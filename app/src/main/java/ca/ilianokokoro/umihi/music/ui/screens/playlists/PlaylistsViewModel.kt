@@ -21,7 +21,6 @@ class PlaylistsViewModel(application: Application) : AndroidViewModel(applicatio
     val uiState = _uiState.asStateFlow()
 
     private val playlistRepository = PlaylistRepository()
-
     private val datastoreRepository = DatastoreRepository(application)
 
 
@@ -32,24 +31,32 @@ class PlaylistsViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun getPlaylists() {
         viewModelScope.launch {
+            _uiState.update { screenState ->
+                _uiState.value.copy(
+                    isRefreshing = true
+                )
+            }
+
             val cookies = datastoreRepository.getCookies()
             if (cookies.isEmpty()) {
                 _uiState.update { screenState ->
-                    PlaylistsState(
-                        screenState = ScreenState.LoggedOut
+                    _uiState.value.copy(
+                        screenState =
+                            ScreenState.LoggedOut
                     )
+
                 }
                 return@launch
             }
 
             playlistRepository.retrieveAll(cookies).collect { apiResult ->
                 _uiState.update { screenState ->
-                    PlaylistsState(
+                    _uiState.value.copy(
                         screenState = when (apiResult) {
                             is ApiResult.Error -> ScreenState.Error(apiResult.exception)
                             ApiResult.Loading -> ScreenState.Loading
                             is ApiResult.Success -> ScreenState.LoggedIn(apiResult.data)
-                        }
+                        }, isRefreshing = false
                     )
                 }
             }
