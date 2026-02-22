@@ -27,7 +27,7 @@ ksp = "2.3.4"
 customactivityoncrash = "2.4.0"
 workRuntimeKtx = "2.11.1"
 reorderable = "3.0.0"
-newpipeextractor = "v0.25.2"
+newpipeextractor = "v0.26.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

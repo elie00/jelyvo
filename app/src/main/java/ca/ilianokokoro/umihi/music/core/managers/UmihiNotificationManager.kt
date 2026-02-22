@@ -102,6 +102,26 @@ object UmihiNotificationManager {
         updateGroupSummary(context)
     }
 
+    fun showPlaylistDownloadCanceled(
+        context: Context,
+        playlist: Playlist
+    ) {
+        val notification = getBaseNotification(context, NotificationChannels.PLAYLIST_DOWNLOAD)
+            .setContentTitle(playlist.info.title)
+            .setContentText("Download canceled")
+            .setSmallIcon(android.R.drawable.stat_sys_download_done)
+            .setProgress(0, 0, false)
+            .setOngoing(false)
+            .setAutoCancel(true)
+            .setGroup(NotificationChannels.PLAYLIST_DOWNLOAD.group)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+
+        notificationManager.notify(getNotificationID(playlist.info.id), notification)
+        updateGroupSummary(context)
+    }
+
     private fun updateGroupSummary(context: Context) {
         val summaryNotification =
             getBaseNotification(context, NotificationChannels.PLAYLIST_DOWNLOAD)

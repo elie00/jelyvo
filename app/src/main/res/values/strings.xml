@@ -80,4 +80,8 @@
     <string name="no_results">No Results</string>
     <string name="get_song_failed">Failed to get Song Information</string>
     <string name="queue_empty">No songs in the queue</string>
+    <string name="cancel_playlist_download">Cancel Playlist Download</string>
+    <string name="cancel_playlist_download_text">Cancel the ongoing playlist download ?</string>
+    <string name="remove_download">Remove Download</string>
+    <string name="cancel_download">Cancel Download</string>
 </resources>

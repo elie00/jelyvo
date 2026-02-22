@@ -17,7 +17,9 @@ fun PlaylistHeader(
     isDownloading: Boolean,
     onOpenPlayer: () -> Unit,
     onDownloadPlaylist: () -> Unit,
+    onDeletePlaylist: () -> Unit,
     onPlayPlaylist: () -> Unit,
+    onCancelDownload: () -> Unit,
     onShufflePlaylist: () -> Unit,
     playlist: Playlist
 ) {
@@ -32,7 +34,9 @@ fun PlaylistHeader(
             PlaylistInfo(
                 playlist = playlist,
                 isDownloading = isDownloading,
-                onDownloadPressed = onDownloadPlaylist
+                onDownloadPressed = onDownloadPlaylist,
+                onDeletePressed = onDeletePlaylist,
+                onCancelDownload = onCancelDownload
             )
             ActionButtons(
                 buttonEnabled = !playlist.songs.isEmpty(),

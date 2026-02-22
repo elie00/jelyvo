@@ -129,6 +129,7 @@ class PlaylistDownloadWorker(
                 printd("Playlist download complete")
                 Result.success()
             } catch (e: CancellationException) {
+                UmihiNotificationManager.showPlaylistDownloadCanceled(appContext, playlist)
                 printd("Playlist download canceled ${playlist.info.title}")
                 Result.failure()
             } catch (e: Exception) {

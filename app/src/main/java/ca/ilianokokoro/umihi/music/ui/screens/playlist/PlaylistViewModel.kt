@@ -155,15 +155,32 @@ class PlaylistViewModel(playlistInfo: PlaylistInfo, player: Player, application:
     fun downloadPlaylist() {
         val playlist = getPlaylist() ?: return
         viewModelScope.launch {
-            if (!playlist.downloaded) {
-                downloadRepository.downloadPlaylist(playlist)
+            if (playlist.downloaded) {
                 return@launch
             }
 
+            downloadRepository.downloadPlaylist(playlist)
+        }
+    }
+
+    fun deletePlaylist() {
+        val playlist = getPlaylist() ?: return
+        viewModelScope.launch {
             downloadRepository.deletePlaylist(playlist)
             getPlaylistInfoAsync()
         }
     }
+
+    fun cancelDownload() {
+        if (!uiState.value.isDownloading) {
+            return
+        }
+        val playlist = getPlaylist() ?: return
+        viewModelScope.launch {
+            downloadRepository.cancelPlaylistDownload(playlist)
+        }
+    }
+
 
     fun downloadSong(song: Song) {
         val playlist = getPlaylist() ?: return

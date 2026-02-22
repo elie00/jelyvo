@@ -110,6 +110,11 @@ class DownloadRepository(appContext: Context) {
         )
     }
 
+    fun cancelPlaylistDownload(playlist: Playlist) {
+        printd("stopping work ${playlist.info.title}")
+        workManager.cancelUniqueWork(playlist.info.id)
+    }
+
     fun cancelAllWorks() {
         workManager.cancelAllWork()
     }

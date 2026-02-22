@@ -80,6 +80,8 @@ fun PlaylistScreen(
                     onDownloadPlaylist = playlistViewModel::downloadPlaylist,
                     onShufflePlaylist = playlistViewModel::shufflePlaylist,
                     onPlayPlaylist = playlistViewModel::playPlaylist,
+                    onDeletePlaylist = playlistViewModel::deletePlaylist,
+                    onCancelDownload = playlistViewModel::cancelDownload,
                     playlist = playlistInfo
                 )
 
@@ -119,6 +121,8 @@ fun PlaylistScreen(
                                 onDownloadPlaylist = playlistViewModel::downloadPlaylist,
                                 onShufflePlaylist = playlistViewModel::shufflePlaylist,
                                 onPlayPlaylist = playlistViewModel::playPlaylist,
+                                onDeletePlaylist = playlistViewModel::deletePlaylist,
+                                onCancelDownload = playlistViewModel::cancelDownload,
                                 playlist = playlistInfo
                             )
                         }

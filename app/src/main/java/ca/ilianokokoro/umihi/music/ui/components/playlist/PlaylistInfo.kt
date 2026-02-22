@@ -9,14 +9,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadDone
+import androidx.compose.material.icons.rounded.FileDownloadOff
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +43,7 @@ import androidx.compose.ui.window.DialogProperties
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.dropdown.ModernDropdownItem
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -44,11 +51,15 @@ fun PlaylistInfo(
     playlist: Playlist,
     isDownloading: Boolean,
     onDownloadPressed: () -> Unit,
+    onDeletePressed: () -> Unit,
+    onCancelDownload: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val songsCount = playlist.songs.count()
     var animatedCount by remember { mutableStateOf<Int?>(null) }
-    val showDialog = remember { mutableStateOf(false) }
+    val showDeleteDialog = remember { mutableStateOf(false) }
+    val showCancelDialog = remember { mutableStateOf(false) }
+    var optionsExtended by remember { mutableStateOf(false) }
 
     LaunchedEffect(songsCount) {
         animatedCount = songsCount
@@ -92,34 +103,81 @@ fun PlaylistInfo(
                 )
 
 
-                if (isDownloading) {
-                    CircularWavyProgressIndicator(modifier = Modifier.size(40.dp))
-                } else {
-                    FilledIconButton(
-                        onClick = {
-                            if (!playlist.downloaded) {
-                                onDownloadPressed()
-                            } else {
-                                showDialog.value = true
-                            }
-                        },
-                        shapes = IconButtonDefaults.shapes(),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        enabled = !playlist.info.isDownloadedPlaylist && alpha != 0F
+                if (!playlist.info.isDownloadedPlaylist) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (playlist.downloaded) {
+
+                        FilledIconButton(
+                            onClick = {
+                                if (playlist.downloaded) {
+                                    showDeleteDialog.value = true
+                                } else if (isDownloading) {
+                                    showCancelDialog.value = true
+                                } else {
+                                    onDownloadPressed()
+                                }
+                            },
+                            shapes = IconButtonDefaults.shapes(),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            enabled = alpha != 0F
+                        ) {
+                            if (playlist.downloaded) {
+                                Icon(
+                                    imageVector = Icons.Rounded.DownloadDone,
+                                    contentDescription = null,
+                                )
+                            } else if (isDownloading) {
+                                CircularWavyProgressIndicator(modifier = Modifier.size(25.dp))
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Rounded.Download,
+                                    contentDescription = stringResource(R.string.download),
+                                )
+                            }
+                        }
+
+
+                        IconButton(
+                            onClick = {
+                                optionsExtended = true
+                            },
+                            shapes = IconButtonDefaults.shapes(),
+                        ) {
                             Icon(
-                                imageVector = Icons.Rounded.DownloadDone,
-                                contentDescription = null,
+                                imageVector = Icons.Rounded.MoreVert,
+                                contentDescription = Icons.Rounded.MoreVert.name
                             )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.Download,
-                                contentDescription = stringResource(R.string.download),
-                            )
+
+                            DropdownMenu(
+                                expanded = optionsExtended,
+                                onDismissRequest = { optionsExtended = false },
+                                shape = RoundedCornerShape(24.dp),
+                            ) {
+                                if (isDownloading) {
+                                    ModernDropdownItem(
+                                        leadingIcon = Icons.Rounded.Cancel,
+                                        text = stringResource(R.string.cancel_download),
+                                        onClick = {
+                                            showCancelDialog.value = true
+                                            optionsExtended = false
+                                        }
+                                    )
+                                }
+
+                                ModernDropdownItem(
+                                    leadingIcon = Icons.Rounded.FileDownloadOff,
+                                    text = stringResource(R.string.remove_download),
+                                    onClick = {
+                                        showDeleteDialog.value = true
+                                        optionsExtended = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -127,22 +185,44 @@ fun PlaylistInfo(
         }
     }
 
-    if (showDialog.value) {
+    if (showDeleteDialog.value) {
         AlertDialog(
-            onDismissRequest = { showDialog.value = false },
+            onDismissRequest = { showDeleteDialog.value = false },
             title = { Text(stringResource(R.string.remove_local_playlist)) },
             text = { Text(stringResource(R.string.remove_local_confirm_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showDialog.value = false
-                        onDownloadPressed()
+                        showDeleteDialog.value = false
+                        onDeletePressed()
                     }
                 ) { Text(stringResource(R.string.confirm)) }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDialog.value = false }
+                    onClick = { showDeleteDialog.value = false }
+                ) { Text(stringResource(R.string.cancel)) }
+            },
+            properties = DialogProperties(dismissOnClickOutside = false)
+        )
+    }
+
+    if (showCancelDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog.value = false },
+            title = { Text(stringResource(R.string.cancel_playlist_download)) },
+            text = { Text(stringResource(R.string.cancel_playlist_download_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelDialog.value = false
+                        onCancelDownload()
+                    }
+                ) { Text(stringResource(R.string.confirm)) }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showCancelDialog.value = false }
                 ) { Text(stringResource(R.string.cancel)) }
             },
             properties = DialogProperties(dismissOnClickOutside = false)
