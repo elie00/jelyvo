@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.helpers
 
 import android.util.Log
+import ca.ilianokokoro.umihi.music.BuildConfig
 import kotlin.time.measureTimedValue
 
 object LogHelper {
@@ -16,7 +17,10 @@ object LogHelper {
     }
 
     fun printd(message: String, tag: String = TAG) {
-        Log.d(tag, message)
+        // Debug logging is stripped from release builds to avoid leaking sensitive data.
+        if (BuildConfig.DEBUG) {
+            Log.d(tag, message)
+        }
     }
 
     fun printe(message: String, tag: String = TAG, exception: Exception? = null) {
