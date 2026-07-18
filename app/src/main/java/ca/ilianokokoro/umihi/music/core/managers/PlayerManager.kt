@@ -12,6 +12,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import ca.ilianokokoro.umihi.music.models.Playlist
@@ -27,6 +29,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -52,6 +55,7 @@ object PlayerManager {
 
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val radioRepository = RadioRepository()
 
     private var sleepTimerJob: Job? = null
     private var sleepTimerEndOfSongListener: Player.Listener? = null
@@ -235,6 +239,40 @@ object PlayerManager {
         controller.setMediaItem(song.mediaItem)
         controller.prepare()
         controller.play()
+    }
+
+    /**
+     * "Start radio" from a seed song: plays it immediately, then appends related tracks so the
+     * user gets an endless mix built around that song. A failed fetch just leaves the seed playing.
+     */
+    fun startRadio(song: Song, context: Context? = null) {
+        playSong(song)
+
+        context?.let {
+            Toast.makeText(
+                it,
+                it.getString(R.string.starting_radio),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        scope.launch {
+            val related = radioRepository.getRelated(song)
+                .firstOrNull { it is ApiResult.Success } as? ApiResult.Success
+                ?: return@launch
+            val songs = related.data
+            if (songs.isEmpty()) {
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                val controller = currentController ?: return@withContext
+                // Only extend if the seed is still what we started (user hasn't moved on).
+                if (controller.currentMediaItem?.mediaId == song.youtubeId) {
+                    controller.addMediaItems(songs.map { it.mediaItem })
+                }
+            }
+        }
     }
 
     suspend fun getPlaybackPosition(): Pair<Float, Float>? {

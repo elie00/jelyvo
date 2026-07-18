@@ -109,6 +109,9 @@ fun SearchScreen(
                                         },
                                         addToQueue = {
                                             PlayerManager.addToQueue(it, context)
+                                        },
+                                        startRadio = {
+                                            PlayerManager.startRadio(it, context)
                                         }
                                     )
                                 }

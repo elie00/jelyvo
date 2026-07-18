@@ -105,6 +105,8 @@
     <string name="import_from_spotify_subtitle">Match your Spotify tracks to YouTube</string>
     <string name="autoplay_title">Autoplay</string>
     <string name="autoplay_subtitle">Keep playing related songs when the queue ends</string>
+    <string name="start_radio">Start radio</string>
+    <string name="starting_radio">Starting radio…</string>
     <string name="privacy_unlisted">Unlisted</string>
     <string name="privacy_public">Public</string>
     <string name="privacy_private">Private</string>

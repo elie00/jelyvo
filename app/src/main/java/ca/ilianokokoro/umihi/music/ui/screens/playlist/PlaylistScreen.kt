@@ -272,6 +272,8 @@ fun PlaylistScreen(
                                             song,
                                             application
                                         )
+                                    }, startRadio = {
+                                        PlayerManager.startRadio(song, application)
                                     }, download = {
                                         playlistViewModel.downloadSong(song)
                                     })
