@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player
 
+import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.Song
 
 
@@ -18,6 +20,8 @@ data class PlayerState(
     val isLoggedIn: Boolean = false,
     val isLiked: Boolean = false,
     val isLiking: Boolean = false,
+    val lyrics: ApiResult<Lyrics> = ApiResult.Loading,
+    val areLyricsShown: Boolean = false,
 )
 
 data class PlaybackProgress(

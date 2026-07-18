@@ -13,12 +13,15 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
 import ca.ilianokokoro.umihi.music.models.Song
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,6 +35,9 @@ class PlayerViewModel(application: Application) :
     private val _uiState = MutableStateFlow(PlayerState())
     val uiState = _uiState.asStateFlow()
     private val datastoreRepository = DatastoreRepository(application)
+    private val lyricsRepository = LyricsRepository()
+    private var lyricsJob: Job? = null
+    private var lyricsSongId: String? = null
 
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -229,6 +235,26 @@ class PlayerViewModel(application: Application) :
                 isLiked = mergedQueue.getOrNull(index)?.isLiked ?: false
             )
         }
+
+        val current = freshQueue.getOrNull(index)
+        if (current != null && current.youtubeId != lyricsSongId) {
+            lyricsSongId = current.youtubeId
+            loadLyrics(current)
+        }
+    }
+
+    private fun loadLyrics(song: Song) {
+        lyricsJob?.cancel()
+        _uiState.update { it.copy(lyrics = ApiResult.Loading) }
+        lyricsJob = viewModelScope.launch {
+            lyricsRepository.getLyrics(song).collect { result ->
+                _uiState.update { it.copy(lyrics = result) }
+            }
+        }
+    }
+
+    fun toggleLyricsVisibility() {
+        _uiState.update { it.copy(areLyricsShown = !it.areLyricsShown) }
     }
 
     private fun updateQueue() {

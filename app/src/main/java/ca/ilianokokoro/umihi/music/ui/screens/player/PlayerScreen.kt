@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -48,6 +49,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
@@ -98,8 +100,10 @@ fun PlayerScreen(
 
             ) {
 
-                Thumbnail(
-                    href = currentSong?.thumbnailHref.toString(),
+                ArtworkOrLyrics(
+                    currentSong = currentSong,
+                    uiState = uiState,
+                    onToggle = playerViewModel::toggleLyricsVisibility,
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(1f)
@@ -155,8 +159,10 @@ fun PlayerScreen(
                         .fillMaxHeight()
                         .weight(1f)
                 ) {
-                    Thumbnail(
-                        href = currentSong?.thumbnailHref.toString(),
+                    ArtworkOrLyrics(
+                        currentSong = currentSong,
+                        uiState = uiState,
+                        onToggle = playerViewModel::toggleLyricsVisibility,
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
@@ -229,6 +235,29 @@ fun PlayerScreen(
             onStartEndOfSong = playerViewModel::startSleepTimerEndOfSong,
             onCancelTimer = playerViewModel::cancelSleepTimer,
         )
+    }
+}
+
+@Composable
+private fun ArtworkOrLyrics(
+    currentSong: Song?,
+    uiState: PlayerState,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.clickable(onClick = onToggle)) {
+        if (uiState.areLyricsShown) {
+            LyricsPanel(
+                lyricsState = uiState.lyrics,
+                currentPositionMs = uiState.playbackProgress.position.toLong(),
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Thumbnail(
+                href = currentSong?.thumbnailHref.toString(),
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 }
 
