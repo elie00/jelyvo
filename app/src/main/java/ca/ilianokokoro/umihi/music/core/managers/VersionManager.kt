@@ -14,6 +14,7 @@ import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.exceptions.GithubRateLimitException
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
@@ -30,8 +31,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import okhttp3.Request
 import java.io.File
-import java.net.URL
+import java.io.IOException
 
 
 object VersionManager {
@@ -152,29 +154,35 @@ object VersionManager {
 
         val apkFile = File(updateDir, Constants.Downloads.UPDATE_APK)
 
-        val connection = URL(release.downloadUrl).openConnection()
-        val totalBytes = connection.contentLengthLong
+        val request = Request.Builder().url(release.downloadUrl).build()
+        UmihiHttpClient.downloadClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("APK download failed: HTTP ${response.code}")
+            }
+            val body = response.body ?: throw IOException("APK download failed: empty body")
+            val totalBytes = body.contentLength()
 
-        connection.getInputStream().use { input ->
-            apkFile.outputStream().use { output ->
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                var downloadedBytes = 0L
+            body.byteStream().use { input ->
+                apkFile.outputStream().use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var downloadedBytes = 0L
 
-                while (true) {
-                    val read = input.read(buffer)
+                    while (true) {
+                        val read = input.read(buffer)
 
-                    if (read == -1) {
-                        break
-                    }
+                        if (read == -1) {
+                            break
+                        }
 
-                    output.write(buffer, 0, read)
-                    downloadedBytes += read
+                        output.write(buffer, 0, read)
+                        downloadedBytes += read
 
-                    if (totalBytes > 0) {
-                        val progress = downloadedBytes.toFloat() / totalBytes.toFloat()
+                        if (totalBytes > 0) {
+                            val progress = downloadedBytes.toFloat() / totalBytes.toFloat()
 
-                        withContext(Dispatchers.Main) {
-                            onProgress(progress)
+                            withContext(Dispatchers.Main) {
+                                onProgress(progress)
+                            }
                         }
                     }
                 }
