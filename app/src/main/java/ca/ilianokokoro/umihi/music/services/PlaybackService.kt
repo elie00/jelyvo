@@ -43,6 +43,7 @@ import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -59,6 +60,7 @@ class PlaybackService : MediaLibraryService() {
     private val songRepository = SongRepository()
     private lateinit var playlistRepository: PlaylistRepository
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var consecutivePlaybackErrors = 0
 
     private lateinit var callback: UmihiMediaLibraryCallback
 
@@ -168,10 +170,23 @@ class PlaybackService : MediaLibraryService() {
                 if (playbackState == Player.STATE_IDLE) {
                     YoutubeStatsTracker.stopPlaybackTracking()
                 }
+                if (playbackState == Player.STATE_READY) {
+                    // A track played successfully: reset the failure guard.
+                    consecutivePlaybackErrors = 0
+                }
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                Toast.makeText(applicationContext, error.message, Toast.LENGTH_LONG).show()
+                consecutivePlaybackErrors++
+                val queueSize = player.mediaItemCount
+                // Stop instead of skipping endlessly when every track fails (e.g. offline).
+                if (consecutivePlaybackErrors >= queueSize ||
+                    consecutivePlaybackErrors >= MAX_CONSECUTIVE_PLAYBACK_ERRORS
+                ) {
+                    Toast.makeText(applicationContext, error.message, Toast.LENGTH_LONG).show()
+                    player.pause()
+                    return
+                }
                 player.seekToNext()
                 player.prepare()
             }
@@ -238,6 +253,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        serviceScope.cancel()
         mediaLibrarySession?.run {
             if (currentAudioSessionId > 0) {
                 sendBroadcast(
@@ -247,11 +263,12 @@ class PlaybackService : MediaLibraryService() {
                     }
                 )
             }
-            player.release()
-            exoCache.release()
             release()
-            mediaLibrarySession = null
         }
+        mediaLibrarySession = null
+        // Released unconditionally: a null session must not leak the player or cache lock.
+        if (::player.isInitialized) player.release()
+        if (::exoCache.isInitialized) exoCache.release()
         super.onDestroy()
     }
 
@@ -345,5 +362,9 @@ class PlaybackService : MediaLibraryService() {
                 )
             }
         }
+    }
+
+    companion object {
+        private const val MAX_CONSECUTIVE_PLAYBACK_ERRORS = 5
     }
 }
