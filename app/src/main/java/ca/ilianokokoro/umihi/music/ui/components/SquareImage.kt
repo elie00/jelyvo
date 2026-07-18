@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
@@ -23,9 +24,13 @@ fun SquareImage(
     contentDescription: String? = null,
     cornerRadius: Dp = 12.dp,
 ) {
+    val context = LocalContext.current
+    val request = remember(uri) {
+        ImageRequest.Builder(context).data(uri)
+            .crossfade(Constants.Animation.IMAGE_FADE_DURATION).build()
+    }
     AsyncImage(
-        model = ImageRequest.Builder(LocalContext.current).data(uri)
-            .crossfade(Constants.Animation.IMAGE_FADE_DURATION).build(),
+        model = request,
         contentDescription = contentDescription,
         contentScale = ContentScale.Crop,
         modifier = modifier
