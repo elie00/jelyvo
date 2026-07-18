@@ -14,7 +14,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlin.concurrent.atomics.AtomicInt
@@ -72,9 +72,12 @@ class PlaylistDownloadWorker(
                             try {
                                 val fullSongData = songRepository
                                     .getSongInfo(song.youtubeId)
-                                    .first { it is ApiResult.Success }
+                                    .firstOrNull { it is ApiResult.Success } as? ApiResult.Success
+                                    ?: throw IllegalStateException(
+                                        "Could not fetch song info for ${song.youtubeId}"
+                                    )
 
-                                val fullSong = (fullSongData as ApiResult.Success).data
+                                val fullSong = fullSongData.data
 
                                 val audioPath = DownloadHelper.downloadAudio(appContext, song)
 

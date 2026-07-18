@@ -10,7 +10,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlin.coroutines.cancellation.CancellationException
 
 class SongDownloadWorker(
@@ -50,9 +50,10 @@ class SongDownloadWorker(
 
             val fullSongData = songRepository
                 .getSongInfo(song.youtubeId)
-                .first { it is ApiResult.Success }
+                .firstOrNull { it is ApiResult.Success } as? ApiResult.Success
+                ?: throw IllegalStateException("Could not fetch song info for ${song.youtubeId}")
 
-            val fullSong = (fullSongData as ApiResult.Success).data
+            val fullSong = fullSongData.data
 
             val audioPath = DownloadHelper.downloadAudio(appContext, song)
 
