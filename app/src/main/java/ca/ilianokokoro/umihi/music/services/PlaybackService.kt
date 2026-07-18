@@ -36,9 +36,11 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.extensions.cappedTo
+import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +63,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var playlistRepository: PlaylistRepository
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var consecutivePlaybackErrors = 0
+    private val historyRepository by lazy { HistoryRepository(applicationContext) }
 
     private lateinit var callback: UmihiMediaLibraryCallback
 
@@ -160,9 +163,11 @@ class PlaybackService : MediaLibraryService() {
                 PlayerManager.updatePlaybackInfo(PlaybackAudioInfo())
                 updateCurrentMediaItemThumbnail(mediaItem)
                 val songId = mediaItem?.mediaId ?: return
+                val playedSong = mediaItem.toSong()
                 serviceScope.launch {
                     val settings = datastoreRepository.getSettings()
                     YoutubeStatsTracker.onPlaybackStarted(songId, settings)
+                    historyRepository.record(playedSong, System.currentTimeMillis())
                 }
             }
 
