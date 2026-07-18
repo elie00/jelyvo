@@ -216,4 +216,7 @@ dependencies {
     // New Pipe Extractor
     implementation(libs.newpipeextractor)
 
+    // Unit tests
+    testImplementation(libs.junit)
+
 }
