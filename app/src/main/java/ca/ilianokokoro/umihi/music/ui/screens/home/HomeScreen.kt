@@ -35,8 +35,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
+import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.dialog.PlaylistCreationDialog
@@ -115,6 +117,14 @@ fun HomeScreen(
                                     )
 
                                 ) {
+                                    if (uiState.recentlyPlayed.isNotEmpty()) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
+                                            RecentlyPlayedRow(
+                                                songs = uiState.recentlyPlayed,
+                                                onSongClick = { PlayerManager.playSong(it) }
+                                            )
+                                        }
+                                    }
                                     item(span = { GridItemSpan(maxLineSpan) }) {
                                         Row(horizontalArrangement = Arrangement.End) {
                                             MaterialUButton(

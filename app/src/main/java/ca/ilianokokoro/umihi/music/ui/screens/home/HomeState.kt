@@ -1,11 +1,13 @@
 package ca.ilianokokoro.umihi.music.ui.screens.home
 
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.Song
 
 
 data class HomeState(
     val screenState: ScreenState = ScreenState.Loading,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val recentlyPlayed: List<Song> = emptyList()
 )
 
 sealed class ScreenState {

@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
@@ -27,10 +28,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val playlistRepository = PlaylistRepository(application)
     private val datastoreRepository = DatastoreRepository(application)
+    private val historyRepository = HistoryRepository(application)
 
 
     init {
         getPlaylists()
+        observeRecentlyPlayed()
+    }
+
+    private fun observeRecentlyPlayed() {
+        viewModelScope.launch {
+            historyRepository.recentSongs().collect { songs ->
+                _uiState.update { it.copy(recentlyPlayed = songs) }
+            }
+        }
     }
 
     fun getPlaylists() {
