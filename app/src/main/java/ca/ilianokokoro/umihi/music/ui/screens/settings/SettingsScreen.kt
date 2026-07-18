@@ -18,8 +18,10 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -56,6 +58,8 @@ import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSectio
 @Composable
 fun SettingsScreen(
     openAuthScreen: () -> Unit,
+    openEqualizerScreen: () -> Unit,
+    openSpotifyImport: () -> Unit,
     application: Application,
     settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory(application))
 ) {
@@ -150,6 +154,13 @@ fun SettingsScreen(
                                 leadingIcon = Icons.Outlined.Delete,
                                 onClick = settingsViewModel::clearLogins
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.import_from_spotify_title),
+                                subtitle = stringResource(R.string.import_from_spotify_subtitle),
+                                leadingIcon = Icons.Outlined.LibraryMusic,
+                                onClick = openSpotifyImport
+                            )
                         }
 
                         SettingsSection(
@@ -199,6 +210,13 @@ fun SettingsScreen(
                                 leadingIcon = Icons.Outlined.Memory,
                                 value = screenState.settings.useAudioOffload,
                                 onToggle = settingsViewModel::updateAudioOffloadSetting
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.equalizer_title),
+                                subtitle = stringResource(R.string.equalizer_subtitle),
+                                leadingIcon = Icons.Outlined.GraphicEq,
+                                onClick = openEqualizerScreen
                             )
                         }
 

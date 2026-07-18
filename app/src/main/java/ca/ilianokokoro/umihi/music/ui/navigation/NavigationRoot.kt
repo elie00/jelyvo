@@ -47,12 +47,18 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
+import ca.ilianokokoro.umihi.music.core.spotify.SpotifyAuthHelper
+import ca.ilianokokoro.umihi.music.core.spotify.SpotifyPkce
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
+import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
 import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
+import ca.ilianokokoro.umihi.music.ui.screens.spotifyimport.SpotifyImportScreen
+import android.content.Intent
+import androidx.core.net.toUri
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -156,7 +162,32 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                         is SettingsScreenKey -> NavEntry(key) {
                             SettingsScreen(
                                 openAuthScreen = { backStack.add(AuthScreenKey) },
+                                openEqualizerScreen = { backStack.add(EqualizerScreenKey) },
+                                openSpotifyImport = { backStack.add(SpotifyImportScreenKey) },
                                 application = app
+                            )
+                        }
+
+                        is EqualizerScreenKey -> NavEntry(key) {
+                            EqualizerScreen(
+                                onBack = backStack::safePop,
+                                application = app
+                            )
+                        }
+
+                        is SpotifyImportScreenKey -> NavEntry(key) {
+                            val context = LocalContext.current
+                            SpotifyImportScreen(
+                                application = app,
+                                onBack = backStack::safePop,
+                                onStartAuth = {
+                                    val pkce = SpotifyPkce.generate()
+                                    val url = SpotifyAuthHelper.buildAuthorizationUrl(
+                                        pkce.codeChallenge,
+                                        "umihi_state"
+                                    )
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                                },
                             )
                         }
 

@@ -21,6 +21,12 @@ data class PlaylistScreenKey(val playlistInfo: PlaylistInfo) : NavKey
 @Serializable
 data object AuthScreenKey : NavKey
 
+@Serializable
+data object EqualizerScreenKey : NavKey
+
+@Serializable
+data object SpotifyImportScreenKey : NavKey
+
 
 data class ScreenUiConfig(
     val showBottomBar: Boolean = true,
@@ -49,6 +55,15 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             )
 
             AuthScreenKey -> ScreenUiConfig(
+                showBottomBar = false,
+                showMiniPlayer = false
+            )
+
+            EqualizerScreenKey -> ScreenUiConfig(
+                showBottomBar = false
+            )
+
+            SpotifyImportScreenKey -> ScreenUiConfig(
                 showBottomBar = false,
                 showMiniPlayer = false
             )
