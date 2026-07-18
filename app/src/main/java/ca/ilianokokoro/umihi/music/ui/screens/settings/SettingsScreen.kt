@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Update
@@ -204,6 +205,19 @@ fun SettingsScreen(
                         SettingsSection(
                             title = stringResource(R.string.playback)
                         ) {
+                            BooleanSettingItem(
+                                title = stringResource(R.string.autoplay_title),
+                                subtitle = stringResource(R.string.autoplay_subtitle),
+                                leadingIcon = Icons.Outlined.Radio,
+                                value = screenState.settings.autoplay,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.AUTOPLAY,
+                                        it
+                                    )
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(
                                 title = stringResource(R.string.enable_audio_offload),
                                 subtitle = stringResource(R.string.audio_offload_subtitle),

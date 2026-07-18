@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
@@ -43,6 +44,7 @@ class DatastoreRepository(private val context: Context) {
         val AUTO_UPDATE = booleanPreferencesKey(Constants.Datastore.AUTO_UPDATE)
         val SEND_PLAYBACK_DATA = booleanPreferencesKey(Constants.Datastore.SEND_PLAYBACK_DATA)
         val DOWNLOAD_ON_METERED = booleanPreferencesKey(Constants.Datastore.DOWNLOAD_ON_METERED)
+        val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -65,6 +67,7 @@ class DatastoreRepository(private val context: Context) {
         val updateChecking = it[AUTO_UPDATE] ?: true
         val sendPlaybackData = it[SEND_PLAYBACK_DATA] ?: false
         val downloadOnMetered = it[DOWNLOAD_ON_METERED] ?: false
+        val autoplay = it[AUTOPLAY] ?: true
         val cookies = cookies.first()
         val dataSyncId = dataSyncId.first()
 
@@ -79,7 +82,8 @@ class DatastoreRepository(private val context: Context) {
             keepScreenOn = keepScreenOn,
             sendPlaybackData = sendPlaybackData,
             updateChecking = updateChecking,
-            downloadOnMetered = downloadOnMetered
+            downloadOnMetered = downloadOnMetered,
+            autoplay = autoplay
         )
     }
 

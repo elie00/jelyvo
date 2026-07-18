@@ -88,6 +88,7 @@ object Constants {
         const val AUTO_UPDATE = "auto-update"
         const val SEND_PLAYBACK_DATA = "send-playback-data"
         const val DOWNLOAD_ON_METERED = "download-on-metered"
+        const val AUTOPLAY = "autoplay"
     }
 
     object Database {

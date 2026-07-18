@@ -39,7 +39,10 @@ import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
+import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
+import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.extensions.cappedTo
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
@@ -48,6 +51,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -65,6 +69,8 @@ class PlaybackService : MediaLibraryService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var consecutivePlaybackErrors = 0
     private val historyRepository by lazy { HistoryRepository(applicationContext) }
+    private val radioRepository = RadioRepository()
+    private var lastRadioSeedId: String? = null
 
     private lateinit var callback: UmihiMediaLibraryCallback
 
@@ -169,6 +175,7 @@ class PlaybackService : MediaLibraryService() {
                     val settings = datastoreRepository.getSettings()
                     YoutubeStatsTracker.onPlaybackStarted(songId, settings)
                     historyRepository.record(playedSong, System.currentTimeMillis())
+                    maybeAppendRadio(playedSong, settings)
                 }
             }
 
@@ -280,6 +287,42 @@ class PlaybackService : MediaLibraryService() {
         if (::player.isInitialized) player.release()
         if (::exoCache.isInitialized) exoCache.release()
         super.onDestroy()
+    }
+
+    /**
+     * Endless-playback ("radio"): when autoplay is on and the current track is the last one in the
+     * queue, fetches related songs for it and appends them, so playback never stops. Guarded by the
+     * seed id so it fires at most once per track.
+     */
+    private suspend fun maybeAppendRadio(currentSong: Song, settings: UmihiSettings) {
+        if (!settings.autoplay || currentSong.youtubeId.isBlank()) {
+            return
+        }
+
+        val isLast = withContext(Dispatchers.Main) {
+            val p = mediaLibrarySession?.player ?: return@withContext false
+            p.currentMediaItemIndex >= p.mediaItemCount - 1
+        }
+        if (!isLast || lastRadioSeedId == currentSong.youtubeId) {
+            return
+        }
+        lastRadioSeedId = currentSong.youtubeId
+
+        val related = radioRepository.getRelated(currentSong)
+            .firstOrNull { it is ApiResult.Success } as? ApiResult.Success
+            ?: return
+        val songs = related.data
+        if (songs.isEmpty()) {
+            return
+        }
+
+        withContext(Dispatchers.Main) {
+            val p = mediaLibrarySession?.player ?: return@withContext
+            // Re-check: the user may have queued items while we were fetching.
+            if (p.currentMediaItemIndex >= p.mediaItemCount - 1) {
+                p.addMediaItems(songs.map { it.mediaItem })
+            }
+        }
     }
 
     private fun updateCurrentMediaItemThumbnail(mediaItem: MediaItem?) {
