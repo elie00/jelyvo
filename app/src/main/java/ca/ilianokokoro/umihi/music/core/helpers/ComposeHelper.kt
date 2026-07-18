@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.media3.common.Player
 
@@ -64,6 +65,32 @@ object ComposeHelper {
         }
 
         return repeatModeState.intValue
+    }
+
+    @Composable
+    fun rememberShuffleMode(player: Player?): Boolean {
+        val shuffleModeState =
+            remember { mutableStateOf(player?.shuffleModeEnabled == true) }
+
+        DisposableEffect(player) {
+            if (player == null) {
+                return@DisposableEffect onDispose {}
+            }
+
+            val listener = object : Player.Listener {
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    shuffleModeState.value = shuffleModeEnabled
+                }
+            }
+
+            player.addListener(listener)
+
+            onDispose {
+                player.removeListener(listener)
+            }
+        }
+
+        return shuffleModeState.value
     }
 
 }

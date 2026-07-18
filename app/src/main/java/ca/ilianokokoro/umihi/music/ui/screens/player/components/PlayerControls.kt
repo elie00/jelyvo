@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Speed
@@ -66,11 +67,12 @@ fun PlayerControls(
     val mainButtonsControlsInteractionSources =
         List(3) { ComposeHelper.rememberInteractionSource() }
     val actionButtonsControlsInteractionSources =
-        List(4) { ComposeHelper.rememberInteractionSource() }
+        List(5) { ComposeHelper.rememberInteractionSource() }
 
     val hapticFeedback = LocalHapticFeedback.current
     val player by PlayerManager.controllerState.collectAsState()
     val repeatMode = ComposeHelper.rememberRepeatMode(player)
+    val shuffleEnabled = ComposeHelper.rememberShuffleMode(player)
 
     Column(
         modifier = modifier
@@ -334,6 +336,38 @@ fun PlayerControls(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                                 contentDescription = stringResource(R.string.queue),
+                                modifier = Modifier.size(iconSize)
+                            )
+                        }
+                    },
+                    {}
+                )
+
+                // Shuffle — MIDDLE segment
+                customItem(
+                    {
+                        FilledIconToggleButton(
+                            checked = shuffleEnabled,
+                            onCheckedChange = { PlayerManager.toggleShuffleMode() },
+                            shapes = IconButtonDefaults.toggleableShapes(
+                                shape = ButtonGroupDefaults.connectedMiddleButtonPressShape,
+                                pressedShape = ButtonGroupDefaults.connectedMiddleButtonPressShape,
+                                checkedShape = ButtonGroupDefaults.connectedMiddleButtonPressShape,
+                            ),
+                            colors = IconButtonDefaults.filledIconToggleButtonColors(
+                                checkedContainerColor = IconButtonDefaults.filledIconToggleButtonColors().checkedContainerColor,
+                                checkedContentColor = IconButtonDefaults.filledIconToggleButtonColors().checkedContentColor,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier
+                                .size(buttonSize)
+                                .animateWidth(interactionSource = actionButtonsControlsInteractionSources[4]),
+                            interactionSource = actionButtonsControlsInteractionSources[4],
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Shuffle,
+                                contentDescription = stringResource(R.string.shuffle),
                                 modifier = Modifier.size(iconSize)
                             )
                         }

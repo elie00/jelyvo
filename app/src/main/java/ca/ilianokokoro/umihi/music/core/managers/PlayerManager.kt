@@ -136,6 +136,9 @@ object PlayerManager {
     val repeatMode: Int
         get() = currentController?.repeatMode ?: Player.REPEAT_MODE_OFF
 
+    val shuffleModeEnabled: Boolean
+        get() = currentController?.shuffleModeEnabled == true
+
     fun seekToIndex(index: Int, positionMs: Long = C.TIME_UNSET) {
         currentController?.seekTo(index, positionMs)
     }
@@ -163,6 +166,10 @@ object PlayerManager {
         }
 
         setRepeatMode(nextRepeatMode)
+    }
+
+    fun toggleShuffleMode() {
+        currentController?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled }
     }
 
 
