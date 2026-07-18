@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,30 +33,32 @@ class PlayerViewModel(application: Application) :
     val uiState = _uiState.asStateFlow()
     private val datastoreRepository = DatastoreRepository(application)
 
+    private val playerListener = object : Player.Listener {
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            updateCurrentSong()
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            updateIsPlayingState()
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            updateIsLoadingState()
+        }
+
+        override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+            updateQueue()
+        }
+
+        override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
+
+            val artworkUri = mediaMetadata.artworkUri ?: return
+            updateThumbnail(artworkUri)
+        }
+    }
+
     init {
-        PlayerManager.currentController?.addListener(object : Player.Listener {
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                updateCurrentSong()
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                updateIsPlayingState()
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                updateIsLoadingState()
-            }
-
-            override fun onTimelineChanged(timeline: Timeline, reason: Int) {
-                updateQueue()
-            }
-
-            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-
-                val artworkUri = mediaMetadata.artworkUri ?: return
-                updateThumbnail(artworkUri)
-            }
-        })
+        PlayerManager.currentController?.addListener(playerListener)
 
         startProgressUpdate()
         updateCurrentSong()
@@ -192,21 +195,29 @@ class PlayerViewModel(application: Application) :
         }
     }
 
+    /**
+     * Carries the locally-known `isLiked` flag over onto a freshly-pulled queue, keyed by
+     * youtubeId. O(n) — indexes the previous queue once instead of a linear scan per song.
+     */
+    private fun mergeLikes(previousQueue: List<Song>, freshQueue: List<Song>): List<Song> {
+        val previousById = previousQueue.associateBy { it.youtubeId }
+        return freshQueue.map { freshSong ->
+            previousById[freshSong.youtubeId]?.let { existing ->
+                if (existing.isLiked != freshSong.isLiked) {
+                    freshSong.copy(isLiked = existing.isLiked)
+                } else {
+                    freshSong
+                }
+            } ?: freshSong
+        }
+    }
+
     private fun updateCurrentSong() {
         val index = PlayerManager.getCurrentIndex()
         val freshQueue = PlayerManager.getQueue()
 
         _uiState.update { state ->
-            val mergedQueue = freshQueue.map { freshSong ->
-                state.queue.find { it.youtubeId == freshSong.youtubeId }
-                    ?.let { existing ->
-                        if (existing.isLiked != freshSong.isLiked) {
-                            freshSong.copy(isLiked = existing.isLiked)
-                        } else {
-                            freshSong
-                        }
-                    } ?: freshSong
-            }
+            val mergedQueue = mergeLikes(state.queue, freshQueue)
 
             state.copy(
                 currentIndex = index,
@@ -222,16 +233,7 @@ class PlayerViewModel(application: Application) :
 
     private fun updateQueue() {
         _uiState.update { state ->
-            val mergedQueue = PlayerManager.getQueue().map { freshSong ->
-                state.queue.find { it.youtubeId == freshSong.youtubeId }
-                    ?.let { existing ->
-                        if (existing.isLiked != freshSong.isLiked) {
-                            freshSong.copy(isLiked = existing.isLiked)
-                        } else {
-                            freshSong
-                        }
-                    } ?: freshSong
-            }
+            val mergedQueue = mergeLikes(state.queue, PlayerManager.getQueue())
 
             state.copy(
                 currentIndex = PlayerManager.getCurrentIndex(),
@@ -345,6 +347,11 @@ class PlayerViewModel(application: Application) :
 
             state.copy(queue = updatedQueue)
         }
+    }
+
+    override fun onCleared() {
+        PlayerManager.currentController?.removeListener(playerListener)
+        super.onCleared()
     }
 
     companion object {
