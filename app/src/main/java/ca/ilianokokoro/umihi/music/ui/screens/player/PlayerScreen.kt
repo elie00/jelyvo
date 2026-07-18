@@ -58,6 +58,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBot
 @Composable
 fun PlayerScreen(
     onBack: () -> Unit,
+    onOpenArtist: (Song) -> Unit = {},
     modifier: Modifier = Modifier,
     application: Application,
     playerViewModel: PlayerViewModel = viewModel(
@@ -122,6 +123,7 @@ fun PlayerScreen(
                         isLiked = uiState.isLiked,
                         isLiking = uiState.isLiking,
                         onToggleLike = playerViewModel::toggleLike,
+                        onArtistClick = { currentSong?.let { onOpenArtist(it) } },
                     )
                     PlayerControls(
                         isPlaying = uiState.isPlaying,
@@ -182,6 +184,7 @@ fun PlayerScreen(
                         isLiked = uiState.isLiked,
                         isLiking = uiState.isLiking,
                         onToggleLike = playerViewModel::toggleLike,
+                        onArtistClick = { currentSong?.let { onOpenArtist(it) } },
                     )
 
                     PlayerControls(
@@ -300,6 +303,7 @@ fun SongInfo(
     isLiked: Boolean = false,
     isLiking: Boolean = false,
     onToggleLike: () -> Unit = {},
+    onArtistClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -328,7 +332,9 @@ fun SongInfo(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontWeight = FontWeight.Bold
                 ),
-                modifier = Modifier.basicMarquee()
+                modifier = Modifier
+                    .basicMarquee()
+                    .clickable(enabled = song != null, onClick = onArtistClick)
             )
         }
 

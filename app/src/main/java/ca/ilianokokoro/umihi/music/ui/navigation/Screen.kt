@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavKey
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -26,6 +27,9 @@ data object EqualizerScreenKey : NavKey
 
 @Serializable
 data object SpotifyImportScreenKey : NavKey
+
+@Serializable
+data class ArtistScreenKey(val seedSong: Song) : NavKey
 
 
 data class ScreenUiConfig(
@@ -66,6 +70,10 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             SpotifyImportScreenKey -> ScreenUiConfig(
                 showBottomBar = false,
                 showMiniPlayer = false
+            )
+
+            is ArtistScreenKey -> ScreenUiConfig(
+                showBottomBar = false
             )
 
             else -> ScreenUiConfig()

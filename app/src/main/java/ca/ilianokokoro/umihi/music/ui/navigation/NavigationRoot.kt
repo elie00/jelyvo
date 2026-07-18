@@ -49,6 +49,7 @@ import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.core.spotify.SpotifyAuthHelper
 import ca.ilianokokoro.umihi.music.core.spotify.SpotifyPkce
+import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
 import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
@@ -215,6 +216,15 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             )
                         }
 
+                        is ArtistScreenKey -> NavEntry(key) {
+                            ArtistScreen(
+                                seedSong = key.seedSong,
+                                onBack = backStack::safePop,
+                                onOpenPlayer = { showFullPlayer = true },
+                                application = app
+                            )
+                        }
+
                         else -> throw RuntimeException(
                             app.getString(
                                 R.string.invalid_navkey,
@@ -270,7 +280,14 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
             },
             sheetState = playerSheetState
         ) {
-            PlayerScreen(onBack = { showFullPlayer = false }, application = app)
+            PlayerScreen(
+                onBack = { showFullPlayer = false },
+                onOpenArtist = { song ->
+                    showFullPlayer = false
+                    backStack.add(ArtistScreenKey(song))
+                },
+                application = app
+            )
         }
     }
 
