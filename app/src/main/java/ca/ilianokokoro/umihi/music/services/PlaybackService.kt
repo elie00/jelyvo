@@ -35,6 +35,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
+import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
@@ -213,6 +214,9 @@ class PlaybackService : MediaLibraryService() {
 
                 currentAudioSessionId = audioSessionId
 
+                // Bind the in-app equalizer to the ExoPlayer session (re-applies saved config).
+                EqualizerManager.attach(audioSessionId)
+
                 if (audioSessionId > 0) {
                     sendBroadcast(
                         Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
@@ -271,6 +275,7 @@ class PlaybackService : MediaLibraryService() {
             release()
         }
         mediaLibrarySession = null
+        EqualizerManager.release()
         // Released unconditionally: a null session must not leak the player or cache lock.
         if (::player.isInitialized) player.release()
         if (::exoCache.isInitialized) exoCache.release()
