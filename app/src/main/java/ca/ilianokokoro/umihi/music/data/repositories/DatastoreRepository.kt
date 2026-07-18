@@ -9,7 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
+import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
@@ -88,7 +88,8 @@ class DatastoreRepository(private val context: Context) {
     }
 
     val cookies = context.dataStore.data.map {
-        Cookies(it[COOKIES] ?: String())
+        val stored = it[COOKIES] ?: String()
+        Cookies(if (stored.isEmpty()) stored else KeystoreCrypto.decrypt(stored))
     }
 
     val dataSyncId: Flow<String?> = flow {
@@ -106,8 +107,9 @@ class DatastoreRepository(private val context: Context) {
     }
 
     suspend fun saveCookies(cookies: Cookies) {
+        val raw = cookies.toRawCookie()
         context.dataStore.edit {
-            it[COOKIES] = cookies.toRawCookie()
+            it[COOKIES] = if (raw.isEmpty()) raw else KeystoreCrypto.encrypt(raw)
         }
     }
 
@@ -125,16 +127,6 @@ class DatastoreRepository(private val context: Context) {
             it[DATA_SYNC_ID] = newId
         }
     }
-
-    suspend fun debugPrintAllPreferences() {
-        val prefs = context.dataStore.data.first()
-        LogHelper.printd("=== All preferences ===")
-        prefs.asMap().forEach { (key, value) ->
-            LogHelper.printd("  $key = $value")
-        }
-        LogHelper.printd("========================")
-    }
-
 
     enum class UpdateChannel {
         Stable,
