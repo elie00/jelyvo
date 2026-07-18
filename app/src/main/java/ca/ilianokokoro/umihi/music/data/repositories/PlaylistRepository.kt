@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.data.repositories
 import android.app.Application
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.datasources.PlaylistDataSource
 import ca.ilianokokoro.umihi.music.extensions.toException
@@ -32,6 +33,8 @@ class PlaylistRepository(application: Application) {
                 if (e is CancellationException) {
                     throw e
                 }
+                // Network/API failure: fall back to the local cache, but surface the cause.
+                printe(message = "retrieveAll failed, using local cache", exception = e)
                 val localPlaylists = localPlaylistDataSource.getAll().map { it.info }
                 emit(ApiResult.Success(localPlaylists))
             }
@@ -59,6 +62,7 @@ class PlaylistRepository(application: Application) {
                 if (e is CancellationException) {
                     throw e
                 }
+                printe(message = "retrieveOne failed, using local cache", exception = e)
                 val localPlaylist = localPlaylistDataSource.getPlaylistById(playlist.info.id)
                 if (localPlaylist != null) {
                     emit(
