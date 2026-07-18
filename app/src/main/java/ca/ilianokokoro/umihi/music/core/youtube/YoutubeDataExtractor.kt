@@ -28,9 +28,17 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.Request
 import org.schabi.newpipe.extractor.ServiceList
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 
-var visitorData: String? = null
+private val visitorDataRef = AtomicReference<String?>(null)
+
+/**
+ * Thread-safe cache for the YouTube `visitorData` token, read and written by
+ * concurrent stream resolutions (up to [Constants.Downloads.MAX_CONCURRENT_DOWNLOADS] at once).
+ */
+val visitorData: String?
+    get() = visitorDataRef.get()
 
 object YoutubeDataExtractor {
     fun extractYouTubeVideoId(url: String): String? {
@@ -812,8 +820,9 @@ object YoutubeDataExtractor {
             ?.jsonPrimitive
             ?.contentOrNull
 
-        if (visitorData == null && newVisitorData != null) {
-            visitorData = newVisitorData
+        if (newVisitorData != null) {
+            // First writer wins; concurrent resolutions never clobber each other.
+            visitorDataRef.compareAndSet(null, newVisitorData)
         }
 
         val status = root["playabilityStatus"]
