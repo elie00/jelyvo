@@ -63,6 +63,14 @@
                 <data android:pathPrefix="/v/" />
                 <data android:pathPrefix="/embed/" />
             </intent-filter>
+
+            <!-- Spotify OAuth redirect (umihi://spotify-callback) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="umihi" android:host="spotify-callback" />
+            </intent-filter>
         </activity>
 
 
