@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
@@ -36,6 +37,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 @Composable
 fun SearchScreen(
     application: Application,
+    onOpenArtist: (Song) -> Unit = {},
     searchViewModel: SearchViewModel = viewModel(
         factory =
             SearchViewModel.Factory(application = application)
@@ -112,7 +114,8 @@ fun SearchScreen(
                                         },
                                         startRadio = {
                                             PlayerManager.startRadio(it, context)
-                                        }
+                                        },
+                                        onViewArtist = { onOpenArtist(it) }
                                     )
                                 }
                             }

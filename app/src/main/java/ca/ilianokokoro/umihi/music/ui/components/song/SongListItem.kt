@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadForOffline
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material3.Icon
@@ -43,6 +44,7 @@ fun SongListItem(
     addToQueue: () -> Unit,
     startRadio: () -> Unit,
     modifier: Modifier = Modifier,
+    onViewArtist: (() -> Unit)? = null,
     download: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -97,6 +99,16 @@ fun SongListItem(
                         expanded = false
                     }
                 )
+                if (onViewArtist != null) {
+                    MaterialUDropdownItem(
+                        leadingIcon = Icons.Rounded.Person,
+                        text = stringResource(R.string.view_artist),
+                        onClick = {
+                            onViewArtist()
+                            expanded = false
+                        }
+                    )
+                }
                 if (download != null && !song.downloaded) {
                     MaterialUDropdownItem(
                         leadingIcon = Icons.Rounded.Download,

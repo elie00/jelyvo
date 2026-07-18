@@ -41,6 +41,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
@@ -57,6 +58,7 @@ fun PlaylistScreen(
     playlistInfo: PlaylistInfo,
     onOpenPlayer: () -> Unit,
     onBack: () -> Unit,
+    onOpenArtist: (Song) -> Unit = {},
     modifier: Modifier = Modifier,
     application: Application,
     playlistViewModel: PlaylistViewModel = viewModel(
@@ -274,6 +276,8 @@ fun PlaylistScreen(
                                         )
                                     }, startRadio = {
                                         PlayerManager.startRadio(song, application)
+                                    }, onViewArtist = {
+                                        onOpenArtist(song)
                                     }, download = {
                                         playlistViewModel.downloadSong(song)
                                     })
