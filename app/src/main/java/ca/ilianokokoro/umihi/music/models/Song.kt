@@ -35,7 +35,7 @@ data class Song(
         get() {
             val extras = Bundle()
             extras.putString(Constants.ExoPlayer.SongMetadata.DURATION, duration)
-            extras.putString(Constants.ExoPlayer.SongMetadata.UID, Uuid.random().toString())
+            extras.putString(Constants.ExoPlayer.SongMetadata.UID, uid)
             extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_EXPLICIT, isExplicit)
             isLiked?.let { extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_LIKED, it) }
 
@@ -72,14 +72,14 @@ data class Song(
     }
 
     override fun equals(other: Any?): Boolean {
-        if (other !is Song) {
-            return false
-        }
-        return this.hashCode() == other.hashCode()
+        if (this === other) return true
+        if (other !is Song) return false
+        // Queue-entry identity: same track (youtubeId) AND same queue slot (uid).
+        return youtubeId == other.youtubeId && uid == other.uid
     }
 
     override fun hashCode(): Int {
-        return youtubeId.hashCode() + 31 * uid.hashCode()
+        return 31 * youtubeId.hashCode() + uid.hashCode()
     }
 
     fun isSameYoutubeSong(other: Song): Boolean {
