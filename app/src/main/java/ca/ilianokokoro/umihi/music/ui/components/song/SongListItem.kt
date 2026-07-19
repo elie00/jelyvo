@@ -101,7 +101,7 @@ fun SongListItem(
                         expanded = false
                     }
                 )
-                if (onViewArtist != null) {
+                if (onViewArtist != null && song.artistId != null) {
                     MaterialUDropdownItem(
                         leadingIcon = Icons.Rounded.Person,
                         text = stringResource(R.string.view_artist),

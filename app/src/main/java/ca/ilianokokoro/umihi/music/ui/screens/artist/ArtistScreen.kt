@@ -36,12 +36,13 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 
 @Composable
 fun ArtistScreen(
-    seedSong: Song,
+    artistId: String,
+    artistName: String,
     onBack: () -> Unit,
     onOpenPlayer: () -> Unit,
     application: Application,
     artistViewModel: ArtistViewModel = viewModel(
-        factory = ArtistViewModel.Factory(application, seedSong)
+        factory = ArtistViewModel.Factory(application, artistId, artistName)
     ),
 ) {
     val state = artistViewModel.uiState.collectAsStateWithLifecycle().value

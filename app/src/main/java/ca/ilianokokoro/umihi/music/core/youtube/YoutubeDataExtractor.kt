@@ -41,6 +41,12 @@ val visitorData: String?
     get() = visitorDataRef.get()
 
 object YoutubeDataExtractor {
+    private val HEADER_RENDERER_KEYS = listOf(
+        "musicImmersiveHeaderRenderer",
+        "musicVisualHeaderRenderer",
+        "musicHeaderRenderer",
+    )
+
     fun extractYouTubeVideoId(url: String): String? {
         val uri = url.toUri()
 
@@ -526,6 +532,52 @@ object YoutubeDataExtractor {
             is JsonArray -> element.forEach { collectSongItems(it, out) }
             else -> {}
         }
+    }
+
+    /**
+     * Extracts the songs from a YouTube Music artist page browse response (browseId "UC…"). The
+     * artist page mixes shelves and carousels, so we recursively collect every song renderer.
+     */
+    fun extractArtistSongs(jsonString: String): List<Song> {
+        val json = Json.parseToJsonElement(jsonString)
+        val items = mutableListOf<JsonObject>()
+        collectSongItems(json, items)
+        return items.mapNotNull { extractSong(it) }.distinctBy { it.youtubeId }
+    }
+
+    /** Reads the artist name from an artist page header, if present. */
+    fun extractArtistName(jsonString: String): String? {
+        val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
+            ?: return null
+        for (key in HEADER_RENDERER_KEYS) {
+            val name = header[key]?.safeObject()
+                ?.get("title")?.safeObject()
+                ?.get("runs")?.safeArray()?.firstOrNull()
+                ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull
+            if (!name.isNullOrBlank()) {
+                return name
+            }
+        }
+        return null
+    }
+
+    /** Reads the artist header thumbnail (largest) from an artist page, if present. */
+    fun extractArtistThumbnail(jsonString: String): String? {
+        val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
+            ?: return null
+        for (key in HEADER_RENDERER_KEYS) {
+            val thumbnails = header[key]?.safeObject()
+                ?.get("thumbnail")?.safeObject()
+                ?.get("musicThumbnailRenderer")?.safeObject()
+                ?.get("thumbnail")?.safeObject()
+                ?.get("thumbnails")?.safeArray()
+            val url = thumbnails?.lastOrNull()?.safeObject()
+                ?.get("url")?.jsonPrimitive?.contentOrNull
+            if (!url.isNullOrBlank()) {
+                return url
+            }
+        }
+        return null
     }
 
     suspend fun extractContinuationSongs(jsonString: String, settings: UmihiSettings): List<Song> {

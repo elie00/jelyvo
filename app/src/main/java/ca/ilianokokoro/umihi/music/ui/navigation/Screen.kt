@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.navigation3.runtime.NavKey
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
-import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -29,7 +28,7 @@ data object EqualizerScreenKey : NavKey
 data object SpotifyImportScreenKey : NavKey
 
 @Serializable
-data class ArtistScreenKey(val seedSong: Song) : NavKey
+data class ArtistScreenKey(val artistId: String, val artistName: String) : NavKey
 
 @Serializable
 data class AlbumScreenKey(val albumId: String, val albumName: String) : NavKey

@@ -9,7 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.repositories.ArtistRepository
-import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -17,9 +17,11 @@ import kotlinx.coroutines.launch
 
 class ArtistViewModel(
     application: Application,
-    private val seedSong: Song,
+    private val artistId: String,
+    private val artistName: String,
 ) : AndroidViewModel(application) {
     private val artistRepository = ArtistRepository()
+    private val datastoreRepository = DatastoreRepository(application)
 
     private val _uiState = MutableStateFlow<ArtistState>(ArtistState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -30,7 +32,8 @@ class ArtistViewModel(
 
     fun load() {
         viewModelScope.launch {
-            artistRepository.getArtistForSong(seedSong).collect { result ->
+            val settings = datastoreRepository.getSettings()
+            artistRepository.getArtist(artistId, artistName, settings).collect { result ->
                 _uiState.update {
                     when (result) {
                         is ApiResult.Loading -> ArtistState.Loading
@@ -46,11 +49,14 @@ class ArtistViewModel(
     }
 
     companion object {
-        fun Factory(application: Application, seedSong: Song): ViewModelProvider.Factory =
-            viewModelFactory {
-                initializer {
-                    ArtistViewModel(application, seedSong)
-                }
+        fun Factory(
+            application: Application,
+            artistId: String,
+            artistName: String,
+        ): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                ArtistViewModel(application, artistId, artistName)
             }
+        }
     }
 }

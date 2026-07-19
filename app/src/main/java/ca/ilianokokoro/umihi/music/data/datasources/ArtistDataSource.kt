@@ -1,77 +1,35 @@
 package ca.ilianokokoro.umihi.music.data.datasources
 
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistPage
-import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.channel.ChannelInfo
-import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
-import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
-import org.schabi.newpipe.extractor.stream.StreamInfo
-import org.schabi.newpipe.extractor.stream.StreamInfoItem
-import java.util.Locale
 
 /**
- * Resolves an artist page (name, avatar and tracks) for a given song via NewPipe. The song's
- * uploader channel is treated as the "artist"; its Videos tab supplies the track list.
+ * Loads a YouTube Music artist page via the innertube browse endpoint using the artist's browseId
+ * ("UC…") captured from search results. This returns the official artist page (songs, header),
+ * unlike the auto-generated "… - Topic" channels.
  */
 class ArtistDataSource {
-    suspend fun getArtistForSong(song: Song): ArtistPage = withContext(Dispatchers.IO) {
-        val stream = StreamInfo.getInfo(ServiceList.YouTube, song.youtubeUrl)
-        val channelUrl = stream.uploaderUrl
-            ?: error("No uploader channel for ${song.youtubeId}")
-        getArtistPage(channelUrl, fallbackName = stream.uploaderName.orEmpty())
-    }
-
     suspend fun getArtistPage(
-        channelUrl: String,
-        fallbackName: String = "",
+        artistId: String,
+        fallbackName: String,
+        settings: UmihiSettings,
     ): ArtistPage = withContext(Dispatchers.IO) {
-        val channelInfo = ChannelInfo.getInfo(ServiceList.YouTube, channelUrl)
+        val response = YoutubeApiClient.browse(artistId, settings)
 
-        val videosTab = channelInfo.tabs.firstOrNull { it.contentFilters.contains(ChannelTabs.VIDEOS) }
-            ?: channelInfo.tabs.firstOrNull()
-
-        val items = videosTab
-            ?.let { ChannelTabInfo.getInfo(ServiceList.YouTube, it).relatedItems }
-            .orEmpty()
-
-        val songs = items
-            .filterIsInstance<StreamInfoItem>()
-            .mapNotNull { it.toSongOrNull() }
-            .distinctBy { it.youtubeId }
-
-        val name = channelInfo.name.ifBlank { fallbackName }
-        val avatar = channelInfo.avatars.lastOrNull()?.url.orEmpty()
+        val songs = YoutubeDataExtractor.extractArtistSongs(response)
+        val name = YoutubeDataExtractor.extractArtistName(response)?.takeIf { it.isNotBlank() }
+            ?: fallbackName
+        val thumbnail = YoutubeDataExtractor.extractArtistThumbnail(response)
+            ?: songs.firstOrNull()?.thumbnailHref.orEmpty()
 
         ArtistPage(
-            artist = Artist(name = name, thumbnailHref = avatar, channelUrl = channelUrl),
+            artist = Artist(name = name, thumbnailHref = thumbnail, channelUrl = artistId),
             songs = songs,
         )
-    }
-
-    private fun StreamInfoItem.toSongOrNull(): Song? {
-        val videoId = YoutubeDataExtractor.extractYouTubeVideoId(url) ?: return null
-        return Song(
-            youtubeId = videoId,
-            title = name.orEmpty(),
-            artist = uploaderName.orEmpty(),
-            duration = if (duration > 0) formatDuration(duration) else "",
-            thumbnailHref = thumbnails.lastOrNull()?.url.orEmpty(),
-        )
-    }
-
-    private fun formatDuration(totalSeconds: Long): String {
-        val hours = totalSeconds / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-        return if (hours > 0) {
-            String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            String.format(Locale.US, "%d:%02d", minutes, seconds)
-        }
     }
 }

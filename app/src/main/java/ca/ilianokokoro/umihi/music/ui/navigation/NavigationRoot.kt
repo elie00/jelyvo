@@ -199,7 +199,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 playlistInfo = key.playlistInfo,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
-                                onOpenArtist = { song -> backStack.add(ArtistScreenKey(song)) },
+                                onOpenArtist = { song -> song.artistId?.let { id -> backStack.add(ArtistScreenKey(id, song.artist)) } },
                                 onOpenAlbum = { id, name -> backStack.add(AlbumScreenKey(id, name)) },
                                 application = app
                             )
@@ -216,14 +216,15 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                         is SearchScreenKey -> NavEntry(key) {
                             SearchScreen(
                                 application = app,
-                                onOpenArtist = { song -> backStack.add(ArtistScreenKey(song)) },
+                                onOpenArtist = { song -> song.artistId?.let { id -> backStack.add(ArtistScreenKey(id, song.artist)) } },
                                 onOpenAlbum = { id, name -> backStack.add(AlbumScreenKey(id, name)) },
                             )
                         }
 
                         is ArtistScreenKey -> NavEntry(key) {
                             ArtistScreen(
-                                seedSong = key.seedSong,
+                                artistId = key.artistId,
+                                artistName = key.artistName,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
                                 application = app
@@ -298,8 +299,10 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
             PlayerScreen(
                 onBack = { showFullPlayer = false },
                 onOpenArtist = { song ->
-                    showFullPlayer = false
-                    backStack.add(ArtistScreenKey(song))
+                    song.artistId?.let { id ->
+                        showFullPlayer = false
+                        backStack.add(ArtistScreenKey(id, song.artist))
+                    }
                 },
                 application = app
             )
