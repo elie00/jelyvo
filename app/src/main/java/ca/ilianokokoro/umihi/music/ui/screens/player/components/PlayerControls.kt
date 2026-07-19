@@ -149,15 +149,14 @@ fun PlayerControls(
                             shapes = IconButtonDefaults.shapes(),
                             interactionSource = mainButtonsControlsInteractionSources[0],
                             modifier = Modifier
-                                .padding(vertical = 20.dp)
-                                .weight(2f)
-                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .weight(1f)
+                                .size(IconButtonDefaults.largeContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                                 .animateWidth(interactionSource = mainButtonsControlsInteractionSources[0])
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.SkipPrevious,
                                 contentDescription = stringResource(R.string.previous),
-                                modifier = Modifier.size(30.dp)
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     },
@@ -186,7 +185,7 @@ fun PlayerControls(
                             ),
                             interactionSource = mainButtonsControlsInteractionSources[1],
                             modifier = Modifier
-                                .weight(3f)
+                                .weight(1f)
                                 .size(IconButtonDefaults.largeContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                                 .animateWidth(interactionSource = mainButtonsControlsInteractionSources[1])
                         ) {
@@ -202,8 +201,12 @@ fun PlayerControls(
                                 }
                                 Icon(
                                     imageVector = icon,
-                                    contentDescription = icon.name,
-                                    modifier = Modifier.size(50.dp)
+                                    contentDescription = if (isPlaying) {
+                                        stringResource(R.string.pause)
+                                    } else {
+                                        stringResource(R.string.play)
+                                    },
+                                    modifier = Modifier.size(40.dp)
                                 )
                             }
 
@@ -220,15 +223,14 @@ fun PlayerControls(
                             shapes = IconButtonDefaults.shapes(),
                             interactionSource = mainButtonsControlsInteractionSources[2],
                             modifier = Modifier
-                                .padding(vertical = 20.dp)
-                                .weight(2f)
-                                .size(IconButtonDefaults.mediumContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
+                                .weight(1f)
+                                .size(IconButtonDefaults.largeContainerSize(IconButtonDefaults.IconButtonWidthOption.Wide))
                                 .animateWidth(interactionSource = mainButtonsControlsInteractionSources[2])
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.SkipNext,
                                 contentDescription = stringResource(R.string.next),
-                                modifier = Modifier.size(30.dp)
+                                modifier = Modifier.size(32.dp)
 
                             )
                         }
