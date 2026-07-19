@@ -31,6 +31,9 @@ data object SpotifyImportScreenKey : NavKey
 @Serializable
 data class ArtistScreenKey(val seedSong: Song) : NavKey
 
+@Serializable
+data class AlbumScreenKey(val albumId: String, val albumName: String) : NavKey
+
 
 data class ScreenUiConfig(
     val showBottomBar: Boolean = true,
@@ -73,6 +76,10 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             )
 
             is ArtistScreenKey -> ScreenUiConfig(
+                showBottomBar = false
+            )
+
+            is AlbumScreenKey -> ScreenUiConfig(
                 showBottomBar = false
             )
 

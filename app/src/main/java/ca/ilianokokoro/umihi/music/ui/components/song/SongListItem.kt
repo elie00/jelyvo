@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadForOffline
 import androidx.compose.material.icons.rounded.MoreVert
@@ -45,6 +46,7 @@ fun SongListItem(
     startRadio: () -> Unit,
     modifier: Modifier = Modifier,
     onViewArtist: (() -> Unit)? = null,
+    onViewAlbum: (() -> Unit)? = null,
     download: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -105,6 +107,16 @@ fun SongListItem(
                         text = stringResource(R.string.view_artist),
                         onClick = {
                             onViewArtist()
+                            expanded = false
+                        }
+                    )
+                }
+                if (onViewAlbum != null && song.albumId != null) {
+                    MaterialUDropdownItem(
+                        leadingIcon = Icons.Rounded.Album,
+                        text = stringResource(R.string.view_album),
+                        onClick = {
+                            onViewAlbum()
                             expanded = false
                         }
                     )

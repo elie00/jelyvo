@@ -49,6 +49,7 @@ import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.core.spotify.SpotifyAuthHelper
 import ca.ilianokokoro.umihi.music.core.spotify.SpotifyPkce
+import ca.ilianokokoro.umihi.music.ui.screens.album.AlbumScreen
 import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
 import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
@@ -199,6 +200,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
                                 onOpenArtist = { song -> backStack.add(ArtistScreenKey(song)) },
+                                onOpenAlbum = { id, name -> backStack.add(AlbumScreenKey(id, name)) },
                                 application = app
                             )
                         }
@@ -215,12 +217,23 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             SearchScreen(
                                 application = app,
                                 onOpenArtist = { song -> backStack.add(ArtistScreenKey(song)) },
+                                onOpenAlbum = { id, name -> backStack.add(AlbumScreenKey(id, name)) },
                             )
                         }
 
                         is ArtistScreenKey -> NavEntry(key) {
                             ArtistScreen(
                                 seedSong = key.seedSong,
+                                onBack = backStack::safePop,
+                                onOpenPlayer = { showFullPlayer = true },
+                                application = app
+                            )
+                        }
+
+                        is AlbumScreenKey -> NavEntry(key) {
+                            AlbumScreen(
+                                albumId = key.albumId,
+                                albumName = key.albumName,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
                                 application = app

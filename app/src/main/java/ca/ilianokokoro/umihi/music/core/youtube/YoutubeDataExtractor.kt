@@ -494,6 +494,40 @@ object YoutubeDataExtractor {
         return emptyList()
     }
 
+    /**
+     * Extracts the track list of an album browse response. Albums use a slightly different shape
+     * than playlists, so this first reuses the playlist path and, if that yields nothing, falls
+     * back to a recursive scan collecting every song renderer on the page.
+     */
+    suspend fun extractAlbumSongs(jsonString: String, settings: UmihiSettings): List<Song> {
+        val viaPlaylist = extractSongList(jsonString, settings)
+        if (viaPlaylist.isNotEmpty()) {
+            return viaPlaylist
+        }
+
+        val json = Json.parseToJsonElement(jsonString)
+        val items = mutableListOf<JsonObject>()
+        collectSongItems(json, items)
+
+        return items
+            .mapNotNull { extractSong(it) }
+            .distinctBy { it.youtubeId }
+    }
+
+    private fun collectSongItems(element: JsonElement, out: MutableList<JsonObject>) {
+        when (element) {
+            is JsonObject -> {
+                if (element.containsKey("musicResponsiveListItemRenderer")) {
+                    out.add(element)
+                }
+                element.values.forEach { collectSongItems(it, out) }
+            }
+
+            is JsonArray -> element.forEach { collectSongItems(it, out) }
+            else -> {}
+        }
+    }
+
     suspend fun extractContinuationSongs(jsonString: String, settings: UmihiSettings): List<Song> {
         val json = Json.parseToJsonElement(jsonString).jsonObject
 
@@ -615,6 +649,8 @@ object YoutubeDataExtractor {
             ?.safeObject()?.get("likeStatus")
             ?.jsonPrimitive?.contentOrNull == "LIKE"
 
+        val album = extractAlbum(songContent)
+
         return Song(
             youtubeId = videoId,
             title = title,
@@ -622,9 +658,38 @@ object YoutubeDataExtractor {
             duration = duration,
             thumbnailHref = thumbnailUrl,
             isExplicit = isExplicit,
-            isLiked = isLiked
-        )
+            isLiked = isLiked,
+        ).also {
+            it.albumId = album?.first
+            it.albumName = album?.second
+        }
 
+    }
+
+    /**
+     * Scans the flex-column runs of a search result for an album reference (a browseEndpoint whose
+     * browseId starts with "MPRE"). Returns (albumId, albumName) when present. Album info is not
+     * always exposed by YouTube, hence the nullable result.
+     */
+    private fun extractAlbum(songContent: JsonObject): Pair<String, String>? {
+        val flexColumns = songContent["flexColumns"]?.safeArray() ?: return null
+        for (column in flexColumns) {
+            val runs = column.safeObject()
+                ?.get("musicResponsiveListItemFlexColumnRenderer")?.safeObject()
+                ?.get("text")?.safeObject()
+                ?.get("runs")?.safeArray() ?: continue
+            for (run in runs) {
+                val browseId = run.safeObject()
+                    ?.get("navigationEndpoint")?.safeObject()
+                    ?.get("browseEndpoint")?.safeObject()
+                    ?.get("browseId")?.jsonPrimitive?.contentOrNull
+                if (browseId != null && browseId.startsWith("MPRE")) {
+                    val name = run.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+                    return browseId to name
+                }
+            }
+        }
+        return null
     }
 
 
