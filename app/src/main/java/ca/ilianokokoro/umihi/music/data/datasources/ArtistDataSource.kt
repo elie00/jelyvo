@@ -21,7 +21,20 @@ class ArtistDataSource {
     ): ArtistPage = withContext(Dispatchers.IO) {
         val response = YoutubeApiClient.browse(artistId, settings)
 
-        val songs = YoutubeDataExtractor.extractArtistSongs(response)
+        var songs = YoutubeDataExtractor.extractArtistSongs(response)
+
+        // Follow the Songs shelf's "Show all" endpoint to load the full song list, not just the top few.
+        YoutubeDataExtractor.extractMoreEndpoint(response)?.let { (moreId, params) ->
+            runCatching {
+                val moreSongs = YoutubeDataExtractor.extractArtistSongs(
+                    YoutubeApiClient.browse(moreId, params, settings)
+                )
+                if (moreSongs.size > songs.size) {
+                    songs = moreSongs
+                }
+            }
+        }
+
         val name = YoutubeDataExtractor.extractArtistName(response)?.takeIf { it.isNotBlank() }
             ?: fallbackName
         val thumbnail = YoutubeDataExtractor.extractArtistThumbnail(response)

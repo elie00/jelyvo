@@ -555,6 +555,39 @@ object YoutubeDataExtractor {
         return null
     }
 
+    /**
+     * Finds the "Show all" endpoint of a shelf (its `bottomEndpoint.browseEndpoint`, browseId +
+     * params) — used to open an artist's full song list. Targets `musicShelfRenderer` specifically
+     * so it doesn't pick up header/tab links (e.g. "Featured").
+     */
+    fun extractMoreEndpoint(jsonString: String): Pair<String, String>? {
+        return findShelfBottomEndpoint(Json.parseToJsonElement(jsonString))
+    }
+
+    private fun findShelfBottomEndpoint(element: JsonElement): Pair<String, String>? {
+        when (element) {
+            is JsonObject -> {
+                val shelf = element["musicShelfRenderer"]?.safeObject()
+                if (shelf != null) {
+                    val browseEndpoint = shelf["bottomEndpoint"]?.safeObject()
+                        ?.get("browseEndpoint")?.safeObject()
+                    val browseId = browseEndpoint?.get("browseId")?.jsonPrimitive?.contentOrNull
+                    val params = browseEndpoint?.get("params")?.jsonPrimitive?.contentOrNull
+                    if (browseId != null && params != null) {
+                        return browseId to params
+                    }
+                }
+                element.values.forEach { child ->
+                    findShelfBottomEndpoint(child)?.let { return it }
+                }
+            }
+
+            is JsonArray -> element.forEach { findShelfBottomEndpoint(it)?.let { return it } }
+            else -> {}
+        }
+        return null
+    }
+
     /** Extracts songs from a search continuation response (musicShelfContinuation). */
     fun extractSearchContinuationSongs(jsonString: String): List<Song> {
         val json = Json.parseToJsonElement(jsonString)

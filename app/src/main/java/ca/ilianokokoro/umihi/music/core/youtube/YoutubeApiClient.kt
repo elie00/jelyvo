@@ -31,6 +31,20 @@ object YoutubeApiClient {
         )
     }
 
+    /** Browse with a `params` token, e.g. to open an artist's full "Songs" list. */
+    suspend fun browse(browseId: String, params: String, settings: UmihiSettings): String {
+        val base = YoutubeAuthHelper.buildContextBody("browseId", browseId, settings)
+        val body = buildJsonObject {
+            base.forEach { (key, value) -> put(key, value) }
+            put("params", params)
+        }
+        return requestWithBody(
+            url = Constants.YoutubeApi.Browse.URL,
+            body = body,
+            settings = settings,
+        )
+    }
+
     suspend fun requestContinuation(
         continuationToken: String,
         settings: UmihiSettings,
