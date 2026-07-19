@@ -38,7 +38,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 fun SearchScreen(
     application: Application,
     onOpenArtist: (Song) -> Unit = {},
-    onOpenAlbum: (String, String) -> Unit = { _, _ -> },
+    onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
     searchViewModel: SearchViewModel = viewModel(
         factory =
             SearchViewModel.Factory(application = application)
@@ -119,7 +119,7 @@ fun SearchScreen(
                                         onViewArtist = { onOpenArtist(it) },
                                         onViewAlbum = {
                                             it.albumId?.let { id ->
-                                                onOpenAlbum(id, it.albumName ?: "")
+                                                onOpenAlbum(id, it.albumName ?: "", it.thumbnailHref)
                                             }
                                         }
                                     )

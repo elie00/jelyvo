@@ -59,7 +59,7 @@ fun PlaylistScreen(
     onOpenPlayer: () -> Unit,
     onBack: () -> Unit,
     onOpenArtist: (Song) -> Unit = {},
-    onOpenAlbum: (String, String) -> Unit = { _, _ -> },
+    onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
     application: Application,
     playlistViewModel: PlaylistViewModel = viewModel(
@@ -281,7 +281,7 @@ fun PlaylistScreen(
                                         onOpenArtist(song)
                                     }, onViewAlbum = {
                                         song.albumId?.let { id ->
-                                            onOpenAlbum(id, song.albumName ?: "")
+                                            onOpenAlbum(id, song.albumName ?: "", song.thumbnailHref)
                                         }
                                     }, download = {
                                         playlistViewModel.downloadSong(song)

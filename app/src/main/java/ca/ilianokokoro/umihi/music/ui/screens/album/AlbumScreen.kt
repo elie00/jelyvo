@@ -38,6 +38,7 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 fun AlbumScreen(
     albumId: String,
     albumName: String,
+    albumCover: String = "",
     onBack: () -> Unit,
     onOpenPlayer: () -> Unit,
     application: Application,
@@ -86,7 +87,9 @@ fun AlbumScreen(
                                     BackButton(onBack = onBack)
                                 }
                                 SquareImage(
-                                    uri = page.songs.firstOrNull()?.thumbnailHref ?: "",
+                                    uri = albumCover.ifBlank {
+                                        page.songs.firstOrNull()?.thumbnailHref ?: ""
+                                    },
                                     modifier = Modifier.size(180.dp)
                                 )
                                 Text(
@@ -99,7 +102,13 @@ fun AlbumScreen(
                             }
                         }
 
-                        items(items = page.songs, key = { it.youtubeId }) { song ->
+                        items(items = page.songs, key = { it.youtubeId }) { rawSong ->
+                            // Album tracks share the album cover, so fill in blank thumbnails.
+                            val song = if (rawSong.thumbnailHref.isBlank() && albumCover.isNotBlank()) {
+                                rawSong.copy(thumbnailHref = albumCover)
+                            } else {
+                                rawSong
+                            }
                             SongListItem(
                                 song = song,
                                 onPress = {

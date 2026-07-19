@@ -31,7 +31,11 @@ data object SpotifyImportScreenKey : NavKey
 data class ArtistScreenKey(val artistId: String, val artistName: String) : NavKey
 
 @Serializable
-data class AlbumScreenKey(val albumId: String, val albumName: String) : NavKey
+data class AlbumScreenKey(
+    val albumId: String,
+    val albumName: String,
+    val albumCover: String = "",
+) : NavKey
 
 
 data class ScreenUiConfig(
