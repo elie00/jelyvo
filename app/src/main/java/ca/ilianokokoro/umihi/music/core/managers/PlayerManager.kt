@@ -148,17 +148,32 @@ object PlayerManager {
     }
 
     fun skipToNext() {
-        currentController?.run {
-            seekToNextMediaItem()
-            prepare()
+        val controller = currentController ?: return
+        if (controller.hasNextMediaItem()) {
+            controller.seekToNext()
+            return
+        }
+        // No next track (e.g. a single-song queue): build a radio around the current song.
+        val seed = controller.currentMediaItem?.toSong() ?: return
+        scope.launch {
+            val related = radioRepository.getRelated(seed)
+                .firstOrNull { it is ApiResult.Success } as? ApiResult.Success
+                ?: return@launch
+            if (related.data.isEmpty()) {
+                return@launch
+            }
+            withContext(Dispatchers.Main) {
+                val c = currentController ?: return@withContext
+                if (!c.hasNextMediaItem() && c.currentMediaItem?.mediaId == seed.youtubeId) {
+                    c.addMediaItems(related.data.map { it.mediaItem })
+                    c.seekToNext()
+                }
+            }
         }
     }
 
     fun skipToPrevious() {
-        currentController?.run {
-            seekToPreviousMediaItem()
-            prepare()
-        }
+        currentController?.seekToPrevious()
     }
 
     fun cycleRepeatMode() {
