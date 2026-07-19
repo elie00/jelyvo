@@ -28,3 +28,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Umihi Music"
 include(":app")
+
+include(":baselineprofile")

@@ -21,6 +21,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.kotlin.serialization)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.baselineprofile)
 }
 
 kotlinExtension.jvmToolchain {
@@ -83,9 +84,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfigs.findByName("release")?.let {
-                signingConfig = it
-            }
+            // Use the release keystore when present (CI); otherwise fall back to debug signing so
+            // local release builds (incl. Baseline Profile generation variants) stay installable.
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
     }
 
@@ -215,6 +217,10 @@ dependencies {
 
     // New Pipe Extractor
     implementation(libs.newpipeextractor)
+
+    // Baseline Profile installer (applies the profile at runtime)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
 
     // Unit tests
     testImplementation(libs.junit)
