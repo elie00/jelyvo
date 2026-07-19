@@ -91,6 +91,14 @@ class DatastoreRepository(private val context: Context) {
         return settings.first()
     }
 
+    /**
+     * Reads only the special-language flag. Used on the startup path (attachBaseContext) to avoid
+     * the cost of the full settings read (cookie decryption, dataSyncId collection) on the main thread.
+     */
+    suspend fun getUseSpecialLanguage(): Boolean {
+        return context.dataStore.data.map { it[USE_SPECIAL_LANGUAGE] ?: false }.first()
+    }
+
     val cookies = context.dataStore.data.map {
         val stored = it[COOKIES] ?: String()
         Cookies(if (stored.isEmpty()) stored else KeystoreCrypto.decrypt(stored))

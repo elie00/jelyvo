@@ -29,7 +29,6 @@ import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.schabi.newpipe.extractor.NewPipe
@@ -100,7 +99,7 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         val useSpecialLanguage = runBlocking {
-            DatastoreRepository(newBase).settings.first().useSpecialLanguage
+            DatastoreRepository(newBase).getUseSpecialLanguage()
         }
 
         val context = if (useSpecialLanguage) {
