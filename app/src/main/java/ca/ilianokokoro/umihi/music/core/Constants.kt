@@ -188,6 +188,9 @@ object Constants {
             const val UID = "uid"
             const val IS_EXPLICIT = "is-explicit"
             const val IS_LIKED = "is-liked"
+            const val ARTIST_ID = "artist-id"
+            const val ALBUM_ID = "album-id"
+            const val ALBUM_NAME = "album-name"
         }
     }
 

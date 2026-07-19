@@ -32,13 +32,17 @@ data class Song(
     val isExplicit: Boolean = false,
     val isLiked: Boolean? = null,
 ) {
-    // Not persisted (transient): populated from search results to enable "View album".
+    // Not persisted (transient): populated from search results to enable the artist/album pages.
     // Set once right after extraction; never mutated afterwards.
     @Ignore
     var albumId: String? = null
 
     @Ignore
     var albumName: String? = null
+
+    // YouTube Music artist browseId ("UC…") — opens the official artist page (not a Topic channel).
+    @Ignore
+    var artistId: String? = null
 
     val mediaItem: MediaItem
         get() {
@@ -47,6 +51,9 @@ data class Song(
             extras.putString(Constants.ExoPlayer.SongMetadata.UID, uid)
             extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_EXPLICIT, isExplicit)
             isLiked?.let { extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_LIKED, it) }
+            artistId?.let { extras.putString(Constants.ExoPlayer.SongMetadata.ARTIST_ID, it) }
+            albumId?.let { extras.putString(Constants.ExoPlayer.SongMetadata.ALBUM_ID, it) }
+            albumName?.let { extras.putString(Constants.ExoPlayer.SongMetadata.ALBUM_NAME, it) }
 
             return MediaItem.Builder()
                 .setUri(youtubeUrl)

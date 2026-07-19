@@ -16,5 +16,9 @@ fun MediaItem?.toSong(): Song {
         isExplicit = extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_EXPLICIT, false)
             ?: false,
         isLiked = extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_LIKED)
-    )
+    ).also {
+        it.artistId = extras?.getString(Constants.ExoPlayer.SongMetadata.ARTIST_ID)
+        it.albumId = extras?.getString(Constants.ExoPlayer.SongMetadata.ALBUM_ID)
+        it.albumName = extras?.getString(Constants.ExoPlayer.SongMetadata.ALBUM_NAME)
+    }
 }

@@ -649,7 +649,8 @@ object YoutubeDataExtractor {
             ?.safeObject()?.get("likeStatus")
             ?.jsonPrimitive?.contentOrNull == "LIKE"
 
-        val album = extractAlbum(songContent)
+        val album = extractBrowseId(songContent, "MPRE")
+        val artistRef = extractBrowseId(songContent, "UC")
 
         return Song(
             youtubeId = videoId,
@@ -662,16 +663,17 @@ object YoutubeDataExtractor {
         ).also {
             it.albumId = album?.first
             it.albumName = album?.second
+            it.artistId = artistRef?.first
         }
 
     }
 
     /**
-     * Scans the flex-column runs of a search result for an album reference (a browseEndpoint whose
-     * browseId starts with "MPRE"). Returns (albumId, albumName) when present. Album info is not
-     * always exposed by YouTube, hence the nullable result.
+     * Scans the flex-column runs of a search result for a browseEndpoint whose browseId starts with
+     * [prefix] (e.g. "MPRE" for an album, "UC" for a YouTube Music artist page). Returns
+     * (browseId, runText) when present. Not always exposed by YouTube, hence the nullable result.
      */
-    private fun extractAlbum(songContent: JsonObject): Pair<String, String>? {
+    private fun extractBrowseId(songContent: JsonObject, prefix: String): Pair<String, String>? {
         val flexColumns = songContent["flexColumns"]?.safeArray() ?: return null
         for (column in flexColumns) {
             val runs = column.safeObject()
@@ -683,7 +685,7 @@ object YoutubeDataExtractor {
                     ?.get("navigationEndpoint")?.safeObject()
                     ?.get("browseEndpoint")?.safeObject()
                     ?.get("browseId")?.jsonPrimitive?.contentOrNull
-                if (browseId != null && browseId.startsWith("MPRE")) {
+                if (browseId != null && browseId.startsWith(prefix)) {
                     val name = run.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
                     return browseId to name
                 }
