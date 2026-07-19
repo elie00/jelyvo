@@ -666,13 +666,12 @@ object YoutubeDataExtractor {
     ): Song? {
         val songContent =
             json.safeObject()?.get("musicResponsiveListItemRenderer")?.safeObject() ?: return null
-        val thumbnailUrl = getBestThumbnailUrl(songContent["thumbnail"] ?: return null)
+        // Album/artist track rows may share the cover and omit a per-track thumbnail.
+        val thumbnailUrl = songContent["thumbnail"]?.let { getBestThumbnailUrl(it) } ?: ""
 
         val title = getSongInfo(songContent, SongInfoType.TITLE)
         val artist = getSongInfo(songContent, SongInfoType.ARTIST)
-        val videoId = songContent["playlistItemData"]
-            ?.safeObject()?.get("videoId")
-            ?.jsonPrimitive?.contentOrNull ?: return null
+        val videoId = extractVideoId(songContent) ?: return null
 
 
         val duration = extractDuration(songContent)
@@ -725,6 +724,35 @@ object YoutubeDataExtractor {
      * [prefix] (e.g. "MPRE" for an album, "UC" for a YouTube Music artist page). Returns
      * (browseId, runText) when present. Not always exposed by YouTube, hence the nullable result.
      */
+    /**
+     * Extracts a track's videoId. Search/playlist items expose it via `playlistItemData`, but
+     * album/artist page items instead put it on the title run's watchEndpoint or the play-button
+     * overlay — so we fall back to those.
+     */
+    private fun extractVideoId(songContent: JsonObject): String? {
+        songContent["playlistItemData"]?.safeObject()
+            ?.get("videoId")?.jsonPrimitive?.contentOrNull
+            ?.let { return it }
+
+        val titleRuns = songContent["flexColumns"]?.safeArray()?.getOrNull(0)
+            ?.safeObject()?.get("musicResponsiveListItemFlexColumnRenderer")?.safeObject()
+            ?.get("text")?.safeObject()?.get("runs")?.safeArray()
+        titleRuns?.forEach { run ->
+            run.safeObject()?.get("navigationEndpoint")?.safeObject()
+                ?.get("watchEndpoint")?.safeObject()
+                ?.get("videoId")?.jsonPrimitive?.contentOrNull
+                ?.let { return it }
+        }
+
+        return songContent["overlay"]?.safeObject()
+            ?.get("musicItemThumbnailOverlayRenderer")?.safeObject()
+            ?.get("content")?.safeObject()
+            ?.get("musicPlayButtonRenderer")?.safeObject()
+            ?.get("playNavigationEndpoint")?.safeObject()
+            ?.get("watchEndpoint")?.safeObject()
+            ?.get("videoId")?.jsonPrimitive?.contentOrNull
+    }
+
     private fun extractBrowseId(songContent: JsonObject, prefix: String): Pair<String, String>? {
         val flexColumns = songContent["flexColumns"]?.safeArray() ?: return null
         for (column in flexColumns) {
