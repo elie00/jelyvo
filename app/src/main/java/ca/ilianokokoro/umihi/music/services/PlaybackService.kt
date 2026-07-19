@@ -34,6 +34,7 @@ import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
@@ -49,6 +50,7 @@ import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -177,6 +179,7 @@ class PlaybackService : MediaLibraryService() {
                     historyRepository.record(playedSong, System.currentTimeMillis())
                     maybeAppendRadio(playedSong, settings)
                 }
+                prefetchNextStreamUrl()
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -321,6 +324,28 @@ class PlaybackService : MediaLibraryService() {
             // Re-check: the user may have queued items while we were fetching.
             if (p.currentMediaItemIndex >= p.mediaItemCount - 1) {
                 p.addMediaItems(songs.map { it.mediaItem })
+            }
+        }
+    }
+
+    /**
+     * Resolves (and caches) the next queue item's stream URL ahead of time, so a manual "next"
+     * press plays almost instantly instead of waiting for on-demand extraction. Best-effort.
+     */
+    private fun prefetchNextStreamUrl() {
+        val nextIndex = player.currentMediaItemIndex + 1
+        if (nextIndex >= player.mediaItemCount) {
+            return
+        }
+        val nextSong = player.getMediaItemAt(nextIndex).toSong()
+        val context = applicationContext
+        serviceScope.launch {
+            try {
+                YoutubeDataExtractor.getSongPlayerUrl(context, nextSong)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Ignore: prefetch is opportunistic, real resolution happens on playback.
             }
         }
     }
