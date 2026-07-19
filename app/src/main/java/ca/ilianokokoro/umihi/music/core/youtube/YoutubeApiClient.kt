@@ -175,6 +175,22 @@ object YoutubeApiClient {
         )
     }
 
+    suspend fun searchContinuation(continuationToken: String): String {
+        val url = Constants.YoutubeApi.Search.URL.toHttpUrl().newBuilder()
+            .addQueryParameter("continuation", continuationToken)
+            .addQueryParameter("type", "next")
+            .build()
+            .toString()
+
+        val body = YoutubeAuthHelper.buildContextBody(
+            idName = null,
+            id = null,
+            settings = null
+        )
+
+        return requestWithBody(url = url, body = body)
+    }
+
     private suspend fun requestWithBody(
         url: String,
         body: Any,

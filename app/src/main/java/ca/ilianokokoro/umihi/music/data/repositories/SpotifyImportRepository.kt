@@ -74,7 +74,7 @@ class SpotifyImportRepository(
                 .first { it !is ApiResult.Loading }
 
             when (result) {
-                is ApiResult.Success -> result.data.firstOrNull()
+                is ApiResult.Success -> result.data.songs.firstOrNull()
                 else -> null
             }
         } catch (e: CancellationException) {

@@ -534,6 +534,35 @@ object YoutubeDataExtractor {
         }
     }
 
+    /** Finds a continuation token (for pagination) anywhere in a response. */
+    fun extractContinuationToken(jsonString: String): String? {
+        return findContinuationToken(Json.parseToJsonElement(jsonString))
+    }
+
+    private fun findContinuationToken(element: JsonElement): String? {
+        when (element) {
+            is JsonObject -> {
+                element["nextContinuationData"]?.safeObject()
+                    ?.get("continuation")?.jsonPrimitive?.contentOrNull?.let { return it }
+                element["continuationCommand"]?.safeObject()
+                    ?.get("token")?.jsonPrimitive?.contentOrNull?.let { return it }
+                element.values.forEach { child -> findContinuationToken(child)?.let { return it } }
+            }
+
+            is JsonArray -> element.forEach { findContinuationToken(it)?.let { return it } }
+            else -> {}
+        }
+        return null
+    }
+
+    /** Extracts songs from a search continuation response (musicShelfContinuation). */
+    fun extractSearchContinuationSongs(jsonString: String): List<Song> {
+        val json = Json.parseToJsonElement(jsonString)
+        val items = mutableListOf<JsonObject>()
+        collectSongItems(json, items)
+        return items.mapNotNull { extractSong(it) }.distinctBy { it.youtubeId }
+    }
+
     /**
      * Extracts the songs from a YouTube Music artist page browse response (browseId "UC…"). The
      * artist page mixes shelves and carousels, so we recursively collect every song renderer.

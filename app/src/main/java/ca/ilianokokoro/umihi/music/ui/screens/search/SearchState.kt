@@ -6,6 +6,8 @@ import ca.ilianokokoro.umihi.music.models.Song
 data class SearchState(
     val search: String = String(),
     val screenState: ScreenState = ScreenState.Success(),
+    val continuation: String? = null,
+    val isLoadingMore: Boolean = false,
 )
 
 

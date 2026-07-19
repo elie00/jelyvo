@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.ui.screens.search
 
 import android.app.Application
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,11 +10,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -90,7 +93,23 @@ fun SearchScreen(
                     is ScreenState.Success -> {
                         val songs = uiState.screenState.results
                         if (songs.isNotEmpty()) {
+                            val listState = rememberLazyListState()
+
+                            // Infinite scroll: load the next page as we approach the end.
+                            LaunchedEffect(listState, songs.size, uiState.continuation) {
+                                snapshotFlow {
+                                    listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+                                }.collect { lastVisible ->
+                                    if (uiState.continuation != null &&
+                                        lastVisible >= songs.size - 3
+                                    ) {
+                                        searchViewModel.loadMore()
+                                    }
+                                }
+                            }
+
                             LazyColumn(
+                                state = listState,
                                 verticalArrangement = Arrangement.Top,
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
@@ -123,6 +142,19 @@ fun SearchScreen(
                                             }
                                         }
                                     )
+                                }
+
+                                if (uiState.isLoadingMore) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            LoadingAnimation()
+                                        }
+                                    }
                                 }
                             }
                         } else {
