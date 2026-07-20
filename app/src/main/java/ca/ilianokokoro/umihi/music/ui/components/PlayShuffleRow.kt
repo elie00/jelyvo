@@ -73,10 +73,7 @@ fun PlayShuffleRow(
     }
 }
 
-/**
- * "Play" action with an attached menu of secondary actions. Not wired into any
- * screen yet; kept for upcoming header revisions.
- */
+/** "Play" action with an attached menu of secondary album/playlist actions. */
 @Composable
 fun PlaySplitButton(
     onPlay: () -> Unit,

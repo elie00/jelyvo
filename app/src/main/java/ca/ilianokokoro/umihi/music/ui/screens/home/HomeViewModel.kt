@@ -206,7 +206,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                         _uiState.update {
                             it.copy(
-                                screenState = ScreenState.LoggedIn(updatedPlaylists)
+                                screenState = currentState.copy(
+                                    playlistInfos = updatedPlaylists,
+                                )
                             )
                         }
                     }
