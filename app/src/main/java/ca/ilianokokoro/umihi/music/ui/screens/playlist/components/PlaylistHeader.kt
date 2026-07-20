@@ -40,17 +40,25 @@ fun PlaylistHeader(
                 onDeletePressed = onDeletePlaylist,
                 onCancelDownload = onCancelDownload,
             )
-            ActionButtons(
-                buttonEnabled = !playlist.songs.isEmpty(),
-                onPlayClicked = {
-                    onOpenPlayer()
-                    onPlayPlaylist()
-                },
-                onShuffleClicked = {
-                    onOpenPlayer()
-                    onShufflePlaylist()
-                }
-            )
+            if (playlist.songs.isNotEmpty()) {
+                ActionButtons(
+                    onPlayClicked = {
+                        onOpenPlayer()
+                        onPlayPlaylist()
+                    },
+                    onShuffleClicked = {
+                        onOpenPlayer()
+                        onShufflePlaylist()
+                    },
+                    onRadioClicked = {
+                        onOpenPlayer()
+                        ca.ilianokokoro.umihi.music.core.managers.PlayerManager.startRadio(
+                            playlist.songs.first(),
+                        )
+                    },
+                    onDownloadClicked = onDownloadPlaylist,
+                )
+            }
         }
     }
 }

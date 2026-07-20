@@ -12,6 +12,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -31,7 +35,8 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
-import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
+import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButton
+import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
@@ -116,9 +121,30 @@ fun AlbumScreen(
                                     textAlign = TextAlign.Center
                                 )
                                 if (playableSongs.isNotEmpty()) {
-                                    PlayShuffleRow(
+                                    PlaySplitButton(
                                         onPlay = { playSongs(playableSongs) },
-                                        onShuffle = { playSongs(playableSongs.shuffled()) },
+                                        menuActions = listOf(
+                                            PlaySplitButtonAction(
+                                                label = stringResource(R.string.shuffle),
+                                                icon = Icons.Rounded.Shuffle,
+                                                onClick = { playSongs(playableSongs.shuffled()) },
+                                            ),
+                                            PlaySplitButtonAction(
+                                                label = stringResource(R.string.start_radio),
+                                                icon = Icons.Rounded.Radio,
+                                                onClick = {
+                                                    onOpenPlayer()
+                                                    PlayerManager.startRadio(playableSongs.first(), context)
+                                                },
+                                            ),
+                                            PlaySplitButtonAction(
+                                                label = stringResource(R.string.download),
+                                                icon = Icons.Rounded.Download,
+                                                onClick = {
+                                                    albumViewModel.downloadAlbum(playableSongs, cover)
+                                                },
+                                            ),
+                                        ),
                                     )
                                 }
                             }

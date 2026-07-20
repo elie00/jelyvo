@@ -10,6 +10,10 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.repositories.AlbumRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
+import ca.ilianokokoro.umihi.music.models.Playlist
+import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -22,6 +26,7 @@ class AlbumViewModel(
 ) : AndroidViewModel(application) {
     private val albumRepository = AlbumRepository()
     private val datastoreRepository = DatastoreRepository(application)
+    private val downloadRepository = DownloadRepository(application)
 
     private val _uiState = MutableStateFlow<AlbumState>(AlbumState.Loading)
     val uiState = _uiState.asStateFlow()
@@ -45,6 +50,24 @@ class AlbumViewModel(
                     }
                 }
             }
+        }
+    }
+
+    fun downloadAlbum(songs: List<Song>, cover: String) {
+        if (songs.isEmpty()) return
+        viewModelScope.launch {
+            val settings = datastoreRepository.getSettings()
+            downloadRepository.downloadPlaylist(
+                playlist = Playlist(
+                    info = PlaylistInfo(
+                        id = "album:$albumId",
+                        title = albumName,
+                        coverHref = cover,
+                    ),
+                    songs = songs,
+                ),
+                useMetered = settings.downloadOnMetered,
+            )
         }
     }
 
