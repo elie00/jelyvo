@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.data.datasources
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.SearchResult
+import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.Song
 
 class SongDataSource {
@@ -25,19 +26,24 @@ class SongDataSource {
         )
     }
 
-    suspend fun search(query: String): SearchResult {
-        val json = YoutubeApiClient.search(query)
+    suspend fun search(query: String, filter: SearchFilter): SearchResult {
+        val json = YoutubeApiClient.search(query, filter)
         return SearchResult(
-            songs = YoutubeDataExtractor.extractSearchResults(json),
+            items = YoutubeDataExtractor.extractSearchItems(json, filter),
             continuation = YoutubeDataExtractor.extractContinuationToken(json),
         )
     }
 
-    suspend fun searchMore(continuationToken: String): SearchResult {
+    suspend fun searchMore(continuationToken: String, filter: SearchFilter): SearchResult {
         val json = YoutubeApiClient.searchContinuation(continuationToken)
         return SearchResult(
-            songs = YoutubeDataExtractor.extractSearchContinuationSongs(json),
+            items = YoutubeDataExtractor.extractSearchItems(json, filter),
             continuation = YoutubeDataExtractor.extractContinuationToken(json),
         )
     }
+
+    suspend fun suggestions(query: String): List<String> =
+        YoutubeDataExtractor.extractSearchSuggestions(
+            YoutubeApiClient.searchSuggestions(query)
+        )
 }

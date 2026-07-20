@@ -315,7 +315,9 @@ object Constants {
 
         object Search {
             const val URL = "https://music.youtube.com/youtubei/v1/search?prettyPrint=false"
-            const val FILTER = "EgWKAQIIAWoSEAMQBBAQEAUQFRAKEAkQERAO"
+            const val SUGGESTIONS_URL =
+                "https://music.youtube.com/youtubei/v1/music/get_search_suggestions?prettyPrint=false"
+            const val FILTER = "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
         }
 
 

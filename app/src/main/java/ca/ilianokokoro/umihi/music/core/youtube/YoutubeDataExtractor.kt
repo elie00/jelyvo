@@ -17,6 +17,8 @@ import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.SearchFilter
+import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -435,6 +437,78 @@ object YoutubeDataExtractor {
                 ?: return emptyList()
 
         return songRendererList.mapNotNull { extractSong(it) }
+    }
+
+    fun extractSearchItems(jsonString: String, filter: SearchFilter): List<SearchItem> {
+        val root = Json.parseToJsonElement(jsonString)
+        return when (filter) {
+            SearchFilter.Songs -> {
+                val songItems = mutableListOf<JsonObject>()
+                collectSongItems(root, songItems)
+                songItems.mapNotNull { extractSong(it)?.let(SearchItem::Track) }
+            }
+            SearchFilter.Albums, SearchFilter.Artists -> {
+                val rows = mutableListOf<JsonObject>()
+                collectTwoRowItems(root, rows)
+                rows.mapNotNull { row -> row.toSearchItem(filter) }
+            }
+        }.distinctBy(SearchItem::id)
+    }
+
+    fun extractSearchSuggestions(jsonString: String): List<String> {
+        val suggestions = mutableListOf<String>()
+        fun walk(element: JsonElement) {
+            when (element) {
+                is JsonObject -> {
+                    element["searchSuggestionRenderer"]?.safeObject()
+                        ?.get("suggestion").runsText()
+                        .takeIf(String::isNotBlank)
+                        ?.let(suggestions::add)
+                    element.values.forEach(::walk)
+                }
+                is JsonArray -> element.forEach(::walk)
+                else -> Unit
+            }
+        }
+        walk(Json.parseToJsonElement(jsonString))
+        return suggestions.distinct().take(8)
+    }
+
+    private fun collectTwoRowItems(element: JsonElement, output: MutableList<JsonObject>) {
+        when (element) {
+            is JsonObject -> {
+                element["musicTwoRowItemRenderer"]?.safeObject()?.let(output::add)
+                element.values.forEach { collectTwoRowItems(it, output) }
+            }
+            is JsonArray -> element.forEach { collectTwoRowItems(it, output) }
+            else -> Unit
+        }
+    }
+
+    private fun JsonObject.toSearchItem(filter: SearchFilter): SearchItem? {
+        val endpoint = this["navigationEndpoint"]?.safeObject()
+            ?: this["title"]?.safeObject()?.get("runs")?.safeArray()
+                ?.firstOrNull()?.safeObject()?.get("navigationEndpoint")?.safeObject()
+            ?: return null
+        val browseId = endpoint["browseEndpoint"]?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        val title = this["title"].runsText()
+        val thumbnail = (this["thumbnailRenderer"] ?: this["thumbnail"])
+            ?.let(::getBestThumbnailUrl).orEmpty()
+        return when (filter) {
+            SearchFilter.Albums -> browseId.takeIf { it.startsWith("MPRE") }?.let {
+                SearchItem.Album(
+                    id = it,
+                    title = title,
+                    subtitle = this["subtitle"].runsText(),
+                    thumbnail = thumbnail,
+                )
+            }
+            SearchFilter.Artists -> browseId.takeIf { it.startsWith("UC") }?.let {
+                SearchItem.Artist(id = it, name = title, thumbnail = thumbnail)
+            }
+            SearchFilter.Songs -> null
+        }
     }
 
     fun extractHomeFeed(jsonString: String): List<HomeFeedSection> {

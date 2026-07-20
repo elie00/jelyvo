@@ -5,13 +5,20 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +38,10 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.SearchFilter
+import ca.ilianokokoro.umihi.music.models.SearchItem
+import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import androidx.compose.foundation.layout.size
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
@@ -85,23 +96,62 @@ fun SearchScreen(
                     focusRequester = focusRequester,
                 )
 
-                when (uiState.screenState) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    SearchFilter.entries.forEach { filter ->
+                        FilterChip(
+                            selected = uiState.filter == filter,
+                            onClick = { searchViewModel.selectFilter(filter) },
+                            label = {
+                                Text(
+                                    stringResource(
+                                        when (filter) {
+                                            SearchFilter.Songs -> R.string.search_songs
+                                            SearchFilter.Albums -> R.string.search_albums
+                                            SearchFilter.Artists -> R.string.search_artists
+                                        }
+                                    )
+                                )
+                            },
+                        )
+                    }
+                }
+
+                if (uiState.showSuggestions && uiState.suggestions.isNotEmpty()) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(uiState.suggestions, key = { it }) { suggestion ->
+                            ListItem(
+                                headlineContent = { Text(suggestion) },
+                                modifier = Modifier.clickable {
+                                    focusManager.clearFocus()
+                                    searchViewModel.selectSuggestion(suggestion)
+                                },
+                            )
+                            HorizontalDivider()
+                        }
+                    }
+                } else when (uiState.screenState) {
                     ScreenState.Loading -> {
                         LoadingAnimation()
                     }
 
                     is ScreenState.Success -> {
-                        val songs = uiState.screenState.results
-                        if (songs.isNotEmpty()) {
+                        val results = uiState.screenState.results
+                        if (results.isNotEmpty()) {
                             val listState = rememberLazyListState()
 
                             // Infinite scroll: load the next page as we approach the end.
-                            LaunchedEffect(listState, songs.size, uiState.continuation) {
+                            LaunchedEffect(listState, results.size, uiState.continuation) {
                                 snapshotFlow {
                                     listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
                                 }.collect { lastVisible ->
                                     if (uiState.continuation != null &&
-                                        lastVisible >= songs.size - 3
+                                        lastVisible >= results.size - 3
                                     ) {
                                         searchViewModel.loadMore()
                                     }
@@ -117,31 +167,48 @@ fun SearchScreen(
                                     .fillMaxSize()
                             ) {
                                 items(
-                                    items = songs,
-                                    key = { song ->
-                                        song.uid
-                                    }) {
-                                    SongListItem(
-                                        song = it,
+                                    items = results,
+                                    key = { it.id }) { item ->
+                                    when (item) {
+                                    is SearchItem.Track -> SongListItem(
+                                        song = item.song,
                                         onPress = {
-                                            PlayerManager.playSong(it)
+                                            PlayerManager.playSong(item.song)
                                         },
                                         playNext = {
-                                            PlayerManager.addNext(it, context)
+                                            PlayerManager.addNext(item.song, context)
                                         },
                                         addToQueue = {
-                                            PlayerManager.addToQueue(it, context)
+                                            PlayerManager.addToQueue(item.song, context)
                                         },
                                         startRadio = {
-                                            PlayerManager.startRadio(it, context)
+                                            PlayerManager.startRadio(item.song, context)
                                         },
-                                        onViewArtist = { onOpenArtist(it) },
+                                        onViewArtist = { onOpenArtist(item.song) },
                                         onViewAlbum = {
-                                            it.albumId?.let { id ->
-                                                onOpenAlbum(id, it.albumName ?: "", it.thumbnailHref)
+                                            item.song.albumId?.let { id ->
+                                                onOpenAlbum(id, item.song.albumName ?: "", item.song.thumbnailHref)
                                             }
                                         }
                                     )
+                                    is SearchItem.Album -> SearchBrowseResult(
+                                        title = item.title,
+                                        subtitle = item.subtitle,
+                                        thumbnail = item.thumbnail,
+                                        onClick = { onOpenAlbum(item.id, item.title, item.thumbnail) },
+                                    )
+                                    is SearchItem.Artist -> SearchBrowseResult(
+                                        title = item.name,
+                                        subtitle = "",
+                                        thumbnail = item.thumbnail,
+                                        round = true,
+                                        onClick = {
+                                            onOpenArtist(Song(youtubeId = "", artist = item.name).also {
+                                                it.artistId = item.id
+                                            })
+                                        },
+                                    )
+                                    }
                                 }
 
                                 if (uiState.isLoadingMore) {
@@ -175,5 +242,29 @@ fun SearchScreen(
         }
     }
 
+}
+
+@Composable
+private fun SearchBrowseResult(
+    title: String,
+    subtitle: String,
+    thumbnail: String,
+    onClick: () -> Unit,
+    round: Boolean = false,
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = subtitle.takeIf(String::isNotBlank)?.let { value ->
+            { Text(value) }
+        },
+        leadingContent = {
+            SquareImage(
+                uri = thumbnail,
+                modifier = Modifier.size(64.dp),
+                cornerRadius = if (round) 32.dp else 8.dp,
+            )
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
 }
 

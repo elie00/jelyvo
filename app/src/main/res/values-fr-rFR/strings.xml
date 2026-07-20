@@ -130,4 +130,7 @@
     <string name="download_on_metered_title">Télécharger via les données mobiles</string>
     <string name="download_on_metered_description">Permet de télécharger des titres et des playlists en utilisant votre forfait de données mobiles</string>
     <string name="waiting_for_wifi_to_download">En attente d\'une connexion Wi-Fi pour télécharger %1$s</string>
+    <string name="search_songs">Titres</string>
+    <string name="search_albums">Albums</string>
+    <string name="search_artists">Artistes</string>
 </resources>

@@ -5,6 +5,36 @@ package ca.ilianokokoro.umihi.music.models
  * are no more results).
  */
 data class SearchResult(
-    val songs: List<Song>,
+    val items: List<SearchItem>,
     val continuation: String?,
-)
+) {
+    val songs: List<Song>
+        get() = items.mapNotNull { (it as? SearchItem.Track)?.song }
+}
+
+enum class SearchFilter(val params: String) {
+    Songs("EgWKAQIIAWoKEAkQBRAKEAMQBA=="),
+    Albums("EgWKAQIYAWoKEAkQChAFEAMQBA=="),
+    Artists("EgWKAQIgAWoKEAkQChAFEAMQBA=="),
+}
+
+sealed interface SearchItem {
+    val id: String
+
+    data class Track(val song: Song) : SearchItem {
+        override val id: String get() = song.youtubeId
+    }
+
+    data class Album(
+        override val id: String,
+        val title: String,
+        val subtitle: String,
+        val thumbnail: String,
+    ) : SearchItem
+
+    data class Artist(
+        override val id: String,
+        val name: String,
+        val thumbnail: String,
+    ) : SearchItem
+}

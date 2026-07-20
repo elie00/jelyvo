@@ -150,4 +150,7 @@
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="download_on_metered_description">Allows downloading songs and playlists using your mobile data plan</string>
     <string name="waiting_for_wifi_to_download">Waiting for Wi-Fi to download %1$s</string>
+    <string name="search_songs">Songs</string>
+    <string name="search_albums">Albums</string>
+    <string name="search_artists">Artists</string>
 </resources>

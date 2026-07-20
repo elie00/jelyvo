@@ -6,6 +6,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeAuthHelper.applyHeaders
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -199,13 +200,27 @@ object YoutubeApiClient {
         )
     }
 
-    suspend fun search(query: String): String {
-        return requestWithContext(
-            url = Constants.YoutubeApi.Search.URL,
+    suspend fun search(query: String, filter: SearchFilter = SearchFilter.Songs): String {
+        val base = YoutubeAuthHelper.buildContextBody(
             idName = "query",
-            id = query
+            id = query,
+            settings = null,
+        )
+        val body = buildJsonObject {
+            base.forEach { (key, value) -> put(key, value) }
+            put("params", filter.params)
+        }
+        return requestWithBody(
+            url = Constants.YoutubeApi.Search.URL,
+            body = body,
         )
     }
+
+    suspend fun searchSuggestions(input: String): String = requestWithContext(
+        url = Constants.YoutubeApi.Search.SUGGESTIONS_URL,
+        idName = "input",
+        id = input,
+    )
 
     suspend fun searchContinuation(continuationToken: String): String {
         val url = Constants.YoutubeApi.Search.URL.toHttpUrl().newBuilder()
