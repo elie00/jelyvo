@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.UpdateChannel
 
 @Immutable
@@ -15,7 +16,8 @@ data class UmihiSettings(
     val keepScreenOn: Boolean = false,
     val sendPlaybackData: Boolean = false,
     val downloadOnMetered: Boolean = false,
-    val autoplay: Boolean = true
+    val autoplay: Boolean = true,
+    val themeColor: ThemeColor = ThemeColor.Dynamic
 ) {
     val canTrack: Boolean get() = sendPlaybackData && !cookies.isEmpty()
 }

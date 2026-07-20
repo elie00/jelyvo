@@ -13,8 +13,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
@@ -49,7 +52,10 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            UmihiMusicTheme {
+            val themeColor by remember { DatastoreRepository(this).themeColor }
+                .collectAsStateWithLifecycle(initialValue = DatastoreRepository.ThemeColor.Dynamic)
+
+            UmihiMusicTheme(themeColor = themeColor) {
                 NavigationRoot(
                     modifier = Modifier.fillMaxSize()
                 )

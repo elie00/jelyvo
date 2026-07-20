@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.SystemUpdate
@@ -51,7 +52,9 @@ import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateChannelDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
@@ -163,6 +166,22 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.import_from_spotify_subtitle),
                                 leadingIcon = Icons.Outlined.LibraryMusic,
                                 onClick = openSpotifyImport
+                            )
+                        }
+
+                        SettingsSection(
+                            title = stringResource(R.string.appearance)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.theme_color_title),
+                                subtitle = stringResource(
+                                    R.string.theme_color_subtitle,
+                                    themeColorLabel(screenState.settings.themeColor)
+                                ),
+                                leadingIcon = Icons.Outlined.Palette,
+                                onClick = {
+                                    settingsViewModel.updateShowThemeColorDialog(true)
+                                }
                             )
                         }
 
@@ -308,7 +327,20 @@ fun SettingsScreen(
                             }
                         }
 
-                        if (uiState.showUpdateChannelDialog) {
+                        if (uiState.showThemeColorDialog) {
+                            ThemeColorDialog(
+                                selectedOption = screenState.settings.themeColor,
+                                onChange = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.THEME_COLOR,
+                                        it.toString()
+                                    )
+                                },
+                                onClose = {
+                                    settingsViewModel.updateShowThemeColorDialog(false)
+                                }
+                            )
+                        } else if (uiState.showUpdateChannelDialog) {
                             UpdateChannelDialog(
                                 selectedOption = screenState.settings.updateChannel,
                                 onChange = {

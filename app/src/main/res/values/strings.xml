@@ -78,6 +78,16 @@
     <string name="remove_download">Remove Download</string>
     <string name="cancel_download">Cancel Download</string>
     <string name="general">General</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme_color_title">Theme color</string>
+    <string name="theme_color_subtitle">Current theme : %1$s</string>
+    <string name="theme_color_dynamic">Dynamic (Material You)</string>
+    <string name="theme_color_ocean_blue">Ocean blue</string>
+    <string name="theme_color_forest_green">Forest green</string>
+    <string name="theme_color_violet">Violet</string>
+    <string name="theme_color_sunset_orange">Sunset orange</string>
+    <string name="theme_color_rose_red">Rose red</string>
+    <string name="theme_color_mono">Graphite</string>
     <string name="show_podcast_playlist_title">Show Podcast Playlist</string>
     <string name="show_podcast_playlist_description">Toggles the visibility of the \'Episodes for Later\' Playlist</string>
     <string name="special_language_disabled">Special Language Disabled</string>
@@ -150,6 +160,7 @@
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="download_on_metered_description">Allows downloading songs and playlists using your mobile data plan</string>
     <string name="waiting_for_wifi_to_download">Waiting for Wi-Fi to download %1$s</string>
+    <string name="search_all">All</string>
     <string name="search_songs">Songs</string>
     <string name="search_albums">Albums</string>
     <string name="search_artists">Artists</string>

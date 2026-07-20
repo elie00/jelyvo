@@ -78,6 +78,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updateShowThemeColorDialog(value: Boolean) {
+        viewModelScope.launch {
+            _uiState.update {
+                _uiState.value.copy(
+                    showThemeColorDialog = value
+                )
+            }
+        }
+    }
+
     fun updateShowDownloadDeleteConfirm(value: Boolean) {
         viewModelScope.launch {
             _uiState.update {

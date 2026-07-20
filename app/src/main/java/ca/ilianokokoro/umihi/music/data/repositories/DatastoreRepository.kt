@@ -19,6 +19,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.UPDATE_CHANNEL
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
@@ -45,6 +46,7 @@ class DatastoreRepository(private val context: Context) {
         val SEND_PLAYBACK_DATA = booleanPreferencesKey(Constants.Datastore.SEND_PLAYBACK_DATA)
         val DOWNLOAD_ON_METERED = booleanPreferencesKey(Constants.Datastore.DOWNLOAD_ON_METERED)
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
+        val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -68,6 +70,9 @@ class DatastoreRepository(private val context: Context) {
         val sendPlaybackData = it[SEND_PLAYBACK_DATA] ?: false
         val downloadOnMetered = it[DOWNLOAD_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
+        val themeColor = it[THEME_COLOR]?.let { value ->
+            runCatching { ThemeColor.valueOf(value) }.getOrNull()
+        } ?: ThemeColor.Dynamic
         val cookies = cookies.first()
         val dataSyncId = dataSyncId.first()
 
@@ -83,7 +88,8 @@ class DatastoreRepository(private val context: Context) {
             sendPlaybackData = sendPlaybackData,
             updateChecking = updateChecking,
             downloadOnMetered = downloadOnMetered,
-            autoplay = autoplay
+            autoplay = autoplay,
+            themeColor = themeColor
         )
     }
 
@@ -97,6 +103,16 @@ class DatastoreRepository(private val context: Context) {
      */
     suspend fun getUseSpecialLanguage(): Boolean {
         return context.dataStore.data.map { it[USE_SPECIAL_LANGUAGE] ?: false }.first()
+    }
+
+    /**
+     * Reads only the theme color. Used on the startup path (setContent) to avoid the cost of the
+     * full settings read (cookie decryption, dataSyncId collection) when applying the app theme.
+     */
+    val themeColor: Flow<ThemeColor> = context.dataStore.data.map {
+        it[THEME_COLOR]?.let { value ->
+            runCatching { ThemeColor.valueOf(value) }.getOrNull()
+        } ?: ThemeColor.Dynamic
     }
 
     val cookies = context.dataStore.data.map {
@@ -143,6 +159,16 @@ class DatastoreRepository(private val context: Context) {
     enum class UpdateChannel {
         Stable,
         Beta
+    }
+
+    enum class ThemeColor {
+        Dynamic,
+        OceanBlue,
+        ForestGreen,
+        Violet,
+        SunsetOrange,
+        RoseRed,
+        Mono
     }
 
 }

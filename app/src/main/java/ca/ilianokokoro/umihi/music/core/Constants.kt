@@ -89,6 +89,7 @@ object Constants {
         const val SEND_PLAYBACK_DATA = "send-playback-data"
         const val DOWNLOAD_ON_METERED = "download-on-metered"
         const val AUTOPLAY = "autoplay"
+        const val THEME_COLOR = "theme-color"
     }
 
     object Database {

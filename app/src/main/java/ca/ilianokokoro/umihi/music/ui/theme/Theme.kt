@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
 
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
@@ -102,11 +103,11 @@ data class ColorFamily(
 @Composable
 fun UmihiMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    themeColor: ThemeColor = ThemeColor.Dynamic,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        themeColor == ThemeColor.Dynamic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) {
                 dynamicDarkColorScheme(context)
@@ -115,8 +116,8 @@ fun UmihiMusicTheme(
             }
         }
 
-        darkTheme -> darkScheme
-        else -> lightScheme
+        else -> SeedSchemes.colorScheme(themeColor, darkTheme)
+            ?: if (darkTheme) darkScheme else lightScheme
     }
 
     MaterialExpressiveTheme(
