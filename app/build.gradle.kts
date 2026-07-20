@@ -9,6 +9,10 @@ val appVersionCode = 11303
 
 
 val beta: Boolean = (project.findProperty("beta") as String?)?.toBoolean() ?: true
+
+// APK size: -PtargetAbi=arm64-v8a (comma-separated for several) restricts packaged native libs
+// to the given ABI(s). When the property is unset, builds stay universal (all ABIs).
+val targetAbi: String? = project.findProperty("targetAbi") as String?
 val keystorePropertiesFile: File = rootProject.file("keystore.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
@@ -45,6 +49,12 @@ android {
 
         buildConfigField("boolean", "IS_BETA", "$beta")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        if (targetAbi != null) {
+            ndk {
+                abiFilters += targetAbi.split(",")
+            }
+        }
     }
 
 
@@ -120,6 +130,23 @@ android {
     androidResources {
         @Suppress("UnstableApiUsage")
         generateLocaleConfig = true
+    }
+
+    // APK size: strip metadata files that R8/AGP would otherwise package. None of these are read
+    // at runtime; Rhino's default Messages.properties is intentionally NOT excluded because Rhino
+    // loads it for runtime error text.
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/**/LICENSE.txt",
+                "META-INF/*.version",
+                "google/protobuf/*.proto",
+                "kotlin/**",
+                "**/*.kotlin_builtins",
+                "org/mozilla/javascript/resources/Messages_fr.properties",
+                "org/mozilla/javascript/resources/Messages_zh_CN.properties",
+            )
+        }
     }
 }
 

@@ -1,5 +1,8 @@
 ### Rules for NewPipeExtractor
--keep class org.mozilla.javascript.** { *; }
+# allowoptimization lets R8 inline/merge Rhino internals while still keeping every class and
+# member name (NewPipe drives Rhino in interpreted mode). Revert to a plain -keep if YouTube
+# stream resolution (the throttling-parameter JS path) ever breaks.
+-keep,allowoptimization class org.mozilla.javascript.** { *; }
 -dontwarn org.mozilla.javascript.tools.**
 -dontwarn java.beans.*
 -dontwarn javax.script.*
