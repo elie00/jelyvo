@@ -286,6 +286,23 @@ object PlayerManager {
     }
 
     /**
+     * Replaces the currently playing item in place with [videoSong] (its `forceVideo` flag set) and
+     * restarts it, so the user's "play the video version" choice switches to the clip stream/poster
+     * without disturbing the rest of the queue.
+     */
+    fun replaceCurrentWithVideo(videoSong: Song) {
+        val controller = currentController ?: return
+        val index = controller.currentMediaItemIndex
+        if (index == C.INDEX_UNSET) {
+            return
+        }
+        controller.replaceMediaItem(index, videoSong.mediaItem)
+        controller.seekTo(index, 0L)
+        controller.prepare()
+        controller.play()
+    }
+
+    /**
      * Resumes a partially listened title: plays [song] starting at [startPositionMs]. If the saved
      * position sits within the final 5% of the track it restarts from the beginning instead.
      */

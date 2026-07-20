@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.MusicVideo
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Share
@@ -46,6 +47,7 @@ fun PlayerMenuBottomSheet(
     song: Song,
     onOpenAlbum: (Song) -> Unit,
     onOpenEqualizer: () -> Unit,
+    onPlayVideoVersion: () -> Unit,
     abLoop: AbLoop?,
     onToggleAbLoop: () -> Unit,
     modifier: Modifier = Modifier
@@ -89,6 +91,17 @@ fun PlayerMenuBottomSheet(
                     changeVisibility(false)
                 },
             )
+
+            if (!song.isLocal) {
+                PlayerMenuItem(
+                    icon = Icons.Rounded.MusicVideo,
+                    text = stringResource(R.string.play_video_version),
+                    onClick = {
+                        onPlayVideoVersion()
+                        changeVisibility(false)
+                    },
+                )
+            }
 
             if (song.albumId != null) {
                 PlayerMenuItem(

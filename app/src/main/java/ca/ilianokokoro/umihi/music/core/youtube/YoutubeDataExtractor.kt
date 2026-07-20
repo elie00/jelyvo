@@ -1559,7 +1559,9 @@ object YoutubeDataExtractor {
             printe(ex.toString())
         }
 
-        if (savedSong != null) {
+        // The clip ("video version") stream and the default official-audio stream share the same
+        // youtubeId, so the per-id cache is bypassed in video mode to avoid serving one for the other.
+        if (savedSong != null && !song.forceVideo) {
             if (allowLocal && savedSong.audioFilePath != null) {
                 PlaybackLoudnessStore.update(song.youtubeId, savedSong.loudnessDb)
                 printd("${song.youtubeId} : Was downloaded")
@@ -1576,12 +1578,14 @@ object YoutubeDataExtractor {
             }
         }
 
-        val resolved = getSongUrlFromYoutube(song)
-        localSongRepository.setStreamInfo(
-            songId = song.youtubeId,
-            streamUrl = resolved.url,
-            loudnessDb = resolved.loudnessDb,
-        )
+        val resolved = getSongUrlFromYoutube(song, forceVideo = song.forceVideo)
+        if (!song.forceVideo) {
+            localSongRepository.setStreamInfo(
+                songId = song.youtubeId,
+                streamUrl = resolved.url,
+                loudnessDb = resolved.loudnessDb,
+            )
+        }
         PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
         printd("${song.youtubeId} : Got url from YouTube and saved song")
         return resolved.url
@@ -1641,12 +1645,14 @@ object YoutubeDataExtractor {
 
     private suspend fun getSongUrlFromYoutube(
         song: Song,
-        retries: Int = Constants.YoutubeApi.RETRY_COUNT
+        retries: Int = Constants.YoutubeApi.RETRY_COUNT,
+        forceVideo: Boolean = false,
     ): ResolvedAudioStream {
         var lastError: Throwable? = null
 
-        // Prefer the official audio (ATV) version over a music-video clip when one exists.
-        val playbackSong = resolvePreferredAudioSong(song)
+        // Prefer the official audio (ATV) version over a music-video clip when one exists, unless
+        // the user explicitly asked for the video version.
+        val playbackSong = if (forceVideo) song else resolvePreferredAudioSong(song)
 
         val fastUrl = resolveAndroidVrStreamUrl(playbackSong.youtubeId)
 

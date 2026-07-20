@@ -215,6 +215,7 @@ object Constants {
             const val IS_LOCAL = "is-local"
             const val LOCAL_URI = "local-uri"
             const val IS_SUGGESTION = "is-suggestion"
+            const val FORCE_VIDEO = "force-video"
         }
     }
 
@@ -238,6 +239,9 @@ object Constants {
         const val PODCAST_PLAYLIST_ID = "VLSE"
         const val RETRY_DELAY = 1000
         const val YOUTUBE_URL_PREFIX = "https://www.youtube.com/watch?v="
+        // Playback URI marker: appended to a track's stream URI to request the music-video clip
+        // stream (and its poster) instead of the default official-audio counterpart.
+        const val FORCE_VIDEO_PARAM = "umihiForceVideo"
         const val ORIGIN = "https://music.youtube.com"
         const val API_KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30"
         const val USER_AGENT =

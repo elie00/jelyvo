@@ -21,6 +21,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
+import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -37,6 +38,7 @@ class PlayerViewModel(application: Application) :
     val uiState = _uiState.asStateFlow()
     private val datastoreRepository = DatastoreRepository(application)
     private val lyricsRepository = LyricsRepository()
+    private val songRepository = SongRepository()
     private var lyricsJob: Job? = null
     private var lyricsSongId: String? = null
 
@@ -177,6 +179,50 @@ class PlayerViewModel(application: Application) :
             } finally {
                 _uiState.update { it.copy(isResolvingArtist = false) }
             }
+        }
+    }
+
+    /**
+     * "Play the video version" of the current title: streams the music-video clip (instead of the
+     * official-audio counterpart) and shows its poster. The clip poster is fetched from the player
+     * response first so the artwork switches deterministically; on failure the current cover is
+     * kept and only the stream switches. A no-op for local (on-device) tracks.
+     *
+     * Note: whether a distinct video version actually exists is not probed up front (that needs an
+     * extra watch-next round-trip). When there is none, YouTube resolves the same track and the
+     * result is simply the default audio — a safe fallback.
+     */
+    fun playCurrentAsVideo() {
+        val current = _uiState.value.queue.getOrNull(_uiState.value.currentIndex) ?: return
+        if (current.isLocal) {
+            return
+        }
+        PlayerManager.currentController ?: return
+
+        viewModelScope.launch {
+            var clipThumbnail: String? = null
+            try {
+                songRepository.getSongInfo(current.youtubeId).collect { result ->
+                    if (result is ApiResult.Success) {
+                        clipThumbnail = result.data.thumbnailHref
+                    }
+                }
+            } catch (e: Exception) {
+                printe(message = "Failed to fetch video artwork: ${e.message}", exception = e)
+            }
+
+            val videoSong = current.copy(
+                thumbnailHref = clipThumbnail?.takeIf { it.isNotBlank() } ?: current.thumbnailHref,
+                thumbnailPath = null,
+            ).also {
+                it.forceVideo = true
+                it.artistId = current.artistId
+                it.albumId = current.albumId
+                it.albumName = current.albumName
+                it.isSuggestion = current.isSuggestion
+            }
+
+            PlayerManager.replaceCurrentWithVideo(videoSong)
         }
     }
 

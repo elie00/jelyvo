@@ -59,6 +59,12 @@ data class Song(
     @Ignore
     var isSuggestion: Boolean = false
 
+    // Play-the-clip override: when true, playback streams the music-video itself (skipping the
+    // official-audio counterpart swap) and shows the clip poster instead of the album cover.
+    // Default false = official audio. Transient; carried in the MediaItem extras and stream URI.
+    @Ignore
+    var forceVideo: Boolean = false
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()
@@ -76,9 +82,19 @@ data class Song(
             if (isSuggestion) {
                 extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_SUGGESTION, true)
             }
+            if (forceVideo) {
+                extras.putBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, true)
+            }
+
+            val playbackUri = when {
+                isLocal -> localUri ?: youtubeUrl
+                // The prefix already carries a "?v=" query, so the marker is appended with "&".
+                forceVideo -> "$youtubeUrl&${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1"
+                else -> youtubeUrl
+            }
 
             return MediaItem.Builder()
-                .setUri(if (isLocal) (localUri ?: youtubeUrl) else youtubeUrl)
+                .setUri(playbackUri)
                 .setMediaId(youtubeId)
                 .setMediaMetadata(
                     MediaMetadata.Builder()
@@ -126,7 +142,13 @@ data class Song(
 
     companion object {
         fun createFromYoutubeUrl(url: String): Song {
-            return Song(youtubeId = url.removePrefix(Constants.YoutubeApi.YOUTUBE_URL_PREFIX))
+            val raw = url.removePrefix(Constants.YoutubeApi.YOUTUBE_URL_PREFIX)
+            // Split off any appended playback markers (e.g. "&umihiForceVideo=1") so the
+            // youtubeId stays clean while the flag is recovered from the URI.
+            val forceVideo = raw.contains("${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1")
+            return Song(youtubeId = raw.substringBefore("&")).also {
+                it.forceVideo = forceVideo
+            }
         }
 
     }

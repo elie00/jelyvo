@@ -629,52 +629,41 @@ class PlaybackService : MediaLibraryService() {
 
         val context = applicationContext
         val songId = mediaItem.mediaId
+        val forceVideo = mediaItem.mediaMetadata.extras
+            ?.getBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, false) ?: false
 
         serviceScope.launch {
             try {
-                val imageDir = UmihiHelper.getDownloadDirectory(
-                    context,
-                    Constants.Downloads.THUMBNAILS_FOLDER
-                )
-
-                val downloadedImage = File(imageDir, "$songId.jpg")
-                if (downloadedImage.exists()) {
-                    val imageBytes = downloadedImage.readBytes()
-
-                    updateMediaItemArtwork(
-                        mediaItem,
-                        imageBytes.cappedTo(),
-                        downloadedImage.toUri()
+                // A downloaded thumbnail is the official-audio cover; skip it when the user asked
+                // for the video version so the clip poster (already on the media item) is honoured.
+                if (!forceVideo) {
+                    val imageDir = UmihiHelper.getDownloadDirectory(
+                        context,
+                        Constants.Downloads.THUMBNAILS_FOLDER
                     )
-                    return@launch
+
+                    val downloadedImage = File(imageDir, "$songId.jpg")
+                    if (downloadedImage.exists()) {
+                        val imageBytes = downloadedImage.readBytes()
+
+                        updateMediaItemArtwork(
+                            mediaItem,
+                            imageBytes.cappedTo(),
+                            downloadedImage.toUri()
+                        )
+                        return@launch
+                    }
                 }
 
-                songRepository.getSongInfo(songId)
-                    .collect { result ->
-                        when (result) {
-                            is ApiResult.Success -> {
-                                val song = result.data
-                                val thumbnail = song.thumbnailHref
-                                if (thumbnail.isNotBlank()) {
-                                    val artBytes = UmihiHelper.fetchArtworkBytes(thumbnail)
-                                    if (artBytes != null) {
-                                        updateMediaItemArtwork(
-                                            mediaItem,
-                                            artBytes,
-                                            song.thumbnailHref.toUri()
-                                        )
-                                    }
-                                    return@collect
-                                }
-                            }
-
-                            is ApiResult.Error -> {
-                                error("Request to YouTube failed")
-                            }
-
-                            else -> {}
-                        }
-                    }
+                // Load the bytes for the artwork the media item already carries (the official album
+                // cover, or the clip poster in video mode) instead of re-deriving a thumbnail from
+                // the player response, which for a music video is the video clip poster and would
+                // make the artwork drift away from the official audio.
+                val artworkUri = mediaItem.mediaMetadata.artworkUri ?: return@launch
+                val artBytes = UmihiHelper.fetchArtworkBytes(artworkUri.toString())
+                if (artBytes != null) {
+                    updateMediaItemArtwork(mediaItem, artBytes, artworkUri)
+                }
             } catch (ex: Exception) {
                 printe(
                     message = "Failed to get full res thumbnail for $songId. Error : ${ex.message}",

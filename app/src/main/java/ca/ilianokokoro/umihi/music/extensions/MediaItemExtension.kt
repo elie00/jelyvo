@@ -24,5 +24,7 @@ fun MediaItem?.toSong(): Song {
         it.localUri = extras?.getString(Constants.ExoPlayer.SongMetadata.LOCAL_URI)
         it.isSuggestion =
             extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_SUGGESTION, false) ?: false
+        it.forceVideo =
+            extras?.getBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, false) ?: false
     }
 }
