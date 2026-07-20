@@ -32,11 +32,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
-import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 
@@ -103,27 +103,52 @@ fun ArtistScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                 )
+                                if (page.songs.isNotEmpty()) {
+                                    PlayShuffleRow(
+                                        onPlay = {
+                                            onOpenPlayer()
+                                            PlayerManager.playQueue(page.songs.map { it.mediaItem })
+                                        },
+                                        onShuffle = {
+                                            onOpenPlayer()
+                                            PlayerManager.playQueue(
+                                                page.songs.shuffled().map { it.mediaItem }
+                                            )
+                                        },
+                                    )
+                                }
                             }
                         }
 
-                        if (page.albums.isNotEmpty()) {
-                            item {
+                        page.sections.forEachIndexed { index, section ->
+                            item(key = "section-title-$index") {
                                 Text(
-                                    text = stringResource(R.string.albums),
+                                    text = section.title,
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
                                 )
                             }
-                            item {
+                            item(key = "section-row-$index") {
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
-                                    items(items = page.albums, key = { it.browseId }) { album ->
+                                    items(items = section.albums, key = { it.browseId }) { album ->
                                         AlbumCard(
-                                            album = album,
+                                            thumbnail = album.thumbnail,
+                                            title = album.title,
                                             onClick = {
                                                 onOpenAlbum(album.browseId, album.title, album.thumbnail)
+                                            }
+                                        )
+                                    }
+                                    items(items = section.videos, key = { it.youtubeId }) { video ->
+                                        AlbumCard(
+                                            thumbnail = video.thumbnailHref,
+                                            title = video.title,
+                                            onClick = {
+                                                onOpenPlayer()
+                                                PlayerManager.playSong(video)
                                             }
                                         )
                                     }
@@ -161,7 +186,8 @@ fun ArtistScreen(
 
 @Composable
 private fun AlbumCard(
-    album: ArtistAlbum,
+    thumbnail: String,
+    title: String,
     onClick: () -> Unit,
 ) {
     Column(
@@ -171,11 +197,11 @@ private fun AlbumCard(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         SquareImage(
-            uri = album.thumbnail,
+            uri = thumbnail,
             modifier = Modifier.fillMaxWidth()
         )
         Text(
-            text = album.title,
+            text = title,
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis

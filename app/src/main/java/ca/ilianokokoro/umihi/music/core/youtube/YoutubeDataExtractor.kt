@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
+import ca.ilianokokoro.umihi.music.models.ArtistSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
@@ -637,25 +638,69 @@ object YoutubeDataExtractor {
         return items.mapNotNull { extractSong(it) }.distinctBy { it.youtubeId }
     }
 
-    /** Extracts the album/single cards (musicTwoRowItemRenderer with an "MPRE…" browseId) of an artist page. */
-    fun extractArtistAlbums(jsonString: String): List<ArtistAlbum> {
-        val items = mutableListOf<JsonObject>()
-        collectTwoRowItems(Json.parseToJsonElement(jsonString), items)
-        return items.mapNotNull { it.toArtistAlbum() }.distinctBy { it.browseId }
+    /**
+     * Extracts the carousel sections of an artist page ("Albums", "Singles", "Videos", …), keeping
+     * them separate. Each shelf becomes an [ArtistSection] with its album cards and/or videos.
+     */
+    fun extractArtistSections(jsonString: String): List<ArtistSection> {
+        val shelves = mutableListOf<JsonObject>()
+        collectCarouselShelves(Json.parseToJsonElement(jsonString), shelves)
+        return shelves
+            .mapNotNull { it.toArtistSection() }
+            .filter { it.albums.isNotEmpty() || it.videos.isNotEmpty() }
     }
 
-    private fun collectTwoRowItems(element: JsonElement, out: MutableList<JsonObject>) {
+    private fun collectCarouselShelves(element: JsonElement, out: MutableList<JsonObject>) {
         when (element) {
             is JsonObject -> {
-                if (element.containsKey("musicTwoRowItemRenderer")) {
+                if (element.containsKey("musicCarouselShelfRenderer")) {
                     out.add(element)
                 }
-                element.values.forEach { collectTwoRowItems(it, out) }
+                element.values.forEach { collectCarouselShelves(it, out) }
             }
 
-            is JsonArray -> element.forEach { collectTwoRowItems(it, out) }
+            is JsonArray -> element.forEach { collectCarouselShelves(it, out) }
             else -> {}
         }
+    }
+
+    private fun JsonObject.toArtistSection(): ArtistSection? {
+        val shelf = this["musicCarouselShelfRenderer"]?.safeObject() ?: return null
+        val title = shelf["header"]?.safeObject()
+            ?.get("musicCarouselShelfBasicHeaderRenderer")?.safeObject()
+            ?.get("title")?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        val contents = shelf["contents"]?.safeArray() ?: return null
+
+        val albums = mutableListOf<ArtistAlbum>()
+        val videos = mutableListOf<Song>()
+        for (item in contents) {
+            val obj = item.safeObject() ?: continue
+            obj.toArtistAlbum()?.let { albums.add(it); continue }
+            obj.toArtistVideo()?.let { videos.add(it) }
+        }
+        return ArtistSection(
+            title = title,
+            albums = albums.distinctBy { it.browseId },
+            videos = videos.distinctBy { it.youtubeId },
+        )
+    }
+
+    private fun JsonObject.toArtistVideo(): Song? {
+        val renderer = this["musicTwoRowItemRenderer"]?.safeObject() ?: return null
+        val videoId = renderer["navigationEndpoint"]?.safeObject()
+            ?.get("watchEndpoint")?.safeObject()
+            ?.get("videoId")?.jsonPrimitive?.contentOrNull ?: return null
+        val title = renderer["title"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        val thumbnail = renderer["thumbnailRenderer"]?.safeObject()
+            ?.get("musicThumbnailRenderer")?.safeObject()
+            ?.get("thumbnail")?.safeObject()
+            ?.get("thumbnails")?.safeArray()?.lastOrNull()
+            ?.safeObject()?.get("url")?.jsonPrimitive?.contentOrNull ?: ""
+        return Song(youtubeId = videoId, title = title, thumbnailHref = thumbnail)
     }
 
     private fun JsonObject.toArtistAlbum(): ArtistAlbum? {

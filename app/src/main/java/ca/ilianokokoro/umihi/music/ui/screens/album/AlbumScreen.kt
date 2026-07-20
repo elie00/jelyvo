@@ -28,9 +28,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 
@@ -70,6 +72,18 @@ fun AlbumScreen(
                     val page = state.page
                     // Prefer the high-res cover from the browse response, fall back to the passed one.
                     val cover = page.cover.ifBlank { albumCover }
+                    // Album tracks share the cover; fill it in so playback/artwork isn't blank.
+                    val playableSongs = page.songs.map { song ->
+                        if (song.thumbnailHref.isBlank() && cover.isNotBlank()) {
+                            song.copy(thumbnailHref = cover)
+                        } else {
+                            song
+                        }
+                    }
+                    val playSongs: (List<Song>) -> Unit = { list ->
+                        onOpenPlayer()
+                        PlayerManager.playQueue(list.map { it.mediaItem })
+                    }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -101,16 +115,16 @@ fun AlbumScreen(
                                     ),
                                     textAlign = TextAlign.Center
                                 )
+                                if (playableSongs.isNotEmpty()) {
+                                    PlayShuffleRow(
+                                        onPlay = { playSongs(playableSongs) },
+                                        onShuffle = { playSongs(playableSongs.shuffled()) },
+                                    )
+                                }
                             }
                         }
 
-                        items(items = page.songs, key = { it.youtubeId }) { rawSong ->
-                            // Album tracks share the album cover, so fill in blank thumbnails.
-                            val song = if (rawSong.thumbnailHref.isBlank() && cover.isNotBlank()) {
-                                rawSong.copy(thumbnailHref = cover)
-                            } else {
-                                rawSong
-                            }
+                        items(items = playableSongs, key = { it.youtubeId }) { song ->
                             SongListItem(
                                 song = song,
                                 onPress = {

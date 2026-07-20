@@ -16,9 +16,17 @@ data class ArtistAlbum(
     val thumbnail: String = "",
 )
 
+/** A carousel section of an artist page (e.g. "Albums", "Singles", "Videos"). */
+@Immutable
+data class ArtistSection(
+    val title: String,
+    val albums: List<ArtistAlbum> = emptyList(),
+    val videos: List<Song> = emptyList(),
+)
+
 @Immutable
 data class ArtistPage(
     val artist: Artist,
     val songs: List<Song> = emptyList(),
-    val albums: List<ArtistAlbum> = emptyList(),
+    val sections: List<ArtistSection> = emptyList(),
 )
