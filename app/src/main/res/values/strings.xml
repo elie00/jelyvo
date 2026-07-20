@@ -153,4 +153,14 @@
     <string name="search_songs">Songs</string>
     <string name="search_albums">Albums</string>
     <string name="search_artists">Artists</string>
+    <string name="listening_stats">Listening stats</string>
+    <string name="listening_stats_subtitle">Your top tracks and artists for the month</string>
+    <string name="this_month">This month</string>
+    <string name="top_tracks">Top tracks</string>
+    <string name="top_artists">Top artists</string>
+    <string name="no_listening_stats">Listen to a few tracks to see your monthly stats here.</string>
+    <plurals name="play_count">
+        <item quantity="one">%d play</item>
+        <item quantity="other">%d plays</item>
+    </plurals>
 </resources>

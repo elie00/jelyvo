@@ -2,17 +2,22 @@ package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import ca.ilianokokoro.umihi.music.core.Constants
 
 /**
- * A single entry in the listening history. One row per track (keyed by [youtubeId]); replaying a
- * track updates [playedAt] instead of adding a duplicate, giving a clean "recently played" list.
+ * A single playback event. Keeping one row per play makes monthly listening statistics accurate;
+ * the recent-items query is responsible for collapsing repeated tracks.
  */
 @Immutable
-@Entity(tableName = Constants.Database.HISTORY_TABLE)
+@Entity(
+    tableName = Constants.Database.HISTORY_TABLE,
+    indices = [Index("youtubeId"), Index("playedAt")],
+)
 data class PlayHistoryEntry(
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
     val youtubeId: String,
     val title: String = "",
     val artist: String = "",

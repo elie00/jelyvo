@@ -57,6 +57,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
 import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
+import ca.ilianokokoro.umihi.music.ui.screens.stats.ListeningStatsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.spotifyimport.SpotifyImportScreen
 import androidx.core.net.toUri
 
@@ -194,7 +195,16 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 openAuthScreen = { backStack.add(AuthScreenKey) },
                                 openEqualizerScreen = { backStack.add(EqualizerScreenKey) },
                                 openSpotifyImport = { backStack.add(SpotifyImportScreenKey) },
+                                openListeningStats = { backStack.add(ListeningStatsScreenKey) },
                                 application = app
+                            )
+                        }
+
+                        is ListeningStatsScreenKey -> NavEntry(key) {
+                            ListeningStatsScreen(
+                                application = app,
+                                onBack = backStack::safePop,
+                                onOpenPlayer = { showFullPlayer = true },
                             )
                         }
 

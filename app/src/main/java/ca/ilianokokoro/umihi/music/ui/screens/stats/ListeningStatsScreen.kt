@@ -1,0 +1,162 @@
+package ca.ilianokokoro.umihi.music.ui.screens.stats
+
+import android.app.Application
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+
+@Composable
+fun ListeningStatsScreen(
+    application: Application,
+    onBack: () -> Unit,
+    onOpenPlayer: () -> Unit,
+    viewModel: ListeningStatsViewModel = viewModel(
+        factory = ListeningStatsViewModel.Factory(application),
+    ),
+) {
+    val state = viewModel.uiState.collectAsStateWithLifecycle().value
+    val hasStats = state.topTracks.isNotEmpty() || state.topArtists.isNotEmpty()
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            TopAppBar(
+                title = {
+                    androidx.compose.foundation.layout.Column {
+                        Text(stringResource(R.string.listening_stats))
+                        Text(
+                            text = stringResource(R.string.this_month),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                navigationIcon = { BackButton(onBack = onBack) },
+            )
+        },
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentPadding = PaddingValues(
+                start = 12.dp,
+                end = 12.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (!hasStats) {
+                item {
+                    Text(
+                        text = stringResource(R.string.no_listening_stats),
+                        modifier = Modifier.padding(24.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            if (state.topTracks.isNotEmpty()) {
+                item { StatsSectionTitle(stringResource(R.string.top_tracks)) }
+                itemsIndexed(
+                    items = state.topTracks,
+                    key = { _, stat -> stat.youtubeId },
+                ) { index, stat ->
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                text = "${index + 1}. ${stat.title}",
+                                maxLines = 1,
+                            )
+                        },
+                        supportingContent = { Text(stat.artist, maxLines = 1) },
+                        leadingContent = {
+                            SquareImage(
+                                uri = stat.thumbnailHref,
+                                modifier = Modifier.size(56.dp),
+                                cornerRadius = 8.dp,
+                            )
+                        },
+                        trailingContent = {
+                            Text(
+                                pluralStringResource(
+                                    R.plurals.play_count,
+                                    stat.playCount,
+                                    stat.playCount,
+                                ),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        },
+                        modifier = Modifier
+                            .clickable {
+                                PlayerManager.playSong(stat.toSong())
+                                onOpenPlayer()
+                            },
+                    )
+                }
+            }
+
+            if (state.topArtists.isNotEmpty()) {
+                item { StatsSectionTitle(stringResource(R.string.top_artists)) }
+                itemsIndexed(
+                    items = state.topArtists,
+                    key = { _, stat -> stat.artist },
+                ) { index, stat ->
+                    ListItem(
+                        headlineContent = { Text(stat.artist, maxLines = 1) },
+                        leadingContent = {
+                            Text(
+                                text = "${index + 1}",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        },
+                        trailingContent = {
+                            Text(
+                                pluralStringResource(
+                                    R.plurals.play_count,
+                                    stat.playCount,
+                                    stat.playCount,
+                                ),
+                                style = MaterialTheme.typography.labelLarge,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatsSectionTitle(title: String) {
+    Text(
+        text = title,
+        modifier = Modifier.padding(start = 8.dp, top = 20.dp, bottom = 8.dp),
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+    )
+}

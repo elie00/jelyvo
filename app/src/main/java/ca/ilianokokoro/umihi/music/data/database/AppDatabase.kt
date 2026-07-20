@@ -59,7 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java, Constants.Database.NAME
             )
-                .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
+                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
 
@@ -84,6 +84,37 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_10_11 = object : Migration(10, 11) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `${Constants.Database.SONGS_TABLE}` ADD COLUMN `loudnessDb` REAL")
+            }
+        }
+
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE `play_history_new` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `youtubeId` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `artist` TEXT NOT NULL,
+                        `thumbnailHref` TEXT NOT NULL,
+                        `duration` TEXT NOT NULL,
+                        `isExplicit` INTEGER NOT NULL,
+                        `playedAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `play_history_new`
+                        (`youtubeId`, `title`, `artist`, `thumbnailHref`, `duration`, `isExplicit`, `playedAt`)
+                    SELECT `youtubeId`, `title`, `artist`, `thumbnailHref`, `duration`, `isExplicit`, `playedAt`
+                    FROM `play_history`
+                    """.trimIndent()
+                )
+                db.execSQL("DROP TABLE `play_history`")
+                db.execSQL("ALTER TABLE `play_history_new` RENAME TO `play_history`")
+                db.execSQL("CREATE INDEX `index_play_history_youtubeId` ON `play_history` (`youtubeId`)")
+                db.execSQL("CREATE INDEX `index_play_history_playedAt` ON `play_history` (`playedAt`)")
             }
         }
     }

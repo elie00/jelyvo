@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
@@ -61,6 +62,7 @@ fun SettingsScreen(
     openAuthScreen: () -> Unit,
     openEqualizerScreen: () -> Unit,
     openSpotifyImport: () -> Unit,
+    openListeningStats: () -> Unit,
     application: Application,
     settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory(application))
 ) {
@@ -205,6 +207,13 @@ fun SettingsScreen(
                         SettingsSection(
                             title = stringResource(R.string.playback)
                         ) {
+                            SettingsItem(
+                                title = stringResource(R.string.listening_stats),
+                                subtitle = stringResource(R.string.listening_stats_subtitle),
+                                leadingIcon = Icons.Outlined.Leaderboard,
+                                onClick = openListeningStats,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(
                                 title = stringResource(R.string.autoplay_title),
                                 subtitle = stringResource(R.string.autoplay_subtitle),
