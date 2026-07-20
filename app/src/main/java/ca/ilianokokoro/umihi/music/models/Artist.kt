@@ -14,7 +14,13 @@ data class ArtistAlbum(
     val browseId: String,
     val title: String,
     val thumbnail: String = "",
-)
+    /** Card subtitle, e.g. "Album • 2025" — used to infer the release year. */
+    val subtitle: String = "",
+) {
+    /** The release year parsed from the subtitle, or null when absent. */
+    val year: Int?
+        get() = Regex("""\b(19|20)\d{2}\b""").find(subtitle)?.value?.toIntOrNull()
+}
 
 /** A carousel section of an artist page (e.g. "Albums", "Singles", "Videos"). */
 @Immutable

@@ -53,6 +53,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
 import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
+import ca.ilianokokoro.umihi.music.ui.screens.library.LibraryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
@@ -99,6 +100,18 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                         showFullPlayer = false
                         backStack.add(ArtistScreenKey(id, song.artist))
                     }
+                },
+                onOpenAlbum = { song ->
+                    song.albumId?.let { id ->
+                        showFullPlayer = false
+                        backStack.add(
+                            AlbumScreenKey(id, song.albumName ?: "", song.thumbnailHref)
+                        )
+                    }
+                },
+                onOpenEqualizer = {
+                    showFullPlayer = false
+                    backStack.add(EqualizerScreenKey)
                 },
                 artworkModifier = artworkModifier,
                 modifier = Modifier.fillMaxSize(),
@@ -175,7 +188,6 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
 
                         is HomeScreenKey -> NavEntry(key) {
                             HomeScreen(
-                                sharedViewModel = sharedViewModel,
                                 onSettingsButtonPress = { backStack.add(SettingsScreenKey) },
                                 onPlaylistPressed = { playlist ->
                                     backStack.add(PlaylistScreenKey(playlistInfo = playlist))
@@ -251,6 +263,24 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             )
                         }
 
+                        is LibraryScreenKey -> NavEntry(key) {
+                            LibraryScreen(
+                                sharedViewModel = sharedViewModel,
+                                onSettingsButtonPress = { backStack.add(SettingsScreenKey) },
+                                onOpenPlayer = { showFullPlayer = true },
+                                onPlaylistPressed = { playlist ->
+                                    backStack.add(PlaylistScreenKey(playlistInfo = playlist))
+                                },
+                                onOpenAlbum = { id, name, cover ->
+                                    backStack.add(AlbumScreenKey(id, name, cover))
+                                },
+                                onOpenArtist = { id, name ->
+                                    backStack.add(ArtistScreenKey(id, name))
+                                },
+                                application = app
+                            )
+                        }
+
                         is SearchScreenKey -> NavEntry(key) {
                             SearchScreen(
                                 application = app,
@@ -279,6 +309,12 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 albumCover = key.albumCover,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
+                                onOpenArtist = { id, name ->
+                                    backStack.add(ArtistScreenKey(id, name))
+                                },
+                                onOpenAlbum = { id, name, cover ->
+                                    backStack.add(AlbumScreenKey(id, name, cover))
+                                },
                                 application = app
                             )
                         }
