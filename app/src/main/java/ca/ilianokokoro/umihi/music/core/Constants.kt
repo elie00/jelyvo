@@ -303,6 +303,10 @@ object Constants {
 //            }
         }
 
+        object Next {
+            const val URL = "${ORIGIN}/youtubei/v1/next?prettyPrint=false"
+        }
+
         object Like {
             const val LIKE_URL = "${ORIGIN}/youtubei/v1/like/like?prettyPrint=false"
             const val REMOVE_LIKE_URL = "${ORIGIN}/youtubei/v1/like/removelike?prettyPrint=false"

@@ -770,6 +770,71 @@ object YoutubeDataExtractor {
         return ArtistAlbum(browseId = browseId, title = title, thumbnail = thumbnail)
     }
 
+    private const val MUSIC_VIDEO_TYPE_ATV = "MUSIC_VIDEO_TYPE_ATV"
+
+    /**
+     * From a watch-next response, returns the audio ("song") version of a music video, or null
+     * when the item already is pure audio or has no counterpart. YouTube links both versions of a
+     * track through the play panel's `counterpart` entry.
+     */
+    fun extractAudioCounterpart(jsonString: String): Song? {
+        val wrapper = findFirstObject(
+            Json.parseToJsonElement(jsonString),
+            listOf("playlistPanelVideoWrapperRenderer")
+        ) ?: return null
+
+        val primaryType = wrapper["primaryRenderer"]?.safeObject()
+            ?.get("playlistPanelVideoRenderer")?.safeObject()
+            ?.let { musicVideoType(it) }
+        if (primaryType == MUSIC_VIDEO_TYPE_ATV) {
+            return null
+        }
+
+        val counterpart = wrapper["counterpart"]?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("counterpartRenderer")?.safeObject()
+            ?.get("playlistPanelVideoRenderer")?.safeObject()
+            ?: return null
+
+        if (musicVideoType(counterpart) != MUSIC_VIDEO_TYPE_ATV) {
+            return null
+        }
+
+        return parsePanelVideo(counterpart)
+    }
+
+    private fun musicVideoType(renderer: JsonObject): String? {
+        return renderer["navigationEndpoint"]?.safeObject()
+            ?.get("watchEndpoint")?.safeObject()
+            ?.get("watchEndpointMusicSupportedConfigs")?.safeObject()
+            ?.get("watchEndpointMusicConfig")?.safeObject()
+            ?.get("musicVideoType")?.jsonPrimitive?.contentOrNull
+    }
+
+    private fun parsePanelVideo(renderer: JsonObject): Song? {
+        val videoId = renderer["videoId"]?.jsonPrimitive?.contentOrNull ?: return null
+        val title = renderer["title"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        // longBylineText runs: [artist, " • ", album, " • ", …] — the first run is the artist.
+        val artist = renderer["longBylineText"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        val duration = renderer["lengthText"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        val thumbnail = renderer["thumbnail"]?.safeObject()
+            ?.get("thumbnails")?.safeArray()?.lastOrNull()
+            ?.safeObject()?.get("url")?.jsonPrimitive?.contentOrNull ?: ""
+
+        return Song(
+            youtubeId = videoId,
+            title = title,
+            artist = artist,
+            duration = duration,
+            thumbnailHref = thumbnail,
+        )
+    }
+
     /** Reads the artist name from an artist page header, if present. */
     fun extractArtistName(jsonString: String): String? {
         val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()

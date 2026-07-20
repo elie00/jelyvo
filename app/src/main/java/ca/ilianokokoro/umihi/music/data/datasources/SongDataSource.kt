@@ -15,6 +15,16 @@ class SongDataSource {
         )
     }
 
+    /**
+     * Returns the album-audio version of a music video, or null when the track already is pure
+     * audio (or has no linked audio version).
+     */
+    suspend fun getAudioCounterpart(songId: String): Song? {
+        return YoutubeDataExtractor.extractAudioCounterpart(
+            YoutubeApiClient.next(songId)
+        )
+    }
+
     suspend fun search(query: String): SearchResult {
         val json = YoutubeApiClient.search(query)
         return SearchResult(
