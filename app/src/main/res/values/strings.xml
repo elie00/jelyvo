@@ -116,6 +116,9 @@
     <string name="import_from_spotify_subtitle">Match your Spotify tracks to YouTube</string>
     <string name="autoplay_title">Autoplay</string>
     <string name="autoplay_subtitle">Keep playing related songs when the queue ends</string>
+    <string name="crossfade_title">Crossfade</string>
+    <string name="crossfade_disabled">Off — gapless playback</string>
+    <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
     <string name="start_radio">Start radio</string>
     <string name="share">Share</string>
     <string name="share_song_text" translatable="false">%1$s • %2$s\n%3$s</string>

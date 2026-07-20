@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
+import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +69,7 @@ import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SliderSettingItem
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -298,6 +300,25 @@ fun SettingsScreen(
                                 leadingIcon = Icons.Outlined.Memory,
                                 value = screenState.settings.useAudioOffload,
                                 onToggle = settingsViewModel::updateAudioOffloadSetting
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            val crossfadeSeconds = screenState.settings.crossfadeSeconds
+                            SliderSettingItem(
+                                title = stringResource(R.string.crossfade_title),
+                                subtitle = if (crossfadeSeconds <= 0) {
+                                    stringResource(R.string.crossfade_disabled)
+                                } else {
+                                    stringResource(R.string.crossfade_seconds, crossfadeSeconds)
+                                },
+                                leadingIcon = Icons.Outlined.Waves,
+                                value = crossfadeSeconds,
+                                valueRange = 0..12,
+                                onValueChange = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.CROSSFADE_SECONDS,
+                                        it
+                                    )
+                                }
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             SettingsItem(

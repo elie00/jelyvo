@@ -83,6 +83,7 @@ class PlaybackService : MediaLibraryService() {
     private var queuePersistenceJob: Job? = null
     private var volumeFadeJob: Job? = null
     @Volatile private var normalizedVolume = 1f
+    @Volatile private var crossfadeMs = 0L
     @Volatile private var fadeInActive = false
     @Volatile private var queueRestoreComplete = false
     @Volatile private var isRestoringQueue = false
@@ -409,7 +410,21 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /**
+     * Fade length applied around an automatic track transition. When the user has set a crossfade
+     * duration it wins; otherwise the short default fade keeps loudness-normalized gapless
+     * transitions click-free. Re-read at each transition so changes apply without a restart.
+     */
+    private fun fadeDurationMs(): Long =
+        if (crossfadeMs > 0L) crossfadeMs else AUDIO_FADE_DURATION_MS
+
     private fun startAudioVolumeManagement() {
+        serviceScope.launch {
+            datastoreRepository.settings.collectLatest { settings ->
+                crossfadeMs = settings.crossfadeSeconds.coerceIn(0, 12) * 1000L
+            }
+        }
+
         serviceScope.launch {
             PlaybackLoudnessStore.updates.collectLatest { update ->
                 withContext(Dispatchers.Main) {
@@ -428,10 +443,11 @@ class PlaybackService : MediaLibraryService() {
                     if (fadeInActive || !player.isPlaying || !player.hasNextMediaItem()) {
                         return@withContext
                     }
+                    val fadeMs = fadeDurationMs()
                     val duration = player.duration
                     val remaining = duration - player.currentPosition
-                    player.volume = if (duration > 0 && remaining in 1..AUDIO_FADE_DURATION_MS) {
-                        normalizedVolume * (remaining.toFloat() / AUDIO_FADE_DURATION_MS)
+                    player.volume = if (duration > 0 && remaining in 1..fadeMs) {
+                        normalizedVolume * (remaining.toFloat() / fadeMs)
                     } else {
                         normalizedVolume
                     }
@@ -452,7 +468,7 @@ class PlaybackService : MediaLibraryService() {
         fadeInActive = true
         player.volume = 0f
         volumeFadeJob = serviceScope.launch {
-            val steps = (AUDIO_FADE_DURATION_MS / AUDIO_FADE_POLL_INTERVAL_MS).toInt()
+            val steps = (fadeDurationMs() / AUDIO_FADE_POLL_INTERVAL_MS).toInt()
                 .coerceAtLeast(1)
             repeat(steps) { step ->
                 delay(AUDIO_FADE_POLL_INTERVAL_MS)

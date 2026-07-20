@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ca.ilianokokoro.umihi.music.BuildConfig
@@ -13,6 +14,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
@@ -54,6 +56,7 @@ class DatastoreRepository(private val context: Context) {
         val SEND_PLAYBACK_DATA = booleanPreferencesKey(Constants.Datastore.SEND_PLAYBACK_DATA)
         val DOWNLOAD_ON_METERED = booleanPreferencesKey(Constants.Datastore.DOWNLOAD_ON_METERED)
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
+        val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
         val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
     }
 
@@ -88,6 +91,7 @@ class DatastoreRepository(private val context: Context) {
         val sendPlaybackData = it[SEND_PLAYBACK_DATA] ?: false
         val downloadOnMetered = it[DOWNLOAD_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
+        val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
         val themeColor = it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Dynamic
@@ -108,6 +112,7 @@ class DatastoreRepository(private val context: Context) {
             updateChecking = updateChecking,
             downloadOnMetered = downloadOnMetered,
             autoplay = autoplay,
+            crossfadeSeconds = crossfadeSeconds,
             themeColor = themeColor
         )
     }
