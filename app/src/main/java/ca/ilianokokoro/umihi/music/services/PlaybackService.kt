@@ -320,10 +320,10 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val result = super.onStartCommand(intent, flags, startId)
-        when (intent?.action) {
+        when (val action = intent?.action) {
             ACTION_WIDGET_PLAY_PAUSE,
             ACTION_WIDGET_PREVIOUS,
-            ACTION_WIDGET_NEXT -> handleWidgetAction(intent.action)
+            ACTION_WIDGET_NEXT -> handleWidgetAction(action)
         }
         return result
     }
