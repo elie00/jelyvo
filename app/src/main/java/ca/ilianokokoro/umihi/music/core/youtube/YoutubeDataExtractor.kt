@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
+import ca.ilianokokoro.umihi.music.models.AlbumHeaderInfo
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistSection
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
@@ -466,6 +467,37 @@ object YoutubeDataExtractor {
         }.distinctBy(SearchItem::id)
     }
 
+    /**
+     * Extracts the saved albums of the account's library (`FEmusic_liked_albums`): a grid of
+     * `musicTwoRowItemRenderer` tiles whose browseIds start with "MPRE".
+     */
+    fun extractLibraryAlbums(jsonString: String): List<SearchItem.Album> {
+        val rows = mutableListOf<JsonObject>()
+        collectTwoRowItems(Json.parseToJsonElement(jsonString), rows)
+        return rows
+            .mapNotNull { it.toSearchItem(SearchFilter.Albums) as? SearchItem.Album }
+            .distinctBy(SearchItem.Album::id)
+    }
+
+    /**
+     * Extracts the followed/subscribed artists of the account's library. Depending on the browse
+     * feed the rows are either `musicResponsiveListItemRenderer` list rows or
+     * `musicTwoRowItemRenderer` tiles, both navigating to a "UC…" artist browseId.
+     */
+    fun extractLibraryArtists(jsonString: String): List<SearchItem.Artist> {
+        val root = Json.parseToJsonElement(jsonString)
+
+        val listRows = mutableListOf<JsonObject>()
+        collectSongItems(root, listRows)
+
+        val tiles = mutableListOf<JsonObject>()
+        collectTwoRowItems(root, tiles)
+
+        return (listRows.mapNotNull { it.toMixedSearchItem() as? SearchItem.Artist } +
+                tiles.mapNotNull { it.toSearchItem(SearchFilter.Artists) as? SearchItem.Artist })
+            .distinctBy(SearchItem.Artist::id)
+    }
+
     fun extractSearchSuggestions(jsonString: String): List<String> {
         val suggestions = mutableListOf<String>()
         fun walk(element: JsonElement) {
@@ -882,6 +914,54 @@ object YoutubeDataExtractor {
         return largestThumbnailIn(cover)
     }
 
+    /**
+     * Extracts the header metadata of an album browse response: title, artist (+ browseId),
+     * the "Album • 2023" subtitle, the "12 songs • 41 minutes" second subtitle and the
+     * description. Fields the header doesn't carry are returned empty so callers can fall
+     * back to locally-known values.
+     */
+    fun extractAlbumHeaderInfo(jsonString: String): AlbumHeaderInfo? {
+        val header = findFirstObject(
+            Json.parseToJsonElement(jsonString),
+            listOf("musicResponsiveHeaderRenderer", "musicDetailHeaderRenderer")
+        ) ?: return null
+
+        val artistRun = header["straplineTextOne"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()?.safeObject()
+        val artistId = artistRun?.get("navigationEndpoint")?.safeObject()
+            ?.get("browseEndpoint")?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull
+
+        // Newer headers wrap the description in a musicDescriptionShelfRenderer; older detail
+        // headers expose plain runs directly.
+        val description = header["description"]?.safeObject()
+            ?.get("musicDescriptionShelfRenderer")?.safeObject()
+            ?.get("description").runsText()
+            .ifEmpty { header["description"].runsText() }
+
+        return AlbumHeaderInfo(
+            title = header["title"].runsText(),
+            artist = header["straplineTextOne"].runsText(),
+            artistId = artistId,
+            subtitle = header["subtitle"].runsText(),
+            secondSubtitle = header["secondSubtitle"].runsText(),
+            description = description,
+        )
+    }
+
+    /**
+     * Album carousels of an album page (e.g. "Other versions"): every carousel shelf whose
+     * items are albums, with its localized shelf title. Video-only carousels are dropped.
+     */
+    fun extractAlbumSections(jsonString: String): List<ArtistSection> {
+        val shelves = mutableListOf<JsonObject>()
+        collectCarouselShelves(Json.parseToJsonElement(jsonString), shelves)
+        return shelves
+            .mapNotNull { it.toArtistSection() }
+            .map { it.copy(videos = emptyList()) }
+            .filter { it.albums.isNotEmpty() }
+    }
+
     private fun findFirstObject(element: JsonElement, keys: List<String>): JsonObject? {
         when (element) {
             is JsonObject -> {
@@ -1041,7 +1121,12 @@ object YoutubeDataExtractor {
             ?.get("thumbnail")?.safeObject()
             ?.get("thumbnails")?.safeArray()?.lastOrNull()
             ?.safeObject()?.get("url")?.jsonPrimitive?.contentOrNull ?: ""
-        return ArtistAlbum(browseId = browseId, title = title, thumbnail = thumbnail)
+        return ArtistAlbum(
+            browseId = browseId,
+            title = title,
+            thumbnail = thumbnail,
+            subtitle = renderer["subtitle"].runsText(),
+        )
     }
 
     private const val MUSIC_VIDEO_TYPE_ATV = "MUSIC_VIDEO_TYPE_ATV"
@@ -1107,6 +1192,52 @@ object YoutubeDataExtractor {
             duration = duration,
             thumbnailHref = thumbnail,
         )
+    }
+
+    /**
+     * From a watch-next response, returns the primary artist's browse id ("UC…") for the
+     * currently-playing panel video ([videoId]), falling back to the first panel entry when the
+     * exact id is absent (e.g. when the panel lists an audio/video counterpart instead). Null
+     * when YouTube exposes no artist page link.
+     */
+    fun extractArtistBrowseId(jsonString: String, videoId: String): String? {
+        val renderers = mutableListOf<JsonObject>()
+        collectObjects(
+            Json.parseToJsonElement(jsonString),
+            "playlistPanelVideoRenderer",
+            renderers
+        )
+        val renderer = renderers.firstOrNull {
+            it["videoId"]?.jsonPrimitive?.contentOrNull == videoId
+        } ?: renderers.firstOrNull() ?: return null
+
+        // Byline runs: [artist, " • ", album, …] — the artist run links to a "UC…" browse page.
+        for (bylineKey in listOf("longBylineText", "shortBylineText")) {
+            renderer[bylineKey]?.safeObject()
+                ?.get("runs")?.safeArray()
+                ?.forEach { run ->
+                    val browseId = run.safeObject()
+                        ?.get("navigationEndpoint")?.safeObject()
+                        ?.get("browseEndpoint")?.safeObject()
+                        ?.get("browseId")?.jsonPrimitive?.contentOrNull
+                    if (browseId != null && browseId.startsWith("UC")) {
+                        return browseId
+                    }
+                }
+        }
+        return null
+    }
+
+    private fun collectObjects(element: JsonElement, key: String, into: MutableList<JsonObject>) {
+        when (element) {
+            is JsonObject -> {
+                element[key]?.safeObject()?.let { into.add(it) }
+                element.values.forEach { collectObjects(it, key, into) }
+            }
+
+            is JsonArray -> element.forEach { collectObjects(it, key, into) }
+            else -> {}
+        }
     }
 
     /** Reads the artist name from an artist page header, if present. */

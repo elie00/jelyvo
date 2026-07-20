@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.ui.screens.album
 
 import android.app.Application
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,9 +10,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
@@ -20,11 +25,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,6 +58,8 @@ fun AlbumScreen(
     albumCover: String = "",
     onBack: () -> Unit,
     onOpenPlayer: () -> Unit,
+    onOpenArtist: (String, String) -> Unit = { _, _ -> },
+    onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
     application: Application,
     albumViewModel: AlbumViewModel = viewModel(
         factory = AlbumViewModel.Factory(application, albumId, albumName)
@@ -89,6 +101,32 @@ fun AlbumScreen(
                         onOpenPlayer()
                         PlayerManager.playQueue(list.map { it.mediaItem }, startIndex)
                     }
+                    // "12 songs • 41 min" computed locally when the header didn't provide it.
+                    val totalMinutes = playableSongs.sumOf { song ->
+                        song.duration.split(":")
+                            .mapNotNull { part -> part.trim().toIntOrNull() }
+                            .fold(0L) { acc, part -> acc * 60 + part }
+                    } / 60
+                    val fallbackSecondSubtitle = if (playableSongs.isEmpty()) "" else {
+                        listOfNotNull(
+                            stringResource(R.string.songs, playableSongs.size),
+                            stringResource(R.string.short_minutes, totalMinutes)
+                                .takeIf { totalMinutes > 0 },
+                        ).joinToString(" • ")
+                    }
+                    // YT-Music-style metadata line, e.g. "Album • 2023 • 12 songs • 41 min".
+                    val metadataLine = listOf(
+                        page.subtitle,
+                        page.secondSubtitle.ifBlank { fallbackSecondSubtitle },
+                    )
+                        .filter { it.isNotBlank() }
+                        .joinToString(" • ")
+                    // Album carousels ("Other versions"…) minus the album currently shown.
+                    val sections = page.sections
+                        .map { section ->
+                            section.copy(albums = section.albums.filter { it.browseId != albumId })
+                        }
+                        .filter { it.albums.isNotEmpty() }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -120,6 +158,29 @@ fun AlbumScreen(
                                     ),
                                     textAlign = TextAlign.Center
                                 )
+                                if (page.artist.isNotBlank()) {
+                                    val artistId = page.artistId
+                                    Text(
+                                        text = page.artist,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        textAlign = TextAlign.Center,
+                                        modifier = if (artistId != null) {
+                                            Modifier.clickable {
+                                                onOpenArtist(artistId, page.artist)
+                                            }
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                                }
+                                if (metadataLine.isNotBlank()) {
+                                    Text(
+                                        text = metadataLine,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                                 if (playableSongs.isNotEmpty()) {
                                     PlaySplitButton(
                                         onPlay = { playSongs(playableSongs, 0) },
@@ -171,9 +232,102 @@ fun AlbumScreen(
                                 )
                             }
                         }
+
+                        if (page.description.isNotBlank()) {
+                            item(key = "album-description") {
+                                var expanded by remember { mutableStateOf(false) }
+                                Text(
+                                    text = page.description,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = if (expanded) Int.MAX_VALUE else 4,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { expanded = !expanded }
+                                        .padding(horizontal = 8.dp, vertical = 12.dp)
+                                        .animateContentSize()
+                                )
+                            }
+                        }
+
+                        sections.forEachIndexed { index, section ->
+                            item(key = "album-section-title-$index") {
+                                Text(
+                                    text = section.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(
+                                        start = 8.dp,
+                                        top = 8.dp,
+                                        bottom = 4.dp
+                                    )
+                                )
+                            }
+                            item(key = "album-section-row-$index") {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(
+                                        horizontal = 8.dp,
+                                        vertical = 4.dp
+                                    )
+                                ) {
+                                    items(
+                                        items = section.albums,
+                                        key = { it.browseId }) { album ->
+                                        AlbumVersionCard(
+                                            thumbnail = album.thumbnail,
+                                            title = album.title,
+                                            subtitle = album.subtitle,
+                                            onClick = {
+                                                onOpenAlbum(
+                                                    album.browseId,
+                                                    album.title,
+                                                    album.thumbnail
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AlbumVersionCard(
+    thumbnail: String,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(140.dp)
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        SquareImage(
+            uri = thumbnail,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        if (subtitle.isNotBlank()) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

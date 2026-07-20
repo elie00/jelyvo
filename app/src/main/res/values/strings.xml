@@ -117,6 +117,8 @@
     <string name="autoplay_title">Autoplay</string>
     <string name="autoplay_subtitle">Keep playing related songs when the queue ends</string>
     <string name="start_radio">Start radio</string>
+    <string name="share">Share</string>
+    <string name="share_song_text" translatable="false">%1$s • %2$s\n%3$s</string>
     <string name="starting_radio">Starting radio…</string>
     <string name="view_artist">View artist</string>
     <string name="view_album">View album</string>
@@ -174,6 +176,15 @@
     <string name="top_tracks">Top tracks</string>
     <string name="top_artists">Top artists</string>
     <string name="no_listening_stats">Listen to a few tracks to see your monthly stats here.</string>
+    <string name="library">Library</string>
+    <string name="liked_songs">Liked songs</string>
+    <string name="saved_albums">Albums</string>
+    <string name="followed_artists">Artists</string>
+    <string name="no_liked_songs">No liked songs yet</string>
+    <string name="no_saved_albums">No saved albums yet</string>
+    <string name="no_followed_artists">No followed artists yet</string>
+    <string name="new_releases_from_artists">New releases from your artists</string>
+    <string name="home_empty">Nothing to show here yet</string>
     <plurals name="play_count">
         <item quantity="one">%d play</item>
         <item quantity="other">%d plays</item>

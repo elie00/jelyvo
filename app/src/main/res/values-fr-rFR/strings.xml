@@ -31,6 +31,7 @@
     <string name="join_discord_server">Rejoignez le serveur Discord</string>
     <string name="play_next">Lire le suivant</string>
     <string name="add_to_queue">Ajouter à la file d\'attente</string>
+    <string name="view_artist">Voir l\'artiste</string>
     <string name="retry">Réessayer</string>
     <string name="play_next_toast">Lecture de ce titre suivant</string>
     <string name="added_queue_toast">Ajout du titre à la file d\'attente</string>
@@ -105,6 +106,10 @@
     <string name="visibility">Visibilité</string>
     <string name="auto_update_title">Vérification automatique des mises à jour</string>
     <string name="auto_update_subtitle">Active la vérification des mises à jour automatiquement au lancement de l\'application</string>
+    <string name="share">Partager</string>
+    <string name="start_radio">Lancer la radio</string>
+    <string name="view_album">Voir l\'album</string>
+    <string name="equalizer_title">Égaliseur</string>
     <string name="sleep_timer">Minuterie de sommeil</string>
     <string name="sleep_timer_active">Minuterie de sommeil active</string>
     <string name="sleep_timer_remaining">restants</string>
@@ -144,6 +149,15 @@
     <string name="top_tracks">Top titres</string>
     <string name="top_artists">Top artistes</string>
     <string name="no_listening_stats">Écoutez quelques titres pour voir vos statistiques mensuelles.</string>
+    <string name="library">Bibliothèque</string>
+    <string name="liked_songs">Titres aimés</string>
+    <string name="saved_albums">Albums</string>
+    <string name="followed_artists">Artistes</string>
+    <string name="no_liked_songs">Aucun titre aimé pour le moment</string>
+    <string name="no_saved_albums">Aucun album enregistré pour le moment</string>
+    <string name="no_followed_artists">Aucun artiste suivi pour le moment</string>
+    <string name="new_releases_from_artists">Nouveautés de vos artistes</string>
+    <string name="home_empty">Rien à afficher pour le moment</string>
     <plurals name="play_count">
         <item quantity="one">%d écoute</item>
         <item quantity="other">%d écoutes</item>

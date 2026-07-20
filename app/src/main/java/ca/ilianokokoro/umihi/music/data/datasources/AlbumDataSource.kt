@@ -12,11 +12,19 @@ class AlbumDataSource {
         settings: UmihiSettings,
     ): AlbumPage {
         val response = YoutubeApiClient.browse(albumId, settings)
+        val header = YoutubeDataExtractor.extractAlbumHeaderInfo(response)
         return AlbumPage(
-            name = albumName,
+            // Prefer the title YouTube reports; the nav-passed name can be stale/truncated.
+            name = header?.title?.takeIf { it.isNotBlank() } ?: albumName,
             songs = YoutubeDataExtractor.extractAlbumSongs(response, settings),
             cover = (YoutubeDataExtractor.extractAlbumCover(response)
                 ?: YoutubeDataExtractor.extractLargestThumbnail(response)).orEmpty(),
+            artist = header?.artist.orEmpty(),
+            artistId = header?.artistId,
+            subtitle = header?.subtitle.orEmpty(),
+            secondSubtitle = header?.secondSubtitle.orEmpty(),
+            description = header?.description.orEmpty(),
+            sections = YoutubeDataExtractor.extractAlbumSections(response),
         )
     }
 }
