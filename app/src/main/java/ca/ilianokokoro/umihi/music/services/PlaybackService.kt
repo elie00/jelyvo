@@ -584,7 +584,7 @@ class PlaybackService : MediaLibraryService() {
             val p = mediaLibrarySession?.player ?: return@withContext
             // Re-check: the user may have queued items while we were fetching.
             if (p.currentMediaItemIndex >= p.mediaItemCount - 1) {
-                p.addMediaItems(songs.map { it.mediaItem })
+                p.addMediaItems(songs.map { it.apply { isSuggestion = true }.mediaItem })
             }
         }
     }

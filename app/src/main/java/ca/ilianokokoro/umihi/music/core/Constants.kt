@@ -214,6 +214,7 @@ object Constants {
             const val ALBUM_NAME = "album-name"
             const val IS_LOCAL = "is-local"
             const val LOCAL_URI = "local-uri"
+            const val IS_SUGGESTION = "is-suggestion"
         }
     }
 

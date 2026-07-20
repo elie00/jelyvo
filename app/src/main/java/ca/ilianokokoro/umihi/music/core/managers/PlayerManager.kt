@@ -190,7 +190,7 @@ object PlayerManager {
             withContext(Dispatchers.Main) {
                 val c = currentController ?: return@withContext
                 if (!c.hasNextMediaItem() && c.currentMediaItem?.mediaId == seed.youtubeId) {
-                    c.addMediaItems(related.data.map { it.mediaItem })
+                    c.addMediaItems(related.data.map { it.apply { isSuggestion = true }.mediaItem })
                     c.seekToNext()
                 }
             }

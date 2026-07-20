@@ -37,6 +37,8 @@
     <string name="play_next_toast">Playing this song next</string>
     <string name="added_queue_toast">Added song to the queue</string>
     <string name="playing_now">Playing Now</string>
+    <string name="queue_section_up_next">Up next in queue</string>
+    <string name="queue_section_suggestions">Autoplay suggestions</string>
     <string name="up_to_date_message">The app is up to date !</string>
     <string name="update_check_failed">Failed to check for updates</string>
     <string name="github_rate_limit_retry">GitHub API rate limited. Retry in %1$s.</string>

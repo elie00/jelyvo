@@ -77,6 +77,7 @@ private data class PersistedQueueSong(
     val albumName: String?,
     val isLocal: Boolean = false,
     val localUri: String? = null,
+    val isSuggestion: Boolean = false,
 ) {
     fun toSong(): Song = Song(
         youtubeId = youtubeId,
@@ -93,6 +94,7 @@ private data class PersistedQueueSong(
         song.albumName = albumName
         song.isLocal = isLocal
         song.localUri = localUri
+        song.isSuggestion = isSuggestion
     }
 
     companion object {
@@ -110,6 +112,7 @@ private data class PersistedQueueSong(
             albumName = song.albumName,
             isLocal = song.isLocal,
             localUri = song.localUri,
+            isSuggestion = song.isSuggestion,
         )
     }
 }

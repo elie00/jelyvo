@@ -53,6 +53,12 @@ data class Song(
     @Ignore
     var localUri: String? = null
 
+    // Autoplay suggestion: true when this queue entry was appended by the end-of-queue radio
+    // mechanism (not explicitly added by the user). Transient; carried in the MediaItem extras and
+    // persisted with the queue so the UI can separate "up next" from automatic suggestions.
+    @Ignore
+    var isSuggestion: Boolean = false
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()
@@ -66,6 +72,9 @@ data class Song(
             if (isLocal) {
                 extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_LOCAL, true)
                 localUri?.let { extras.putString(Constants.ExoPlayer.SongMetadata.LOCAL_URI, it) }
+            }
+            if (isSuggestion) {
+                extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_SUGGESTION, true)
             }
 
             return MediaItem.Builder()

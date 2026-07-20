@@ -108,14 +108,30 @@ fun QueueBottomSheet(
                         )
                     }
                 } else {
+                    val firstSuggestionIndex = mutableSongList.indexOfFirst { it.isSuggestion }
+                    val hasSuggestions = firstSuggestionIndex >= 0
                     itemsIndexed(
                         items = mutableSongList, key = { _, song -> song.uid }
                     ) { index, song ->
-                        ReorderableItem(
-                            reorderableLazyListState,
-                            key = song.uid
-                        ) { _ ->
-                            QueueSongListItem(
+                        val itemScope = this
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Only split into sections once suggestions exist, and only show the
+                            // "up next" header when there is at least one user-added item above them.
+                            if (hasSuggestions && index == 0 && firstSuggestionIndex > 0) {
+                                QueueSectionHeader(stringResource(R.string.queue_section_up_next))
+                            }
+                            if (hasSuggestions && index == firstSuggestionIndex) {
+                                QueueSectionHeader(
+                                    stringResource(R.string.queue_section_suggestions)
+                                )
+                            }
+                            itemScope.ReorderableItem(
+                                reorderableLazyListState,
+                                key = song.uid
+                            ) { _ ->
+                                QueueSongListItem(
                                 song = song,
                                 isCurrentSong = song.uid == songs.getOrNull(currentIndex)?.uid,
                                 onPress = {
@@ -139,11 +155,22 @@ fun QueueBottomSheet(
                                         mutableSongList.indexOf(song)
                                     )
                                 }
-                            )
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun QueueSectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+    )
 }
