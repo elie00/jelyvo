@@ -10,7 +10,15 @@ data class Artist(
 )
 
 @Immutable
+data class ArtistAlbum(
+    val browseId: String,
+    val title: String,
+    val thumbnail: String = "",
+)
+
+@Immutable
 data class ArtistPage(
     val artist: Artist,
     val songs: List<Song> = emptyList(),
+    val albums: List<ArtistAlbum> = emptyList(),
 )

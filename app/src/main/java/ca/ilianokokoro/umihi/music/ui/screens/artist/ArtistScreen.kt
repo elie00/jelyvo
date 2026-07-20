@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.artist
 
 import android.app.Application
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,9 +9,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -21,12 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
@@ -40,6 +46,7 @@ fun ArtistScreen(
     artistName: String,
     onBack: () -> Unit,
     onOpenPlayer: () -> Unit,
+    onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
     application: Application,
     artistViewModel: ArtistViewModel = viewModel(
         factory = ArtistViewModel.Factory(application, artistId, artistName)
@@ -99,6 +106,31 @@ fun ArtistScreen(
                             }
                         }
 
+                        if (page.albums.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(R.string.albums),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
+                                )
+                            }
+                            item {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    items(items = page.albums, key = { it.browseId }) { album ->
+                                        AlbumCard(
+                                            album = album,
+                                            onClick = {
+                                                onOpenAlbum(album.browseId, album.title, album.thumbnail)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         items(items = page.songs, key = { it.youtubeId }) { song ->
                             SongListItem(
                                 song = song,
@@ -124,5 +156,29 @@ fun ArtistScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun AlbumCard(
+    album: ArtistAlbum,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(140.dp)
+            .clickable(onClick = onClick),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        SquareImage(
+            uri = album.thumbnail,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text(
+            text = album.title,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }

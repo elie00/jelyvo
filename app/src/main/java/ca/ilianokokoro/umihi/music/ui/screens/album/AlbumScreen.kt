@@ -68,6 +68,8 @@ fun AlbumScreen(
 
                 is AlbumState.Success -> {
                     val page = state.page
+                    // Prefer the high-res cover from the browse response, fall back to the passed one.
+                    val cover = page.cover.ifBlank { albumCover }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -87,7 +89,7 @@ fun AlbumScreen(
                                     BackButton(onBack = onBack)
                                 }
                                 SquareImage(
-                                    uri = albumCover.ifBlank {
+                                    uri = cover.ifBlank {
                                         page.songs.firstOrNull()?.thumbnailHref ?: ""
                                     },
                                     modifier = Modifier.size(180.dp)
@@ -104,8 +106,8 @@ fun AlbumScreen(
 
                         items(items = page.songs, key = { it.youtubeId }) { rawSong ->
                             // Album tracks share the album cover, so fill in blank thumbnails.
-                            val song = if (rawSong.thumbnailHref.isBlank() && albumCover.isNotBlank()) {
-                                rawSong.copy(thumbnailHref = albumCover)
+                            val song = if (rawSong.thumbnailHref.isBlank() && cover.isNotBlank()) {
+                                rawSong.copy(thumbnailHref = cover)
                             } else {
                                 rawSong
                             }

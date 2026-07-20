@@ -10,6 +10,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
+import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
@@ -588,6 +589,35 @@ object YoutubeDataExtractor {
         return null
     }
 
+    /**
+     * Returns the largest thumbnail URL in a response — used as an album cover, since album track
+     * rows carry no per-track thumbnail so the biggest image on the page is the album art.
+     */
+    fun extractLargestThumbnail(jsonString: String): String? {
+        var bestWidth = -1
+        var bestUrl: String? = null
+
+        fun walk(element: JsonElement) {
+            when (element) {
+                is JsonObject -> {
+                    val url = element["url"]?.jsonPrimitive?.contentOrNull
+                    val width = element["width"]?.jsonPrimitive?.intOrNull
+                    if (url != null && width != null && width > bestWidth) {
+                        bestWidth = width
+                        bestUrl = url
+                    }
+                    element.values.forEach { walk(it) }
+                }
+
+                is JsonArray -> element.forEach { walk(it) }
+                else -> {}
+            }
+        }
+
+        walk(Json.parseToJsonElement(jsonString))
+        return bestUrl
+    }
+
     /** Extracts songs from a search continuation response (musicShelfContinuation). */
     fun extractSearchContinuationSongs(jsonString: String): List<Song> {
         val json = Json.parseToJsonElement(jsonString)
@@ -605,6 +635,46 @@ object YoutubeDataExtractor {
         val items = mutableListOf<JsonObject>()
         collectSongItems(json, items)
         return items.mapNotNull { extractSong(it) }.distinctBy { it.youtubeId }
+    }
+
+    /** Extracts the album/single cards (musicTwoRowItemRenderer with an "MPRE…" browseId) of an artist page. */
+    fun extractArtistAlbums(jsonString: String): List<ArtistAlbum> {
+        val items = mutableListOf<JsonObject>()
+        collectTwoRowItems(Json.parseToJsonElement(jsonString), items)
+        return items.mapNotNull { it.toArtistAlbum() }.distinctBy { it.browseId }
+    }
+
+    private fun collectTwoRowItems(element: JsonElement, out: MutableList<JsonObject>) {
+        when (element) {
+            is JsonObject -> {
+                if (element.containsKey("musicTwoRowItemRenderer")) {
+                    out.add(element)
+                }
+                element.values.forEach { collectTwoRowItems(it, out) }
+            }
+
+            is JsonArray -> element.forEach { collectTwoRowItems(it, out) }
+            else -> {}
+        }
+    }
+
+    private fun JsonObject.toArtistAlbum(): ArtistAlbum? {
+        val renderer = this["musicTwoRowItemRenderer"]?.safeObject() ?: return null
+        val browseId = renderer["navigationEndpoint"]?.safeObject()
+            ?.get("browseEndpoint")?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        if (!browseId.startsWith("MPRE")) {
+            return null
+        }
+        val title = renderer["title"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        val thumbnail = renderer["thumbnailRenderer"]?.safeObject()
+            ?.get("musicThumbnailRenderer")?.safeObject()
+            ?.get("thumbnail")?.safeObject()
+            ?.get("thumbnails")?.safeArray()?.lastOrNull()
+            ?.safeObject()?.get("url")?.jsonPrimitive?.contentOrNull ?: ""
+        return ArtistAlbum(browseId = browseId, title = title, thumbnail = thumbnail)
     }
 
     /** Reads the artist name from an artist page header, if present. */

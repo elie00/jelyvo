@@ -6,4 +6,5 @@ import androidx.compose.runtime.Immutable
 data class AlbumPage(
     val name: String,
     val songs: List<Song> = emptyList(),
+    val cover: String = "",
 )

@@ -227,6 +227,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 artistName = key.artistName,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
+                                onOpenAlbum = { id, name, cover ->
+                                    backStack.add(AlbumScreenKey(id, name, cover))
+                                },
                                 application = app
                             )
                         }

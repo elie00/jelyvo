@@ -39,10 +39,12 @@ class ArtistDataSource {
             ?: fallbackName
         val thumbnail = YoutubeDataExtractor.extractArtistThumbnail(response)
             ?: songs.firstOrNull()?.thumbnailHref.orEmpty()
+        val albums = YoutubeDataExtractor.extractArtistAlbums(response)
 
         ArtistPage(
             artist = Artist(name = name, thumbnailHref = thumbnail, channelUrl = artistId),
             songs = songs,
+            albums = albums,
         )
     }
 }

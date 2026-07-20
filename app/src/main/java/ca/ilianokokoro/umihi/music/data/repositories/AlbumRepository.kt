@@ -21,8 +21,7 @@ class AlbumRepository {
     ): Flow<ApiResult<AlbumPage>> {
         return flow {
             emit(ApiResult.Loading)
-            val songs = albumDataSource.getAlbumSongs(albumId, settings)
-            emit(ApiResult.Success(AlbumPage(name = albumName, songs = songs)))
+            emit(ApiResult.Success(albumDataSource.getAlbum(albumId, albumName, settings)))
         }.catch { e ->
             emit(ApiResult.Error(e.toException()))
         }.flowOn(Dispatchers.IO)
