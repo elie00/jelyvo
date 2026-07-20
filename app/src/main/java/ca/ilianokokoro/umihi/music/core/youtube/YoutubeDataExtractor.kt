@@ -452,6 +452,17 @@ object YoutubeDataExtractor {
                 collectTwoRowItems(root, rows)
                 rows.mapNotNull { row -> row.toSearchItem(filter) }
             }
+
+            SearchFilter.All -> {
+                // "Top results" mixes entity types: the top-result card shelf plus every
+                // musicShelf row, classified per item (album/artist browseId, else a track).
+                val cards = mutableListOf<JsonObject>()
+                collectCardShelves(root, cards)
+                val rows = mutableListOf<JsonObject>()
+                collectSongItems(root, rows)
+                cards.mapNotNull { it.cardToSearchItem() } +
+                        rows.mapNotNull { it.toMixedSearchItem() }
+            }
         }.distinctBy(SearchItem::id)
     }
 
@@ -485,6 +496,78 @@ object YoutubeDataExtractor {
         }
     }
 
+    private fun collectCardShelves(element: JsonElement, output: MutableList<JsonObject>) {
+        when (element) {
+            is JsonObject -> {
+                element["musicCardShelfRenderer"]?.safeObject()?.let(output::add)
+                element.values.forEach { collectCardShelves(it, output) }
+            }
+            is JsonArray -> element.forEach { collectCardShelves(it, output) }
+            else -> Unit
+        }
+    }
+
+    /** Classifies a top-result card (musicCardShelfRenderer) into an album or artist item. */
+    private fun JsonObject.cardToSearchItem(): SearchItem? {
+        val browseId = this["title"]?.safeObject()?.get("runs")?.safeArray()
+            ?.firstOrNull()?.safeObject()
+            ?.get("navigationEndpoint")?.safeObject()
+            ?.get("browseEndpoint")?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        val title = this["title"].runsText()
+        val thumbnail = this["thumbnail"]?.let(::getBestThumbnailUrl).orEmpty()
+        return when {
+            browseId.startsWith("UC") -> SearchItem.Artist(
+                id = browseId,
+                name = title,
+                thumbnail = thumbnail,
+            )
+
+            browseId.startsWith("MPRE") -> SearchItem.Album(
+                id = browseId,
+                title = title,
+                subtitle = this["subtitle"].runsText(),
+                thumbnail = thumbnail,
+            )
+
+            else -> null
+        }
+    }
+
+    /**
+     * Classifies a musicResponsiveListItemRenderer wrapper from the unscoped ("All") results:
+     * an item navigating to an album/artist page becomes that entity, anything else that has a
+     * videoId becomes a track.
+     */
+    private fun JsonObject.toMixedSearchItem(): SearchItem? {
+        val renderer = this["musicResponsiveListItemRenderer"]?.safeObject() ?: return null
+        val browseId = renderer["navigationEndpoint"]?.safeObject()
+            ?.get("browseEndpoint")?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull
+        val thumbnail = renderer["thumbnail"]?.let(::getBestThumbnailUrl).orEmpty()
+        return when {
+            browseId?.startsWith("MPRE") == true -> SearchItem.Album(
+                id = browseId,
+                title = flexColumnText(renderer, 0),
+                subtitle = flexColumnText(renderer, 1),
+                thumbnail = thumbnail,
+            )
+
+            browseId?.startsWith("UC") == true -> SearchItem.Artist(
+                id = browseId,
+                name = flexColumnText(renderer, 0),
+                thumbnail = thumbnail,
+            )
+
+            else -> extractSong(this)?.let(SearchItem::Track)
+        }
+    }
+
+    private fun flexColumnText(renderer: JsonObject, index: Int): String =
+        renderer["flexColumns"]?.safeArray()?.getOrNull(index)
+            ?.safeObject()?.get("musicResponsiveListItemFlexColumnRenderer")
+            ?.safeObject()?.get("text").runsText()
+
     private fun JsonObject.toSearchItem(filter: SearchFilter): SearchItem? {
         val endpoint = this["navigationEndpoint"]?.safeObject()
             ?: this["title"]?.safeObject()?.get("runs")?.safeArray()
@@ -507,7 +590,7 @@ object YoutubeDataExtractor {
             SearchFilter.Artists -> browseId.takeIf { it.startsWith("UC") }?.let {
                 SearchItem.Artist(id = it, name = title, thumbnail = thumbnail)
             }
-            SearchFilter.Songs -> null
+            SearchFilter.Songs, SearchFilter.All -> null
         }
     }
 
@@ -1370,7 +1453,10 @@ object YoutubeDataExtractor {
     ): ResolvedAudioStream {
         var lastError: Throwable? = null
 
-        val fastUrl = resolveAndroidVrStreamUrl(song.youtubeId)
+        // Prefer the official audio (ATV) version over a music-video clip when one exists.
+        val playbackSong = resolvePreferredAudioSong(song)
+
+        val fastUrl = resolveAndroidVrStreamUrl(playbackSong.youtubeId)
 
         if (fastUrl != null) {
             return fastUrl
@@ -1380,7 +1466,7 @@ object YoutubeDataExtractor {
         repeat(retries) { attempt ->
             try {
                 return ResolvedAudioStream(
-                    url = withContext(Dispatchers.IO) { resolveNewPipeStreamUrl(song) },
+                    url = withContext(Dispatchers.IO) { resolveNewPipeStreamUrl(playbackSong) },
                     loudnessDb = null,
                 )
             } catch (e: Throwable) {
@@ -1401,6 +1487,28 @@ object YoutubeDataExtractor {
             "${song.youtubeId} : Fatal fail. Could not get it after $retries attempts",
             lastError
         )
+    }
+
+    /**
+     * Returns the song whose stream should actually be played: the ATV ("official audio")
+     * counterpart when [song] is a music video that has one, otherwise [song] itself.
+     * Any failure while looking up the counterpart silently falls back to the original song.
+     */
+    private suspend fun resolvePreferredAudioSong(song: Song): Song {
+        val counterpart = try {
+            extractAudioCounterpart(YoutubeApiClient.next(song.youtubeId))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            printe(
+                "${song.youtubeId} : Audio counterpart lookup failed, using original: " +
+                        "${e::class.simpleName}: ${e.message ?: "no message"}"
+            )
+            null
+        } ?: return song
+
+        printd("${song.youtubeId} : Playing audio counterpart ${counterpart.youtubeId}")
+        return counterpart
     }
 
     private suspend fun resolveAndroidVrStreamUrl(
