@@ -229,6 +229,13 @@ object Constants {
             const val URL = "${ORIGIN}/youtubei/v1/browse?key=${API_KEY}&prettyPrint=false"
             const val PLAYLIST_BROWSE_ID = "FEmusic_liked_playlists"
 
+            // Library (connected account collection) browse ids.
+            // "LM" is the liked-songs playlist; the "VL" prefix matches the playlist convention.
+            const val LIKED_SONGS_BROWSE_ID = "VLLM"
+            const val LIKED_ALBUMS_BROWSE_ID = "FEmusic_liked_albums"
+            const val LIBRARY_ARTISTS_BROWSE_ID = "FEmusic_library_corpus_artists"
+            const val LIBRARY_LANDING_BROWSE_ID = "FEmusic_library_landing"
+
             // Disabled as it was causing issues
 //            object Fields {
 //                const val PLAYLISTS =
