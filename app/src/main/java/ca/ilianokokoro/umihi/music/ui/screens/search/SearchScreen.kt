@@ -1,6 +1,13 @@
 package ca.ilianokokoro.umihi.music.ui.screens.search
 
+import android.app.Activity
 import android.app.Application
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.speech.RecognizerIntent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,6 +72,43 @@ fun SearchScreen(
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
+    val voiceSearchLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val spoken = result.data
+                ?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+                ?.firstOrNull()
+            if (!spoken.isNullOrBlank()) {
+                focusManager.clearFocus()
+                searchViewModel.onSearchFieldChange(spoken)
+                searchViewModel.search()
+            }
+        }
+    }
+
+    val startVoiceSearch = {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            putExtra(
+                RecognizerIntent.EXTRA_PROMPT,
+                context.getString(R.string.voice_search_prompt)
+            )
+        }
+        try {
+            voiceSearchLauncher.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(
+                context,
+                R.string.voice_search_unavailable,
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     LaunchedEffect(Unit) {
         if (uiState.search.isBlank()) {
             focusRequester.requestFocus()
@@ -92,6 +136,7 @@ fun SearchScreen(
                     value = uiState.search,
                     onValueChange = searchViewModel::onSearchFieldChange,
                     onSearch = searchViewModel::search,
+                    onVoiceSearch = startVoiceSearch,
                     focusManager = focusManager,
                     focusRequester = focusRequester,
                 )

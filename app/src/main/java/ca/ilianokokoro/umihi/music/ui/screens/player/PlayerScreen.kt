@@ -10,6 +10,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -40,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -120,6 +123,10 @@ fun PlayerScreen(
                     currentSong = currentSong,
                     uiState = uiState,
                     onToggle = playerViewModel::toggleLyricsVisibility,
+                    onSkipNext = PlayerManager::skipToNext,
+                    onSkipPrevious = PlayerManager::skipToPrevious,
+                    onSeekForward = { playerViewModel.seekBy(10_000L) },
+                    onSeekBackward = { playerViewModel.seekBy(-10_000L) },
                     artworkModifier = artworkModifier,
                     modifier = Modifier
                         .fillMaxHeight()
@@ -182,6 +189,10 @@ fun PlayerScreen(
                         currentSong = currentSong,
                         uiState = uiState,
                         onToggle = playerViewModel::toggleLyricsVisibility,
+                        onSkipNext = PlayerManager::skipToNext,
+                        onSkipPrevious = PlayerManager::skipToPrevious,
+                        onSeekForward = { playerViewModel.seekBy(10_000L) },
+                        onSeekBackward = { playerViewModel.seekBy(-10_000L) },
                         artworkModifier = artworkModifier,
                         modifier = Modifier
                             .fillMaxSize()
@@ -290,6 +301,10 @@ private fun ArtworkOrLyrics(
     currentSong: Song?,
     uiState: PlayerState,
     onToggle: () -> Unit,
+    onSkipNext: () -> Unit = {},
+    onSkipPrevious: () -> Unit = {},
+    onSeekForward: () -> Unit = {},
+    onSeekBackward: () -> Unit = {},
     artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
 ) {
@@ -303,6 +318,11 @@ private fun ArtworkOrLyrics(
         } else {
             Thumbnail(
                 href = (currentSong?.thumbnailPath ?: currentSong?.thumbnailHref).toString(),
+                onToggle = onToggle,
+                onSkipNext = onSkipNext,
+                onSkipPrevious = onSkipPrevious,
+                onSeekForward = onSeekForward,
+                onSeekBackward = onSeekBackward,
                 artworkModifier = artworkModifier,
                 modifier = Modifier.fillMaxSize()
             )
@@ -313,6 +333,11 @@ private fun ArtworkOrLyrics(
 @Composable
 fun Thumbnail(
     href: String,
+    onToggle: () -> Unit = {},
+    onSkipNext: () -> Unit = {},
+    onSkipPrevious: () -> Unit = {},
+    onSeekForward: () -> Unit = {},
+    onSeekBackward: () -> Unit = {},
     artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
@@ -320,7 +345,7 @@ fun Thumbnail(
         modifier = modifier.padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
-        val size = minOf(maxWidth, maxHeight)
+        val artSize = minOf(maxWidth, maxHeight)
 
         AnimatedContent(
             targetState = href,
@@ -336,7 +361,37 @@ fun Thumbnail(
         ) { targetState ->
             SquareImage(
                 uri = targetState,
-                modifier = artworkModifier.size(size)
+                modifier = artworkModifier
+                    .size(artSize)
+                    // Tap toggles lyrics; double-tap on the right/left half seeks ±10s.
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { onToggle() },
+                            onDoubleTap = { offset ->
+                                if (offset.x >= size.width / 2f) {
+                                    onSeekForward()
+                                } else {
+                                    onSeekBackward()
+                                }
+                            }
+                        )
+                    }
+                    // Horizontal swipe: left = next track, right = previous track.
+                    .pointerInput(Unit) {
+                        var dragTotal = 0f
+                        val threshold = size.width * 0.15f
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragTotal = 0f },
+                            onDragEnd = {
+                                if (dragTotal <= -threshold) {
+                                    onSkipNext()
+                                } else if (dragTotal >= threshold) {
+                                    onSkipPrevious()
+                                }
+                            },
+                            onHorizontalDrag = { _, dragAmount -> dragTotal += dragAmount }
+                        )
+                    }
             )
         }
     }

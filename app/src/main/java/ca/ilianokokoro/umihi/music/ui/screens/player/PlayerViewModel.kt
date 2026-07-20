@@ -222,6 +222,18 @@ class PlayerViewModel(application: Application) :
         PlayerManager.currentController?.seekTo(_uiState.value.playbackProgress.position.toLong())
     }
 
+    /**
+     * Relative seek (double-tap on the artwork). Clamps to 0..duration so the ±10s jumps never
+     * run past the ends of the track.
+     */
+    fun seekBy(deltaMs: Long) {
+        val controller = PlayerManager.currentController ?: return
+        val duration = controller.duration
+        val upperBound = if (duration > 0) duration else Long.MAX_VALUE
+        val target = (controller.currentPosition + deltaMs).coerceIn(0L, upperBound)
+        controller.seekTo(target)
+    }
+
     fun seek(location: Float) {
         viewModelScope.launch {
             _uiState.update {

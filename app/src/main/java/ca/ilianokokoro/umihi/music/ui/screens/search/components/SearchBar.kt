@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextFieldDefaults
@@ -25,6 +26,7 @@ fun SearchBar(
     value: String,
     onValueChange: (String) -> Unit,
     onSearch: () -> Unit,
+    onVoiceSearch: (() -> Unit)? = null,
     focusRequester: FocusRequester? = null,
     focusManager: FocusManager? = null,
 ) {
@@ -43,6 +45,8 @@ fun SearchBar(
         value = value,
         onValueChange = onValueChange,
         leadingIcon = Icons.Rounded.Search,
+        trailingIcon = onVoiceSearch?.let { Icons.Rounded.Mic },
+        onTrailingIconClick = onVoiceSearch,
         placeholder = stringResource(R.string.search),
         singleLine = true,
         colors = TextFieldDefaults.colors(
