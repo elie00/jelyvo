@@ -28,6 +28,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import androidx.glance.appwidget.updateAll
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
@@ -50,6 +51,8 @@ import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.extensions.cappedTo
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
+import ca.ilianokokoro.umihi.music.widget.PlaybackWidget
+import ca.ilianokokoro.umihi.music.widget.PlaybackWidgetStateStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -190,6 +193,10 @@ class PlaybackService : MediaLibraryService() {
             ) {
                 scheduleQueuePersistence()
                 PlayerManager.updatePlaybackInfo(PlaybackAudioInfo())
+                updatePlaybackWidget(
+                    mediaItem,
+                    mediaItem?.mediaMetadata?.artworkData?.cappedTo(),
+                )
                 updateCurrentMediaItemThumbnail(mediaItem)
                 val songId = mediaItem?.mediaId ?: return
                 applyTrackVolume(songId, reason)
@@ -233,6 +240,7 @@ class PlaybackService : MediaLibraryService() {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (!isPlaying) scheduleQueuePersistence()
+                updatePlaybackWidget(player.currentMediaItem)
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -310,6 +318,16 @@ class PlaybackService : MediaLibraryService() {
         controllerInfo: MediaSession.ControllerInfo
     ): MediaLibrarySession? = mediaLibrarySession
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val result = super.onStartCommand(intent, flags, startId)
+        when (intent?.action) {
+            ACTION_WIDGET_PLAY_PAUSE,
+            ACTION_WIDGET_PREVIOUS,
+            ACTION_WIDGET_NEXT -> handleWidgetAction(intent.action)
+        }
+        return result
+    }
+
     override fun onTaskRemoved(rootIntent: Intent?) {
         scheduleQueuePersistence(immediate = true)
         val player = mediaLibrarySession?.player
@@ -325,6 +343,18 @@ class PlaybackService : MediaLibraryService() {
             val snapshot = captureQueueSnapshot()
             runBlocking(Dispatchers.IO) {
                 persistQueueSnapshot(snapshot)
+            }
+        }
+        if (::player.isInitialized) {
+            val currentItem = player.currentMediaItem
+            runBlocking(Dispatchers.IO) {
+                PlaybackWidgetStateStore.write(
+                    context = applicationContext,
+                    mediaItem = currentItem,
+                    isPlaying = false,
+                    artworkBytes = currentItem?.mediaMetadata?.artworkData?.cappedTo(),
+                )
+                PlaybackWidget().updateAll(applicationContext)
             }
         }
         serviceScope.cancel()
@@ -627,9 +657,54 @@ class PlaybackService : MediaLibraryService() {
                 )
             }
         }
+        updatePlaybackWidget(updated, artBytes?.cappedTo())
+    }
+
+    private fun handleWidgetAction(action: String) {
+        serviceScope.launch {
+            var attempts = 0
+            while (!queueRestoreComplete && attempts < 20) {
+                delay(50)
+                attempts++
+            }
+            withContext(Dispatchers.Main) {
+                when (action) {
+                    ACTION_WIDGET_PLAY_PAUSE -> {
+                        if (player.isPlaying) {
+                            player.pause()
+                        } else if (player.mediaItemCount > 0) {
+                            if (player.playbackState == Player.STATE_IDLE) player.prepare()
+                            player.play()
+                        }
+                    }
+
+                    ACTION_WIDGET_PREVIOUS -> player.seekToPreviousMediaItem()
+                    ACTION_WIDGET_NEXT -> player.seekToNextMediaItem()
+                }
+            }
+        }
+    }
+
+    private fun updatePlaybackWidget(mediaItem: MediaItem?, artworkBytes: ByteArray? = null) {
+        serviceScope.launch {
+            val isPlaying = withContext(Dispatchers.Main) { player.isPlaying }
+            PlaybackWidgetStateStore.write(
+                context = applicationContext,
+                mediaItem = mediaItem,
+                isPlaying = isPlaying,
+                artworkBytes = artworkBytes,
+            )
+            PlaybackWidget().updateAll(applicationContext)
+        }
     }
 
     companion object {
+        const val ACTION_WIDGET_PLAY_PAUSE =
+            "ca.ilianokokoro.umihi.music.action.WIDGET_PLAY_PAUSE"
+        const val ACTION_WIDGET_PREVIOUS =
+            "ca.ilianokokoro.umihi.music.action.WIDGET_PREVIOUS"
+        const val ACTION_WIDGET_NEXT =
+            "ca.ilianokokoro.umihi.music.action.WIDGET_NEXT"
         private const val AUDIO_FADE_DURATION_MS = 450L
         private const val AUDIO_FADE_POLL_INTERVAL_MS = 30L
         private const val QUEUE_CHANGE_DEBOUNCE_MS = 350L

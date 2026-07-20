@@ -155,6 +155,9 @@
     <string name="search_artists">Artists</string>
     <string name="listening_stats">Listening stats</string>
     <string name="downloads">Downloads</string>
+    <string name="playback_widget_description">Now playing controls</string>
+    <string name="widget_nothing_playing">Nothing playing</string>
+    <string name="album_artwork">Album artwork</string>
     <string name="listening_stats_subtitle">Your top tracks and artists for the month</string>
     <string name="this_month">This month</string>
     <string name="top_tracks">Top tracks</string>

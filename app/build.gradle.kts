@@ -188,6 +188,10 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.palette)
 
+    // Home screen widget
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     // Exoplayer
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
