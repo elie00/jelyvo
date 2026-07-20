@@ -177,6 +177,15 @@
     <string name="short_minutes">%1$d min</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="download_on_metered_description">Allows downloading songs and playlists using your mobile data plan</string>
+    <string name="smart_offline"><![CDATA[Smart Offline]]></string>
+    <string name="auto_download_title">Auto-download offline</string>
+    <string name="auto_download_description">Automatically keep your selected sources available offline</string>
+    <string name="auto_download_liked_title">Liked songs</string>
+    <string name="auto_download_liked_description">Include your liked songs in the offline auto-download</string>
+    <string name="auto_download_wifi_only_title">Wi-Fi only</string>
+    <string name="auto_download_wifi_only_description">Only auto-download while connected to Wi-Fi</string>
+    <string name="auto_download_quota_title">Storage quota</string>
+    <string name="auto_download_quota_subtitle">Keep auto-downloads under %1$d GB</string>
     <string name="waiting_for_wifi_to_download">Waiting for Wi-Fi to download %1$s</string>
     <string name="search_all">All</string>
     <string name="search_songs">Songs</string>

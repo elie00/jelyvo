@@ -25,6 +25,22 @@ interface LocalSongDataSource {
     )
     suspend fun getDownloadedSongs(): List<Song>
 
+    /**
+     * Downloaded songs that are NOT linked to any playlist. These are the auto-downloaded (offline
+     * sync) tracks: manual downloads always create a playlist cross-reference, so anything without
+     * one was added by [OfflineSyncWorker] and is safe for the quota purge to reclaim.
+     */
+    @Query(
+        """
+    SELECT *
+    FROM songs
+    WHERE audioFilePath IS NOT NULL
+      AND thumbnailPath IS NOT NULL
+      AND youtubeId NOT IN (SELECT songId FROM PlaylistSongCrossRef)
+"""
+    )
+    suspend fun getUnlinkedDownloadedSongs(): List<Song>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun createAll(songs: List<Song>)
 

@@ -14,6 +14,10 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_LIKED
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_QUOTA_GB
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
@@ -63,6 +67,10 @@ class DatastoreRepository(private val context: Context) {
         val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
         val NOTIFY_NEW_RELEASES = booleanPreferencesKey(Constants.Datastore.NOTIFY_NEW_RELEASES)
         val NOTIFIED_RELEASE_IDS = stringSetPreferencesKey(Constants.Datastore.NOTIFIED_RELEASE_IDS)
+        val AUTO_DOWNLOAD = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD)
+        val AUTO_DOWNLOAD_LIKED = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_LIKED)
+        val AUTO_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_WIFI_ONLY)
+        val AUTO_DOWNLOAD_QUOTA_GB = intPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_QUOTA_GB)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -101,6 +109,14 @@ class DatastoreRepository(private val context: Context) {
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Dynamic
         val notifyNewReleases = it[NOTIFY_NEW_RELEASES] ?: false
+        val autoDownload = it[AUTO_DOWNLOAD] ?: false
+        val autoDownloadLiked = it[AUTO_DOWNLOAD_LIKED] ?: true
+        val autoDownloadWifiOnly = it[AUTO_DOWNLOAD_WIFI_ONLY] ?: true
+        val autoDownloadQuotaGb = (it[AUTO_DOWNLOAD_QUOTA_GB]
+            ?: Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_DEFAULT).coerceIn(
+            Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_MIN,
+            Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_MAX
+        )
         val cookies = cookies.first()
         val dataSyncId = dataSyncId.first()
 
@@ -120,7 +136,11 @@ class DatastoreRepository(private val context: Context) {
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
             themeColor = themeColor,
-            notifyNewReleases = notifyNewReleases
+            notifyNewReleases = notifyNewReleases,
+            autoDownload = autoDownload,
+            autoDownloadLiked = autoDownloadLiked,
+            autoDownloadWifiOnly = autoDownloadWifiOnly,
+            autoDownloadQuotaGb = autoDownloadQuotaGb
         )
     }
 
@@ -156,6 +176,18 @@ class DatastoreRepository(private val context: Context) {
      */
     val notifyNewReleases: Flow<Boolean> = context.dataStore.data.map {
         it[NOTIFY_NEW_RELEASES] ?: false
+    }
+
+    /**
+     * Reads only the offline auto-download toggle and its Wi-Fi-only constraint. Used on the
+     * startup path (Application) to (re)schedule [OfflineSyncWorker] without the full settings read.
+     */
+    val autoDownload: Flow<Boolean> = context.dataStore.data.map {
+        it[AUTO_DOWNLOAD] ?: false
+    }
+
+    val autoDownloadWifiOnly: Flow<Boolean> = context.dataStore.data.map {
+        it[AUTO_DOWNLOAD_WIFI_ONLY] ?: true
     }
 
     /** The set of release browseIds already surfaced by [NewReleasesWorker], persisted so a

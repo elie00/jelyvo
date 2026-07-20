@@ -19,6 +19,7 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
+import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
@@ -145,6 +146,38 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
+
+    private fun autoDownloadWifiOnly(): Boolean {
+        val state = _uiState.value.screenState
+        return (state as? ScreenState.Success)?.settings?.autoDownloadWifiOnly ?: true
+    }
+
+    fun updateAutoDownloadSetting(value: Boolean) {
+        if (value) {
+            val wifiOnly = autoDownloadWifiOnly()
+            OfflineSyncScheduler.schedule(_application, wifiOnly)
+            // Kick off an immediate sync so enabling the feature does not wait a full period.
+            OfflineSyncScheduler.triggerNow(_application, wifiOnly)
+        } else {
+            OfflineSyncScheduler.cancel(_application)
+        }
+        updateSetting(
+            DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD,
+            value
+        )
+    }
+
+    fun updateAutoDownloadWifiOnlySetting(value: Boolean) {
+        // Reschedule so the changed network constraint takes effect when the feature is enabled.
+        val state = _uiState.value.screenState
+        if ((state as? ScreenState.Success)?.settings?.autoDownload == true) {
+            OfflineSyncScheduler.reschedule(_application, value)
+        }
+        updateSetting(
+            DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY,
+            value
+        )
+    }
 
     fun checkForUpdates() {
         viewModelScope.launch {

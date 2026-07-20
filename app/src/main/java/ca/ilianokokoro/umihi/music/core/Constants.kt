@@ -36,6 +36,11 @@ object Constants {
         const val DOWNLOADED_PLAYLIST_ID = "_downloaded_"
 
         const val UPDATE_APK = "update.apk"
+
+        // Offline auto-download (see OfflineSyncWorker).
+        const val AUTO_DOWNLOAD_QUOTA_GB_DEFAULT = 4
+        const val AUTO_DOWNLOAD_QUOTA_GB_MIN = 1
+        const val AUTO_DOWNLOAD_QUOTA_GB_MAX = 20
     }
 
     object Locale {
@@ -93,6 +98,10 @@ object Constants {
         const val THEME_COLOR = "theme-color"
         const val NOTIFY_NEW_RELEASES = "notify-new-releases"
         const val NOTIFIED_RELEASE_IDS = "notified-release-ids"
+        const val AUTO_DOWNLOAD = "auto-download"
+        const val AUTO_DOWNLOAD_LIKED = "auto-download-liked"
+        const val AUTO_DOWNLOAD_WIFI_ONLY = "auto-download-wifi-only"
+        const val AUTO_DOWNLOAD_QUOTA_GB = "auto-download-quota-gb"
     }
 
     object Database {

@@ -21,7 +21,9 @@ import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Leaderboard
@@ -32,7 +34,9 @@ import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Waves
+import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.MaterialTheme
@@ -362,6 +366,60 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowDownloadDeleteConfirm(true)
                                 }
                             )
+                        }
+
+                        SettingsSection(
+                            title = stringResource(R.string.smart_offline)
+                        ) {
+                            BooleanSettingItem(
+                                title = stringResource(R.string.auto_download_title),
+                                subtitle = stringResource(R.string.auto_download_description),
+                                leadingIcon = Icons.Outlined.CloudSync,
+                                value = screenState.settings.autoDownload,
+                                onToggle = settingsViewModel::updateAutoDownloadSetting
+                            )
+                            if (screenState.settings.autoDownload) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                BooleanSettingItem(
+                                    title = stringResource(R.string.auto_download_liked_title),
+                                    subtitle = stringResource(R.string.auto_download_liked_description),
+                                    leadingIcon = Icons.Outlined.FavoriteBorder,
+                                    value = screenState.settings.autoDownloadLiked,
+                                    onToggle = {
+                                        settingsViewModel.updateSetting(
+                                            PreferenceKeys.AUTO_DOWNLOAD_LIKED,
+                                            it
+                                        )
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                BooleanSettingItem(
+                                    title = stringResource(R.string.auto_download_wifi_only_title),
+                                    subtitle = stringResource(R.string.auto_download_wifi_only_description),
+                                    leadingIcon = Icons.Outlined.Wifi,
+                                    value = screenState.settings.autoDownloadWifiOnly,
+                                    onToggle = settingsViewModel::updateAutoDownloadWifiOnlySetting
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                val quotaGb = screenState.settings.autoDownloadQuotaGb
+                                SliderSettingItem(
+                                    title = stringResource(R.string.auto_download_quota_title),
+                                    subtitle = stringResource(
+                                        R.string.auto_download_quota_subtitle,
+                                        quotaGb
+                                    ),
+                                    leadingIcon = Icons.Outlined.Storage,
+                                    value = quotaGb,
+                                    valueRange = Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_MIN..
+                                            Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_MAX,
+                                    onValueChange = {
+                                        settingsViewModel.updateSetting(
+                                            PreferenceKeys.AUTO_DOWNLOAD_QUOTA_GB,
+                                            it
+                                        )
+                                    }
+                                )
+                            }
                         }
 
                         if (BuildConfig.UPDATER_ENABLED) {

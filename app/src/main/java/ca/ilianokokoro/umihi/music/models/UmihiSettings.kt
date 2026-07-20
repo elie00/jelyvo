@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.UpdateChannel
 
@@ -19,7 +20,11 @@ data class UmihiSettings(
     val autoplay: Boolean = true,
     val crossfadeSeconds: Int = 0,
     val themeColor: ThemeColor = ThemeColor.Dynamic,
-    val notifyNewReleases: Boolean = false
+    val notifyNewReleases: Boolean = false,
+    val autoDownload: Boolean = false,
+    val autoDownloadLiked: Boolean = true,
+    val autoDownloadWifiOnly: Boolean = true,
+    val autoDownloadQuotaGb: Int = Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_DEFAULT,
 ) {
     val canTrack: Boolean get() = sendPlaybackData && !cookies.isEmpty()
 }

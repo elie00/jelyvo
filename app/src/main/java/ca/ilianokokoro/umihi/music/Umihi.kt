@@ -4,6 +4,7 @@ import android.app.Application
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
+import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import coil3.ImageLoader
 import coil3.PlatformContext
@@ -29,10 +30,22 @@ class Umihi : Application(), SingletonImageLoader.Factory {
         // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means an
         // already-running schedule is left untouched.
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            if (DatastoreRepository(this@Umihi).notifyNewReleases.first()) {
+            val datastoreRepository = DatastoreRepository(this@Umihi)
+
+            if (datastoreRepository.notifyNewReleases.first()) {
                 NewReleasesScheduler.schedule(this@Umihi)
             } else {
                 NewReleasesScheduler.cancel(this@Umihi)
+            }
+
+            // (Re)schedule the periodic offline auto-download to match the persisted toggle.
+            if (datastoreRepository.autoDownload.first()) {
+                OfflineSyncScheduler.schedule(
+                    this@Umihi,
+                    datastoreRepository.autoDownloadWifiOnly.first()
+                )
+            } else {
+                OfflineSyncScheduler.cancel(this@Umihi)
             }
         }
     }
