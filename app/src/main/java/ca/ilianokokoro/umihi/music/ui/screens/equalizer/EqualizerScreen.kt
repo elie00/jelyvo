@@ -32,11 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import kotlin.math.roundToInt
@@ -54,7 +56,7 @@ fun EqualizerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Equalizer") },
+                title = { Text(stringResource(R.string.equalizer_title)) },
                 navigationIcon = { BackButton(onBack = onBack) }
             )
         }
@@ -79,9 +81,7 @@ fun EqualizerScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "The equalizer is not available on this device, " +
-                                "or no audio is playing yet. Start playing a song and " +
-                                "come back to adjust the sound.",
+                        text = stringResource(R.string.equalizer_unavailable),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -98,7 +98,7 @@ fun EqualizerScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Enable equalizer",
+                    text = stringResource(R.string.equalizer_enable),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f)
@@ -113,7 +113,7 @@ fun EqualizerScreen(
             if (state.presets.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Presets",
+                        text = stringResource(R.string.equalizer_presets),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -130,7 +130,7 @@ fun EqualizerScreen(
                             FilterChip(
                                 selected = true,
                                 onClick = { },
-                                label = { Text("Custom") },
+                                label = { Text(stringResource(R.string.equalizer_preset_custom)) },
                                 enabled = state.enabled
                             )
                         }
@@ -141,7 +141,7 @@ fun EqualizerScreen(
             // Bands
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Bands",
+                    text = stringResource(R.string.equalizer_bands),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -168,7 +168,7 @@ fun EqualizerScreen(
             // Bass boost
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Bass boost",
+                    text = stringResource(R.string.equalizer_bass_boost),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )

@@ -31,10 +31,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.data.repositories.ImportProgress
 import ca.ilianokokoro.umihi.music.models.spotify.SpotifyPlaylist
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
@@ -64,7 +66,7 @@ fun SpotifyImportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Import from Spotify") },
+                title = { Text(stringResource(R.string.import_from_spotify_title)) },
                 navigationIcon = { BackButton(onBack = onBack) },
             )
         }
@@ -112,12 +114,12 @@ private fun ConnectContent(onStartAuth: () -> Unit) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Connect your Spotify account to import your playlists and liked songs.",
+            text = stringResource(R.string.spotify_connect_description),
             style = MaterialTheme.typography.bodyLarge,
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onStartAuth) {
-            Text("Connect Spotify")
+            Text(stringResource(R.string.spotify_connect_button))
         }
     }
 }
@@ -135,15 +137,15 @@ private fun PlaylistsContent(
     ) {
         item {
             Text(
-                text = "Choose what to import",
+                text = stringResource(R.string.spotify_choose_what_to_import),
                 style = MaterialTheme.typography.titleMedium,
             )
         }
 
         item {
             SourceCard(
-                title = "Liked Songs",
-                subtitle = "Your saved tracks",
+                title = stringResource(R.string.liked_songs),
+                subtitle = stringResource(R.string.spotify_liked_songs_subtitle),
                 icon = Icons.Outlined.Favorite,
                 onImport = onImportLiked,
             )
@@ -152,7 +154,7 @@ private fun PlaylistsContent(
         items(items = playlists, key = { it.id }) { playlist ->
             SourceCard(
                 title = playlist.name,
-                subtitle = "${playlist.trackCount} tracks",
+                subtitle = stringResource(R.string.spotify_playlist_tracks, playlist.trackCount),
                 icon = Icons.Outlined.LibraryMusic,
                 onImport = { onImportPlaylist(playlist) },
             )
@@ -196,7 +198,7 @@ private fun SourceCard(
                 )
             }
             FilledTonalButton(onClick = onImport) {
-                Text("Import")
+                Text(stringResource(R.string.import_playlist))
             }
         }
     }
@@ -218,7 +220,7 @@ private fun ImportingContent(progress: ImportProgress) {
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Matching tracks on YouTube…",
+            text = stringResource(R.string.spotify_matching_tracks),
             style = MaterialTheme.typography.titleMedium,
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -228,11 +230,15 @@ private fun ImportingContent(progress: ImportProgress) {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "${progress.processed} / ${progress.total} processed",
+            text = stringResource(R.string.spotify_progress_processed, progress.processed, progress.total),
             style = MaterialTheme.typography.bodyMedium,
         )
         Text(
-            text = "${progress.matchedCount} matched · ${progress.failureCount} failed",
+            text = stringResource(
+                R.string.spotify_progress_matched_failed,
+                progress.matchedCount,
+                progress.failureCount
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -252,24 +258,28 @@ private fun ImportCompleteContent(
         verticalArrangement = Arrangement.Center,
     ) {
         Text(
-            text = "Import complete",
+            text = stringResource(R.string.spotify_import_complete),
             style = MaterialTheme.typography.headlineSmall,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "${progress.matchedCount} of ${progress.total} tracks matched on YouTube.",
+            text = stringResource(
+                R.string.spotify_import_matched_summary,
+                progress.matchedCount,
+                progress.total
+            ),
             style = MaterialTheme.typography.bodyLarge,
         )
         if (progress.failureCount > 0) {
             Text(
-                text = "${progress.failureCount} could not be matched.",
+                text = stringResource(R.string.spotify_import_failed_summary, progress.failureCount),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = onDone) {
-            Text("Done")
+            Text(stringResource(R.string.done))
         }
     }
 }

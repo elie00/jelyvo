@@ -236,7 +236,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         val mutablePlaylists = playlists.toMutableList()
         val downloadedPlaylist = PlaylistInfo(
             id = Constants.Downloads.DOWNLOADED_PLAYLIST_ID,
-            title = "Downloaded",
+            title = getApplication<Application>().getString(R.string.downloaded),
         )
 
         if (!settings.showPodcastPlaylist) {
