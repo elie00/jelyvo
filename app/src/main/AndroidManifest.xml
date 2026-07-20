@@ -19,9 +19,16 @@
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/icon"
         android:label="@string/app_name"
+        android:resizeableActivity="true"
         android:roundIcon="@mipmap/icon_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.App.Starting">
+
+        <!-- Legacy OEM full-screen whitelisting (Samsung/Xiaomi): allow rendering up to 2.4:1
+             so tall displays (e.g. 19.5:9 S24 Ultra) are never letterboxed. -->
+        <meta-data
+            android:name="android.max_aspect"
+            android:value="2.4" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -79,7 +86,7 @@
             android:exported="false"
             android:launchMode="singleTop"
             android:process=":error_activity"
-            android:theme="@style/Theme.App.Starting">
+            android:theme="@style/Theme.UmihiMusic">
             <intent-filter>
                 <action android:name="cat.ereza.customactivityoncrash.ERROR" />
             </intent-filter>
