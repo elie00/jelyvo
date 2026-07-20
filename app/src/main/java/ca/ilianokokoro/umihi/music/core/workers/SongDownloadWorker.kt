@@ -57,9 +57,11 @@ class SongDownloadWorker(
 
             val audioPath = DownloadHelper.downloadAudio(appContext, song)
 
+            // The player response only knows the video thumbnail (16:9 for clips); keep the
+            // square art captured when the song was added, if any.
             val thumbnailPath = DownloadHelper.downloadImage(
                 appContext,
-                fullSong.thumbnailHref,
+                song.thumbnailHref.ifBlank { fullSong.thumbnailHref },
                 song.youtubeId
             )
 
