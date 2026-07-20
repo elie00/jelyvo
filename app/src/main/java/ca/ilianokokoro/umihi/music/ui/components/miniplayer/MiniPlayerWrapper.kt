@@ -30,6 +30,7 @@ import ca.ilianokokoro.umihi.music.extensions.toSong
 @Composable
 fun MiniPlayerWrapper(
     modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
     onMiniPlayerPressed: () -> Unit,
     showMiniPlayer: Boolean,
 ) {
@@ -91,6 +92,7 @@ fun MiniPlayerWrapper(
         val song = currentSong ?: return@AnimatedVisibility
         MiniPlayer(
             currentSong = song,
+            artworkModifier = artworkModifier,
             onClick = onMiniPlayerPressed,
             onPlayPause = {
                 if (player?.isPlaying == true) {

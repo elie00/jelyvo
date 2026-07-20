@@ -1,7 +1,11 @@
 package ca.ilianokokoro.umihi.music.ui.navigation
 
 import android.app.Application
+import android.content.Intent
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -17,11 +21,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavBackStack
@@ -59,11 +58,9 @@ import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
 import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.spotifyimport.SpotifyImportScreen
-import android.content.Intent
 import androidx.core.net.toUri
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationRoot(modifier: Modifier = Modifier) {
     val sharedViewModel: SharedViewModel = viewModel()
@@ -75,15 +72,40 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
     var showFullPlayer by remember { mutableStateOf(false) }
     var bottomBarHeightPixels by remember { mutableIntStateOf(0) }
     val bottomBarHeightDp = with(LocalDensity.current) { bottomBarHeightPixels.toDp() }
-    val playerSheetState =
-        rememberBottomSheetState(
-            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
-            initialValue = SheetValue.Hidden
-        )
+    BackHandler(enabled = showFullPlayer) { showFullPlayer = false }
 
+    SharedTransitionLayout(modifier = modifier.fillMaxSize()) {
+    AnimatedContent(
+        targetState = showFullPlayer,
+        transitionSpec = {
+            fadeIn(tween(Constants.Animation.NAVIGATION_DURATION)) togetherWith
+                fadeOut(tween(Constants.Animation.NAVIGATION_DURATION))
+        },
+        label = "miniPlayerToFullPlayer",
+    ) { fullPlayer ->
+        val artworkModifier = with(this@SharedTransitionLayout) {
+            Modifier.sharedElement(
+                sharedContentState = rememberSharedContentState(PlayerSharedElement.Artwork),
+                animatedVisibilityScope = this@AnimatedContent,
+            )
+        }
 
+        if (fullPlayer) {
+            PlayerScreen(
+                onBack = { showFullPlayer = false },
+                onOpenArtist = { song ->
+                    song.artistId?.let { id ->
+                        showFullPlayer = false
+                        backStack.add(ArtistScreenKey(id, song.artist))
+                    }
+                },
+                artworkModifier = artworkModifier,
+                modifier = Modifier.fillMaxSize(),
+                application = app,
+            )
+        } else {
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0),
     ) { paddingValues ->
 
@@ -256,8 +278,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
             )
 
             MiniPlayerWrapper(
-                showMiniPlayer = screenConfig.showMiniPlayer && !showFullPlayer,
+                showMiniPlayer = screenConfig.showMiniPlayer,
                 onMiniPlayerPressed = { showFullPlayer = true },
+                artworkModifier = artworkModifier,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = miniPlayerBottomPadding)
@@ -289,31 +312,12 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
         }
 
     }
-
-
-
-    if (showFullPlayer) {
-        ModalBottomSheet(
-            sheetMaxWidth = Dp.Unspecified,
-            onDismissRequest = {
-                showFullPlayer = false
-            },
-            sheetState = playerSheetState
-        ) {
-            PlayerScreen(
-                onBack = { showFullPlayer = false },
-                onOpenArtist = { song ->
-                    song.artistId?.let { id ->
-                        showFullPlayer = false
-                        backStack.add(ArtistScreenKey(id, song.artist))
-                    }
-                },
-                application = app
-            )
         }
     }
-
+    }
 }
+
+private enum class PlayerSharedElement { Artwork }
 
 
 fun NavBackStack<NavKey>.safePop() {

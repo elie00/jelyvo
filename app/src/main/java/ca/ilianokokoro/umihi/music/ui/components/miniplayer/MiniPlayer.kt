@@ -37,6 +37,7 @@ import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 @Composable
 fun MiniPlayer(
     modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
     currentSong: Song,
     onClick: () -> Unit,
     onPlayPause: () -> Unit,
@@ -64,7 +65,7 @@ fun MiniPlayer(
         ) {
             SquareImage(
                 uri = currentSong.thumbnailPath ?: currentSong.thumbnailHref,
-                modifier = Modifier.size(50.dp),
+                modifier = artworkModifier.size(50.dp),
             )
 
             Column(

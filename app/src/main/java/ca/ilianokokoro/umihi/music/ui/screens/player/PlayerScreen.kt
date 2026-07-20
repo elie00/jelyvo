@@ -62,6 +62,7 @@ fun PlayerScreen(
     onBack: () -> Unit,
     onOpenArtist: (Song) -> Unit = {},
     modifier: Modifier = Modifier,
+    artworkModifier: Modifier = Modifier,
     application: Application,
     playerViewModel: PlayerViewModel = viewModel(
         factory =
@@ -110,6 +111,7 @@ fun PlayerScreen(
                     currentSong = currentSong,
                     uiState = uiState,
                     onToggle = playerViewModel::toggleLyricsVisibility,
+                    artworkModifier = artworkModifier,
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(1f)
@@ -170,6 +172,7 @@ fun PlayerScreen(
                         currentSong = currentSong,
                         uiState = uiState,
                         onToggle = playerViewModel::toggleLyricsVisibility,
+                        artworkModifier = artworkModifier,
                         modifier = Modifier
                             .fillMaxSize()
                             .weight(1f)
@@ -252,6 +255,7 @@ private fun ArtworkOrLyrics(
     currentSong: Song?,
     uiState: PlayerState,
     onToggle: () -> Unit,
+    artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.clickable(onClick = onToggle)) {
@@ -263,7 +267,8 @@ private fun ArtworkOrLyrics(
             )
         } else {
             Thumbnail(
-                href = currentSong?.thumbnailHref.toString(),
+                href = (currentSong?.thumbnailPath ?: currentSong?.thumbnailHref).toString(),
+                artworkModifier = artworkModifier,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -273,6 +278,7 @@ private fun ArtworkOrLyrics(
 @Composable
 fun Thumbnail(
     href: String,
+    artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(
@@ -295,7 +301,7 @@ fun Thumbnail(
         ) { targetState ->
             SquareImage(
                 uri = targetState,
-                modifier = Modifier.size(size)
+                modifier = artworkModifier.size(size)
             )
         }
     }
