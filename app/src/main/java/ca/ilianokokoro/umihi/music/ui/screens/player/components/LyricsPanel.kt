@@ -20,7 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.LyricLine
@@ -52,10 +54,8 @@ fun LyricsPanel(
             is ApiResult.Loading -> LoadingAnimation()
 
             is ApiResult.Error -> {
-                // English text is written in-line; the orchestrator can swap this
-                // for a string resource (e.g. R.string.lyrics_unavailable).
                 Text(
-                    text = "Lyrics unavailable",
+                    text = stringResource(R.string.lyrics_unavailable),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -67,7 +67,7 @@ fun LyricsPanel(
                 val lyrics = lyricsState.data
                 if (lyrics.isEmpty) {
                     Text(
-                        text = "Lyrics unavailable",
+                        text = stringResource(R.string.lyrics_unavailable),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
