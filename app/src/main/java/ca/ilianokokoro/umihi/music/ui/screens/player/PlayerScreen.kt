@@ -54,6 +54,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
+import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 @Composable
 fun PlayerScreen(
@@ -323,7 +324,7 @@ fun SongInfo(
         ) {
             Text(
                 text = song?.title ?: "",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleLargeEmphasized.copy(fontFamily = nunitoFontFamily),
                 modifier = Modifier.basicMarquee()
             )
             Text(

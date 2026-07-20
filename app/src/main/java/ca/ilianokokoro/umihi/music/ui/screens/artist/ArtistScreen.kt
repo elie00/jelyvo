@@ -16,15 +16,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -39,7 +42,9 @@ import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ArtistScreen(
     artistId: String,
@@ -94,13 +99,15 @@ fun ArtistScreen(
                                 }
                                 SquareImage(
                                     uri = page.artist.thumbnailHref,
-                                    cornerRadius = 100.dp,
-                                    modifier = Modifier.size(140.dp)
+                                    cornerRadius = 0.dp,
+                                    modifier = Modifier
+                                        .size(140.dp)
+                                        .clip(MaterialShapes.Cookie12Sided.toShape())
                                 )
                                 Text(
                                     text = page.artist.name,
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        fontWeight = FontWeight.Bold
+                                    style = MaterialTheme.typography.headlineSmallEmphasized.copy(
+                                        fontFamily = nunitoFontFamily
                                     )
                                 )
                                 if (page.songs.isNotEmpty()) {
