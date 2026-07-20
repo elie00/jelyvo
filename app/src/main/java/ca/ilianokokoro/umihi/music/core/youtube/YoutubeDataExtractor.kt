@@ -1240,6 +1240,22 @@ object YoutubeDataExtractor {
     }
 
     /**
+     * From a watch-next radio response (requested with the seed's own station,
+     * `playlistId = "RDAMVM" + videoId`), returns the "up next" queue: every panel video in order.
+     * These stay within the seed's station, so autoplay keeps the same register instead of drifting
+     * to generic recommendations.
+     */
+    fun extractRadioSongs(jsonString: String): List<Song> {
+        val renderers = mutableListOf<JsonObject>()
+        collectObjects(
+            Json.parseToJsonElement(jsonString),
+            "playlistPanelVideoRenderer",
+            renderers
+        )
+        return renderers.mapNotNull { parsePanelVideo(it) }.distinctBy { it.youtubeId }
+    }
+
+    /**
      * From a watch-next response, returns the primary artist's browse id ("UC…") for the
      * currently-playing panel video ([videoId]), falling back to the first panel entry when the
      * exact id is absent (e.g. when the panel lists an audio/video counterpart instead). Null

@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.data.datasources
 
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.Dispatchers
@@ -10,23 +11,21 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import org.schabi.newpipe.extractor.ServiceList
-import org.schabi.newpipe.extractor.stream.StreamInfo
-import org.schabi.newpipe.extractor.stream.StreamInfoItem
-import java.util.Locale
 
 /**
- * Builds a "radio" / autoplay continuation for a seed song using NewPipe's related streams.
- * Relies on the already-initialized NewPipe service (see MainActivity.initNewPipe).
+ * Builds a "radio" / autoplay continuation for a seed song from the seed's own YouTube Music
+ * station ("RDAMVM" + videoId), so the suggestions stay in the seed's register instead of the
+ * generic recommendations a plain related-streams lookup returns.
  */
 class RadioDataSource {
     private val songDataSource = SongDataSource()
 
     suspend fun getRelatedSongs(seed: Song): List<Song> = withContext(Dispatchers.IO) {
-        val info = StreamInfo.getInfo(ServiceList.YouTube, seed.youtubeUrl)
-        val related = info.relatedItems
-            .filterIsInstance<StreamInfoItem>()
-            .mapNotNull { it.toSongOrNull() }
+        val response = YoutubeApiClient.next(
+            videoId = seed.youtubeId,
+            playlistId = RADIO_PLAYLIST_PREFIX + seed.youtubeId,
+        )
+        val related = YoutubeDataExtractor.extractRadioSongs(response)
             .filter { it.youtubeId != seed.youtubeId }
             .distinctBy { it.youtubeId }
 
@@ -36,10 +35,10 @@ class RadioDataSource {
     }
 
     /**
-     * NewPipe related items are often the music-video version of a track, with a 16:9 thumbnail
-     * and the clip's audio. Swap each one for its album-audio counterpart when it exists;
-     * otherwise just recover the square art from the player info. One extra request per song,
-     * bounded, and a failure keeps the item as-is.
+     * Radio items can be the music-video version of a track, with a 16:9 thumbnail and the clip's
+     * audio. Swap each one for its album-audio counterpart when it exists; otherwise just recover
+     * the square art from the player info. One extra request per song, bounded, and a failure keeps
+     * the item as-is.
      */
     private suspend fun enrichSongs(songs: List<Song>): List<Song> = coroutineScope {
         val semaphore = Semaphore(Constants.Downloads.MAX_CONCURRENT_DOWNLOADS)
@@ -64,25 +63,7 @@ class RadioDataSource {
         }
     }
 
-    private fun StreamInfoItem.toSongOrNull(): Song? {
-        val videoId = YoutubeDataExtractor.extractYouTubeVideoId(url) ?: return null
-        return Song(
-            youtubeId = videoId,
-            title = name.orEmpty(),
-            artist = uploaderName.orEmpty(),
-            duration = if (duration > 0) formatDuration(duration) else "",
-            thumbnailHref = thumbnails.lastOrNull()?.url.orEmpty(),
-        )
-    }
-
-    private fun formatDuration(totalSeconds: Long): String {
-        val hours = totalSeconds / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-        return if (hours > 0) {
-            String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            String.format(Locale.US, "%d:%02d", minutes, seconds)
-        }
+    companion object {
+        private const val RADIO_PLAYLIST_PREFIX = "RDAMVM"
     }
 }

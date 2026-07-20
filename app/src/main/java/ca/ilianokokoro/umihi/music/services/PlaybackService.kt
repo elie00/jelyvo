@@ -584,7 +584,14 @@ class PlaybackService : MediaLibraryService() {
             val p = mediaLibrarySession?.player ?: return@withContext
             // Re-check: the user may have queued items while we were fetching.
             if (p.currentMediaItemIndex >= p.mediaItemCount - 1) {
-                p.addMediaItems(songs.map { it.apply { isSuggestion = true }.mediaItem })
+                // Exclude titles already in the queue so the radio never re-appends them.
+                val existingIds = buildSet {
+                    for (i in 0 until p.mediaItemCount) add(p.getMediaItemAt(i).mediaId)
+                }
+                val fresh = songs.filter { it.youtubeId !in existingIds }
+                if (fresh.isNotEmpty()) {
+                    p.addMediaItems(fresh.map { it.apply { isSuggestion = true }.mediaItem })
+                }
             }
         }
     }

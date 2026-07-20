@@ -149,10 +149,13 @@ object YoutubeApiClient {
      * Watch-next endpoint: returns the play panel of a video, which links a music video to its
      * audio ("song") counterpart when both versions exist.
      */
-    suspend fun next(videoId: String): String {
+    suspend fun next(videoId: String, playlistId: String? = null): String {
         val base = YoutubeAuthHelper.buildContextBody("videoId", videoId, settings = null)
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
+            if (playlistId != null) {
+                put("playlistId", playlistId)
+            }
             put("enablePersistentPlaylistPanel", true)
             put("isAudioOnly", true)
             put("tunerSettingValue", "AUTOMIX_SETTING_NORMAL")
