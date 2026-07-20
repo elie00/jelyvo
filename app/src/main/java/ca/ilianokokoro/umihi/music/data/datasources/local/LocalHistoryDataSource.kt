@@ -16,14 +16,14 @@ interface LocalHistoryDataSource {
 
     @Query(
         """
-        SELECT current.* FROM play_history AS current
-        WHERE current.id = (
+        SELECT latest.* FROM play_history AS latest
+        WHERE latest.id = (
             SELECT candidate.id FROM play_history AS candidate
-            WHERE candidate.youtubeId = current.youtubeId
+            WHERE candidate.youtubeId = latest.youtubeId
             ORDER BY candidate.playedAt DESC, candidate.id DESC
             LIMIT 1
         )
-        ORDER BY current.playedAt DESC
+        ORDER BY latest.playedAt DESC
         LIMIT :limit
         """
     )
