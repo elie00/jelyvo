@@ -54,6 +54,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
 import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
 import ca.ilianokokoro.umihi.music.ui.screens.library.LibraryScreen
+import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.LocalPlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
@@ -255,6 +256,15 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             )
                         }
 
+                        is LocalPlaylistScreenKey -> NavEntry(key) {
+                            LocalPlaylistScreen(
+                                playlistId = key.playlistId,
+                                onBack = backStack::safePop,
+                                onOpenPlayer = { showFullPlayer = true },
+                                application = app
+                            )
+                        }
+
                         is AuthScreenKey -> NavEntry(key) {
                             AuthScreen(
                                 onBack = backStack::safePop,
@@ -270,6 +280,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onOpenPlayer = { showFullPlayer = true },
                                 onPlaylistPressed = { playlist ->
                                     backStack.add(PlaylistScreenKey(playlistInfo = playlist))
+                                },
+                                onLocalPlaylistPressed = { id ->
+                                    backStack.add(LocalPlaylistScreenKey(playlistId = id))
                                 },
                                 onOpenAlbum = { id, name, cover ->
                                     backStack.add(AlbumScreenKey(id, name, cover))

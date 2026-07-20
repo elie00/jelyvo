@@ -1,0 +1,116 @@
+package ca.ilianokokoro.umihi.music.ui.screens.localplaylist
+
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
+import ca.ilianokokoro.umihi.music.models.Playlist
+import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+class LocalPlaylistViewModel(
+    private val playlistId: String,
+    application: Application,
+) : AndroidViewModel(application) {
+
+    private val repository = LocalPlaylistRepository(application)
+
+    private val _uiState = MutableStateFlow(LocalPlaylistState())
+    val uiState = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            repository.observeById(playlistId).collect { playlist ->
+                _uiState.update {
+                    if (playlist == null) {
+                        it.copy(loading = false, notFound = true)
+                    } else {
+                        it.copy(
+                            loading = false,
+                            notFound = false,
+                            name = playlist.name,
+                            songs = repository.songsOf(playlist),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private fun asPlaylist(songs: List<LocalPlaylistSong>): Playlist =
+        Playlist(
+            info = PlaylistInfo(id = playlistId, title = _uiState.value.name),
+            songs = songs.map { it.toSong() },
+        )
+
+    fun play(startIndex: Int = 0) {
+        val songs = _uiState.value.songs
+        if (songs.isEmpty()) return
+        PlayerManager.playPlaylist(asPlaylist(songs), startIndex)
+    }
+
+    fun shuffle() {
+        val songs = _uiState.value.songs
+        if (songs.isEmpty()) return
+        PlayerManager.shufflePlaylist(asPlaylist(songs))
+    }
+
+    /** Persists a new song order (called when a drag gesture finishes). */
+    fun persistOrder(songs: List<LocalPlaylistSong>) {
+        viewModelScope.launch {
+            repository.updateSongs(playlistId, songs)
+        }
+    }
+
+    fun removeSong(uid: String) {
+        viewModelScope.launch {
+            val updated = _uiState.value.songs.filterNot { it.uid == uid }
+            repository.updateSongs(playlistId, updated)
+        }
+    }
+
+    fun rename(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            repository.rename(playlistId, trimmed)
+        }
+    }
+
+    fun delete(onDeleted: () -> Unit) {
+        viewModelScope.launch {
+            repository.delete(playlistId)
+            onDeleted()
+        }
+    }
+
+    fun export(context: Context, uri: Uri) {
+        viewModelScope.launch {
+            try {
+                repository.exportToUri(context, uri, _uiState.value.name, _uiState.value.songs)
+            } catch (ex: Exception) {
+                printe(message = "Failed to export playlist", exception = ex)
+            }
+        }
+    }
+
+    companion object {
+        fun Factory(playlistId: String, application: Application): ViewModelProvider.Factory =
+            viewModelFactory {
+                initializer {
+                    LocalPlaylistViewModel(playlistId, application)
+                }
+            }
+    }
+}

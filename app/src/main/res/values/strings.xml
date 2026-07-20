@@ -197,6 +197,15 @@
     <string name="grant_permission">Grant access</string>
     <string name="new_releases_from_artists">New releases from your artists</string>
     <string name="home_empty">Nothing to show here yet</string>
+    <string name="rename_playlist">Rename playlist</string>
+    <string name="export_playlist">Export playlist</string>
+    <string name="import_playlist">Import</string>
+    <string name="playlist_name">Playlist name</string>
+    <string name="on_device_playlists">On-device playlists</string>
+    <string name="account_playlists">Account playlists</string>
+    <string name="playlist_imported">Playlist imported</string>
+    <string name="playlist_import_failed">Could not import playlist: invalid file</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
     <plurals name="play_count">
         <item quantity="one">%d play</item>
         <item quantity="other">%d plays</item>

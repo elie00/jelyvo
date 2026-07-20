@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
@@ -60,6 +62,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Library
+import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.Song
@@ -92,6 +95,7 @@ fun LibraryScreen(
     onSettingsButtonPress: () -> Unit,
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
+    onLocalPlaylistPressed: (id: String) -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
     application: Application,
@@ -102,6 +106,20 @@ fun LibraryScreen(
     val uiState = libraryViewModel.uiState.collectAsStateWithLifecycle().value
     var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.Playlists) }
     var createPlaylistOpen by remember { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { libraryViewModel.importPlaylist(it) }
+    }
+
+    uiState.importMessage?.let { messageRes ->
+        LaunchedEffect(messageRes) {
+            Toast.makeText(context, context.getString(messageRes), Toast.LENGTH_SHORT).show()
+            libraryViewModel.consumeImportMessage()
+        }
+    }
 
     val deletedPlaylistIds by sharedViewModel.deletedPlaylistIds.collectAsState()
     val playlistRefreshNeeded by sharedViewModel.playlistRefreshNeeded.collectAsState()
@@ -164,13 +182,16 @@ fun LibraryScreen(
                             LibraryContent(
                                 library = uiState.screenState.library,
                                 playlists = uiState.playlists,
+                                localPlaylists = uiState.localPlaylists,
                                 localSongs = uiState.localSongs,
                                 localSongsLoaded = uiState.localSongsLoaded,
                                 onLoadLocalSongs = libraryViewModel::loadLocalSongs,
                                 selectedTab = selectedTab,
                                 onOpenPlayer = onOpenPlayer,
                                 onPlaylistPressed = onPlaylistPressed,
+                                onLocalPlaylistPressed = onLocalPlaylistPressed,
                                 onCreatePlaylist = { createPlaylistOpen = true },
+                                onImportPlaylist = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                                 onOpenAlbum = onOpenAlbum,
                                 onOpenArtist = onOpenArtist,
                             )
@@ -224,21 +245,27 @@ fun LibraryScreen(
 private fun LibraryContent(
     library: Library,
     playlists: List<PlaylistInfo>,
+    localPlaylists: List<LocalPlaylist>,
     localSongs: List<Song>,
     localSongsLoaded: Boolean,
     onLoadLocalSongs: () -> Unit,
     selectedTab: LibraryTab,
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
+    onLocalPlaylistPressed: (id: String) -> Unit,
     onCreatePlaylist: () -> Unit,
+    onImportPlaylist: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
     when (selectedTab) {
         LibraryTab.Playlists -> PlaylistsTab(
             playlists = playlists,
+            localPlaylists = localPlaylists,
             onPlaylistPressed = onPlaylistPressed,
+            onLocalPlaylistPressed = onLocalPlaylistPressed,
             onCreatePlaylist = onCreatePlaylist,
+            onImportPlaylist = onImportPlaylist,
         )
 
         LibraryTab.LikedSongs -> LikedSongsTab(
@@ -397,8 +424,11 @@ private fun OnDeviceTab(
 @Composable
 private fun PlaylistsTab(
     playlists: List<PlaylistInfo>,
+    localPlaylists: List<LocalPlaylist>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
+    onLocalPlaylistPressed: (id: String) -> Unit,
     onCreatePlaylist: () -> Unit,
+    onImportPlaylist: () -> Unit,
 ) {
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
@@ -413,11 +443,45 @@ private fun PlaylistsTab(
         ),
     ) {
         item(span = { GridItemSpan(maxLineSpan) }) {
-            Row(horizontalArrangement = Arrangement.End) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+                MaterialUButton(
+                    onClick = onImportPlaylist,
+                    icon = Icons.Rounded.FileOpen,
+                    text = stringResource(R.string.import_playlist)
+                )
                 MaterialUButton(
                     onClick = onCreatePlaylist,
                     icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
                     text = stringResource(R.string.create_playlist)
+                )
+            }
+        }
+
+        if (localPlaylists.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = stringResource(R.string.on_device_playlists),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            items(
+                items = localPlaylists,
+                key = { it.id }
+            ) { local ->
+                PlaylistCard(
+                    playlistInfo = PlaylistInfo(id = local.id, title = local.name),
+                    onClicked = { onLocalPlaylistPressed(local.id) }
+                )
+            }
+        }
+
+        if (playlists.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    text = stringResource(R.string.account_playlists),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }

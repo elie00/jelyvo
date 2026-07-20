@@ -25,6 +25,9 @@ data object ListeningStatsScreenKey : NavKey
 data class PlaylistScreenKey(val playlistInfo: PlaylistInfo) : NavKey
 
 @Serializable
+data class LocalPlaylistScreenKey(val playlistId: String) : NavKey
+
+@Serializable
 data object AuthScreenKey : NavKey
 
 @Serializable
@@ -73,6 +76,10 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             ListeningStatsScreenKey -> ScreenUiConfig(showBottomBar = false)
 
             is PlaylistScreenKey -> ScreenUiConfig(
+                showBottomBar = false
+            )
+
+            is LocalPlaylistScreenKey -> ScreenUiConfig(
                 showBottomBar = false
             )
 

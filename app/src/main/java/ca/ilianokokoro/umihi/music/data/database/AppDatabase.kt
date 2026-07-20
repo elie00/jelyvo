@@ -11,7 +11,9 @@ import ca.ilianokokoro.umihi.music.data.datasources.local.LocalHistoryDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalPlaylistDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalPlayerQueueDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalSongDataSource
+import ca.ilianokokoro.umihi.music.data.datasources.local.LocalUserPlaylistDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.VersionDataSource
+import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.PlaylistSongCrossRef
@@ -27,6 +29,7 @@ import ca.ilianokokoro.umihi.music.models.Version
         Version::class,
         PlayHistoryEntry::class,
         PlayerQueueState::class,
+        LocalPlaylist::class,
     ],
     version = Constants.Database.VERSION,
     exportSchema = false
@@ -37,6 +40,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun versionRepository(): VersionDataSource
     abstract fun historyRepository(): LocalHistoryDataSource
     abstract fun playerQueueRepository(): LocalPlayerQueueDataSource
+    abstract fun localPlaylistRepository(): LocalUserPlaylistDataSource
 
     companion object {
         @Volatile
@@ -59,7 +63,13 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java, Constants.Database.NAME
             )
-                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+                .addMigrations(
+                    MIGRATION_9_10,
+                    MIGRATION_10_11,
+                    MIGRATION_11_12,
+                    MIGRATION_12_13,
+                    MIGRATION_13_14
+                )
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
 
@@ -122,6 +132,22 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `play_history` ADD COLUMN `positionMs` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `play_history` ADD COLUMN `durationMs` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `${Constants.Database.LOCAL_PLAYLISTS_TABLE}` (
+                        `id` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `songsJson` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent()
+                )
             }
         }
     }

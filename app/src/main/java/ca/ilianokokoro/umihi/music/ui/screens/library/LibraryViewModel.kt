@@ -1,17 +1,20 @@
 package ca.ilianokokoro.umihi.music.ui.screens.library
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
@@ -26,6 +29,7 @@ import kotlinx.coroutines.launch
 class LibraryViewModel(application: Application) : AndroidViewModel(application) {
     private val libraryRepository = LibraryRepository()
     private val playlistRepository = PlaylistRepository(application)
+    private val localPlaylistRepository = LocalPlaylistRepository(application)
     private val datastoreRepository = DatastoreRepository(application)
     private val localAudioDataSource = LocalAudioDataSource(application)
 
@@ -34,6 +38,33 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         load()
+        observeLocalPlaylists()
+    }
+
+    private fun observeLocalPlaylists() {
+        viewModelScope.launch {
+            localPlaylistRepository.observeAll().collect { playlists ->
+                _uiState.update { it.copy(localPlaylists = playlists) }
+            }
+        }
+    }
+
+    /** Imports a playlist JSON file (SAF Uri) into a new local playlist. */
+    fun importPlaylist(uri: Uri) {
+        viewModelScope.launch {
+            val message = try {
+                localPlaylistRepository.importFromUri(getApplication(), uri)
+                R.string.playlist_imported
+            } catch (ex: Exception) {
+                printe(message = "Failed to import playlist", exception = ex)
+                R.string.playlist_import_failed
+            }
+            _uiState.update { it.copy(importMessage = message) }
+        }
+    }
+
+    fun consumeImportMessage() {
+        _uiState.update { it.copy(importMessage = null) }
     }
 
     fun load() {

@@ -2,6 +2,8 @@ package ca.ilianokokoro.umihi.music.ui.screens.playlist
 
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -15,7 +17,9 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
@@ -54,6 +58,7 @@ class PlaylistViewModel(
 
     private val playlistRepository = PlaylistRepository(application)
     private val localPlaylistRepository = AppDatabase.getInstance(application).playlistRepository()
+    private val localUserPlaylistRepository = LocalPlaylistRepository(application)
     private val datastoreRepository = DatastoreRepository(application)
     private val downloadRepository = DownloadRepository(application)
 
@@ -241,6 +246,23 @@ class PlaylistViewModel(
         viewModelScope.launch {
             val settings = datastoreRepository.getSettings()
             downloadRepository.downloadSong(playlist, song, settings.downloadOnMetered)
+        }
+    }
+
+    /** Exports the currently loaded playlist (name + songs) to the user-chosen JSON file. */
+    fun exportPlaylist(context: Context, uri: Uri) {
+        val playlist = getPlaylist() ?: return
+        viewModelScope.launch {
+            try {
+                localUserPlaylistRepository.exportToUri(
+                    context = context,
+                    uri = uri,
+                    name = playlist.info.title,
+                    songs = playlist.songs.map { LocalPlaylistSong.fromSong(it) },
+                )
+            } catch (ex: Exception) {
+                printe(message = "Failed to export playlist", exception = ex)
+            }
         }
     }
 
