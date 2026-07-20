@@ -30,30 +30,38 @@ class RadioDataSource {
             .filter { it.youtubeId != seed.youtubeId }
             .distinctBy { it.youtubeId }
 
-        enrichThumbnails(related)
+        enrichSongs(related)
+            .distinctBy { it.youtubeId }
+            .filter { it.youtubeId != seed.youtubeId }
     }
 
     /**
-     * NewPipe related items only expose the 16:9 video thumbnail. Fetch each track's player info
-     * to recover the square art when it exists — one extra request per song, bounded, and a
-     * failure just keeps the video thumbnail.
+     * NewPipe related items are often the music-video version of a track, with a 16:9 thumbnail
+     * and the clip's audio. Swap each one for its album-audio counterpart when it exists;
+     * otherwise just recover the square art from the player info. One extra request per song,
+     * bounded, and a failure keeps the item as-is.
      */
-    private suspend fun enrichThumbnails(songs: List<Song>): List<Song> = coroutineScope {
+    private suspend fun enrichSongs(songs: List<Song>): List<Song> = coroutineScope {
         val semaphore = Semaphore(Constants.Downloads.MAX_CONCURRENT_DOWNLOADS)
         songs.map { song ->
             async {
                 semaphore.withPermit {
-                    val betterThumbnail = runCatching {
-                        songDataSource.getSongInfo(song.youtubeId).thumbnailHref
-                    }.getOrDefault("")
-                    if (betterThumbnail.isBlank()) {
-                        song
-                    } else {
-                        song.copy(thumbnailHref = betterThumbnail)
-                    }
+                    runCatching { songDataSource.getAudioCounterpart(song.youtubeId) }.getOrNull()
+                        ?: enrichThumbnail(song)
                 }
             }
         }.awaitAll()
+    }
+
+    private suspend fun enrichThumbnail(song: Song): Song {
+        val betterThumbnail = runCatching {
+            songDataSource.getSongInfo(song.youtubeId).thumbnailHref
+        }.getOrDefault("")
+        return if (betterThumbnail.isBlank()) {
+            song
+        } else {
+            song.copy(thumbnailHref = betterThumbnail)
+        }
     }
 
     private fun StreamInfoItem.toSongOrNull(): Song? {
