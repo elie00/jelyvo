@@ -240,7 +240,10 @@ class PlaybackService : MediaLibraryService() {
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
-                if (!isPlaying) scheduleQueuePersistence()
+                if (!isPlaying) {
+                    scheduleQueuePersistence()
+                    serviceScope.launch { persistPlaybackPosition() }
+                }
                 updatePlaybackWidget(player.currentMediaItem)
             }
 
@@ -405,9 +408,30 @@ class PlaybackService : MediaLibraryService() {
                 val isPlaying = withContext(Dispatchers.Main) { player.isPlaying }
                 if (queueRestoreComplete && isPlaying) {
                     persistQueueSnapshot()
+                    persistPlaybackPosition()
                 }
             }
         }
+    }
+
+    /**
+     * Persists the current track's playback position into the listening history so a partially
+     * listened title can later be resumed. Reuses the existing periodic save loop (throttled) plus
+     * a save on pause; a no-op when there is no recorded play row for the current track.
+     */
+    private suspend fun persistPlaybackPosition() {
+        if (isRestoringQueue) return
+        val snapshot = withContext(Dispatchers.Main) {
+            val item = player.currentMediaItem ?: return@withContext null
+            Triple(item.mediaId, player.currentPosition, player.duration)
+        } ?: return
+        val (songId, positionMs, durationMs) = snapshot
+        if (songId.isBlank() || positionMs <= 0) return
+        historyRepository.updatePosition(
+            youtubeId = songId,
+            positionMs = positionMs,
+            durationMs = durationMs.coerceAtLeast(0L),
+        )
     }
 
     /**

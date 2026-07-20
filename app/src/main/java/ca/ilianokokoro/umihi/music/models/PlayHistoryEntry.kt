@@ -25,6 +25,9 @@ data class PlayHistoryEntry(
     val duration: String = "",
     val isExplicit: Boolean = false,
     val playedAt: Long,
+    // Last known playback position/duration for this play, used to resume a partially listened track.
+    val positionMs: Long = 0,
+    val durationMs: Long = 0,
 ) {
     fun toSong(): Song = Song(
         youtubeId = youtubeId,

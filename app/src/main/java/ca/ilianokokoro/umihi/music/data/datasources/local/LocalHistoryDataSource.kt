@@ -29,6 +29,43 @@ interface LocalHistoryDataSource {
     )
     fun getRecent(limit: Int): Flow<List<PlayHistoryEntry>>
 
+    /** Stores the latest playback position on the most recent play row of the given track. */
+    @Query(
+        """
+        UPDATE play_history
+        SET positionMs = :positionMs, durationMs = :durationMs
+        WHERE id = (
+            SELECT id FROM play_history
+            WHERE youtubeId = :youtubeId
+            ORDER BY playedAt DESC, id DESC
+            LIMIT 1
+        )
+        """
+    )
+    suspend fun updatePosition(youtubeId: String, positionMs: Long, durationMs: Long)
+
+    /**
+     * Most recently played tracks that were left partially listened (some progress, not near the
+     * end), collapsed to one row per track. Feeds the "resume listening" home section.
+     */
+    @Query(
+        """
+        SELECT latest.* FROM play_history AS latest
+        WHERE latest.id = (
+            SELECT candidate.id FROM play_history AS candidate
+            WHERE candidate.youtubeId = latest.youtubeId
+            ORDER BY candidate.playedAt DESC, candidate.id DESC
+            LIMIT 1
+        )
+        AND latest.positionMs > 0
+        AND latest.durationMs > 0
+        AND latest.positionMs < latest.durationMs - (latest.durationMs / 20)
+        ORDER BY latest.playedAt DESC
+        LIMIT :limit
+        """
+    )
+    fun getResumable(limit: Int): Flow<List<PlayHistoryEntry>>
+
     @Query(
         """
         SELECT youtubeId,

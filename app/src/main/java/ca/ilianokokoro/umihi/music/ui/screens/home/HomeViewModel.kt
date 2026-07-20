@@ -42,12 +42,21 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     init {
         getHomeFeed()
         observeRecentlyPlayed()
+        observeResumable()
     }
 
     private fun observeRecentlyPlayed() {
         viewModelScope.launch {
             historyRepository.recentSongs().collect { songs ->
                 _uiState.update { it.copy(recentlyPlayed = songs) }
+            }
+        }
+    }
+
+    private fun observeResumable() {
+        viewModelScope.launch {
+            historyRepository.resumableSongs().collect { items ->
+                _uiState.update { it.copy(resumeItems = items) }
             }
         }
     }

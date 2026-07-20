@@ -59,7 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java, Constants.Database.NAME
             )
-                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
 
@@ -115,6 +115,13 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `play_history_new` RENAME TO `play_history`")
                 db.execSQL("CREATE INDEX `index_play_history_youtubeId` ON `play_history` (`youtubeId`)")
                 db.execSQL("CREATE INDEX `index_play_history_playedAt` ON `play_history` (`playedAt`)")
+            }
+        }
+
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `play_history` ADD COLUMN `positionMs` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `play_history` ADD COLUMN `durationMs` INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

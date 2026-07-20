@@ -38,6 +38,7 @@ import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
 import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
+import ca.ilianokokoro.umihi.music.ui.components.home.ResumeListeningRow
 
 @Composable
 fun HomeScreen(
@@ -69,7 +70,7 @@ fun HomeScreen(
                         val homeSections = uiState.screenState.homeSections
                         val newReleases = uiState.screenState.newReleases
 
-                        if (homeSections.isEmpty() && newReleases.isEmpty() && uiState.recentlyPlayed.isEmpty()) {
+                        if (homeSections.isEmpty() && newReleases.isEmpty() && uiState.recentlyPlayed.isEmpty() && uiState.resumeItems.isEmpty()) {
                             Text(
                                 stringResource(R.string.home_empty),
                                 textAlign = TextAlign.Center
@@ -106,6 +107,23 @@ fun HomeScreen(
                                                     contentDescription = stringResource(R.string.settings)
                                                 )
                                             }
+                                        }
+                                    }
+                                    if (uiState.resumeItems.isNotEmpty()) {
+                                        item(
+                                            key = "resume-listening",
+                                            span = { GridItemSpan(maxLineSpan) },
+                                        ) {
+                                            ResumeListeningRow(
+                                                items = uiState.resumeItems,
+                                                onResume = {
+                                                    PlayerManager.resumeSong(
+                                                        it.song,
+                                                        it.positionMs,
+                                                        it.durationMs,
+                                                    )
+                                                }
+                                            )
                                         }
                                     }
                                     if (uiState.recentlyPlayed.isNotEmpty()) {

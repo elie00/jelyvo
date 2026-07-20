@@ -109,6 +109,7 @@
     <string name="create">Create</string>
     <string name="create_playlist">Create playlist</string>
     <string name="recently_played">Recently played</string>
+    <string name="resume_listening">Resume listening</string>
     <string name="lyrics_unavailable">Lyrics unavailable</string>
     <string name="equalizer_title">Equalizer</string>
     <string name="equalizer_subtitle">Adjust bands, presets and bass boost</string>

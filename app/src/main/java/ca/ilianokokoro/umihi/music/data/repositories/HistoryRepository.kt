@@ -4,6 +4,7 @@ import android.content.Context
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.ArtistListeningStat
+import ca.ilianokokoro.umihi.music.models.ResumeItem
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +15,16 @@ class HistoryRepository(context: Context) {
 
     fun recentSongs(limit: Int = DEFAULT_LIMIT): Flow<List<Song>> =
         localHistoryDataSource.getRecent(limit).map { entries -> entries.map { it.toSong() } }
+
+    fun resumableSongs(limit: Int = RESUME_LIMIT): Flow<List<ResumeItem>> =
+        localHistoryDataSource.getResumable(limit).map { entries ->
+            entries.map { ResumeItem(it.toSong(), it.positionMs, it.durationMs) }
+        }
+
+    suspend fun updatePosition(youtubeId: String, positionMs: Long, durationMs: Long) {
+        if (youtubeId.isBlank()) return
+        localHistoryDataSource.updatePosition(youtubeId, positionMs, durationMs)
+    }
 
     fun topTracks(since: Long, limit: Int = STATS_LIMIT): Flow<List<TrackListeningStat>> =
         localHistoryDataSource.getTopTracks(since, limit)
@@ -30,6 +41,7 @@ class HistoryRepository(context: Context) {
 
     companion object {
         const val DEFAULT_LIMIT = 25
+        const val RESUME_LIMIT = 12
         const val STATS_LIMIT = 10
     }
 }

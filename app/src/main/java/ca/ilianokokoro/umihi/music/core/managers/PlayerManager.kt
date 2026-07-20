@@ -286,6 +286,22 @@ object PlayerManager {
     }
 
     /**
+     * Resumes a partially listened title: plays [song] starting at [startPositionMs]. If the saved
+     * position sits within the final 5% of the track it restarts from the beginning instead.
+     */
+    fun resumeSong(song: Song, startPositionMs: Long, durationMs: Long) {
+        val controller = currentController ?: return
+
+        val nearEnd = durationMs > 0 && startPositionMs >= durationMs - (durationMs / 20)
+        val position = if (nearEnd) C.TIME_UNSET else startPositionMs.coerceAtLeast(0L)
+
+        isCollectionQueue = false
+        controller.setMediaItem(song.mediaItem, position)
+        controller.prepare()
+        controller.play()
+    }
+
+    /**
      * "Start radio" from a seed song: plays it immediately, then appends related tracks so the
      * user gets an endless mix built around that song. A failed fetch just leaves the seed playing.
      */
