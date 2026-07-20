@@ -449,20 +449,31 @@ object YoutubeDataExtractor {
                 songItems.mapNotNull { extractSong(it)?.let(SearchItem::Track) }
             }
             SearchFilter.Albums, SearchFilter.Artists -> {
+                // Scoped album/artist search returns musicResponsiveListItemRenderer list rows
+                // (not musicTwoRowItemRenderer tiles). Classify each by its browseId, then keep
+                // only the entity type this tab asked for.
                 val rows = mutableListOf<JsonObject>()
-                collectTwoRowItems(root, rows)
-                rows.mapNotNull { row -> row.toSearchItem(filter) }
+                collectSongItems(root, rows)
+                val items = rows.mapNotNull { it.toMixedSearchItem() }
+                when (filter) {
+                    SearchFilter.Albums -> items.filterIsInstance<SearchItem.Album>()
+                    else -> items.filterIsInstance<SearchItem.Artist>()
+                }
             }
 
             SearchFilter.All -> {
-                // "Top results" mixes entity types: the top-result card shelf plus every
-                // musicShelf row, classified per item (album/artist browseId, else a track).
+                // "Top results" mixes entity types: the top-result card shelf, the musicShelf list
+                // rows (classified per item: album/artist browseId, else a track) and the
+                // album/artist carousel tiles (musicTwoRowItemRenderer).
                 val cards = mutableListOf<JsonObject>()
                 collectCardShelves(root, cards)
                 val rows = mutableListOf<JsonObject>()
                 collectSongItems(root, rows)
+                val tiles = mutableListOf<JsonObject>()
+                collectTwoRowItems(root, tiles)
                 cards.mapNotNull { it.cardToSearchItem() } +
-                        rows.mapNotNull { it.toMixedSearchItem() }
+                        rows.mapNotNull { it.toMixedSearchItem() } +
+                        tiles.mapNotNull { it.twoRowToSearchItem() }
             }
         }.distinctBy(SearchItem::id)
     }
@@ -623,6 +634,40 @@ object YoutubeDataExtractor {
                 SearchItem.Artist(id = it, name = title, thumbnail = thumbnail)
             }
             SearchFilter.Songs, SearchFilter.All -> null
+        }
+    }
+
+    /**
+     * Classifies a musicTwoRowItemRenderer tile (a carousel card in "Top results") into an album or
+     * artist by its browseId prefix. Tracks/playlists (watch or "VL…" endpoints) return null, since
+     * the "All" view already collects tracks from the list rows.
+     */
+    private fun JsonObject.twoRowToSearchItem(): SearchItem? {
+        val renderer = this["musicTwoRowItemRenderer"]?.safeObject() ?: this
+        val endpoint = renderer["navigationEndpoint"]?.safeObject()
+            ?: renderer["title"]?.safeObject()?.get("runs")?.safeArray()
+                ?.firstOrNull()?.safeObject()?.get("navigationEndpoint")?.safeObject()
+            ?: return null
+        val browseId = endpoint["browseEndpoint"]?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        val title = renderer["title"].runsText()
+        val thumbnail = (renderer["thumbnailRenderer"] ?: renderer["thumbnail"])
+            ?.let(::getBestThumbnailUrl).orEmpty()
+        return when {
+            browseId.startsWith("MPRE") -> SearchItem.Album(
+                id = browseId,
+                title = title,
+                subtitle = renderer["subtitle"].runsText(),
+                thumbnail = thumbnail,
+            )
+
+            browseId.startsWith("UC") -> SearchItem.Artist(
+                id = browseId,
+                name = title,
+                thumbnail = thumbnail,
+            )
+
+            else -> null
         }
     }
 
