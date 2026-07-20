@@ -591,21 +591,69 @@ object YoutubeDataExtractor {
     }
 
     /**
-     * Returns the largest thumbnail URL in a response — used as an album cover, since album track
-     * rows carry no per-track thumbnail so the biggest image on the page is the album art.
+     * Extracts the album cover from an album browse response header. Album pages also embed other
+     * carousels ("More from this artist", videos…), so scanning the whole page for the biggest
+     * image can pick an unrelated cover or a 16:9 clip frame — the header thumbnail is the only
+     * one guaranteed to be the album art.
+     */
+    fun extractAlbumCover(jsonString: String): String? {
+        val json = Json.parseToJsonElement(jsonString)
+        val header = findFirstObject(
+            json,
+            listOf("musicResponsiveHeaderRenderer", "musicDetailHeaderRenderer")
+        ) ?: return null
+        // "thumbnail" holds the cover; the header may also carry a small artist avatar
+        // ("straplineThumbnail"), so restrict the search to the cover node.
+        val cover = header["thumbnail"] ?: return null
+        return largestThumbnailIn(cover)
+    }
+
+    private fun findFirstObject(element: JsonElement, keys: List<String>): JsonObject? {
+        when (element) {
+            is JsonObject -> {
+                for (key in keys) {
+                    element[key]?.safeObject()?.let { return it }
+                }
+                element.values.forEach { child ->
+                    findFirstObject(child, keys)?.let { return it }
+                }
+            }
+
+            is JsonArray -> element.forEach { findFirstObject(it, keys)?.let { return it } }
+            else -> {}
+        }
+        return null
+    }
+
+    /**
+     * Returns the largest thumbnail URL in a response, preferring square images (album/track art)
+     * over 16:9 video frames. Fallback when no header cover is available.
      */
     fun extractLargestThumbnail(jsonString: String): String? {
-        var bestWidth = -1
-        var bestUrl: String? = null
+        return largestThumbnailIn(Json.parseToJsonElement(jsonString))
+    }
+
+    private fun largestThumbnailIn(root: JsonElement): String? {
+        var bestSquareWidth = -1
+        var bestSquareUrl: String? = null
+        var bestAnyWidth = -1
+        var bestAnyUrl: String? = null
 
         fun walk(element: JsonElement) {
             when (element) {
                 is JsonObject -> {
                     val url = element["url"]?.jsonPrimitive?.contentOrNull
                     val width = element["width"]?.jsonPrimitive?.intOrNull
-                    if (url != null && width != null && width > bestWidth) {
-                        bestWidth = width
-                        bestUrl = url
+                    val height = element["height"]?.jsonPrimitive?.intOrNull
+                    if (url != null && width != null) {
+                        if (width > bestAnyWidth) {
+                            bestAnyWidth = width
+                            bestAnyUrl = url
+                        }
+                        if (width == height && width > bestSquareWidth) {
+                            bestSquareWidth = width
+                            bestSquareUrl = url
+                        }
                     }
                     element.values.forEach { walk(it) }
                 }
@@ -615,8 +663,8 @@ object YoutubeDataExtractor {
             }
         }
 
-        walk(Json.parseToJsonElement(jsonString))
-        return bestUrl
+        walk(root)
+        return bestSquareUrl ?: bestAnyUrl
     }
 
     /** Extracts songs from a search continuation response (musicShelfContinuation). */
@@ -787,11 +835,24 @@ object YoutubeDataExtractor {
     }
 
     private fun extractHighQualityThumbnail(jsonString: String): String {
-        val json = Json.parseToJsonElement(jsonString).jsonObject
-        val url = json["videoDetails"]
+        val thumbnails = Json.parseToJsonElement(jsonString).jsonObject["videoDetails"]
             ?.safeObject()?.get("thumbnail")
             ?.safeObject()?.get("thumbnails")
-            ?.safeArray()?.lastOrNull()
+            ?.safeArray()
+
+        // Prefer square art (music tracks) over the 16:9 clip frame; the array is sorted by size,
+        // so the last matching entry is the largest.
+        val squareUrl = thumbnails
+            ?.lastOrNull { thumb ->
+                val obj = thumb.safeObject()
+                val width = obj?.get("width")?.jsonPrimitive?.intOrNull
+                val height = obj?.get("height")?.jsonPrimitive?.intOrNull
+                width != null && width == height
+            }
+            ?.safeObject()?.get("url")
+            ?.jsonPrimitive?.contentOrNull
+
+        val url = squareUrl ?: thumbnails?.lastOrNull()
             ?.safeObject()?.get("url")
             ?.jsonPrimitive?.contentOrNull
 

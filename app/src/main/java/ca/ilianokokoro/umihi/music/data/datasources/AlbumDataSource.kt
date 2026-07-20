@@ -15,7 +15,8 @@ class AlbumDataSource {
         return AlbumPage(
             name = albumName,
             songs = YoutubeDataExtractor.extractAlbumSongs(response, settings),
-            cover = YoutubeDataExtractor.extractLargestThumbnail(response).orEmpty(),
+            cover = (YoutubeDataExtractor.extractAlbumCover(response)
+                ?: YoutubeDataExtractor.extractLargestThumbnail(response)).orEmpty(),
         )
     }
 }
