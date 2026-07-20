@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import kotlin.math.roundToInt
 
@@ -63,7 +64,11 @@ fun EqualizerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
+                .padding(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING
+                ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             if (!state.available) {

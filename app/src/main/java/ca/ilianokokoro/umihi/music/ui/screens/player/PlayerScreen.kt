@@ -102,11 +102,7 @@ fun PlayerScreen(
         artworkUri = currentSong?.thumbnailPath ?: currentSong?.thumbnailHref,
     ) {
     Scaffold(
-        modifier = Modifier.padding(
-            start = 8.dp,
-            end = 8.dp,
-            bottom = 10.dp
-        )
+        containerColor = androidx.compose.ui.graphics.Color.Transparent
     ) { paddingValues ->
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             Column(

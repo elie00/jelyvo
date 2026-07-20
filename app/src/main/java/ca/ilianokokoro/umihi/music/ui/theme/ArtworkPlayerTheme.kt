@@ -24,6 +24,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import coil3.SingletonImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import coil3.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,6 +53,9 @@ fun ArtworkPlayerTheme(
                     val request = ImageRequest.Builder(context)
                         .data(uri)
                         .size(256)
+                        // Palette needs to read pixels; hardware bitmaps (Coil's default on
+                        // API 26+) throw in Palette.generate(), silently nulling the seed.
+                        .allowHardware(false)
                         .build()
                     val result = SingletonImageLoader.get(context).execute(request)
                     if (result !is SuccessResult) return@runCatching null
