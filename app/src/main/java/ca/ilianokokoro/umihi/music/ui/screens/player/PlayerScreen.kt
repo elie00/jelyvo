@@ -37,6 +37,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -106,7 +108,7 @@ fun PlayerScreen(
         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
             Column(
                 modifier = modifier
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .background(playerBackgroundBrush())
                     .fillMaxSize()
                     .padding(paddingValues),
 
@@ -165,7 +167,7 @@ fun PlayerScreen(
         } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
             Row(
                 modifier = modifier
-                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .background(playerBackgroundBrush())
                     .fillMaxSize()
                     .padding(paddingValues),
                 verticalAlignment = Alignment.CenterVertically,
@@ -266,6 +268,19 @@ fun PlayerScreen(
         )
     }
     }
+}
+
+/**
+ * Soft vertical gradient from the artwork-derived container tones down to the player surface,
+ * keeping text contrast intact since only surface-level tones are blended.
+ */
+@Composable
+private fun playerBackgroundBrush(): Brush {
+    val colorScheme = MaterialTheme.colorScheme
+    return Brush.verticalGradient(
+        0f to lerp(colorScheme.surfaceContainerLow, colorScheme.primaryContainer, 0.35f),
+        1f to colorScheme.surfaceContainerLow,
+    )
 }
 
 @Composable

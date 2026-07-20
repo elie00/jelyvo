@@ -44,6 +44,15 @@ object SeedSchemes {
         return if (darkTheme) darkScheme(spec) else lightScheme(spec)
     }
 
+    /**
+     * Builds a full Material 3 color scheme from an arbitrary seed hue/chroma, e.g. one extracted
+     * from artwork. Tone pairs guarantee text contrast for every role.
+     */
+    fun colorScheme(hue: Float, chroma: Float, darkTheme: Boolean): ColorScheme {
+        val spec = SeedSpec(hue = hue, chroma = chroma)
+        return if (darkTheme) darkScheme(spec) else lightScheme(spec)
+    }
+
     private class TonalPalette(private val hue: Float, private val chroma: Float) {
         fun tone(tone: Int): Color {
             if (tone <= 0) return Color.Black

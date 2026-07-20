@@ -26,6 +26,7 @@ import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toSong
+import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 
 @Composable
 fun MiniPlayerWrapper(
@@ -90,21 +91,25 @@ fun MiniPlayerWrapper(
             .height(Constants.Ui.MiniPlayer.HEIGHT)
     ) {
         val song = currentSong ?: return@AnimatedVisibility
-        MiniPlayer(
-            currentSong = song,
-            artworkModifier = artworkModifier,
-            onClick = onMiniPlayerPressed,
-            onPlayPause = {
-                if (player?.isPlaying == true) {
-                    player?.pause()
-                } else {
-                    player?.play()
-                }
-            },
-            onSkipNext = { player?.seekToNext() },
-            onSkipPrevious = { player?.seekToPrevious() },
-            isPlaying = songIsPlaying == true,
-            isLoading = songIsLoading
-        )
+        ArtworkPlayerTheme(
+            artworkUri = song.thumbnailPath ?: song.thumbnailHref,
+        ) {
+            MiniPlayer(
+                currentSong = song,
+                artworkModifier = artworkModifier,
+                onClick = onMiniPlayerPressed,
+                onPlayPause = {
+                    if (player?.isPlaying == true) {
+                        player?.pause()
+                    } else {
+                        player?.play()
+                    }
+                },
+                onSkipNext = { player?.seekToNext() },
+                onSkipPrevious = { player?.seekToPrevious() },
+                isPlaying = songIsPlaying == true,
+                isLoading = songIsLoading
+            )
+        }
     }
 }
