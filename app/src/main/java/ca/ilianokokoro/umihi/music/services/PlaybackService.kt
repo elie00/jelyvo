@@ -2,6 +2,9 @@ package ca.ilianokokoro.umihi.music.services
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
 import android.media.audiofx.AudioEffect
 import android.net.Uri
 import android.widget.Toast
@@ -39,7 +42,9 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
+import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
@@ -91,6 +96,19 @@ class PlaybackService : MediaLibraryService() {
     private val historyRepository by lazy { HistoryRepository(applicationContext) }
     private val radioRepository = RadioRepository()
     private var lastRadioSeedId: String? = null
+
+    private var audioManager: AudioManager? = null
+    private val audioDeviceCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+            AudioOutputManager.refresh(applicationContext)
+            applyEqualizerForCurrentOutput()
+        }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            AudioOutputManager.refresh(applicationContext)
+            applyEqualizerForCurrentOutput()
+        }
+    }
 
     private lateinit var callback: UmihiMediaLibraryCallback
 
@@ -316,6 +334,34 @@ class PlaybackService : MediaLibraryService() {
 
         restoreQueueAndStartPersistence()
         startAudioVolumeManagement()
+        startAudioOutputEqualizer()
+    }
+
+    /**
+     * Keeps the equalizer profile in sync with the active audio output: applies
+     * the stored profile for the current output on start, then re-applies the
+     * matching one whenever the output changes (e.g. plugging in headphones or
+     * connecting a Bluetooth speaker).
+     */
+    private fun startAudioOutputEqualizer() {
+        audioManager = (getSystemService(AUDIO_SERVICE) as? AudioManager)?.also {
+            it.registerAudioDeviceCallback(audioDeviceCallback, null)
+        }
+        AudioOutputManager.refresh(applicationContext)
+        applyEqualizerForCurrentOutput()
+    }
+
+    private fun applyEqualizerForCurrentOutput() {
+        serviceScope.launch {
+            val output = AudioOutputManager.currentOutput.value
+            val profile = EqualizerProfileStore.load(applicationContext, output)
+            EqualizerManager.setDesiredConfig(
+                enabled = profile.enabled,
+                preset = profile.preset,
+                bandLevels = profile.bands,
+                bassBoostStrength = profile.bassBoost,
+            )
+        }
     }
 
     override fun onGetSession(
@@ -361,6 +407,7 @@ class PlaybackService : MediaLibraryService() {
                 PlaybackWidget().updateAll(applicationContext)
             }
         }
+        audioManager?.unregisterAudioDeviceCallback(audioDeviceCallback)
         serviceScope.cancel()
         mediaLibrarySession?.run {
             if (currentAudioSessionId > 0) {

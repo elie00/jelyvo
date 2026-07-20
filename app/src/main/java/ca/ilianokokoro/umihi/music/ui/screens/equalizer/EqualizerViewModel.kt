@@ -1,56 +1,49 @@
 package ca.ilianokokoro.umihi.music.ui.screens.equalizer
 
 import android.app.Application
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
-import ca.ilianokokoro.umihi.music.data.repositories.dataStore
+import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * Drives [EqualizerManager] and exposes [EqualizerState].
  *
- * Persistence: the equalizer preferences are not part of the shared
- * [ca.ilianokokoro.umihi.music.models.UmihiSettings] object, so instead of
- * extending that model this view model stores its own keys directly through the
- * public `Context.dataStore` extension and [DatastoreRepository.save]. The
- * persisted config is pushed into [EqualizerManager] on init so it is
- * re-applied whenever a new audio session attaches.
+ * Persistence: the equalizer preferences are stored per active audio output
+ * (speaker / wired / bluetooth) through [EqualizerProfileStore]. The profile
+ * for the current output is pushed into [EqualizerManager] so it is re-applied
+ * whenever a new audio session attaches, and reloaded whenever the output
+ * changes. Edits are saved into the profile of whichever output is active.
  */
 class EqualizerViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(EqualizerState())
     val uiState = _uiState.asStateFlow()
 
-    private val datastoreRepository = DatastoreRepository(application)
-
     init {
-        // 1. Load persisted config and seed the manager so it can re-apply it.
+        // 1. Follow the active output: seed the manager with that output's saved
+        //    profile so it can re-apply it, and reload on every output change.
+        AudioOutputManager.refresh(getApplication())
         viewModelScope.launch {
-            val prefs = getApplication<Application>().dataStore.data.first()
-            val enabled = prefs[KEY_ENABLED] ?: false
-            val preset = prefs[KEY_PRESET] ?: CUSTOM_PRESET
-            val bassBoost = prefs[KEY_BASS_BOOST] ?: 0
-            val bands = decodeBands(prefs[KEY_BANDS])
-
-            EqualizerManager.setDesiredConfig(
-                enabled = enabled,
-                preset = preset,
-                bandLevels = bands,
-                bassBoostStrength = bassBoost
-            )
-            refresh()
+            AudioOutputManager.currentOutput.collect { output ->
+                val profile = EqualizerProfileStore.load(getApplication(), output)
+                EqualizerManager.setDesiredConfig(
+                    enabled = profile.enabled,
+                    preset = profile.preset,
+                    bandLevels = profile.bands,
+                    bassBoostStrength = profile.bassBoost
+                )
+                _uiState.update { it.copy(currentOutput = output) }
+                refresh()
+            }
         }
 
         // 2. Rebuild the state whenever the manager's availability flips
@@ -62,7 +55,10 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setEnabled(enabled: Boolean) {
         EqualizerManager.setEnabled(enabled)
-        viewModelScope.launch { datastoreRepository.save(KEY_ENABLED, enabled) }
+        val output = AudioOutputManager.currentOutput.value
+        viewModelScope.launch {
+            EqualizerProfileStore.saveEnabled(getApplication(), output, enabled)
+        }
         refresh()
     }
 
@@ -80,16 +76,19 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setBassBoost(strength: Int) {
         EqualizerManager.setBassBoost(strength)
-        viewModelScope.launch { datastoreRepository.save(KEY_BASS_BOOST, strength.coerceIn(0, 1000)) }
+        val output = AudioOutputManager.currentOutput.value
+        viewModelScope.launch {
+            EqualizerProfileStore.saveBassBoost(getApplication(), output, strength.coerceIn(0, 1000))
+        }
         refresh()
     }
 
     private fun persistBandsAndPreset() {
-        val encoded = encodeBands(EqualizerManager.getDesiredBandLevels())
+        val bands = EqualizerManager.getDesiredBandLevels()
         val preset = EqualizerManager.getSelectedPreset()
+        val output = AudioOutputManager.currentOutput.value
         viewModelScope.launch {
-            datastoreRepository.save(KEY_BANDS, encoded)
-            datastoreRepository.save(KEY_PRESET, preset)
+            EqualizerProfileStore.saveBandsAndPreset(getApplication(), output, bands, preset)
         }
     }
 
@@ -131,27 +130,6 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     companion object {
-        private const val CUSTOM_PRESET = -1
-
-        private val KEY_ENABLED = booleanPreferencesKey("equalizer-enabled")
-        private val KEY_PRESET = intPreferencesKey("equalizer-preset")
-        private val KEY_BASS_BOOST = intPreferencesKey("equalizer-bass-boost")
-        private val KEY_BANDS = stringPreferencesKey("equalizer-bands")
-
-        /** Encodes band levels as "index:level;index:level". */
-        private fun encodeBands(bands: Map<Short, Short>): String =
-            bands.entries.joinToString(";") { "${it.key}:${it.value}" }
-
-        private fun decodeBands(raw: String?): Map<Short, Short> {
-            if (raw.isNullOrBlank()) return emptyMap()
-            return raw.split(";").mapNotNull { entry ->
-                val parts = entry.split(":")
-                val band = parts.getOrNull(0)?.toShortOrNull()
-                val level = parts.getOrNull(1)?.toShortOrNull()
-                if (band != null && level != null) band to level else null
-            }.toMap()
-        }
-
         fun Factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 EqualizerViewModel(application)

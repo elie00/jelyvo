@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.equalizer
 
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
+
 /**
  * UI state for the equalizer screen.
  *
@@ -12,6 +14,7 @@ package ca.ilianokokoro.umihi.music.ui.screens.equalizer
  * @param presets         Names of the device provided presets.
  * @param selectedPreset  Index into [presets], or -1 for a custom configuration.
  * @param bassBoost       Bass boost strength, 0..1000.
+ * @param currentOutput   The active audio output the shown profile belongs to.
  */
 data class EqualizerState(
     val available: Boolean = false,
@@ -21,7 +24,8 @@ data class EqualizerState(
     val maxLevelMilliBel: Int = 0,
     val presets: List<String> = emptyList(),
     val selectedPreset: Int = -1,
-    val bassBoost: Int = 0
+    val bassBoost: Int = 0,
+    val currentOutput: AudioOutputManager.Output = AudioOutputManager.Output.SPEAKER
 )
 
 /**

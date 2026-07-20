@@ -229,6 +229,10 @@
     <string name="equalizer_preset_custom">Personnalisé</string>
     <string name="equalizer_bands">Bandes</string>
     <string name="equalizer_bass_boost">Amplification des basses</string>
+    <string name="equalizer_active_output">Profil pour la sortie active : %1$s</string>
+    <string name="equalizer_output_bluetooth">Bluetooth</string>
+    <string name="equalizer_output_wired">Écouteurs filaires</string>
+    <string name="equalizer_output_speaker">Haut-parleur</string>
     <string name="spotify_connect_description">Connectez votre compte Spotify pour importer vos playlists et vos titres aimés.</string>
     <string name="spotify_connect_button">Connecter Spotify</string>
     <string name="spotify_choose_what_to_import">Choisissez ce que vous voulez importer</string>

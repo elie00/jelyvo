@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import kotlin.math.roundToInt
 
@@ -90,11 +91,29 @@ fun EqualizerScreen(
                 return@Column
             }
 
+            // Active output the shown profile applies to
+            Text(
+                text = stringResource(
+                    R.string.equalizer_active_output,
+                    stringResource(
+                        when (state.currentOutput) {
+                            AudioOutputManager.Output.BLUETOOTH -> R.string.equalizer_output_bluetooth
+                            AudioOutputManager.Output.WIRED -> R.string.equalizer_output_wired
+                            AudioOutputManager.Output.SPEAKER -> R.string.equalizer_output_speaker
+                        }
+                    )
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            )
+
             // Master enable switch
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
