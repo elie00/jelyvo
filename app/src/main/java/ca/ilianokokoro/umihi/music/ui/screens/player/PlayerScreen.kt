@@ -21,10 +21,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -51,6 +55,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
@@ -61,6 +66,8 @@ import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 fun PlayerScreen(
     onBack: () -> Unit,
     onOpenArtist: (Song) -> Unit = {},
+    onOpenAlbum: (Song) -> Unit = {},
+    onOpenEqualizer: () -> Unit = {},
     modifier: Modifier = Modifier,
     artworkModifier: Modifier = Modifier,
     application: Application,
@@ -130,7 +137,8 @@ fun PlayerScreen(
                         isLiked = uiState.isLiked,
                         isLiking = uiState.isLiking,
                         onToggleLike = playerViewModel::toggleLike,
-                        onArtistClick = { currentSong?.let { onOpenArtist(it) } },
+                        onArtistClick = { playerViewModel.openArtist(onOpenArtist) },
+                        onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
                     )
                     PlayerControls(
                         isPlaying = uiState.isPlaying,
@@ -192,7 +200,8 @@ fun PlayerScreen(
                         isLiked = uiState.isLiked,
                         isLiking = uiState.isLiking,
                         onToggleLike = playerViewModel::toggleLike,
-                        onArtistClick = { currentSong?.let { onOpenArtist(it) } },
+                        onArtistClick = { playerViewModel.openArtist(onOpenArtist) },
+                        onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
                     )
 
                     PlayerControls(
@@ -235,6 +244,15 @@ fun PlayerScreen(
             changeVisibility = playerViewModel::setQueueVisibility,
             songs = uiState.queue,
             currentIndex = uiState.currentIndex
+        )
+    }
+
+    if (uiState.isPlayerMenuShown && currentSong != null) {
+        PlayerMenuBottomSheet(
+            changeVisibility = playerViewModel::setPlayerMenuVisibility,
+            song = currentSong,
+            onOpenAlbum = onOpenAlbum,
+            onOpenEqualizer = onOpenEqualizer,
         )
     }
 
@@ -316,6 +334,7 @@ fun SongInfo(
     isLiking: Boolean = false,
     onToggleLike: () -> Unit = {},
     onArtistClick: () -> Unit = {},
+    onMoreClick: () -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -325,11 +344,7 @@ fun SongInfo(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Column(
-            modifier = if (isLoggedIn) {
-                Modifier.weight(1f)
-            } else {
-                Modifier.fillMaxWidth()
-            },
+            modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalAlignment = Alignment.Start
         ) {
@@ -338,20 +353,37 @@ fun SongInfo(
                 style = MaterialTheme.typography.titleLargeEmphasized.copy(fontFamily = nunitoFontFamily),
                 modifier = Modifier.basicMarquee()
             )
-            Text(
-                text = song?.artist ?: "",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Bold
-                ),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .basicMarquee()
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .clickable(enabled = song != null, onClick = onArtistClick)
-            )
+            ) {
+                Text(
+                    text = song?.artist ?: "",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .basicMarquee()
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = stringResource(R.string.view_artist),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
 
-        if (isLoggedIn) {
-            Box(modifier = Modifier.padding(start = 8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(start = 8.dp)
+        ) {
+            if (isLoggedIn) {
                 FilledIconToggleButton(
                     checked = isLiked,
                     onCheckedChange = {
@@ -382,6 +414,13 @@ fun SongInfo(
                         }
                     )
                 }
+            }
+
+            IconButton(onClick = onMoreClick) {
+                Icon(
+                    imageVector = Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.more)
+                )
             }
         }
     }

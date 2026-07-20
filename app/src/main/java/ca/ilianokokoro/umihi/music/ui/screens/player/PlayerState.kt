@@ -16,10 +16,12 @@ data class PlayerState(
     val isSleepTimerModalShown: Boolean = false,
     val sleepTimerRemainingSeconds: Long? = null,
     val isSpeedSelectorShown: Boolean = false,
+    val isPlayerMenuShown: Boolean = false,
     val playbackSpeed: Float = 1.0f,
     val isLoggedIn: Boolean = false,
     val isLiked: Boolean = false,
     val isLiking: Boolean = false,
+    val isResolvingArtist: Boolean = false,
     val lyrics: ApiResult<Lyrics> = ApiResult.Loading,
     val areLyricsShown: Boolean = false,
 )

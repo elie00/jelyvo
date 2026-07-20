@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
 import ca.ilianokokoro.umihi.music.models.Song
@@ -131,6 +132,47 @@ class PlayerViewModel(application: Application) :
         }
     }
 
+    /**
+     * Opens the current song's artist page. When the queue item doesn't carry the artist
+     * browse id (e.g. restored queues or radio items), it is resolved once through the
+     * watch-next endpoint and cached back onto the song before navigating.
+     */
+    fun openArtist(onOpenArtist: (Song) -> Unit) {
+        val currentSong = _uiState.value.queue.getOrNull(_uiState.value.currentIndex) ?: return
+
+        if (currentSong.artistId != null) {
+            onOpenArtist(currentSong)
+            return
+        }
+
+        if (_uiState.value.isResolvingArtist) {
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isResolvingArtist = true) }
+            try {
+                val artistId = YoutubeDataExtractor.extractArtistBrowseId(
+                    YoutubeApiClient.next(currentSong.youtubeId),
+                    currentSong.youtubeId,
+                )
+                if (artistId != null) {
+                    currentSong.artistId = artistId
+                    onOpenArtist(currentSong)
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                printe(
+                    message = "Failed to resolve artist for ${currentSong.youtubeId}: ${e.message}",
+                    exception = e
+                )
+            } finally {
+                _uiState.update { it.copy(isResolvingArtist = false) }
+            }
+        }
+    }
+
     fun setSleepTimerSheetVisibility(show: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSleepTimerModalShown = show) }
@@ -152,6 +194,12 @@ class PlayerViewModel(application: Application) :
     fun setSpeedSelectorVisibility(show: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSpeedSelectorShown = show) }
+        }
+    }
+
+    fun setPlayerMenuVisibility(show: Boolean) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isPlayerMenuShown = show) }
         }
     }
 
