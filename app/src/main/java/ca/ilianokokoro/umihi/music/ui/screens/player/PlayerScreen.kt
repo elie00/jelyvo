@@ -54,6 +54,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
+import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 @Composable
@@ -84,6 +85,9 @@ fun PlayerScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
+    ArtworkPlayerTheme(
+        artworkUri = currentSong?.thumbnailPath ?: currentSong?.thumbnailHref,
+    ) {
     Scaffold(
         modifier = Modifier.padding(
             start = 8.dp,
@@ -239,6 +243,7 @@ fun PlayerScreen(
             onStartEndOfSong = playerViewModel::startSleepTimerEndOfSong,
             onCancelTimer = playerViewModel::cancelSleepTimer,
         )
+    }
     }
 }
 
