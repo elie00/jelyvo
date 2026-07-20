@@ -179,9 +179,14 @@ object Constants {
         object Library {
             const val ROOT_ID = "root"
             const val PLAYLIST_ROOT = "root_playlist"
+            const val RECENT_ROOT = "root_recent"
+            const val DOWNLOADS_ROOT = "root_downloads"
+            const val TOP_TRACKS_ROOT = "root_top_tracks"
             const val PLAYLIST_PREFIX = "playlist:"
             const val PLAY_PLAYLIST_PREFIX = "action_play_playlist_"
             const val SHUFFLE_PLAYLIST_PREFIX = "action_shuffle_playlist_"
+            const val PLAY_COLLECTION_PREFIX = "action_play_collection_"
+            const val SHUFFLE_COLLECTION_PREFIX = "action_shuffle_collection_"
         }
 
         object SongMetadata {

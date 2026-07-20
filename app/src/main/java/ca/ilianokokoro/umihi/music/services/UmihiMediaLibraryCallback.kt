@@ -14,7 +14,9 @@ import androidx.media3.session.SessionError
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Playlist
@@ -27,6 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 @UnstableApi
 class UmihiMediaLibraryCallback(
@@ -36,6 +39,10 @@ class UmihiMediaLibraryCallback(
     private val songRepository: SongRepository,
     private val playlistRepository: PlaylistRepository
 ) : MediaLibrarySession.Callback {
+    private val database = AppDatabase.getInstance(service.applicationContext)
+    private val localPlaylists = database.playlistRepository()
+    private val localSongs = database.songRepository()
+    private val historyRepository = HistoryRepository(service.applicationContext)
 
     override fun onConnect(
         session: MediaSession,
@@ -62,7 +69,8 @@ class UmihiMediaLibraryCallback(
                     .setMediaId(Constants.ExoPlayer.Library.ROOT_ID)
                     .setMediaMetadata(
                         MediaMetadata.Builder()
-                            .setIsBrowsable(false)
+                            .setTitle(service.getString(R.string.app_name))
+                            .setIsBrowsable(true)
                             .setIsPlayable(false)
                             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
                             .build()
@@ -88,31 +96,53 @@ class UmihiMediaLibraryCallback(
                 val result = when {
                     parentId == Constants.ExoPlayer.Library.ROOT_ID -> {
                         listOf(
-                            MediaItem.Builder()
-                                .setMediaId(Constants.ExoPlayer.Library.PLAYLIST_ROOT)
-                                .setMediaMetadata(
-                                    MediaMetadata.Builder()
-                                        .setTitle(service.getString(R.string.playlists))
-                                        .setIsPlayable(false)
-                                        .setIsBrowsable(true)
-                                        .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS)
-                                        .build()
-                                )
-                                .build()
+                            browsableFolder(
+                                Constants.ExoPlayer.Library.RECENT_ROOT,
+                                service.getString(R.string.recently_played),
+                                MediaMetadata.MEDIA_TYPE_FOLDER_MIXED,
+                            ),
+                            browsableFolder(
+                                Constants.ExoPlayer.Library.TOP_TRACKS_ROOT,
+                                service.getString(R.string.top_tracks),
+                                MediaMetadata.MEDIA_TYPE_FOLDER_MIXED,
+                            ),
+                            browsableFolder(
+                                Constants.ExoPlayer.Library.DOWNLOADS_ROOT,
+                                service.getString(R.string.downloads),
+                                MediaMetadata.MEDIA_TYPE_FOLDER_MIXED,
+                            ),
+                            browsableFolder(
+                                Constants.ExoPlayer.Library.PLAYLIST_ROOT,
+                                service.getString(R.string.playlists),
+                                MediaMetadata.MEDIA_TYPE_FOLDER_PLAYLISTS,
+                            ),
                         )
                     }
 
                     parentId == Constants.ExoPlayer.Library.PLAYLIST_ROOT -> {
-                        val playlists = playlistRepository
-                            .retrieveAll(datastoreRepository.settings.first())
-                            .first { it !is ApiResult.Loading }
-
-                        if (playlists is ApiResult.Success) {
-                            playlists.data.map { playlist ->
-                                playlist.toBrowsableMediaItem()
-                            }
-                        } else {
+                        val remote = try {
+                            val result = playlistRepository
+                                .retrieveAll(datastoreRepository.settings.first())
+                                .first { it !is ApiResult.Loading }
+                            (result as? ApiResult.Success)?.data.orEmpty()
+                        } catch (_: Exception) {
                             emptyList()
+                        }
+                        val local = localPlaylists.getAll().map { it.info }
+                        (remote + local)
+                            .distinctBy { it.id }
+                            .map(PlaylistInfo::toBrowsableMediaItem)
+                    }
+
+                    parentId in collectionRootIds -> {
+                        val songs = collectionSongs(parentId)
+                        if (songs.isEmpty()) {
+                            emptyList()
+                        } else {
+                            listOf(
+                                playCollectionMediaItem(parentId),
+                                shuffleCollectionMediaItem(parentId),
+                            ) + songs.map { it.mediaItem }
                         }
                     }
 
@@ -124,18 +154,21 @@ class UmihiMediaLibraryCallback(
                             PlaylistInfo(id = playlistId)
                         )
 
-                        val result = playlistRepository
-                            .retrieveOne(
-                                playlist,
-                                datastoreRepository.settings.first()
-                            )
-                            .first { it !is ApiResult.Loading }
+                        val remoteResult = try {
+                            playlistRepository
+                                .retrieveOne(playlist, datastoreRepository.settings.first())
+                                .first { it !is ApiResult.Loading }
+                        } catch (_: Exception) {
+                            null
+                        }
+                        val resolvedPlaylist = (remoteResult as? ApiResult.Success)?.data
+                            ?: localPlaylists.getPlaylistById(playlistId)
 
-                        if (result is ApiResult.Success) {
+                        if (resolvedPlaylist != null) {
                             listOf(
                                 playPlaylistMediaItem(playlistId),
                                 shufflePlaylistMediaItem(playlistId)
-                            ) + result.data.songs.map { song ->
+                            ) + resolvedPlaylist.songs.map { song ->
                                 song.mediaItem
                             }
                         } else {
@@ -220,6 +253,20 @@ class UmihiMediaLibraryCallback(
             )
         }
 
+        if (mediaId.startsWith(Constants.ExoPlayer.Library.PLAY_COLLECTION_PREFIX)) {
+            return resolveCollectionSongs(
+                mediaId.removePrefix(Constants.ExoPlayer.Library.PLAY_COLLECTION_PREFIX),
+                shuffle = false,
+            )
+        }
+
+        if (mediaId.startsWith(Constants.ExoPlayer.Library.SHUFFLE_COLLECTION_PREFIX)) {
+            return resolveCollectionSongs(
+                mediaId.removePrefix(Constants.ExoPlayer.Library.SHUFFLE_COLLECTION_PREFIX),
+                shuffle = true,
+            )
+        }
+
         return listOf(
             resolveSongMediaItem(mediaItem)
         )
@@ -238,15 +285,11 @@ class UmihiMediaLibraryCallback(
             result is ApiResult.Success
         }
 
-        if (result !is ApiResult.Success) {
-            return emptyList()
-        }
+        val playlist = (result as? ApiResult.Success)?.data
+            ?: localPlaylists.getPlaylistById(playlistId)
+            ?: return emptyList()
 
-        val songs = if (shuffle) {
-            result.data.songs.shuffled()
-        } else {
-            result.data.songs
-        }
+        val songs = if (shuffle) playlist.songs.shuffled() else playlist.songs
 
         return songs.map { song ->
             song.mediaItem
@@ -295,6 +338,71 @@ class UmihiMediaLibraryCallback(
             .build()
     }
 
+    private suspend fun collectionSongs(collectionId: String) = when (collectionId) {
+        Constants.ExoPlayer.Library.RECENT_ROOT -> historyRepository.recentSongs(50).first()
+        Constants.ExoPlayer.Library.DOWNLOADS_ROOT -> localSongs.getDownloadedSongs()
+        Constants.ExoPlayer.Library.TOP_TRACKS_ROOT -> {
+            val monthStart = Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            historyRepository.topTracks(monthStart, 25).first().map { it.toSong() }
+        }
+        else -> emptyList()
+    }
+
+    private suspend fun resolveCollectionSongs(
+        collectionId: String,
+        shuffle: Boolean,
+    ): List<MediaItem> {
+        val songs = collectionSongs(collectionId).let { if (shuffle) it.shuffled() else it }
+        return songs.map { it.mediaItem }
+    }
+
+    private fun browsableFolder(id: String, title: String, mediaType: Int) =
+        MediaItem.Builder()
+            .setMediaId(id)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setIsPlayable(false)
+                    .setIsBrowsable(true)
+                    .setMediaType(mediaType)
+                    .build()
+            )
+            .build()
+
+    private fun playCollectionMediaItem(collectionId: String) =
+        collectionActionMediaItem(
+            mediaId = "${Constants.ExoPlayer.Library.PLAY_COLLECTION_PREFIX}$collectionId",
+            title = service.getString(R.string.play),
+            icon = androidx.media3.session.R.drawable.media3_icon_play,
+        )
+
+    private fun shuffleCollectionMediaItem(collectionId: String) =
+        collectionActionMediaItem(
+            mediaId = "${Constants.ExoPlayer.Library.SHUFFLE_COLLECTION_PREFIX}$collectionId",
+            title = service.getString(R.string.shuffle),
+            icon = androidx.media3.session.R.drawable.media3_icon_shuffle_on,
+        )
+
+    private fun collectionActionMediaItem(mediaId: String, title: String, icon: Int) =
+        MediaItem.Builder()
+            .setMediaId(mediaId)
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setArtworkUri(drawableUri(icon))
+                    .setIsBrowsable(false)
+                    .setIsPlayable(true)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_PLAYLIST)
+                    .build()
+            )
+            .build()
+
     private fun shufflePlaylistMediaItem(
         playlistId: String
     ): MediaItem {
@@ -320,5 +428,13 @@ class UmihiMediaLibraryCallback(
             .authority(service.packageName)
             .appendPath(drawableResId.toString())
             .build()
+    }
+
+    private companion object {
+        val collectionRootIds = setOf(
+            Constants.ExoPlayer.Library.RECENT_ROOT,
+            Constants.ExoPlayer.Library.DOWNLOADS_ROOT,
+            Constants.ExoPlayer.Library.TOP_TRACKS_ROOT,
+        )
     }
 }
