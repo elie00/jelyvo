@@ -255,6 +255,8 @@ fun PlayerScreen(
             song = currentSong,
             onOpenAlbum = onOpenAlbum,
             onOpenEqualizer = onOpenEqualizer,
+            abLoop = uiState.abLoop,
+            onToggleAbLoop = playerViewModel::toggleAbLoop,
         )
     }
 

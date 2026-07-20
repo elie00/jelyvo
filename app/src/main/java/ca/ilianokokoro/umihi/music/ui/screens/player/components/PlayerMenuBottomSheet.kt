@@ -9,11 +9,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
@@ -29,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.managers.AbLoop
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 
@@ -43,6 +46,8 @@ fun PlayerMenuBottomSheet(
     song: Song,
     onOpenAlbum: (Song) -> Unit,
     onOpenEqualizer: () -> Unit,
+    abLoop: AbLoop?,
+    onToggleAbLoop: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -118,6 +123,17 @@ fun PlayerMenuBottomSheet(
             )
 
             PlayerMenuItem(
+                icon = Icons.Rounded.Repeat,
+                text = when {
+                    abLoop == null -> stringResource(R.string.ab_loop)
+                    abLoop.pointBMs == null -> stringResource(R.string.ab_loop_a_set)
+                    else -> stringResource(R.string.ab_loop_active)
+                },
+                tint = if (abLoop != null) MaterialTheme.colorScheme.primary else null,
+                onClick = onToggleAbLoop,
+            )
+
+            PlayerMenuItem(
                 icon = Icons.Rounded.GraphicEq,
                 text = stringResource(R.string.equalizer_title),
                 onClick = {
@@ -134,13 +150,15 @@ private fun PlayerMenuItem(
     icon: ImageVector,
     text: String,
     onClick: () -> Unit,
+    tint: Color? = null,
 ) {
     ListItem(
-        headlineContent = { Text(text) },
+        headlineContent = { Text(text, color = tint ?: Color.Unspecified) },
         leadingContent = {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
+                tint = tint ?: LocalContentColor.current,
             )
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

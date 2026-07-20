@@ -42,6 +42,7 @@ class PlayerViewModel(application: Application) :
 
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            PlayerManager.clearAbLoop()
             updateCurrentSong()
         }
 
@@ -81,6 +82,12 @@ class PlayerViewModel(application: Application) :
         viewModelScope.launch {
             PlayerManager.playbackSpeed.collect { speed ->
                 _uiState.update { it.copy(playbackSpeed = speed) }
+            }
+        }
+
+        viewModelScope.launch {
+            PlayerManager.abLoop.collect { loop ->
+                _uiState.update { it.copy(abLoop = loop) }
             }
         }
 
@@ -207,6 +214,10 @@ class PlayerViewModel(application: Application) :
         PlayerManager.setPlaybackSpeed(speed)
     }
 
+    fun toggleAbLoop() {
+        PlayerManager.toggleAbLoop()
+    }
+
     fun seekPlayer() {
         PlayerManager.currentController?.seekTo(_uiState.value.playbackProgress.position.toLong())
     }
@@ -326,6 +337,11 @@ class PlayerViewModel(application: Application) :
 
                     val rawPosition = controller?.currentPosition
                     val rawDuration = controller?.duration
+
+                    val loop = state.abLoop
+                    if (loop?.pointBMs != null && rawPosition != null && rawPosition >= loop.pointBMs) {
+                        controller?.seekTo(loop.pointAMs)
+                    }
 
                     val current = state.playbackProgress
 

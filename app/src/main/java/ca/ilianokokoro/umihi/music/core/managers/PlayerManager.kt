@@ -37,6 +37,15 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * A-B repeat segment. [pointBMs] is null while only A has been placed; the loop is active
+ * (playback jumps from B back to A) once both points are set.
+ */
+data class AbLoop(
+    val pointAMs: Long,
+    val pointBMs: Long? = null,
+)
+
 object PlayerManager {
     @Volatile
     private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -65,6 +74,9 @@ object PlayerManager {
 
     private val _playbackSpeed = MutableStateFlow(1.0f)
     val playbackSpeed: StateFlow<Float> = _playbackSpeed.asStateFlow()
+
+    private val _abLoop = MutableStateFlow<AbLoop?>(null)
+    val abLoop: StateFlow<AbLoop?> = _abLoop.asStateFlow()
 
     private val _audioInfo = MutableStateFlow(PlaybackAudioInfo())
     val audioInfo = _audioInfo.asStateFlow()
@@ -482,6 +494,36 @@ object PlayerManager {
     fun setPlaybackSpeed(speed: Float) {
         currentController?.setPlaybackSpeed(speed)
         _playbackSpeed.value = speed
+    }
+
+    /**
+     * Cycles the A-B repeat segment: 1st call places A at the current position, 2nd places B,
+     * 3rd clears it. If B would land before A the two points are swapped; an identical position
+     * is ignored so the loop always keeps a positive length.
+     */
+    fun toggleAbLoop() {
+        val controller = currentController ?: return
+        val positionMs = controller.currentPosition.coerceAtLeast(0)
+        val current = _abLoop.value
+
+        _abLoop.value = when {
+            current == null -> AbLoop(pointAMs = positionMs)
+            current.pointBMs == null -> when {
+                positionMs > current.pointAMs -> current.copy(pointBMs = positionMs)
+                positionMs < current.pointAMs -> AbLoop(
+                    pointAMs = positionMs,
+                    pointBMs = current.pointAMs
+                )
+
+                else -> current
+            }
+
+            else -> null
+        }
+    }
+
+    fun clearAbLoop() {
+        _abLoop.value = null
     }
 
     fun cancelSleepTimer() {
