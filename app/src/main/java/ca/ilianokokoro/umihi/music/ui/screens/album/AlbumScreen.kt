@@ -85,9 +85,9 @@ fun AlbumScreen(
                             song
                         }
                     }
-                    val playSongs: (List<Song>) -> Unit = { list ->
+                    val playSongs: (List<Song>, Int) -> Unit = { list, startIndex ->
                         onOpenPlayer()
-                        PlayerManager.playQueue(list.map { it.mediaItem })
+                        PlayerManager.playQueue(list.map { it.mediaItem }, startIndex)
                     }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -122,12 +122,12 @@ fun AlbumScreen(
                                 )
                                 if (playableSongs.isNotEmpty()) {
                                     PlaySplitButton(
-                                        onPlay = { playSongs(playableSongs) },
+                                        onPlay = { playSongs(playableSongs, 0) },
                                         menuActions = listOf(
                                             PlaySplitButtonAction(
                                                 label = stringResource(R.string.shuffle),
                                                 icon = Icons.Rounded.Shuffle,
-                                                onClick = { playSongs(playableSongs.shuffled()) },
+                                                onClick = { playSongs(playableSongs.shuffled(), 0) },
                                             ),
                                             PlaySplitButtonAction(
                                                 label = stringResource(R.string.start_radio),
@@ -154,8 +154,8 @@ fun AlbumScreen(
                             SongListItem(
                                 song = song,
                                 onPress = {
-                                    onOpenPlayer()
-                                    PlayerManager.playSong(song)
+                                    // Queue the whole album, starting at the tapped track.
+                                    playSongs(playableSongs, playableSongs.indexOf(song))
                                 },
                                 playNext = { PlayerManager.addNext(song, context) },
                                 addToQueue = { PlayerManager.addToQueue(song, context) },

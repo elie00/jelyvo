@@ -69,6 +69,15 @@ object PlayerManager {
     private val _audioInfo = MutableStateFlow(PlaybackAudioInfo())
     val audioInfo = _audioInfo.asStateFlow()
 
+    /**
+     * True when the current queue is a self-contained collection (album, artist page, playlist):
+     * playback must stop at its end instead of being extended with radio/autoplay suggestions.
+     * Cleared whenever the queue is rebuilt around a single song or an explicit radio.
+     */
+    @Volatile
+    var isCollectionQueue: Boolean = false
+        private set
+
     fun updatePlaybackInfo(info: PlaybackAudioInfo) {
         _audioInfo.value = info
     }
@@ -153,6 +162,10 @@ object PlayerManager {
             controller.seekToNext()
             return
         }
+        // A collection queue (album, artist, playlist) ends where the collection ends.
+        if (isCollectionQueue) {
+            return
+        }
         // No next track (e.g. a single-song queue): build a radio around the current song.
         val seed = controller.currentMediaItem?.toSong() ?: return
         scope.launch {
@@ -194,6 +207,7 @@ object PlayerManager {
 
     fun playMediaItem(mediaItem: MediaItem) {
         currentController?.run {
+            isCollectionQueue = false
             setMediaItem(mediaItem)
             prepare()
             play()
@@ -209,6 +223,7 @@ object PlayerManager {
             return
         }
 
+        isCollectionQueue = true
         controller.setMediaItems(
             mediaItems,
             index.coerceIn(0, mediaItems.lastIndex),
@@ -238,6 +253,7 @@ object PlayerManager {
         }
 
         currentController?.run {
+            isCollectionQueue = true
             setMediaItems(
                 mediaItems,
                 startIndex.coerceIn(0, mediaItems.lastIndex),
@@ -251,6 +267,7 @@ object PlayerManager {
     fun playSong(song: Song) {
         val controller = currentController ?: return
 
+        isCollectionQueue = false
         controller.setMediaItem(song.mediaItem)
         controller.prepare()
         controller.play()

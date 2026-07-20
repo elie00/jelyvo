@@ -518,6 +518,10 @@ class PlaybackService : MediaLibraryService() {
         if (!settings.autoplay || currentSong.youtubeId.isBlank()) {
             return
         }
+        // A collection queue (album, artist, playlist) ends where the collection ends.
+        if (PlayerManager.isCollectionQueue) {
+            return
+        }
 
         val isLast = withContext(Dispatchers.Main) {
             val p = mediaLibrarySession?.player ?: return@withContext false

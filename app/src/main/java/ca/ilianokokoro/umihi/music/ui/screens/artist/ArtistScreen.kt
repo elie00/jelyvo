@@ -167,8 +167,12 @@ fun ArtistScreen(
                             SongListItem(
                                 song = song,
                                 onPress = {
+                                    // Queue the artist's listed songs, starting at the tapped one.
                                     onOpenPlayer()
-                                    PlayerManager.playSong(song)
+                                    PlayerManager.playQueue(
+                                        page.songs.map { it.mediaItem },
+                                        page.songs.indexOf(song)
+                                    )
                                 },
                                 playNext = { PlayerManager.addNext(song, context) },
                                 addToQueue = { PlayerManager.addToQueue(song, context) },
