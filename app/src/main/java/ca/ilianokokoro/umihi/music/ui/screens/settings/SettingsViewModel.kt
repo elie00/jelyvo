@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
+import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
@@ -128,6 +129,18 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         ScreenAwakeManager.setKeepScreenOn(value)
         updateSetting(
             DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON,
+            value
+        )
+    }
+
+    fun updateNotifyNewReleasesSetting(value: Boolean) {
+        if (value) {
+            NewReleasesScheduler.schedule(_application)
+        } else {
+            NewReleasesScheduler.cancel(_application)
+        }
+        updateSetting(
+            DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES,
             value
         )
     }

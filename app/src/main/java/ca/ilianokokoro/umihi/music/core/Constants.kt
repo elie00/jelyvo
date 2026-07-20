@@ -91,6 +91,8 @@ object Constants {
         const val AUTOPLAY = "autoplay"
         const val CROSSFADE_SECONDS = "crossfade-seconds"
         const val THEME_COLOR = "theme-color"
+        const val NOTIFY_NEW_RELEASES = "notify-new-releases"
+        const val NOTIFIED_RELEASE_IDS = "notified-release-ids"
     }
 
     object Database {

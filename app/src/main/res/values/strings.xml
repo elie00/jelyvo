@@ -165,6 +165,13 @@
     <string name="playlist_progress_description">Shows live progress and completion notifications for playlist downloads</string>
     <string name="song_alerts_name">Song Download Alerts</string>
     <string name="song_alerts_description">Notifies about individual song download issues during playlist downloads</string>
+    <string name="new_releases_channel_name">New Releases</string>
+    <string name="new_releases_channel_description">Notifies you when artists you follow release new music</string>
+    <string name="new_release_notification_title">New release from %1$s</string>
+    <string name="new_releases_summary_title">New releases</string>
+    <string name="new_releases_summary_text">%1$d new releases from artists you follow</string>
+    <string name="notify_new_releases_title">New Release Notifications</string>
+    <string name="notify_new_releases_description">Get notified when artists you follow publish new albums or singles</string>
     <string name="short_minutes">%1$d min</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="download_on_metered_description">Allows downloading songs and playlists using your mobile data plan</string>

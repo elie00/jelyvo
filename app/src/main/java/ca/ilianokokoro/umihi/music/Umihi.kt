@@ -3,6 +3,8 @@ package ca.ilianokokoro.umihi.music
 import android.app.Application
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
+import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -10,6 +12,11 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import okio.Path.Companion.toOkioPath
 
 class Umihi : Application(), SingletonImageLoader.Factory {
@@ -18,6 +25,16 @@ class Umihi : Application(), SingletonImageLoader.Factory {
         super.onCreate()
 
         NotificationManager.init(this)
+
+        // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means an
+        // already-running schedule is left untouched.
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            if (DatastoreRepository(this@Umihi).notifyNewReleases.first()) {
+                NewReleasesScheduler.schedule(this@Umihi)
+            } else {
+                NewReleasesScheduler.cancel(this@Umihi)
+            }
+        }
     }
 
     /**

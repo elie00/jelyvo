@@ -8,6 +8,7 @@ import androidx.annotation.StringRes
 import androidx.core.app.NotificationCompat
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlin.math.abs
@@ -231,6 +232,45 @@ object NotificationManager {
         androidNotificationManager.notify(getNotificationID(song.youtubeId), notification)
     }
 
+    /**
+     * A newly discovered release from a followed artist. Individual notifications are grouped so
+     * several new releases collapse into one stack; [showNewReleasesSummary] adds the summary line.
+     */
+    fun showNewRelease(
+        context: Context,
+        release: ArtistAlbum,
+        artistName: String,
+    ) {
+        val notification = getBaseNotification(context, NotificationChannels.NEW_RELEASES)
+            .setContentTitle(context.getString(R.string.new_release_notification_title, artistName))
+            .setContentText(release.title)
+            .setSmallIcon(android.R.drawable.stat_notify_more)
+            .setAutoCancel(true)
+            .setGroup(NotificationChannels.NEW_RELEASES.group)
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        androidNotificationManager.notify(getNotificationID(release.browseId), notification)
+    }
+
+    fun showNewReleasesSummary(context: Context, count: Int) {
+        val summaryNotification =
+            getBaseNotification(context, NotificationChannels.NEW_RELEASES)
+                .setContentTitle(context.getString(R.string.new_releases_summary_title))
+                .setContentText(
+                    context.getString(R.string.new_releases_summary_text, count)
+                )
+                .setSmallIcon(android.R.drawable.stat_notify_more)
+                .setGroup(NotificationChannels.NEW_RELEASES.group)
+                .setGroupSummary(true)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .build()
+
+        androidNotificationManager.notify(NEW_RELEASES_SUMMARY_ID, summaryNotification)
+    }
+
     private fun getBaseNotification(
         context: Context,
         channel: NotificationChannels
@@ -245,6 +285,10 @@ object NotificationManager {
     private fun getNotificationID(id: String): Int {
         return 1000 + abs(id.hashCode() and 0x7fffffff)
     }
+
+    // Fixed id for the new-releases group summary; distinct from the 1000+ per-item ids above and
+    // from the playlist group summary (id 0).
+    private const val NEW_RELEASES_SUMMARY_ID = 1
 
 
     private enum class NotificationChannels(
@@ -269,6 +313,14 @@ object NotificationManager {
             descriptionRes = (R.string.song_alerts_description),
             importance = AndroidNotificationManager.IMPORTANCE_DEFAULT,
             group = "SONG_GROUP"
+        ),
+
+        NEW_RELEASES(
+            channelId = "new_releases",
+            nameRes = R.string.new_releases_channel_name,
+            descriptionRes = R.string.new_releases_channel_description,
+            importance = AndroidNotificationManager.IMPORTANCE_DEFAULT,
+            group = "NEW_RELEASES_GROUP"
         );
     }
 }

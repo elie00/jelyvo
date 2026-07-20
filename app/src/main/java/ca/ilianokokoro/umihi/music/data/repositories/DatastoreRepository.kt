@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.core.Constants
@@ -19,6 +20,8 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
@@ -58,6 +61,8 @@ class DatastoreRepository(private val context: Context) {
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
         val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
+        val NOTIFY_NEW_RELEASES = booleanPreferencesKey(Constants.Datastore.NOTIFY_NEW_RELEASES)
+        val NOTIFIED_RELEASE_IDS = stringSetPreferencesKey(Constants.Datastore.NOTIFIED_RELEASE_IDS)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -95,6 +100,7 @@ class DatastoreRepository(private val context: Context) {
         val themeColor = it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Dynamic
+        val notifyNewReleases = it[NOTIFY_NEW_RELEASES] ?: false
         val cookies = cookies.first()
         val dataSyncId = dataSyncId.first()
 
@@ -113,7 +119,8 @@ class DatastoreRepository(private val context: Context) {
             downloadOnMetered = downloadOnMetered,
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
-            themeColor = themeColor
+            themeColor = themeColor,
+            notifyNewReleases = notifyNewReleases
         )
     }
 
@@ -141,6 +148,26 @@ class DatastoreRepository(private val context: Context) {
         it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Dynamic
+    }
+
+    /**
+     * Reads only the new-releases notification toggle. Used on the startup path (Application) to
+     * decide whether to (re)schedule the periodic check without paying for the full settings read.
+     */
+    val notifyNewReleases: Flow<Boolean> = context.dataStore.data.map {
+        it[NOTIFY_NEW_RELEASES] ?: false
+    }
+
+    /** The set of release browseIds already surfaced by [NewReleasesWorker], persisted so a
+     * release is never notified twice across background runs. */
+    suspend fun getNotifiedReleaseIds(): Set<String> {
+        return context.dataStore.data.first()[NOTIFIED_RELEASE_IDS] ?: emptySet()
+    }
+
+    suspend fun setNotifiedReleaseIds(ids: Set<String>) {
+        context.dataStore.edit {
+            it[NOTIFIED_RELEASE_IDS] = ids
+        }
     }
 
     val cookies = context.dataStore.data.map {

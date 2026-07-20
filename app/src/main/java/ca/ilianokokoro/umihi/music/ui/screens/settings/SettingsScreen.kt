@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
@@ -268,6 +269,14 @@ fun SettingsScreen(
                                         it
                                     )
                                 }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            BooleanSettingItem(
+                                title = stringResource(R.string.notify_new_releases_title),
+                                subtitle = stringResource(R.string.notify_new_releases_description),
+                                leadingIcon = Icons.Outlined.NotificationsActive,
+                                value = screenState.settings.notifyNewReleases,
+                                onToggle = settingsViewModel::updateNotifyNewReleasesSetting
                             )
                         }
 

@@ -18,7 +18,8 @@ data class UmihiSettings(
     val downloadOnMetered: Boolean = false,
     val autoplay: Boolean = true,
     val crossfadeSeconds: Int = 0,
-    val themeColor: ThemeColor = ThemeColor.Dynamic
+    val themeColor: ThemeColor = ThemeColor.Dynamic,
+    val notifyNewReleases: Boolean = false
 ) {
     val canTrack: Boolean get() = sendPlaybackData && !cookies.isEmpty()
 }
