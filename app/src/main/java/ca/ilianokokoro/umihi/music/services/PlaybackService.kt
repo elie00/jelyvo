@@ -14,6 +14,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSourceBitmapLoader
@@ -40,6 +41,7 @@ import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
+import ca.ilianokokoro.umihi.music.data.repositories.PlayerQueueRepository
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Song
@@ -51,10 +53,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.uuid.Uuid
@@ -68,7 +73,11 @@ class PlaybackService : MediaLibraryService() {
     private var currentAudioSessionId = C.AUDIO_SESSION_ID_UNSET
     private val songRepository = SongRepository()
     private lateinit var playlistRepository: PlaylistRepository
+    private lateinit var playerQueueRepository: PlayerQueueRepository
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var queuePersistenceJob: Job? = null
+    @Volatile private var queueRestoreComplete = false
+    @Volatile private var isRestoringQueue = false
     private var consecutivePlaybackErrors = 0
     private val historyRepository by lazy { HistoryRepository(applicationContext) }
     private val radioRepository = RadioRepository()
@@ -82,6 +91,7 @@ class PlaybackService : MediaLibraryService() {
 
         datastoreRepository = DatastoreRepository(applicationContext)
         playlistRepository = PlaylistRepository(application)
+        playerQueueRepository = PlayerQueueRepository(applicationContext)
         exoCache = ExoCache(application)
 
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
@@ -165,12 +175,19 @@ class PlaybackService : MediaLibraryService() {
         }
 
         player.addListener(object : Player.Listener {
+            override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                scheduleQueuePersistence()
+            }
+
             override fun onMediaItemTransition(
                 mediaItem: MediaItem?,
                 reason: Int
             ) {
+                scheduleQueuePersistence()
                 PlayerManager.updatePlaybackInfo(PlaybackAudioInfo())
                 updateCurrentMediaItemThumbnail(mediaItem)
+                // Restoring the last queue is not a new listen and must not affect history/stats.
+                if (isRestoringQueue) return
                 val songId = mediaItem?.mediaId ?: return
                 val playedSong = mediaItem.toSong()
                 serviceScope.launch {
@@ -190,6 +207,26 @@ class PlaybackService : MediaLibraryService() {
                     // A track played successfully: reset the failure guard.
                     consecutivePlaybackErrors = 0
                 }
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int,
+            ) {
+                scheduleQueuePersistence()
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                scheduleQueuePersistence()
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                scheduleQueuePersistence()
+            }
+
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                if (!isPlaying) scheduleQueuePersistence()
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -258,6 +295,8 @@ class PlaybackService : MediaLibraryService() {
             .setSessionActivity(pendingIntent)
             .setBitmapLoader(CacheBitmapLoader(DataSourceBitmapLoader.Builder(this).build()))
             .build()
+
+        restoreQueueAndStartPersistence()
     }
 
     override fun onGetSession(
@@ -265,6 +304,7 @@ class PlaybackService : MediaLibraryService() {
     ): MediaLibrarySession? = mediaLibrarySession
 
     override fun onTaskRemoved(rootIntent: Intent?) {
+        scheduleQueuePersistence(immediate = true)
         val player = mediaLibrarySession?.player
         if (player == null || player.mediaItemCount == 0) {
             pauseAllPlayersAndStopSelf()
@@ -272,6 +312,13 @@ class PlaybackService : MediaLibraryService() {
     }
 
     override fun onDestroy() {
+        queuePersistenceJob?.cancel()
+        if (queueRestoreComplete && ::player.isInitialized) {
+            val snapshot = captureQueueSnapshot()
+            runBlocking(Dispatchers.IO) {
+                persistQueueSnapshot(snapshot)
+            }
+        }
         serviceScope.cancel()
         mediaLibrarySession?.run {
             if (currentAudioSessionId > 0) {
@@ -291,6 +338,83 @@ class PlaybackService : MediaLibraryService() {
         if (::exoCache.isInitialized) exoCache.release()
         super.onDestroy()
     }
+
+    private fun restoreQueueAndStartPersistence() {
+        serviceScope.launch {
+            val restored = playerQueueRepository.restore()
+            withContext(Dispatchers.Main) {
+                if (restored != null && player.mediaItemCount == 0) {
+                    isRestoringQueue = true
+                    player.setMediaItems(
+                        restored.songs.map { it.mediaItem },
+                        restored.currentIndex,
+                        restored.positionMs,
+                    )
+                    player.repeatMode = restored.repeatMode
+                    player.shuffleModeEnabled = restored.shuffleEnabled
+                    player.prepare()
+                    player.playWhenReady = false
+                    isRestoringQueue = false
+                }
+                queueRestoreComplete = true
+            }
+        }
+
+        serviceScope.launch {
+            while (true) {
+                delay(QUEUE_POSITION_SAVE_INTERVAL_MS)
+                val isPlaying = withContext(Dispatchers.Main) { player.isPlaying }
+                if (queueRestoreComplete && isPlaying) {
+                    persistQueueSnapshot()
+                }
+            }
+        }
+    }
+
+    private fun scheduleQueuePersistence(immediate: Boolean = false) {
+        if (!queueRestoreComplete || isRestoringQueue) return
+        queuePersistenceJob?.cancel()
+        queuePersistenceJob = serviceScope.launch {
+            if (!immediate) delay(QUEUE_CHANGE_DEBOUNCE_MS)
+            persistQueueSnapshot()
+        }
+    }
+
+    private suspend fun persistQueueSnapshot() {
+        val snapshot = withContext(Dispatchers.Main) { captureQueueSnapshot() }
+        persistQueueSnapshot(snapshot)
+    }
+
+    private suspend fun persistQueueSnapshot(snapshot: QueueSnapshot) {
+        playerQueueRepository.save(
+            songs = snapshot.songs,
+            currentIndex = snapshot.currentIndex,
+            positionMs = snapshot.positionMs,
+            repeatMode = snapshot.repeatMode,
+            shuffleEnabled = snapshot.shuffleEnabled,
+        )
+    }
+
+    private fun captureQueueSnapshot(): QueueSnapshot {
+        val songs = List(player.mediaItemCount) { index ->
+            player.getMediaItemAt(index).toSong()
+        }
+        return QueueSnapshot(
+            songs = songs,
+            currentIndex = player.currentMediaItemIndex,
+            positionMs = player.currentPosition,
+            repeatMode = player.repeatMode,
+            shuffleEnabled = player.shuffleModeEnabled,
+        )
+    }
+
+    private data class QueueSnapshot(
+        val songs: List<Song>,
+        val currentIndex: Int,
+        val positionMs: Long,
+        val repeatMode: Int,
+        val shuffleEnabled: Boolean,
+    )
 
     /**
      * Endless-playback ("radio"): when autoplay is on and the current track is the last one in the
@@ -443,6 +567,8 @@ class PlaybackService : MediaLibraryService() {
     }
 
     companion object {
+        private const val QUEUE_CHANGE_DEBOUNCE_MS = 350L
+        private const val QUEUE_POSITION_SAVE_INTERVAL_MS = 5_000L
         private const val MAX_CONSECUTIVE_PLAYBACK_ERRORS = 5
     }
 }

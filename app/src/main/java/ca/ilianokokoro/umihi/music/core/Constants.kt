@@ -93,11 +93,12 @@ object Constants {
 
     object Database {
         const val NAME = "umihi-music"
-        const val VERSION = 9
+        const val VERSION = 10
         const val SONGS_TABLE = "songs"
         const val PLAYLISTS_TABLE = "playlists"
         const val VERSIONS_TABLE = "versions"
         const val HISTORY_TABLE = "play_history"
+        const val PLAYER_QUEUE_TABLE = "player_queue_state"
     }
 
     object ExoPlayer {
