@@ -45,6 +45,14 @@ data class Song(
     @Ignore
     var artistId: String? = null
 
+    // Local (on-device) track: [localUri] is a playable content:// URI; when set, playback reads it
+    // directly and never resolves a YouTube stream. Transient like the fields above.
+    @Ignore
+    var isLocal: Boolean = false
+
+    @Ignore
+    var localUri: String? = null
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()
@@ -55,9 +63,13 @@ data class Song(
             artistId?.let { extras.putString(Constants.ExoPlayer.SongMetadata.ARTIST_ID, it) }
             albumId?.let { extras.putString(Constants.ExoPlayer.SongMetadata.ALBUM_ID, it) }
             albumName?.let { extras.putString(Constants.ExoPlayer.SongMetadata.ALBUM_NAME, it) }
+            if (isLocal) {
+                extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_LOCAL, true)
+                localUri?.let { extras.putString(Constants.ExoPlayer.SongMetadata.LOCAL_URI, it) }
+            }
 
             return MediaItem.Builder()
-                .setUri(youtubeUrl)
+                .setUri(if (isLocal) (localUri ?: youtubeUrl) else youtubeUrl)
                 .setMediaId(youtubeId)
                 .setMediaMetadata(
                     MediaMetadata.Builder()

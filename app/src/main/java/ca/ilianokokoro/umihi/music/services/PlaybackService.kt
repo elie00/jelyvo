@@ -599,6 +599,10 @@ class PlaybackService : MediaLibraryService() {
             return
         }
         val nextSong = player.getMediaItemAt(nextIndex).toSong()
+        // On-device tracks already have a playable URI; there is no YouTube stream to prefetch.
+        if (nextSong.isLocal) {
+            return
+        }
         val context = applicationContext
         serviceScope.launch {
             try {

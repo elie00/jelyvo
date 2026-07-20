@@ -190,6 +190,11 @@
     <string name="no_liked_songs">No liked songs yet</string>
     <string name="no_saved_albums">No saved albums yet</string>
     <string name="no_followed_artists">No followed artists yet</string>
+    <string name="on_device">On device</string>
+    <string name="no_local_songs">No music found on this device</string>
+    <string name="local_audio_permission_rationale">Allow access to your audio files to play music stored on this device.</string>
+    <string name="local_audio_permission_denied">Permission denied. Grant audio access in system settings to see your local music.</string>
+    <string name="grant_permission">Grant access</string>
     <string name="new_releases_from_artists">New releases from your artists</string>
     <string name="home_empty">Nothing to show here yet</string>
     <plurals name="play_count">

@@ -20,5 +20,7 @@ fun MediaItem?.toSong(): Song {
         it.artistId = extras?.getString(Constants.ExoPlayer.SongMetadata.ARTIST_ID)
         it.albumId = extras?.getString(Constants.ExoPlayer.SongMetadata.ALBUM_ID)
         it.albumName = extras?.getString(Constants.ExoPlayer.SongMetadata.ALBUM_NAME)
+        it.isLocal = extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_LOCAL, false) ?: false
+        it.localUri = extras?.getString(Constants.ExoPlayer.SongMetadata.LOCAL_URI)
     }
 }

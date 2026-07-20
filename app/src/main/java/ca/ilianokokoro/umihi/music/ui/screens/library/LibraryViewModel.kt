@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
@@ -26,6 +27,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private val libraryRepository = LibraryRepository()
     private val playlistRepository = PlaylistRepository(application)
     private val datastoreRepository = DatastoreRepository(application)
+    private val localAudioDataSource = LocalAudioDataSource(application)
 
     private val _uiState = MutableStateFlow(LibraryState())
     val uiState = _uiState.asStateFlow()
@@ -64,6 +66,19 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 loadPlaylistsSuspend(settings)
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
+            }
+        }
+    }
+
+    /** Loads on-device music (MediaStore). Call once the audio permission has been granted. */
+    fun loadLocalSongs() {
+        viewModelScope.launch {
+            try {
+                val songs = localAudioDataSource.getSongs()
+                _uiState.update { it.copy(localSongs = songs, localSongsLoaded = true) }
+            } catch (ex: Exception) {
+                printe(message = "Failed to load local songs", exception = ex)
+                _uiState.update { it.copy(localSongs = emptyList(), localSongsLoaded = true) }
             }
         }
     }

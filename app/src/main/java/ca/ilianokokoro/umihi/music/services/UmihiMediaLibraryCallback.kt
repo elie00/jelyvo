@@ -307,6 +307,17 @@ class UmihiMediaLibraryCallback(
             return mediaItem
         }
 
+        // On-device track: the playable content:// URI is dropped when the item crosses the
+        // controller→session boundary, so rebuild it from the metadata extras instead of trying
+        // to resolve a (non-existent) YouTube stream.
+        val extras = mediaItem.mediaMetadata.extras
+        if (extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_LOCAL) == true) {
+            val localUri = extras.getString(Constants.ExoPlayer.SongMetadata.LOCAL_URI)
+            if (!localUri.isNullOrBlank()) {
+                return mediaItem.buildUpon().setUri(localUri).build()
+            }
+        }
+
         val songResult = songRepository.getSongInfo(mediaId)
             .firstOrNull { result ->
                 result is ApiResult.Success

@@ -2,12 +2,15 @@ package ca.ilianokokoro.umihi.music.ui.screens.library
 
 import ca.ilianokokoro.umihi.music.models.Library
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.Song
 
 
 data class LibraryState(
     val screenState: ScreenState = ScreenState.Loading,
     val isRefreshing: Boolean = false,
     val playlists: List<PlaylistInfo> = emptyList(),
+    val localSongs: List<Song> = emptyList(),
+    val localSongsLoaded: Boolean = false,
 )
 
 sealed class ScreenState {

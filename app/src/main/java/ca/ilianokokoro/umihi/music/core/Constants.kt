@@ -199,6 +199,8 @@ object Constants {
             const val ARTIST_ID = "artist-id"
             const val ALBUM_ID = "album-id"
             const val ALBUM_NAME = "album-name"
+            const val IS_LOCAL = "is-local"
+            const val LOCAL_URI = "local-uri"
         }
     }
 

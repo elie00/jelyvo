@@ -1,6 +1,12 @@
 package ca.ilianokokoro.umihi.music.ui.screens.library
 
+import android.Manifest
 import android.app.Application
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,6 +79,7 @@ private enum class LibraryTab {
     LikedSongs,
     Albums,
     Artists,
+    OnDevice,
 }
 
 /**
@@ -138,6 +145,7 @@ fun LibraryScreen(
                                                     LibraryTab.LikedSongs -> R.string.liked_songs
                                                     LibraryTab.Albums -> R.string.saved_albums
                                                     LibraryTab.Artists -> R.string.followed_artists
+                                                    LibraryTab.OnDevice -> R.string.on_device
                                                 }
                                             ),
                                             maxLines = 1,
@@ -156,6 +164,9 @@ fun LibraryScreen(
                             LibraryContent(
                                 library = uiState.screenState.library,
                                 playlists = uiState.playlists,
+                                localSongs = uiState.localSongs,
+                                localSongsLoaded = uiState.localSongsLoaded,
+                                onLoadLocalSongs = libraryViewModel::loadLocalSongs,
                                 selectedTab = selectedTab,
                                 onOpenPlayer = onOpenPlayer,
                                 onPlaylistPressed = onPlaylistPressed,
@@ -213,6 +224,9 @@ fun LibraryScreen(
 private fun LibraryContent(
     library: Library,
     playlists: List<PlaylistInfo>,
+    localSongs: List<Song>,
+    localSongsLoaded: Boolean,
+    onLoadLocalSongs: () -> Unit,
     selectedTab: LibraryTab,
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
@@ -243,6 +257,140 @@ private fun LibraryContent(
             artists = library.followedArtists,
             onOpenArtist = onOpenArtist,
         )
+
+        LibraryTab.OnDevice -> OnDeviceTab(
+            songs = localSongs,
+            songsLoaded = localSongsLoaded,
+            onLoadLocalSongs = onLoadLocalSongs,
+            onOpenPlayer = onOpenPlayer,
+        )
+    }
+}
+
+@Composable
+private fun OnDeviceTab(
+    songs: List<Song>,
+    songsLoaded: Boolean,
+    onLoadLocalSongs: () -> Unit,
+    onOpenPlayer: () -> Unit,
+) {
+    val context = LocalContext.current
+
+    val permission = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+    }
+
+    var hasPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, permission) ==
+                PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var requested by rememberSaveable { mutableStateOf(false) }
+
+    val launcher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        requested = true
+        hasPermission = granted
+        if (granted) onLoadLocalSongs()
+    }
+
+    // Request the audio permission the first time the section is opened; load once granted.
+    LaunchedEffect(hasPermission) {
+        if (hasPermission) {
+            if (!songsLoaded) onLoadLocalSongs()
+        } else if (!requested) {
+            requested = true
+            launcher.launch(permission)
+        }
+    }
+
+    if (!hasPermission) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = stringResource(
+                    if (requested) R.string.local_audio_permission_denied
+                    else R.string.local_audio_permission_rationale
+                ),
+                textAlign = TextAlign.Center,
+            )
+            FilledTonalButton(
+                onClick = { launcher.launch(permission) },
+                shapes = ButtonDefaults.shapes(),
+                modifier = Modifier.padding(top = 12.dp),
+            ) {
+                Text(stringResource(R.string.grant_permission))
+            }
+        }
+        return
+    }
+
+    if (songsLoaded && songs.isEmpty()) {
+        EmptyTabMessage(stringResource(R.string.no_local_songs))
+        return
+    }
+
+    if (!songsLoaded) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            LoadingAnimation()
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            top = 8.dp,
+            bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            start = 8.dp,
+            end = 8.dp,
+        ),
+    ) {
+        item(key = "play-shuffle") {
+            PlayShuffleRow(
+                onPlay = {
+                    onOpenPlayer()
+                    PlayerManager.playQueue(songs.map { it.mediaItem })
+                },
+                onShuffle = {
+                    onOpenPlayer()
+                    PlayerManager.playQueue(songs.shuffled().map { it.mediaItem })
+                },
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
+
+        items(items = songs, key = { it.youtubeId }) { song ->
+            SongListItem(
+                song = song,
+                onPress = {
+                    // Queue the whole on-device list, starting at the tapped track.
+                    onOpenPlayer()
+                    PlayerManager.playQueue(
+                        songs.map { it.mediaItem },
+                        songs.indexOf(song)
+                    )
+                },
+                playNext = { PlayerManager.addNext(song, context) },
+                addToQueue = { PlayerManager.addToQueue(song, context) },
+                startRadio = { PlayerManager.startRadio(song, context) },
+            )
+        }
     }
 }
 
