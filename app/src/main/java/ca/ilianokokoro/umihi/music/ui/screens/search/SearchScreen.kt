@@ -111,6 +111,7 @@ fun SearchScreen(
                                 Text(
                                     stringResource(
                                         when (filter) {
+                                            SearchFilter.All -> R.string.search_all
                                             SearchFilter.Songs -> R.string.search_songs
                                             SearchFilter.Albums -> R.string.search_albums
                                             SearchFilter.Artists -> R.string.search_artists

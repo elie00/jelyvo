@@ -9,7 +9,7 @@ data class SearchState(
     val screenState: ScreenState = ScreenState.Success(),
     val continuation: String? = null,
     val isLoadingMore: Boolean = false,
-    val filter: SearchFilter = SearchFilter.Songs,
+    val filter: SearchFilter = SearchFilter.All,
     val suggestions: List<String> = emptyList(),
     val showSuggestions: Boolean = false,
 )

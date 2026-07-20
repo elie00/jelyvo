@@ -208,7 +208,9 @@ object YoutubeApiClient {
         )
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
-            put("params", filter.params)
+            if (filter.params.isNotEmpty()) {
+                put("params", filter.params)
+            }
         }
         return requestWithBody(
             url = Constants.YoutubeApi.Search.URL,

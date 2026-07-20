@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.SearchFilter
+import ca.ilianokokoro.umihi.music.models.SearchResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,20 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private var suggestionsJob: Job? = null
     private var loadMoreJob: Job? = null
 
+    /**
+     * Per query+tab result cache so switching tabs back to an already-fetched scope reuses the
+     * page (items + continuation) instead of re-hitting the network.
+     */
+    private val resultCache = mutableMapOf<String, SearchResult>()
+
+    private fun cacheKey(query: String, filter: SearchFilter) = "${filter.name}|$query"
+
+    private fun cachePage(query: String, filter: SearchFilter, page: SearchResult) {
+        if (resultCache.size >= 30) {
+            resultCache.clear()
+        }
+        resultCache[cacheKey(query, filter)] = page
+    }
 
     fun search() {
         suggestionsJob?.cancel()
@@ -47,6 +62,18 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
             _uiState.update { it.copy(showSuggestions = false, suggestions = emptyList()) }
             val filter = uiState.value.filter
+
+            // Reuse an already-fetched page for this query+tab (tab switches come back here).
+            resultCache[cacheKey(query, filter)]?.let { cached ->
+                _uiState.update {
+                    it.copy(
+                        screenState = ScreenState.Success(results = cached.items),
+                        continuation = cached.continuation,
+                    )
+                }
+                return@launch
+            }
+
             songRepository.search(query, filter).collect { apiResult ->
                 _uiState.update {
                     when (apiResult) {
@@ -60,10 +87,13 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                             continuation = null
                         )
 
-                        is ApiResult.Success -> it.copy(
-                            screenState = ScreenState.Success(results = apiResult.data.items),
-                            continuation = apiResult.data.continuation
-                        )
+                        is ApiResult.Success -> {
+                            cachePage(query, filter, apiResult.data)
+                            it.copy(
+                                screenState = ScreenState.Success(results = apiResult.data.items),
+                                continuation = apiResult.data.continuation
+                            )
+                        }
                     }
                 }
             }
@@ -84,6 +114,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             try {
                 val more = songRepository.searchMore(token, state.filter)
                 val combined = (current + more.items).distinctBy { it.id }
+                cachePage(
+                    query = state.search,
+                    filter = state.filter,
+                    page = SearchResult(items = combined, continuation = more.continuation),
+                )
                 _uiState.update {
                     it.copy(
                         screenState = ScreenState.Success(results = combined),
