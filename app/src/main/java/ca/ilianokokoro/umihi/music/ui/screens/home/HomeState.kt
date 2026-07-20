@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.home
 
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.Song
 
 
@@ -12,7 +13,8 @@ data class HomeState(
 
 sealed class ScreenState {
     data class LoggedIn(
-        val playlistInfos: List<PlaylistInfo>
+        val playlistInfos: List<PlaylistInfo>,
+        val homeSections: List<HomeFeedSection> = emptyList(),
     ) : ScreenState()
 
     data object LoggedOut

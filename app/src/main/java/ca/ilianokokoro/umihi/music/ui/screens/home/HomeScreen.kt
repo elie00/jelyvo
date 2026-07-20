@@ -37,6 +37,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
@@ -51,6 +52,8 @@ fun HomeScreen(
     sharedViewModel: SharedViewModel,
     onSettingsButtonPress: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
+    onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
+    onOpenArtist: (id: String, name: String) -> Unit,
     application: Application,
     homeViewModel: HomeViewModel = viewModel(
         factory =
@@ -93,8 +96,9 @@ fun HomeScreen(
                 when (uiState.screenState) {
                     is ScreenState.LoggedIn -> {
                         val playlists = uiState.screenState.playlistInfos
+                        val homeSections = uiState.screenState.homeSections
 
-                        if (playlists.isEmpty()) {
+                        if (playlists.isEmpty() && homeSections.isEmpty()) {
                             Text(
                                 stringResource(R.string.no_playlists),
                                 textAlign = TextAlign.Center
@@ -122,6 +126,24 @@ fun HomeScreen(
                                             RecentlyPlayedRow(
                                                 songs = uiState.recentlyPlayed,
                                                 onSongClick = { PlayerManager.playSong(it) }
+                                            )
+                                        }
+                                    }
+                                    homeSections.forEach { section ->
+                                        item(
+                                            key = "home-${section.title}",
+                                            span = { GridItemSpan(maxLineSpan) },
+                                        ) {
+                                            HomeFeedSectionRow(
+                                                section = section,
+                                                onPlay = PlayerManager::playSong,
+                                                onOpenPlaylist = { onPlaylistPressed(it.playlist) },
+                                                onOpenAlbum = {
+                                                    onOpenAlbum(it.browseId, it.title, it.thumbnail)
+                                                },
+                                                onOpenArtist = {
+                                                    onOpenArtist(it.browseId, it.name)
+                                                },
                                             )
                                         }
                                     }

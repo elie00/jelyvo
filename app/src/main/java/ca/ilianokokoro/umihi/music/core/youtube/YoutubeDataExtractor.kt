@@ -13,6 +13,8 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistSection
+import ca.ilianokokoro.umihi.music.models.HomeFeedItem
+import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
@@ -434,6 +436,119 @@ object YoutubeDataExtractor {
 
         return songRendererList.mapNotNull { extractSong(it) }
     }
+
+    fun extractHomeFeed(jsonString: String): List<HomeFeedSection> {
+        val shelves = mutableListOf<HomeShelf>()
+        collectHomeShelves(Json.parseToJsonElement(jsonString), shelves)
+        return shelves.mapNotNull { it.toSection() }
+            .filter { it.items.isNotEmpty() }
+            .distinctBy { section -> section.title to section.items.firstOrNull() }
+    }
+
+    private fun collectHomeShelves(element: JsonElement, output: MutableList<HomeShelf>) {
+        when (element) {
+            is JsonObject -> {
+                element["musicCarouselShelfRenderer"]?.safeObject()?.let {
+                    output += HomeShelf(it, isCarousel = true)
+                    return
+                }
+                element["musicShelfRenderer"]?.safeObject()?.let {
+                    output += HomeShelf(it, isCarousel = false)
+                    return
+                }
+                element.values.forEach { collectHomeShelves(it, output) }
+            }
+            is JsonArray -> element.forEach { collectHomeShelves(it, output) }
+            else -> Unit
+        }
+    }
+
+    private fun HomeShelf.toSection(): HomeFeedSection? {
+        val title = if (isCarousel) {
+            renderer["header"]?.safeObject()
+                ?.let { header ->
+                    header["musicCarouselShelfBasicHeaderRenderer"]
+                        ?: header["musicCarouselShelfHeaderRenderer"]
+                }
+                ?.safeObject()?.get("title").runsText()
+        } else {
+            renderer["title"].runsText()
+        }.ifBlank { return null }
+
+        val items = renderer["contents"]?.safeArray().orEmpty()
+            .mapNotNull { item ->
+                extractSong(item)?.let(HomeFeedItem::Track)
+                    ?: item.toHomeTwoRowItem()
+            }
+        return HomeFeedSection(title = title, items = items)
+    }
+
+    private fun JsonElement.toHomeTwoRowItem(): HomeFeedItem? {
+        val renderer = safeObject()?.get("musicTwoRowItemRenderer")?.safeObject() ?: return null
+        val title = renderer["title"].runsText()
+        if (title.isBlank()) return null
+        val subtitle = renderer["subtitle"].runsText()
+        val thumbnail = (renderer["thumbnailRenderer"] ?: renderer["thumbnail"])
+            ?.let(::getBestThumbnailUrl).orEmpty()
+        val endpoint = renderer["navigationEndpoint"]?.safeObject()
+            ?: renderer["title"]?.safeObject()?.get("runs")?.safeArray()
+                ?.firstOrNull()?.safeObject()?.get("navigationEndpoint")?.safeObject()
+            ?: return null
+        val watchEndpoint = endpoint["watchEndpoint"]?.safeObject()
+        val playlistId = watchEndpoint?.get("playlistId")?.jsonPrimitive?.contentOrNull
+        if (!playlistId.isNullOrBlank()) {
+            return HomeFeedItem.Playlist(
+                playlist = PlaylistInfo(
+                    id = if (playlistId.startsWith("VL")) playlistId else "VL$playlistId",
+                    title = title,
+                    coverHref = thumbnail,
+                ),
+                subtitle = subtitle,
+            )
+        }
+        val videoId = watchEndpoint?.get("videoId")?.jsonPrimitive?.contentOrNull
+        if (!videoId.isNullOrBlank()) {
+            return HomeFeedItem.Track(
+                Song(
+                    youtubeId = videoId,
+                    title = title,
+                    artist = subtitle,
+                    thumbnailHref = thumbnail,
+                )
+            )
+        }
+
+        val browseId = endpoint["browseEndpoint"]?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        return when {
+            browseId.startsWith("MPRE") -> HomeFeedItem.Album(
+                browseId = browseId,
+                title = title,
+                subtitle = subtitle,
+                thumbnail = thumbnail,
+            )
+            browseId.startsWith("UC") -> HomeFeedItem.Artist(
+                browseId = browseId,
+                name = title,
+                thumbnail = thumbnail,
+            )
+            else -> HomeFeedItem.Playlist(
+                playlist = PlaylistInfo(browseId, title, thumbnail),
+                subtitle = subtitle,
+            )
+        }
+    }
+
+    private fun JsonElement?.runsText(): String = this?.safeObject()
+        ?.get("runs")?.safeArray()
+        ?.mapNotNull { it.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull }
+        ?.joinToString("")
+        .orEmpty()
+
+    private data class HomeShelf(
+        val renderer: JsonObject,
+        val isCarousel: Boolean,
+    )
 
 
     fun extractSongInfo(jsonString: String): Song {

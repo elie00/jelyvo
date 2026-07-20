@@ -12,8 +12,10 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
+import ca.ilianokokoro.umihi.music.data.repositories.HomeRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.Privacy
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +31,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val playlistRepository = PlaylistRepository(application)
     private val datastoreRepository = DatastoreRepository(application)
     private val historyRepository = HistoryRepository(application)
+    private val homeRepository = HomeRepository()
 
 
     init {
@@ -91,7 +94,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         applyPlaylistFiltersAndUpdateState(
             playlists = playlists,
-            settings = settings
+            settings = settings,
+            homeSections = retrieveHomeSections(settings),
         )
     }
 
@@ -116,7 +120,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                     is ApiResult.Success -> {
                         val playlists = apiResult.data.toMutableList()
-                        applyPlaylistFiltersAndUpdateState(playlists, settings)
+                        applyPlaylistFiltersAndUpdateState(
+                            playlists,
+                            settings,
+                            retrieveHomeSections(settings),
+                        )
                     }
 
                     is ApiResult.Error -> {
@@ -137,7 +145,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun applyPlaylistFiltersAndUpdateState(
         playlists: List<PlaylistInfo>,
-        settings: UmihiSettings
+        settings: UmihiSettings,
+        homeSections: List<HomeFeedSection>,
     ) {
         val mutablePlaylists = playlists.toMutableList()
         val downloadedPlaylist = PlaylistInfo(
@@ -153,10 +162,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         _uiState.update { currentState ->
             currentState.copy(
-                screenState = ScreenState.LoggedIn(mutablePlaylists)
+                screenState = ScreenState.LoggedIn(mutablePlaylists, homeSections)
             )
         }
     }
+
+    private suspend fun retrieveHomeSections(
+        settings: UmihiSettings
+    ): List<HomeFeedSection> =
+        when (val result = homeRepository.retrieve(settings).first { it !is ApiResult.Loading }) {
+            is ApiResult.Success -> result.data
+            else -> emptyList()
+        }
 
     fun createPlaylist(title: String, description: String, privacy: Privacy) {
         viewModelScope.launch {

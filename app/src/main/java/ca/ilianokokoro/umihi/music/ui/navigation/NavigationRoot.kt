@@ -179,6 +179,12 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onPlaylistPressed = { playlist ->
                                     backStack.add(PlaylistScreenKey(playlistInfo = playlist))
                                 },
+                                onOpenAlbum = { id, name, cover ->
+                                    backStack.add(AlbumScreenKey(id, name, cover))
+                                },
+                                onOpenArtist = { id, name ->
+                                    backStack.add(ArtistScreenKey(id, name))
+                                },
                                 application = app
                             )
                         }
