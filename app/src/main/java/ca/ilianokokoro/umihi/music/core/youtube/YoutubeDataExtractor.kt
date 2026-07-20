@@ -4,6 +4,7 @@ import android.content.Context
 import android.widget.Toast
 import androidx.core.net.toUri
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
@@ -24,6 +25,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -1095,12 +1097,14 @@ object YoutubeDataExtractor {
 
         if (savedSong != null) {
             if (allowLocal && savedSong.audioFilePath != null) {
+                PlaybackLoudnessStore.update(song.youtubeId, savedSong.loudnessDb)
                 printd("${song.youtubeId} : Was downloaded")
                 return savedSong.audioFilePath
             }
 
             if (savedSong.streamUrl != null) {
                 if (isYoutubeUrlValid(savedSong.streamUrl)) {
+                    PlaybackLoudnessStore.update(song.youtubeId, savedSong.loudnessDb)
                     printd("${song.youtubeId} : Got url from saved")
                     return savedSong.streamUrl
                 }
@@ -1108,10 +1112,15 @@ object YoutubeDataExtractor {
             }
         }
 
-        val newUri = getSongUrlFromYoutube(song)
-        localSongRepository.setStreamUrl(songId = song.youtubeId, streamUrl = newUri)
+        val resolved = getSongUrlFromYoutube(song)
+        localSongRepository.setStreamInfo(
+            songId = song.youtubeId,
+            streamUrl = resolved.url,
+            loudnessDb = resolved.loudnessDb,
+        )
+        PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
         printd("${song.youtubeId} : Got url from YouTube and saved song")
-        return newUri
+        return resolved.url
     }
 
 
@@ -1169,7 +1178,7 @@ object YoutubeDataExtractor {
     private suspend fun getSongUrlFromYoutube(
         song: Song,
         retries: Int = Constants.YoutubeApi.RETRY_COUNT
-    ): String {
+    ): ResolvedAudioStream {
         var lastError: Throwable? = null
 
         val fastUrl = resolveAndroidVrStreamUrl(song.youtubeId)
@@ -1181,9 +1190,10 @@ object YoutubeDataExtractor {
         printd("${song.youtubeId} : Falling back to NewPipe")
         repeat(retries) { attempt ->
             try {
-                return withContext(Dispatchers.IO) {
-                    resolveNewPipeStreamUrl(song)
-                }
+                return ResolvedAudioStream(
+                    url = withContext(Dispatchers.IO) { resolveNewPipeStreamUrl(song) },
+                    loudnessDb = null,
+                )
             } catch (e: Throwable) {
                 lastError = e
 
@@ -1207,8 +1217,8 @@ object YoutubeDataExtractor {
     private suspend fun resolveAndroidVrStreamUrl(
         videoId: String,
         retries: Int = Constants.YoutubeApi.RETRY_COUNT,
-    ): String? = withContext(Dispatchers.IO) {
-        suspend fun executeRequest(): String? {
+    ): ResolvedAudioStream? = withContext(Dispatchers.IO) {
+        suspend fun executeRequest(): ResolvedAudioStream? {
             val response = YoutubeApiClient.getPlayerInfo(
                 videoId = videoId,
                 client = Constants.YoutubeApi.Client.ANDROID_VR,
@@ -1261,7 +1271,7 @@ object YoutubeDataExtractor {
 
     private fun extractStreamFromAndroidVrResponse(
         text: String,
-    ): String? {
+    ): ResolvedAudioStream? {
         val root = Json.parseToJsonElement(text).jsonObject
 
         val newVisitorData = root["responseContext"]
@@ -1309,11 +1319,19 @@ object YoutubeDataExtractor {
             ?.jsonPrimitive
             ?.contentOrNull
 
+        val loudnessDb = root["playerConfig"]
+            ?.safeObject()
+            ?.get("audioConfig")
+            ?.safeObject()
+            ?.get("loudnessDb")
+            ?.jsonPrimitive
+            ?.doubleOrNull
+
         if (reason != null) {
             printe("ANDROID_VR Failed ($status). Reason : $reason ")
         }
 
-        return directUrl
+        return directUrl?.let { ResolvedAudioStream(it, loudnessDb) }
     }
 
     private suspend fun isYoutubeUrlValid(url: String): Boolean = withContext(Dispatchers.IO) {
@@ -1334,6 +1352,11 @@ object YoutubeDataExtractor {
         }
     }
 }
+
+private data class ResolvedAudioStream(
+    val url: String,
+    val loudnessDb: Double?,
+)
 
 
 enum class SongInfoType(val index: Int) {

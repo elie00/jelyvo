@@ -59,7 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java, Constants.Database.NAME
             )
-                .addMigrations(MIGRATION_9_10)
+                .addMigrations(MIGRATION_9_10, MIGRATION_10_11)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
 
@@ -78,6 +78,12 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                     """.trimIndent()
                 )
+            }
+        }
+
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `${Constants.Database.SONGS_TABLE}` ADD COLUMN `loudnessDb` REAL")
             }
         }
     }

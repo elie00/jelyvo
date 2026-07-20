@@ -31,6 +31,7 @@ import androidx.media3.session.MediaSession
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
+import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
@@ -58,6 +59,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -76,6 +78,9 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var playerQueueRepository: PlayerQueueRepository
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var queuePersistenceJob: Job? = null
+    private var volumeFadeJob: Job? = null
+    @Volatile private var normalizedVolume = 1f
+    @Volatile private var fadeInActive = false
     @Volatile private var queueRestoreComplete = false
     @Volatile private var isRestoringQueue = false
     private var consecutivePlaybackErrors = 0
@@ -186,9 +191,10 @@ class PlaybackService : MediaLibraryService() {
                 scheduleQueuePersistence()
                 PlayerManager.updatePlaybackInfo(PlaybackAudioInfo())
                 updateCurrentMediaItemThumbnail(mediaItem)
+                val songId = mediaItem?.mediaId ?: return
+                applyTrackVolume(songId, reason)
                 // Restoring the last queue is not a new listen and must not affect history/stats.
                 if (isRestoringQueue) return
-                val songId = mediaItem?.mediaId ?: return
                 val playedSong = mediaItem.toSong()
                 serviceScope.launch {
                     val settings = datastoreRepository.getSettings()
@@ -297,6 +303,7 @@ class PlaybackService : MediaLibraryService() {
             .build()
 
         restoreQueueAndStartPersistence()
+        startAudioVolumeManagement()
     }
 
     override fun onGetSession(
@@ -313,6 +320,7 @@ class PlaybackService : MediaLibraryService() {
 
     override fun onDestroy() {
         queuePersistenceJob?.cancel()
+        volumeFadeJob?.cancel()
         if (queueRestoreComplete && ::player.isInitialized) {
             val snapshot = captureQueueSnapshot()
             runBlocking(Dispatchers.IO) {
@@ -368,6 +376,61 @@ class PlaybackService : MediaLibraryService() {
                     persistQueueSnapshot()
                 }
             }
+        }
+    }
+
+    private fun startAudioVolumeManagement() {
+        serviceScope.launch {
+            PlaybackLoudnessStore.updates.collectLatest { update ->
+                withContext(Dispatchers.Main) {
+                    if (player.currentMediaItem?.mediaId == update.videoId) {
+                        normalizedVolume = update.volume
+                        if (!fadeInActive) player.volume = normalizedVolume
+                    }
+                }
+            }
+        }
+
+        serviceScope.launch {
+            while (true) {
+                delay(AUDIO_FADE_POLL_INTERVAL_MS)
+                withContext(Dispatchers.Main) {
+                    if (fadeInActive || !player.isPlaying || !player.hasNextMediaItem()) {
+                        return@withContext
+                    }
+                    val duration = player.duration
+                    val remaining = duration - player.currentPosition
+                    player.volume = if (duration > 0 && remaining in 1..AUDIO_FADE_DURATION_MS) {
+                        normalizedVolume * (remaining.toFloat() / AUDIO_FADE_DURATION_MS)
+                    } else {
+                        normalizedVolume
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyTrackVolume(videoId: String, transitionReason: Int) {
+        normalizedVolume = PlaybackLoudnessStore.volumeFor(videoId)
+        volumeFadeJob?.cancel()
+        if (transitionReason != Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+            fadeInActive = false
+            player.volume = normalizedVolume
+            return
+        }
+
+        fadeInActive = true
+        player.volume = 0f
+        volumeFadeJob = serviceScope.launch {
+            val steps = (AUDIO_FADE_DURATION_MS / AUDIO_FADE_POLL_INTERVAL_MS).toInt()
+                .coerceAtLeast(1)
+            repeat(steps) { step ->
+                delay(AUDIO_FADE_POLL_INTERVAL_MS)
+                withContext(Dispatchers.Main) {
+                    player.volume = normalizedVolume * ((step + 1f) / steps)
+                }
+            }
+            fadeInActive = false
         }
     }
 
@@ -567,6 +630,8 @@ class PlaybackService : MediaLibraryService() {
     }
 
     companion object {
+        private const val AUDIO_FADE_DURATION_MS = 450L
+        private const val AUDIO_FADE_POLL_INTERVAL_MS = 30L
         private const val QUEUE_CHANGE_DEBOUNCE_MS = 350L
         private const val QUEUE_POSITION_SAVE_INTERVAL_MS = 5_000L
         private const val MAX_CONSECUTIVE_PLAYBACK_ERRORS = 5

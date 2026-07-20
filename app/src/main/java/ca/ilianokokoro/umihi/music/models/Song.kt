@@ -27,6 +27,7 @@ data class Song(
     val thumbnailHref: String = "",
     val thumbnailPath: String? = null,
     val streamUrl: String? = null,
+    val loudnessDb: Double? = null,
     val audioFilePath: String? = null,
     val uid: String = Uuid.random().toString(),
     val isExplicit: Boolean = false,
