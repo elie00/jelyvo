@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.cachedApiFlow
 import ca.ilianokokoro.umihi.music.data.datasources.SongDataSource
 import ca.ilianokokoro.umihi.music.extensions.toException
 import ca.ilianokokoro.umihi.music.models.SearchResult
@@ -19,14 +20,10 @@ class SongRepository {
     fun search(
         query: String,
         filter: SearchFilter = SearchFilter.Songs,
-    ): Flow<ApiResult<SearchResult>> {
-        return flow {
-            emit(ApiResult.Loading)
-            emit(ApiResult.Success(songDataSource.search(query, filter)))
-        }.catch { e ->
-            emit(ApiResult.Error(e.toException()))
-        }.flowOn(Dispatchers.IO)
-    }
+    ): Flow<ApiResult<SearchResult>> =
+        cachedApiFlow(key = "search:${filter.name}:$query") {
+            songDataSource.search(query, filter)
+        }
 
     suspend fun searchMore(
         continuationToken: String,

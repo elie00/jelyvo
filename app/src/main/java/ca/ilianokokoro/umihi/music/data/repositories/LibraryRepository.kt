@@ -1,21 +1,17 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.cachedApiFlow
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.datasources.LibraryDataSource
-import ca.ilianokokoro.umihi.music.extensions.toException
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.Library
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 
 class LibraryRepository {
     private val libraryDataSource = LibraryDataSource()
@@ -25,43 +21,41 @@ class LibraryRepository {
      * (with a logged cause) so the rest of the page still renders; only a full failure surfaces
      * as an error.
      */
-    fun getLibrary(settings: UmihiSettings): Flow<ApiResult<Library>> {
-        return flow {
-            emit(ApiResult.Loading)
+    fun getLibrary(
+        settings: UmihiSettings,
+        useCache: Boolean = true,
+    ): Flow<ApiResult<Library>> =
+        cachedApiFlow(key = "library:${settings.dataSyncId.orEmpty()}", useCache = useCache) {
+            fetchLibrary(settings)
+        }
 
-            val (likedSongs, savedAlbums, followedArtists) = coroutineScope {
-                val likedSongs = async {
-                    sectionResult("liked songs") { libraryDataSource.retrieveLikedSongs(settings) }
-                }
-                val savedAlbums = async {
-                    sectionResult("saved albums") { libraryDataSource.retrieveSavedAlbums(settings) }
-                }
-                val followedArtists = async {
-                    sectionResult("followed artists") {
-                        libraryDataSource.retrieveFollowedArtists(settings)
-                    }
-                }
-                Triple(likedSongs.await(), savedAlbums.await(), followedArtists.await())
+    private suspend fun fetchLibrary(settings: UmihiSettings): Library {
+        val (likedSongs, savedAlbums, followedArtists) = coroutineScope {
+            val likedSongs = async {
+                sectionResult("liked songs") { libraryDataSource.retrieveLikedSongs(settings) }
             }
-
-            val results = listOf(likedSongs, savedAlbums, followedArtists)
-            val firstFailure = results.firstNotNullOfOrNull { it.exceptionOrNull() }
-            if (firstFailure != null && results.all { it.isFailure }) {
-                throw firstFailure
+            val savedAlbums = async {
+                sectionResult("saved albums") { libraryDataSource.retrieveSavedAlbums(settings) }
             }
+            val followedArtists = async {
+                sectionResult("followed artists") {
+                    libraryDataSource.retrieveFollowedArtists(settings)
+                }
+            }
+            Triple(likedSongs.await(), savedAlbums.await(), followedArtists.await())
+        }
 
-            emit(
-                ApiResult.Success(
-                    Library(
-                        likedSongs = likedSongs.getOrDefault(emptyList()),
-                        savedAlbums = savedAlbums.getOrDefault(emptyList()),
-                        followedArtists = followedArtists.getOrDefault(emptyList()),
-                    )
-                )
-            )
-        }.catch { e ->
-            emit(ApiResult.Error(e.toException()))
-        }.flowOn(Dispatchers.IO)
+        val results = listOf(likedSongs, savedAlbums, followedArtists)
+        val firstFailure = results.firstNotNullOfOrNull { it.exceptionOrNull() }
+        if (firstFailure != null && results.all { it.isFailure }) {
+            throw firstFailure
+        }
+
+        return Library(
+            likedSongs = likedSongs.getOrDefault(emptyList()),
+            savedAlbums = savedAlbums.getOrDefault(emptyList()),
+            followedArtists = followedArtists.getOrDefault(emptyList()),
+        )
     }
 
     /**
@@ -69,42 +63,42 @@ class LibraryRepository {
      * [MAX_NEW_RELEASE_ARTISTS] followed artists, merges their release carousels and keeps the
      * most recent ones. A failing artist page is skipped so the section degrades gracefully.
      */
-    fun getNewReleases(settings: UmihiSettings): Flow<ApiResult<List<HomeFeedItem.Album>>> {
-        return flow {
-            emit(ApiResult.Loading)
+    fun getNewReleases(
+        settings: UmihiSettings,
+        useCache: Boolean = true,
+    ): Flow<ApiResult<List<HomeFeedItem.Album>>> =
+        cachedApiFlow(key = "new-releases:${settings.dataSyncId.orEmpty()}", useCache = useCache) {
+            fetchNewReleases(settings)
+        }
 
-            val artists = libraryDataSource.retrieveFollowedArtists(settings)
-                .take(MAX_NEW_RELEASE_ARTISTS)
+    private suspend fun fetchNewReleases(settings: UmihiSettings): List<HomeFeedItem.Album> {
+        val artists = libraryDataSource.retrieveFollowedArtists(settings)
+            .take(MAX_NEW_RELEASE_ARTISTS)
 
-            val albums = coroutineScope {
-                artists.map { artist ->
-                    async {
-                        sectionResult("releases of ${artist.name}") {
-                            libraryDataSource.retrieveArtistReleases(artist.id, settings)
-                                .map { album ->
-                                    HomeFeedItem.Album(
-                                        browseId = album.browseId,
-                                        title = album.title,
-                                        subtitle = album.subtitle.ifBlank { artist.name },
-                                        thumbnail = album.thumbnail,
-                                    ) to album.year
-                                }
-                        }.getOrDefault(emptyList())
-                    }
-                }.awaitAll()
-            }
+        val albums = coroutineScope {
+            artists.map { artist ->
+                async {
+                    sectionResult("releases of ${artist.name}") {
+                        libraryDataSource.retrieveArtistReleases(artist.id, settings)
+                            .map { album ->
+                                HomeFeedItem.Album(
+                                    browseId = album.browseId,
+                                    title = album.title,
+                                    subtitle = album.subtitle.ifBlank { artist.name },
+                                    thumbnail = album.thumbnail,
+                                ) to album.year
+                            }
+                    }.getOrDefault(emptyList())
+                }
+            }.awaitAll()
+        }
 
-            val newReleases = albums
-                .flatten()
-                .distinctBy { (album, _) -> album.browseId }
-                .sortedByDescending { (_, year) -> year ?: Int.MIN_VALUE }
-                .take(MAX_NEW_RELEASES)
-                .map { (album, _) -> album }
-
-            emit(ApiResult.Success(newReleases))
-        }.catch { e ->
-            emit(ApiResult.Error(e.toException()))
-        }.flowOn(Dispatchers.IO)
+        return albums
+            .flatten()
+            .distinctBy { (album, _) -> album.browseId }
+            .sortedByDescending { (_, year) -> year ?: Int.MIN_VALUE }
+            .take(MAX_NEW_RELEASES)
+            .map { (album, _) -> album }
     }
 
     private suspend fun <T> sectionResult(name: String, block: suspend () -> T): Result<T> {

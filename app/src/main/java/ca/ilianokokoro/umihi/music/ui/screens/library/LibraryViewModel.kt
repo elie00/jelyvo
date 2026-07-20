@@ -44,7 +44,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true) }
             try {
-                loadSuspend(showFullLoading = false)
+                loadSuspend(showFullLoading = false, useCache = false)
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
             } finally {
@@ -116,7 +116,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    private suspend fun loadSuspend(showFullLoading: Boolean) {
+    private suspend fun loadSuspend(showFullLoading: Boolean, useCache: Boolean = true) {
         val settings = datastoreRepository.getSettings()
 
         if (settings.cookies.isEmpty()) {
@@ -133,7 +133,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 }
             }
 
-            libraryRepository.getLibrary(settings).collect { result ->
+            libraryRepository.getLibrary(settings, useCache).collect { result ->
                 _uiState.update { currentState ->
                     when (result) {
                         is ApiResult.Loading -> if (showFullLoading) {

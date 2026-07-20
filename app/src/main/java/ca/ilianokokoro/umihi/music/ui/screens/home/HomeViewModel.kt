@@ -68,7 +68,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             try {
-                getHomeFeedSuspend()
+                getHomeFeedSuspend(useCache = false)
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
             } finally {
@@ -79,7 +79,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private suspend fun getHomeFeedSuspend() {
+    private suspend fun getHomeFeedSuspend(useCache: Boolean = true) {
         try {
             val settings = datastoreRepository.getSettings()
 
@@ -92,8 +92,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
             // Both sections load concurrently; the new-releases fan-out is the slower one.
             val (homeResult, newReleases) = coroutineScope {
-                val sections = async { retrieveHomeSections(settings) }
-                val releases = async { retrieveNewReleases(settings) }
+                val sections = async { retrieveHomeSections(settings, useCache) }
+                val releases = async { retrieveNewReleases(settings, useCache) }
                 sections.await() to releases.await()
             }
 
@@ -136,15 +136,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun retrieveHomeSections(
-        settings: UmihiSettings
+        settings: UmihiSettings,
+        useCache: Boolean,
     ): ApiResult<List<HomeFeedSection>> =
-        homeRepository.retrieve(settings).first { it !is ApiResult.Loading }
+        homeRepository.retrieve(settings, useCache).first { it !is ApiResult.Loading }
 
     private suspend fun retrieveNewReleases(
-        settings: UmihiSettings
+        settings: UmihiSettings,
+        useCache: Boolean,
     ): List<HomeFeedItem.Album> =
         when (val result =
-            libraryRepository.getNewReleases(settings).first { it !is ApiResult.Loading }) {
+            libraryRepository.getNewReleases(settings, useCache)
+                .first { it !is ApiResult.Loading }) {
             is ApiResult.Success -> result.data
             else -> emptyList()
         }

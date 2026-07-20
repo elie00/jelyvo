@@ -14,7 +14,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,11 +32,11 @@ import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.schabi.newpipe.extractor.NewPipe
 
 class MainActivity : ComponentActivity() {
     private val songRepository: SongRepository = SongRepository()
+    private val datastoreRepository by lazy { DatastoreRepository(applicationContext) }
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
@@ -52,7 +51,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            val themeColor by remember { DatastoreRepository(this).themeColor }
+            val themeColor by datastoreRepository.themeColor
                 .collectAsStateWithLifecycle(initialValue = DatastoreRepository.ThemeColor.Dynamic)
 
             UmihiMusicTheme(themeColor = themeColor) {
@@ -104,9 +103,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun attachBaseContext(newBase: Context) {
-        val useSpecialLanguage = runBlocking {
-            DatastoreRepository(newBase).getUseSpecialLanguage()
-        }
+        // Synchronous SharedPreferences mirror read: no DataStore I/O before the first frame.
+        val useSpecialLanguage = DatastoreRepository.getUseSpecialLanguageSync(newBase)
 
         val context = if (useSpecialLanguage) {
             val locale = java.util.Locale.forLanguageTag(Constants.Locale.Special.CODE)

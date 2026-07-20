@@ -23,12 +23,20 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.UPDATE_CHANNEL
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = Constants.Datastore.NAME)
@@ -53,9 +61,19 @@ class DatastoreRepository(private val context: Context) {
         context.dataStore.edit {
             it[key] = value
         }
+        if (key == USE_SPECIAL_LANGUAGE) {
+            mirrorUseSpecialLanguage(value as Boolean)
+        }
     }
 
-    val settings = context.dataStore.data.map {
+    /**
+     * Process-wide shared settings: the DataStore read + cookie decryption run once per
+     * preference change instead of once per [getSettings] call site.
+     */
+    val settings: Flow<UmihiSettings>
+        get() = sharedSettings(context.applicationContext).filterNotNull()
+
+    private fun settingsSource(): Flow<UmihiSettings> = context.dataStore.data.map {
         val updateChannel = it[UPDATE_CHANNEL]?.let { value -> UpdateChannel.valueOf(value) }
             ?: if (BuildConfig.IS_BETA) {
                 UpdateChannel.Beta
@@ -76,6 +94,7 @@ class DatastoreRepository(private val context: Context) {
         val cookies = cookies.first()
         val dataSyncId = dataSyncId.first()
 
+        mirrorUseSpecialLanguage(useSpecialLanguage)
 
         UmihiSettings(
             updateChannel = updateChannel,
@@ -98,11 +117,15 @@ class DatastoreRepository(private val context: Context) {
     }
 
     /**
-     * Reads only the special-language flag. Used on the startup path (attachBaseContext) to avoid
-     * the cost of the full settings read (cookie decryption, dataSyncId collection) on the main thread.
+     * Keeps a plain SharedPreferences mirror of the special-language flag so
+     * [getUseSpecialLanguageSync] can read it synchronously in `attachBaseContext` without
+     * blocking the first frame on a DataStore read. DataStore stays the source of truth.
      */
-    suspend fun getUseSpecialLanguage(): Boolean {
-        return context.dataStore.data.map { it[USE_SPECIAL_LANGUAGE] ?: false }.first()
+    private fun mirrorUseSpecialLanguage(value: Boolean) {
+        val prefs = context.getSharedPreferences(STARTUP_PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(STARTUP_USE_SPECIAL_LANGUAGE, false) != value) {
+            prefs.edit().putBoolean(STARTUP_USE_SPECIAL_LANGUAGE, value).apply()
+        }
     }
 
     /**
@@ -139,6 +162,8 @@ class DatastoreRepository(private val context: Context) {
         context.dataStore.edit {
             it[COOKIES] = if (raw.isEmpty()) raw else KeystoreCrypto.encrypt(raw)
         }
+        // Cached responses belong to the previous account state (login/logout).
+        ResponseCache.clear()
     }
 
     suspend fun logOut() {
@@ -153,6 +178,35 @@ class DatastoreRepository(private val context: Context) {
         }
         context.dataStore.edit {
             it[DATA_SYNC_ID] = newId
+        }
+    }
+
+    companion object {
+        private const val STARTUP_PREFS_NAME = "umihi_startup"
+        private const val STARTUP_USE_SPECIAL_LANGUAGE = "use_special_language"
+
+        private val sharedScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        @Volatile
+        private var sharedSettingsFlow: StateFlow<UmihiSettings?>? = null
+
+        private fun sharedSettings(applicationContext: Context): StateFlow<UmihiSettings?> {
+            return sharedSettingsFlow ?: synchronized(this) {
+                sharedSettingsFlow ?: DatastoreRepository(applicationContext)
+                    .settingsSource()
+                    .stateIn(sharedScope, SharingStarted.Eagerly, null)
+                    .also { sharedSettingsFlow = it }
+            }
+        }
+
+        /**
+         * Synchronous read of the special-language flag for `attachBaseContext`, backed by the
+         * SharedPreferences mirror instead of DataStore so the first frame is never blocked on
+         * a DataStore file open/parse.
+         */
+        fun getUseSpecialLanguageSync(context: Context): Boolean {
+            return context.getSharedPreferences(STARTUP_PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(STARTUP_USE_SPECIAL_LANGUAGE, false)
         }
     }
 
