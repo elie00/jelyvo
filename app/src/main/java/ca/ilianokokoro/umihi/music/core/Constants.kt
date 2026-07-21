@@ -102,11 +102,13 @@ object Constants {
         const val AUTO_DOWNLOAD_LIKED = "auto-download-liked"
         const val AUTO_DOWNLOAD_WIFI_ONLY = "auto-download-wifi-only"
         const val AUTO_DOWNLOAD_QUOTA_GB = "auto-download-quota-gb"
+        const val RECENT_SEARCHES = "recent-searches"
+        const val RECENT_SEARCHES_MAX = 20
     }
 
     object Database {
         const val NAME = "umihi-music"
-        const val VERSION = 14
+        const val VERSION = 15
         const val SONGS_TABLE = "songs"
         const val PLAYLISTS_TABLE = "playlists"
         const val VERSIONS_TABLE = "versions"

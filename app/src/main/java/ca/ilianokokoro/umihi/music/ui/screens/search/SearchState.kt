@@ -12,6 +12,7 @@ data class SearchState(
     val filter: SearchFilter = SearchFilter.All,
     val suggestions: List<String> = emptyList(),
     val showSuggestions: Boolean = false,
+    val recentSearches: List<String> = emptyList(),
 )
 
 

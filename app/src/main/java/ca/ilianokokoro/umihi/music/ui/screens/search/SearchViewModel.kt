@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchResult
@@ -24,6 +25,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     val uiState = _uiState.asStateFlow()
 
     val songRepository = SongRepository()
+    private val datastoreRepository = DatastoreRepository(application)
     private var searchJob: Job? = null
     private var suggestionsJob: Job? = null
     private var loadMoreJob: Job? = null
@@ -35,6 +37,14 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val resultCache = mutableMapOf<String, SearchResult>()
 
     private fun cacheKey(query: String, filter: SearchFilter) = "${filter.name}|$query"
+
+    init {
+        viewModelScope.launch {
+            datastoreRepository.recentSearches.collect { recents ->
+                _uiState.update { it.copy(recentSearches = recents) }
+            }
+        }
+    }
 
     private fun cachePage(query: String, filter: SearchFilter, page: SearchResult) {
         if (resultCache.size >= 30) {
@@ -61,6 +71,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             }
 
             _uiState.update { it.copy(showSuggestions = false, suggestions = emptyList()) }
+            datastoreRepository.addRecentSearch(query)
             val filter = uiState.value.filter
 
             // Reuse an already-fetched page for this query+tab (tab switches come back here).
@@ -155,6 +166,18 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     fun selectSuggestion(suggestion: String) {
         _uiState.update { it.copy(search = suggestion, showSuggestions = false) }
         search()
+    }
+
+    fun removeRecentSearch(query: String) {
+        viewModelScope.launch {
+            datastoreRepository.removeRecentSearch(query)
+        }
+    }
+
+    fun clearRecentSearches() {
+        viewModelScope.launch {
+            datastoreRepository.clearRecentSearches()
+        }
     }
 
     fun selectFilter(filter: SearchFilter) {

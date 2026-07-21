@@ -46,6 +46,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = Constants.Datastore.NAME)
@@ -71,6 +73,7 @@ class DatastoreRepository(private val context: Context) {
         val AUTO_DOWNLOAD_LIKED = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_LIKED)
         val AUTO_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_WIFI_ONLY)
         val AUTO_DOWNLOAD_QUOTA_GB = intPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_QUOTA_GB)
+        val RECENT_SEARCHES = stringPreferencesKey(Constants.Datastore.RECENT_SEARCHES)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -200,6 +203,54 @@ class DatastoreRepository(private val context: Context) {
         context.dataStore.edit {
             it[NOTIFIED_RELEASE_IDS] = ids
         }
+    }
+
+    /**
+     * Submitted search queries, most recent first, deduped (case-insensitive) and capped at
+     * [Constants.Datastore.RECENT_SEARCHES_MAX]. Stored as a JSON list so ordering survives.
+     */
+    val recentSearches: Flow<List<String>> = context.dataStore.data.map {
+        decodeRecentSearches(it[PreferenceKeys.RECENT_SEARCHES])
+    }
+
+    suspend fun addRecentSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) {
+            return
+        }
+        context.dataStore.edit { prefs ->
+            val current = decodeRecentSearches(prefs[PreferenceKeys.RECENT_SEARCHES])
+            val updated = (listOf(trimmed) + current.filterNot { entry ->
+                entry.equals(trimmed, ignoreCase = true)
+            }).take(Constants.Datastore.RECENT_SEARCHES_MAX)
+            prefs[PreferenceKeys.RECENT_SEARCHES] = Json.encodeToString(updated)
+        }
+    }
+
+    suspend fun removeRecentSearch(query: String) {
+        context.dataStore.edit { prefs ->
+            val updated = decodeRecentSearches(prefs[PreferenceKeys.RECENT_SEARCHES])
+                .filterNot { it == query }
+            if (updated.isEmpty()) {
+                prefs.remove(PreferenceKeys.RECENT_SEARCHES)
+            } else {
+                prefs[PreferenceKeys.RECENT_SEARCHES] = Json.encodeToString(updated)
+            }
+        }
+    }
+
+    suspend fun clearRecentSearches() {
+        context.dataStore.edit {
+            it.remove(PreferenceKeys.RECENT_SEARCHES)
+        }
+    }
+
+    private fun decodeRecentSearches(stored: String?): List<String> {
+        if (stored.isNullOrEmpty()) {
+            return emptyList()
+        }
+        return runCatching { Json.decodeFromString<List<String>>(stored) }
+            .getOrDefault(emptyList())
     }
 
     val cookies = context.dataStore.data.map {

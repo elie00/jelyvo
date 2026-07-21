@@ -22,11 +22,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -180,6 +187,51 @@ fun SearchScreen(
                                 },
                             )
                             HorizontalDivider()
+                        }
+                    }
+                } else if (uiState.search.isBlank() && uiState.recentSearches.isNotEmpty()) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        item(key = "recent_searches_header") {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, end = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.recent_searches),
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                TextButton(onClick = searchViewModel::clearRecentSearches) {
+                                    Text(stringResource(R.string.recent_searches_clear_all))
+                                }
+                            }
+                        }
+                        items(uiState.recentSearches, key = { it }) { query ->
+                            ListItem(
+                                headlineContent = { Text(query) },
+                                leadingContent = {
+                                    Icon(
+                                        imageVector = Icons.Default.History,
+                                        contentDescription = null,
+                                    )
+                                },
+                                trailingContent = {
+                                    IconButton(
+                                        onClick = { searchViewModel.removeRecentSearch(query) }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = stringResource(R.string.recent_search_remove),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.clickable {
+                                    focusManager.clearFocus()
+                                    searchViewModel.selectSuggestion(query)
+                                },
+                            )
                         }
                     }
                 } else when (uiState.screenState) {
