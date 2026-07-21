@@ -12,6 +12,8 @@ data class PlayerQueueState(
     val positionMs: Long,
     val repeatMode: Int,
     val shuffleEnabled: Boolean,
+    val sourceName: String? = null,
+    val isRadio: Boolean = false,
 ) {
     companion object {
         const val SINGLETON_ID = 0

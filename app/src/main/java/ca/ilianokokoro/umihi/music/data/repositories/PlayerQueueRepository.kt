@@ -21,6 +21,8 @@ class PlayerQueueRepository(context: Context) {
         positionMs: Long,
         repeatMode: Int,
         shuffleEnabled: Boolean,
+        sourceName: String? = null,
+        isRadio: Boolean = false,
     ) {
         if (songs.isEmpty()) {
             dataSource.clear()
@@ -33,6 +35,8 @@ class PlayerQueueRepository(context: Context) {
                 positionMs = positionMs.coerceAtLeast(0L),
                 repeatMode = repeatMode,
                 shuffleEnabled = shuffleEnabled,
+                sourceName = sourceName,
+                isRadio = isRadio,
             )
         )
     }
@@ -50,6 +54,8 @@ class PlayerQueueRepository(context: Context) {
             positionMs = state.positionMs.coerceAtLeast(0L),
             repeatMode = state.repeatMode,
             shuffleEnabled = state.shuffleEnabled,
+            sourceName = state.sourceName,
+            isRadio = state.isRadio,
         )
     }
 
@@ -59,6 +65,8 @@ class PlayerQueueRepository(context: Context) {
         val positionMs: Long,
         val repeatMode: Int,
         val shuffleEnabled: Boolean,
+        val sourceName: String?,
+        val isRadio: Boolean,
     )
 }
 

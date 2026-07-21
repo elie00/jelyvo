@@ -68,7 +68,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_10_11,
                     MIGRATION_11_12,
                     MIGRATION_12_13,
-                    MIGRATION_13_14
+                    MIGRATION_13_14,
+                    MIGRATION_14_15
                 )
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
@@ -148,6 +149,13 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                     """.trimIndent()
                 )
+            }
+        }
+
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `${Constants.Database.PLAYER_QUEUE_TABLE}` ADD COLUMN `sourceName` TEXT")
+                db.execSQL("ALTER TABLE `${Constants.Database.PLAYER_QUEUE_TABLE}` ADD COLUMN `isRadio` INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

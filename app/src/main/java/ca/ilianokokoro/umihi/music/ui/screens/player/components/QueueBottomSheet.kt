@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
@@ -81,11 +82,29 @@ fun QueueBottomSheet(
             modifier = modifier
                 .fillMaxSize()
         ) {
-            Text(
-                modifier = modifier.padding(start = 8.dp, bottom = 12.dp),
-                text = stringResource(R.string.playing_now),
-                style = MaterialTheme.typography.titleLarge
-            )
+            val sourceName by PlayerManager.queueSourceName.collectAsStateWithLifecycle()
+            val isRadio by PlayerManager.isRadioQueue.collectAsStateWithLifecycle()
+
+            Column(modifier = modifier.padding(start = 8.dp, bottom = 12.dp)) {
+                Text(
+                    text = stringResource(R.string.playing_now),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                // Queue provenance, mirroring YT Music: the source collection's name when the
+                // queue was built from one, "Radio" for a radio queue, nothing otherwise.
+                val provenance = when {
+                    sourceName != null -> stringResource(R.string.playing_from, sourceName!!)
+                    isRadio -> stringResource(R.string.radio)
+                    else -> null
+                }
+                if (provenance != null) {
+                    Text(
+                        text = provenance,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

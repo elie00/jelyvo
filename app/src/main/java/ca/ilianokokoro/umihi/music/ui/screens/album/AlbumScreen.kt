@@ -99,7 +99,11 @@ fun AlbumScreen(
                     }
                     val playSongs: (List<Song>, Int) -> Unit = { list, startIndex ->
                         onOpenPlayer()
-                        PlayerManager.playQueue(list.map { it.mediaItem }, startIndex)
+                        PlayerManager.playQueue(
+                            list.map { it.mediaItem },
+                            startIndex,
+                            sourceName = page.name.ifBlank { albumName }
+                        )
                     }
                     // "12 songs • 41 min" computed locally when the header didn't provide it.
                     val totalMinutes = playableSongs.sumOf { song ->

@@ -379,6 +379,8 @@ private fun OnDeviceTab(
         return
     }
 
+    val sourceName = stringResource(R.string.on_device)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -392,11 +394,17 @@ private fun OnDeviceTab(
             PlayShuffleRow(
                 onPlay = {
                     onOpenPlayer()
-                    PlayerManager.playQueue(songs.map { it.mediaItem })
+                    PlayerManager.playQueue(
+                        songs.map { it.mediaItem },
+                        sourceName = sourceName
+                    )
                 },
                 onShuffle = {
                     onOpenPlayer()
-                    PlayerManager.playQueue(songs.shuffled().map { it.mediaItem })
+                    PlayerManager.playQueue(
+                        songs.shuffled().map { it.mediaItem },
+                        sourceName = sourceName
+                    )
                 },
                 modifier = Modifier.padding(bottom = 8.dp),
             )
@@ -410,7 +418,8 @@ private fun OnDeviceTab(
                     onOpenPlayer()
                     PlayerManager.playQueue(
                         songs.map { it.mediaItem },
-                        songs.indexOf(song)
+                        songs.indexOf(song),
+                        sourceName = sourceName
                     )
                 },
                 playNext = { PlayerManager.addNext(song, context) },
@@ -517,6 +526,8 @@ private fun LikedSongsTab(
         return
     }
 
+    val sourceName = stringResource(R.string.liked_songs)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
@@ -530,11 +541,17 @@ private fun LikedSongsTab(
             PlayShuffleRow(
                 onPlay = {
                     onOpenPlayer()
-                    PlayerManager.playQueue(songs.map { it.mediaItem })
+                    PlayerManager.playQueue(
+                        songs.map { it.mediaItem },
+                        sourceName = sourceName
+                    )
                 },
                 onShuffle = {
                     onOpenPlayer()
-                    PlayerManager.playQueue(songs.shuffled().map { it.mediaItem })
+                    PlayerManager.playQueue(
+                        songs.shuffled().map { it.mediaItem },
+                        sourceName = sourceName
+                    )
                 },
                 modifier = Modifier.padding(bottom = 8.dp),
             )
@@ -548,7 +565,8 @@ private fun LikedSongsTab(
                     onOpenPlayer()
                     PlayerManager.playQueue(
                         songs.map { it.mediaItem },
-                        songs.indexOf(song)
+                        songs.indexOf(song),
+                        sourceName = sourceName
                     )
                 },
                 playNext = { PlayerManager.addNext(song, context) },

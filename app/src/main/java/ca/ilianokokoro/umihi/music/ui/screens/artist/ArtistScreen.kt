@@ -114,12 +114,16 @@ fun ArtistScreen(
                                     PlayShuffleRow(
                                         onPlay = {
                                             onOpenPlayer()
-                                            PlayerManager.playQueue(page.songs.map { it.mediaItem })
+                                            PlayerManager.playQueue(
+                                                page.songs.map { it.mediaItem },
+                                                sourceName = page.artist.name
+                                            )
                                         },
                                         onShuffle = {
                                             onOpenPlayer()
                                             PlayerManager.playQueue(
-                                                page.songs.shuffled().map { it.mediaItem }
+                                                page.songs.shuffled().map { it.mediaItem },
+                                                sourceName = page.artist.name
                                             )
                                         },
                                     )
@@ -171,7 +175,8 @@ fun ArtistScreen(
                                     onOpenPlayer()
                                     PlayerManager.playQueue(
                                         page.songs.map { it.mediaItem },
-                                        page.songs.indexOf(song)
+                                        page.songs.indexOf(song),
+                                        sourceName = page.artist.name
                                     )
                                 },
                                 playNext = { PlayerManager.addNext(song, context) },

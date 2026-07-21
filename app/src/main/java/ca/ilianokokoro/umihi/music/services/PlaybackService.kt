@@ -443,6 +443,10 @@ class PlaybackService : MediaLibraryService() {
                     player.shuffleModeEnabled = restored.shuffleEnabled
                     player.prepare()
                     player.playWhenReady = false
+                    PlayerManager.restoreQueueProvenance(
+                        sourceName = restored.sourceName,
+                        isRadio = restored.isRadio,
+                    )
                     isRestoringQueue = false
                 }
                 queueRestoreComplete = true
@@ -572,6 +576,8 @@ class PlaybackService : MediaLibraryService() {
             positionMs = snapshot.positionMs,
             repeatMode = snapshot.repeatMode,
             shuffleEnabled = snapshot.shuffleEnabled,
+            sourceName = snapshot.sourceName,
+            isRadio = snapshot.isRadio,
         )
     }
 
@@ -585,6 +591,8 @@ class PlaybackService : MediaLibraryService() {
             positionMs = player.currentPosition,
             repeatMode = player.repeatMode,
             shuffleEnabled = player.shuffleModeEnabled,
+            sourceName = PlayerManager.queueSourceName.value,
+            isRadio = PlayerManager.isRadioQueue.value,
         )
     }
 
@@ -594,6 +602,8 @@ class PlaybackService : MediaLibraryService() {
         val positionMs: Long,
         val repeatMode: Int,
         val shuffleEnabled: Boolean,
+        val sourceName: String?,
+        val isRadio: Boolean,
     )
 
     /**

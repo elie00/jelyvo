@@ -90,6 +90,32 @@ object PlayerManager {
     var isCollectionQueue: Boolean = false
         private set
 
+    /**
+     * Human-readable name of the collection the current queue was built from (album, artist,
+     * playlist, liked songs…), shown as "Playing from: <name>" in the queue sheet. Null for
+     * single-song and radio queues.
+     */
+    private val _queueSourceName = MutableStateFlow<String?>(null)
+    val queueSourceName: StateFlow<String?> = _queueSourceName.asStateFlow()
+
+    /** True when the current queue is a radio built around a seed song. */
+    private val _isRadioQueue = MutableStateFlow(false)
+    val isRadioQueue: StateFlow<Boolean> = _isRadioQueue.asStateFlow()
+
+    private fun setQueueProvenance(sourceName: String?, isRadio: Boolean) {
+        _queueSourceName.value = sourceName
+        _isRadioQueue.value = isRadio
+    }
+
+    /**
+     * Re-applies the provenance of a queue restored from its persisted snapshot. A restored
+     * collection queue keeps behaving like one (no autoplay extension past its end).
+     */
+    fun restoreQueueProvenance(sourceName: String?, isRadio: Boolean) {
+        isCollectionQueue = sourceName != null
+        setQueueProvenance(sourceName, isRadio)
+    }
+
     fun updatePlaybackInfo(info: PlaybackAudioInfo) {
         _audioInfo.value = info
     }
@@ -220,6 +246,7 @@ object PlayerManager {
     fun playMediaItem(mediaItem: MediaItem) {
         currentController?.run {
             isCollectionQueue = false
+            setQueueProvenance(sourceName = null, isRadio = false)
             setMediaItem(mediaItem)
             prepare()
             play()
@@ -227,7 +254,11 @@ object PlayerManager {
     }
 
 
-    fun playPlaylist(playlist: Playlist, index: Int = 0) {
+    fun playPlaylist(
+        playlist: Playlist,
+        index: Int = 0,
+        sourceName: String? = playlist.info.title.takeIf { it.isNotBlank() }
+    ) {
         val controller = currentController ?: return
         val mediaItems = playlist.mediaItems
 
@@ -236,6 +267,7 @@ object PlayerManager {
         }
 
         isCollectionQueue = true
+        setQueueProvenance(sourceName = sourceName, isRadio = false)
         controller.setMediaItems(
             mediaItems,
             index.coerceIn(0, mediaItems.lastIndex),
@@ -258,7 +290,8 @@ object PlayerManager {
     fun playQueue(
         mediaItems: List<MediaItem>,
         startIndex: Int = 0,
-        startPositionMs: Long = 0L
+        startPositionMs: Long = 0L,
+        sourceName: String? = null
     ) {
         if (mediaItems.isEmpty()) {
             return
@@ -266,6 +299,7 @@ object PlayerManager {
 
         currentController?.run {
             isCollectionQueue = true
+            setQueueProvenance(sourceName = sourceName, isRadio = false)
             setMediaItems(
                 mediaItems,
                 startIndex.coerceIn(0, mediaItems.lastIndex),
@@ -280,6 +314,7 @@ object PlayerManager {
         val controller = currentController ?: return
 
         isCollectionQueue = false
+        setQueueProvenance(sourceName = null, isRadio = false)
         controller.setMediaItem(song.mediaItem)
         controller.prepare()
         controller.play()
@@ -313,6 +348,7 @@ object PlayerManager {
         val position = if (nearEnd) C.TIME_UNSET else startPositionMs.coerceAtLeast(0L)
 
         isCollectionQueue = false
+        setQueueProvenance(sourceName = null, isRadio = false)
         controller.setMediaItem(song.mediaItem, position)
         controller.prepare()
         controller.play()
@@ -324,6 +360,7 @@ object PlayerManager {
      */
     fun startRadio(song: Song, context: Context? = null) {
         playSong(song)
+        setQueueProvenance(sourceName = null, isRadio = true)
 
         context?.let {
             Toast.makeText(
@@ -416,6 +453,7 @@ object PlayerManager {
             stop()
             clearMediaItems()
         }
+        setQueueProvenance(sourceName = null, isRadio = false)
     }
 
     @Synchronized
