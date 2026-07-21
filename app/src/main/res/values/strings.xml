@@ -37,6 +37,8 @@
     <string name="play_next_toast">Playing this song next</string>
     <string name="added_queue_toast">Added song to the queue</string>
     <string name="playing_now">Playing Now</string>
+    <string name="playing_from">Playing from: %1$s</string>
+    <string name="radio">Radio</string>
     <string name="queue_section_up_next">Up next in queue</string>
     <string name="queue_section_suggestions">Autoplay suggestions</string>
     <string name="up_to_date_message">The app is up to date !</string>
@@ -158,6 +160,9 @@
     <string name="khz" translatable="false">%.1f kHz</string>
     <string name="unlike">Unlike</string>
     <string name="like">Like</string>
+    <string name="add_to_liked">Add to liked songs</string>
+    <string name="added_to_liked_toast">Added to liked songs</string>
+    <string name="add_to_liked_failed_toast">Couldn\'t add to liked songs</string>
     <string name="song_downloaded">Song downloaded</string>
     <string name="download_failed">Download failed</string>
     <string name="failed_to_download_song">Failed to download %1$s - %2$s</string>
@@ -195,6 +200,9 @@
     <string name="search_videos">Videos</string>
     <string name="search_albums">Albums</string>
     <string name="search_artists">Artists</string>
+    <string name="recent_searches">Recent searches</string>
+    <string name="recent_searches_clear_all">Clear all</string>
+    <string name="recent_search_remove">Remove recent search</string>
     <string name="listening_stats">Listening stats</string>
     <string name="downloads">Downloads</string>
     <string name="playback_widget_description">Now playing controls</string>

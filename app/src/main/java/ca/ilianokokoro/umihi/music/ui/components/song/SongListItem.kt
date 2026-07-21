@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadForOffline
+import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircleOutline
@@ -28,10 +29,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
@@ -50,6 +54,9 @@ fun SongListItem(
     download: (() -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val isLoggedIn by remember(context) { LikeManager.isLoggedIn(context) }
+        .collectAsStateWithLifecycle(initialValue = false)
 
     ListItem(
         modifier = modifier
@@ -101,6 +108,16 @@ fun SongListItem(
                         expanded = false
                     }
                 )
+                if (isLoggedIn) {
+                    MaterialUDropdownItem(
+                        leadingIcon = Icons.Rounded.FavoriteBorder,
+                        text = stringResource(R.string.add_to_liked),
+                        onClick = {
+                            LikeManager.addToLiked(song, context)
+                            expanded = false
+                        }
+                    )
+                }
                 if (onViewArtist != null && song.artistId != null) {
                     MaterialUDropdownItem(
                         leadingIcon = Icons.Rounded.Person,
