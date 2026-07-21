@@ -227,6 +227,11 @@ object Constants {
         const val PROGRESS_UPDATE_DELAY = 150
         const val IMAGE_TRANSITION_DELAY = 200
         const val COLOR_TRANSITION_DURATION = 500
+
+        // Blurred artwork background: crossfade between artworks on track change, and the base
+        // period of the slow drift loop (the y/rotation axes run on multiples of it).
+        const val BACKGROUND_CROSSFADE_DURATION = 600
+        const val BACKGROUND_DRIFT_PERIOD_MS = 30_000
         val SPEEDS = listOf(0.25f, 0.5f, 0.75f, 1f, 2f, 3f, 5f)
 
         // Fullscreen video: overlay controls auto-hide after this idle delay while playing.
