@@ -420,6 +420,7 @@ fun SongInfo(
             Text(
                 text = song?.title ?: "",
                 style = MaterialTheme.typography.titleLargeEmphasized.copy(fontFamily = nunitoFontFamily),
+                color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.basicMarquee()
             )
             Row(
@@ -431,7 +432,7 @@ fun SongInfo(
                 Text(
                     text = song?.artist ?: "",
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.secondary,
                         fontWeight = FontWeight.Bold
                     ),
                     modifier = Modifier
@@ -441,7 +442,7 @@ fun SongInfo(
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                     contentDescription = stringResource(R.string.view_artist),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -485,7 +486,12 @@ fun SongInfo(
                 }
             }
 
-            IconButton(onClick = onMoreClick) {
+            IconButton(
+                onClick = onMoreClick,
+                colors = IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
                 Icon(
                     imageVector = Icons.Rounded.MoreVert,
                     contentDescription = stringResource(R.string.more)
