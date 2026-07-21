@@ -16,6 +16,7 @@ enum class SearchFilter(val params: String) {
     /** No scope params: YouTube Music's "Top results" view mixing songs, albums and artists. */
     All(""),
     Songs("EgWKAQIIAWoKEAkQBRAKEAMQBA=="),
+    Videos("EgWKAQIQAWoKEAkQChAFEAMQBA=="),
     Albums("EgWKAQIYAWoKEAkQChAFEAMQBA=="),
     Artists("EgWKAQIgAWoKEAkQChAFEAMQBA=="),
 }

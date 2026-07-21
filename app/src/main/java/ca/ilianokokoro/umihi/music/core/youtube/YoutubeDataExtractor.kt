@@ -443,7 +443,9 @@ object YoutubeDataExtractor {
     fun extractSearchItems(jsonString: String, filter: SearchFilter): List<SearchItem> {
         val root = Json.parseToJsonElement(jsonString)
         return when (filter) {
-            SearchFilter.Songs -> {
+            SearchFilter.Songs, SearchFilter.Videos -> {
+                // Scoped song and video searches both return musicResponsiveListItemRenderer rows
+                // whose payload is a playable videoId, so they share the same extraction.
                 val songItems = mutableListOf<JsonObject>()
                 collectSongItems(root, songItems)
                 songItems.mapNotNull { extractSong(it)?.let(SearchItem::Track) }
@@ -633,7 +635,7 @@ object YoutubeDataExtractor {
             SearchFilter.Artists -> browseId.takeIf { it.startsWith("UC") }?.let {
                 SearchItem.Artist(id = it, name = title, thumbnail = thumbnail)
             }
-            SearchFilter.Songs, SearchFilter.All -> null
+            SearchFilter.Songs, SearchFilter.Videos, SearchFilter.All -> null
         }
     }
 

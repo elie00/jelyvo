@@ -192,6 +192,7 @@
     <string name="waiting_for_wifi_to_download">Waiting for Wi-Fi to download %1$s</string>
     <string name="search_all">All</string>
     <string name="search_songs">Songs</string>
+    <string name="search_videos">Videos</string>
     <string name="search_albums">Albums</string>
     <string name="search_artists">Artists</string>
     <string name="listening_stats">Listening stats</string>
