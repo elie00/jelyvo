@@ -11,6 +11,7 @@
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="shuffle">Shuffle</string>
+    <string name="repeat">Repeat</string>
     <string name="songs">%1$d songs</string>
     <string name="error">Error</string>
     <string name="previous">Previous</string>
@@ -238,6 +239,8 @@
     <string name="no_saved_albums">No saved albums yet</string>
     <string name="no_followed_artists">No followed artists yet</string>
     <string name="on_device">On device</string>
+    <string name="show_all">Show all</string>
+    <string name="clear_filter">Clear filter</string>
     <string name="no_local_songs">No music found on this device</string>
     <string name="local_audio_permission_rationale">Allow access to your audio files to play music stored on this device.</string>
     <string name="local_audio_permission_denied">Permission denied. Grant audio access in system settings to see your local music.</string>

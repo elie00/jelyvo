@@ -11,6 +11,7 @@
     <string name="play">Lecture</string>
     <string name="pause">Pause</string>
     <string name="shuffle">Lecture aléatoire</string>
+    <string name="repeat">Lecture en boucle</string>
     <string name="songs">%1$d titres</string>
     <string name="error">Erreur</string>
     <string name="previous">Précédent</string>
@@ -231,6 +232,8 @@
     <string name="no_saved_albums">Aucun album enregistré pour le moment</string>
     <string name="no_followed_artists">Aucun artiste suivi pour le moment</string>
     <string name="on_device">Sur l\'appareil</string>
+    <string name="show_all">Tout afficher</string>
+    <string name="clear_filter">Effacer le filtre</string>
     <string name="no_local_songs">Aucune musique trouvée sur cet appareil</string>
     <string name="local_audio_permission_rationale">Autorisez l\'accès à vos fichiers audio pour lire la musique stockée sur cet appareil.</string>
     <string name="local_audio_permission_denied">Autorisation refusée. Accordez l\'accès audio dans les paramètres système pour voir votre musique locale.</string>

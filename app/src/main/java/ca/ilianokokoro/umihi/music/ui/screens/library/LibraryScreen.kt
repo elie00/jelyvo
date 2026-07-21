@@ -19,31 +19,38 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.annotation.StringRes
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -77,13 +84,16 @@ import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 
-private enum class LibraryTab {
-    Playlists,
-    LikedSongs,
-    Albums,
-    Artists,
-    OnDevice,
+private enum class LibraryTab(@StringRes val labelRes: Int) {
+    Playlists(R.string.playlists),
+    LikedSongs(R.string.liked_songs),
+    Albums(R.string.saved_albums),
+    Artists(R.string.followed_artists),
+    OnDevice(R.string.on_device),
 }
+
+/** How many songs a stacked section previews before its "show all" button. */
+private const val SECTION_SONG_PREVIEW_COUNT = 5
 
 /**
  * Top-level "Library" destination: the connected account's collection, split into playlists,
@@ -104,7 +114,10 @@ fun LibraryScreen(
     ),
 ) {
     val uiState = libraryViewModel.uiState.collectAsStateWithLifecycle().value
-    var selectedTab by rememberSaveable { mutableStateOf(LibraryTab.Playlists) }
+
+    // -1 means no filter chip selected: every section is shown stacked in one list.
+    var selectedTabOrdinal by rememberSaveable { mutableIntStateOf(-1) }
+    val selectedTab = LibraryTab.entries.getOrNull(selectedTabOrdinal)
     var createPlaylistOpen by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -150,25 +163,39 @@ fun LibraryScreen(
             ) {
                 when (uiState.screenState) {
                     is ScreenState.Success -> {
-                        PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
+                        // Spotify-style filter chips: selecting a chip replaces the current
+                        // filter, tapping the X (or the chip again) clears it.
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             LibraryTab.entries.forEach { tab ->
-                                Tab(
-                                    selected = selectedTab == tab,
-                                    onClick = { selectedTab = tab },
-                                    text = {
+                                val selected = selectedTab == tab
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = {
+                                        selectedTabOrdinal = if (selected) -1 else tab.ordinal
+                                    },
+                                    label = {
                                         Text(
-                                            stringResource(
-                                                when (tab) {
-                                                    LibraryTab.Playlists -> R.string.playlists
-                                                    LibraryTab.LikedSongs -> R.string.liked_songs
-                                                    LibraryTab.Albums -> R.string.saved_albums
-                                                    LibraryTab.Artists -> R.string.followed_artists
-                                                    LibraryTab.OnDevice -> R.string.on_device
-                                                }
-                                            ),
+                                            stringResource(tab.labelRes),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
+                                    },
+                                    leadingIcon = if (selected) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = stringResource(R.string.clear_filter),
+                                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                            )
+                                        }
+                                    } else {
+                                        null
                                     },
                                 )
                             }
@@ -187,6 +214,7 @@ fun LibraryScreen(
                                 localSongsLoaded = uiState.localSongsLoaded,
                                 onLoadLocalSongs = libraryViewModel::loadLocalSongs,
                                 selectedTab = selectedTab,
+                                onSelectTab = { selectedTabOrdinal = it.ordinal },
                                 onOpenPlayer = onOpenPlayer,
                                 onPlaylistPressed = onPlaylistPressed,
                                 onLocalPlaylistPressed = onLocalPlaylistPressed,
@@ -249,7 +277,8 @@ private fun LibraryContent(
     localSongs: List<Song>,
     localSongsLoaded: Boolean,
     onLoadLocalSongs: () -> Unit,
-    selectedTab: LibraryTab,
+    selectedTab: LibraryTab?,
+    onSelectTab: (LibraryTab) -> Unit,
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
@@ -259,6 +288,23 @@ private fun LibraryContent(
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
     when (selectedTab) {
+        null -> AllSectionsContent(
+            library = library,
+            playlists = playlists,
+            localPlaylists = localPlaylists,
+            localSongs = localSongs,
+            localSongsLoaded = localSongsLoaded,
+            onLoadLocalSongs = onLoadLocalSongs,
+            onSelectTab = onSelectTab,
+            onOpenPlayer = onOpenPlayer,
+            onPlaylistPressed = onPlaylistPressed,
+            onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onCreatePlaylist = onCreatePlaylist,
+            onImportPlaylist = onImportPlaylist,
+            onOpenAlbum = onOpenAlbum,
+            onOpenArtist = onOpenArtist,
+        )
+
         LibraryTab.Playlists -> PlaylistsTab(
             playlists = playlists,
             localPlaylists = localPlaylists,
@@ -291,6 +337,155 @@ private fun LibraryContent(
             onLoadLocalSongs = onLoadLocalSongs,
             onOpenPlayer = onOpenPlayer,
         )
+    }
+}
+
+/**
+ * No chip selected: every library section stacked in a single scrollable grid, with a preview
+ * of the song-based sections and a "show all" shortcut that selects the matching chip.
+ */
+@Composable
+private fun AllSectionsContent(
+    library: Library,
+    playlists: List<PlaylistInfo>,
+    localPlaylists: List<LocalPlaylist>,
+    localSongs: List<Song>,
+    localSongsLoaded: Boolean,
+    onLoadLocalSongs: () -> Unit,
+    onSelectTab: (LibraryTab) -> Unit,
+    onOpenPlayer: () -> Unit,
+    onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
+    onLocalPlaylistPressed: (id: String) -> Unit,
+    onCreatePlaylist: () -> Unit,
+    onImportPlaylist: () -> Unit,
+    onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
+    onOpenArtist: (id: String, name: String) -> Unit,
+) {
+    val context = LocalContext.current
+
+    // Load on-device songs for the stacked view when audio access is already granted; the
+    // dedicated "On device" chip owns requesting the permission.
+    LaunchedEffect(localSongsLoaded) {
+        if (!localSongsLoaded) {
+            val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Manifest.permission.READ_MEDIA_AUDIO
+            } else {
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            }
+            if (ContextCompat.checkSelfPermission(context, permission) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                onLoadLocalSongs()
+            }
+        }
+    }
+
+    LazyVerticalGrid(
+        modifier = Modifier.fillMaxSize(),
+        columns = GridCells.Adaptive(minSize = 150.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(
+            top = 8.dp,
+            bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            start = 8.dp,
+            end = 8.dp,
+        ),
+    ) {
+        sectionHeader(key = "header-playlists", titleRes = R.string.playlists)
+        playlistItems(
+            playlists = playlists,
+            localPlaylists = localPlaylists,
+            onPlaylistPressed = onPlaylistPressed,
+            onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onCreatePlaylist = onCreatePlaylist,
+            onImportPlaylist = onImportPlaylist,
+        )
+
+        if (library.likedSongs.isNotEmpty()) {
+            sectionHeader(key = "header-liked-songs", titleRes = R.string.liked_songs)
+            items(
+                items = library.likedSongs.take(SECTION_SONG_PREVIEW_COUNT),
+                key = { "liked-${it.youtubeId}" },
+                span = { GridItemSpan(maxLineSpan) },
+            ) { song ->
+                LikedSongListItem(
+                    song = song,
+                    songs = library.likedSongs,
+                    onOpenPlayer = onOpenPlayer,
+                    onOpenAlbum = onOpenAlbum,
+                    onOpenArtist = onOpenArtist,
+                )
+            }
+            showAllItem(
+                key = "show-all-liked-songs",
+                itemCount = library.likedSongs.size,
+                onShowAll = { onSelectTab(LibraryTab.LikedSongs) },
+            )
+        }
+
+        if (library.savedAlbums.isNotEmpty()) {
+            sectionHeader(key = "header-albums", titleRes = R.string.saved_albums)
+            items(items = library.savedAlbums, key = { "album-${it.id}" }) { album ->
+                LibraryAlbumCard(
+                    album = album,
+                    onClick = { onOpenAlbum(album.id, album.title, album.thumbnail) },
+                )
+            }
+        }
+
+        if (library.followedArtists.isNotEmpty()) {
+            sectionHeader(key = "header-artists", titleRes = R.string.followed_artists)
+            items(
+                items = library.followedArtists,
+                key = { "artist-${it.id}" },
+                span = { GridItemSpan(maxLineSpan) },
+            ) { artist ->
+                ArtistListItem(artist = artist, onOpenArtist = onOpenArtist)
+            }
+        }
+
+        if (localSongsLoaded && localSongs.isNotEmpty()) {
+            sectionHeader(key = "header-on-device", titleRes = R.string.on_device)
+            items(
+                items = localSongs.take(SECTION_SONG_PREVIEW_COUNT),
+                key = { "local-${it.youtubeId}" },
+                span = { GridItemSpan(maxLineSpan) },
+            ) { song ->
+                LocalSongListItem(
+                    song = song,
+                    songs = localSongs,
+                    onOpenPlayer = onOpenPlayer,
+                )
+            }
+            showAllItem(
+                key = "show-all-on-device",
+                itemCount = localSongs.size,
+                onShowAll = { onSelectTab(LibraryTab.OnDevice) },
+            )
+        }
+    }
+}
+
+private fun LazyGridScope.sectionHeader(key: String, @StringRes titleRes: Int) {
+    item(key = key, span = { GridItemSpan(maxLineSpan) }) {
+        Text(
+            text = stringResource(titleRes),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+    }
+}
+
+/** "Show all" shortcut shown when a stacked section previews only part of its content. */
+private fun LazyGridScope.showAllItem(key: String, itemCount: Int, onShowAll: () -> Unit) {
+    if (itemCount <= SECTION_SONG_PREVIEW_COUNT) {
+        return
+    }
+    item(key = key, span = { GridItemSpan(maxLineSpan) }) {
+        TextButton(onClick = onShowAll) {
+            Text(stringResource(R.string.show_all))
+        }
     }
 }
 
@@ -411,23 +606,39 @@ private fun OnDeviceTab(
         }
 
         items(items = songs, key = { it.youtubeId }) { song ->
-            SongListItem(
+            LocalSongListItem(
                 song = song,
-                onPress = {
-                    // Queue the whole on-device list, starting at the tapped track.
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.map { it.mediaItem },
-                        songs.indexOf(song),
-                        sourceName = sourceName
-                    )
-                },
-                playNext = { PlayerManager.addNext(song, context) },
-                addToQueue = { PlayerManager.addToQueue(song, context) },
-                startRadio = { PlayerManager.startRadio(song, context) },
+                songs = songs,
+                onOpenPlayer = onOpenPlayer,
             )
         }
     }
+}
+
+@Composable
+private fun LocalSongListItem(
+    song: Song,
+    songs: List<Song>,
+    onOpenPlayer: () -> Unit,
+) {
+    val context = LocalContext.current
+    val sourceName = stringResource(R.string.on_device)
+
+    SongListItem(
+        song = song,
+        onPress = {
+            // Queue the whole on-device list, starting at the tapped track.
+            onOpenPlayer()
+            PlayerManager.playQueue(
+                songs.map { it.mediaItem },
+                songs.indexOf(song),
+                sourceName = sourceName
+            )
+        },
+        playNext = { PlayerManager.addNext(song, context) },
+        addToQueue = { PlayerManager.addToQueue(song, context) },
+        startRadio = { PlayerManager.startRadio(song, context) },
+    )
 }
 
 @Composable
@@ -451,64 +662,86 @@ private fun PlaylistsTab(
             end = 8.dp,
         ),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                MaterialUButton(
-                    onClick = onImportPlaylist,
-                    icon = Icons.Rounded.FileOpen,
-                    text = stringResource(R.string.import_playlist)
-                )
-                MaterialUButton(
-                    onClick = onCreatePlaylist,
-                    icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                    text = stringResource(R.string.create_playlist)
-                )
-            }
-        }
+        playlistItems(
+            playlists = playlists,
+            localPlaylists = localPlaylists,
+            onPlaylistPressed = onPlaylistPressed,
+            onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onCreatePlaylist = onCreatePlaylist,
+            onImportPlaylist = onImportPlaylist,
+        )
+    }
+}
 
-        if (localPlaylists.isNotEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    text = stringResource(R.string.on_device_playlists),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-            items(
-                items = localPlaylists,
-                key = { it.id }
-            ) { local ->
-                PlaylistCard(
-                    playlistInfo = PlaylistInfo(id = local.id, title = local.name),
-                    onClicked = { onLocalPlaylistPressed(local.id) }
-                )
-            }
-        }
-
-        if (playlists.isNotEmpty()) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    text = stringResource(R.string.account_playlists),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
-            }
-        }
-        itemsIndexed(
-            items = playlists,
-            key = { index, playlist ->
-                ComposeHelper.getLazyKey(
-                    playlist,
-                    playlist.id,
-                    index
-                )
-            }
-        ) { _, playlist ->
-            PlaylistCard(
-                playlistInfo = playlist,
-                onClicked = { onPlaylistPressed(playlist) }
+/**
+ * Import/create buttons plus the on-device and account playlist sections. Shared between the
+ * dedicated Playlists view and the stacked all-sections view.
+ */
+private fun LazyGridScope.playlistItems(
+    playlists: List<PlaylistInfo>,
+    localPlaylists: List<LocalPlaylist>,
+    onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
+    onLocalPlaylistPressed: (id: String) -> Unit,
+    onCreatePlaylist: () -> Unit,
+    onImportPlaylist: () -> Unit,
+) {
+    item(key = "playlist-actions", span = { GridItemSpan(maxLineSpan) }) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            MaterialUButton(
+                onClick = onImportPlaylist,
+                icon = Icons.Rounded.FileOpen,
+                text = stringResource(R.string.import_playlist)
+            )
+            MaterialUButton(
+                onClick = onCreatePlaylist,
+                icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                text = stringResource(R.string.create_playlist)
             )
         }
+    }
+
+    if (localPlaylists.isNotEmpty()) {
+        item(key = "header-on-device-playlists", span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                text = stringResource(R.string.on_device_playlists),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        items(
+            items = localPlaylists,
+            key = { "local-playlist-${it.id}" }
+        ) { local ->
+            PlaylistCard(
+                playlistInfo = PlaylistInfo(id = local.id, title = local.name),
+                onClicked = { onLocalPlaylistPressed(local.id) }
+            )
+        }
+    }
+
+    if (playlists.isNotEmpty()) {
+        item(key = "header-account-playlists", span = { GridItemSpan(maxLineSpan) }) {
+            Text(
+                text = stringResource(R.string.account_playlists),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+    itemsIndexed(
+        items = playlists,
+        key = { index, playlist ->
+            ComposeHelper.getLazyKey(
+                playlist,
+                playlist.id,
+                index
+            )
+        }
+    ) { _, playlist ->
+        PlaylistCard(
+            playlistInfo = playlist,
+            onClicked = { onPlaylistPressed(playlist) }
+        )
     }
 }
 
@@ -519,8 +752,6 @@ private fun LikedSongsTab(
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
-    val context = LocalContext.current
-
     if (songs.isEmpty()) {
         EmptyTabMessage(stringResource(R.string.no_liked_songs))
         return
@@ -558,31 +789,51 @@ private fun LikedSongsTab(
         }
 
         items(items = songs, key = { it.youtubeId }) { song ->
-            SongListItem(
+            LikedSongListItem(
                 song = song,
-                onPress = {
-                    // Queue the whole liked-songs list, starting at the tapped one.
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.map { it.mediaItem },
-                        songs.indexOf(song),
-                        sourceName = sourceName
-                    )
-                },
-                playNext = { PlayerManager.addNext(song, context) },
-                addToQueue = { PlayerManager.addToQueue(song, context) },
-                startRadio = { PlayerManager.startRadio(song, context) },
-                onViewArtist = {
-                    song.artistId?.let { id -> onOpenArtist(id, song.artist) }
-                },
-                onViewAlbum = {
-                    song.albumId?.let { id ->
-                        onOpenAlbum(id, song.albumName ?: "", song.thumbnailHref)
-                    }
-                },
+                songs = songs,
+                onOpenPlayer = onOpenPlayer,
+                onOpenAlbum = onOpenAlbum,
+                onOpenArtist = onOpenArtist,
             )
         }
     }
+}
+
+@Composable
+private fun LikedSongListItem(
+    song: Song,
+    songs: List<Song>,
+    onOpenPlayer: () -> Unit,
+    onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
+    onOpenArtist: (id: String, name: String) -> Unit,
+) {
+    val context = LocalContext.current
+    val sourceName = stringResource(R.string.liked_songs)
+
+    SongListItem(
+        song = song,
+        onPress = {
+            // Queue the whole liked-songs list, starting at the tapped one.
+            onOpenPlayer()
+            PlayerManager.playQueue(
+                songs.map { it.mediaItem },
+                songs.indexOf(song),
+                sourceName = sourceName
+            )
+        },
+        playNext = { PlayerManager.addNext(song, context) },
+        addToQueue = { PlayerManager.addToQueue(song, context) },
+        startRadio = { PlayerManager.startRadio(song, context) },
+        onViewArtist = {
+            song.artistId?.let { id -> onOpenArtist(id, song.artist) }
+        },
+        onViewAlbum = {
+            song.albumId?.let { id ->
+                onOpenAlbum(id, song.albumName ?: "", song.thumbnailHref)
+            }
+        },
+    )
 }
 
 @Composable
@@ -667,19 +918,27 @@ private fun FollowedArtistsTab(
         ),
     ) {
         items(items = artists, key = { it.id }) { artist ->
-            ListItem(
-                headlineContent = { Text(artist.name) },
-                leadingContent = {
-                    SquareImage(
-                        uri = artist.thumbnail,
-                        modifier = Modifier.size(64.dp),
-                        cornerRadius = 32.dp,
-                    )
-                },
-                modifier = Modifier.clickable { onOpenArtist(artist.id, artist.name) },
-            )
+            ArtistListItem(artist = artist, onOpenArtist = onOpenArtist)
         }
     }
+}
+
+@Composable
+private fun ArtistListItem(
+    artist: SearchItem.Artist,
+    onOpenArtist: (id: String, name: String) -> Unit,
+) {
+    ListItem(
+        headlineContent = { Text(artist.name) },
+        leadingContent = {
+            SquareImage(
+                uri = artist.thumbnail,
+                modifier = Modifier.size(64.dp),
+                cornerRadius = 32.dp,
+            )
+        },
+        modifier = Modifier.clickable { onOpenArtist(artist.id, artist.name) },
+    )
 }
 
 @Composable
