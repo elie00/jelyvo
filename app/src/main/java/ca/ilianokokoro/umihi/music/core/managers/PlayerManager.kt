@@ -82,6 +82,48 @@ object PlayerManager {
     val audioInfo = _audioInfo.asStateFlow()
 
     /**
+     * Last playback mode chosen through the player's Song|Video toggle. Session-only (in-memory,
+     * never persisted): a fresh launch always starts back in Song (audio) mode.
+     */
+    private val _videoModePreferred = MutableStateFlow(false)
+    val videoModePreferred: StateFlow<Boolean> = _videoModePreferred.asStateFlow()
+
+    fun setVideoModePreferred(preferred: Boolean) {
+        _videoModePreferred.value = preferred
+    }
+
+    /**
+     * True while the activity is in picture-in-picture mode. Driven by MainActivity; the player
+     * screen uses it to hand the video surface over to the PiP overlay and re-attach its own
+     * surface when the app comes back to the foreground.
+     */
+    private val _isInPipMode = MutableStateFlow(false)
+    val isInPipMode: StateFlow<Boolean> = _isInPipMode.asStateFlow()
+
+    fun setInPipMode(inPip: Boolean) {
+        _isInPipMode.value = inPip
+    }
+
+    /**
+     * Original (audio) queue entries remembered when the toggle swapped them for their video
+     * variant, keyed by the VIDEO item's youtubeId. Lets "back to Song mode" restore the exact
+     * original item (cover, id) instead of guessing. Session-only.
+     */
+    private val audioOriginals = mutableMapOf<String, Song>()
+
+    fun rememberAudioOriginal(videoYoutubeId: String, original: Song) {
+        synchronized(audioOriginals) {
+            audioOriginals[videoYoutubeId] = original
+        }
+    }
+
+    fun getAudioOriginal(videoYoutubeId: String): Song? {
+        return synchronized(audioOriginals) {
+            audioOriginals[videoYoutubeId]
+        }
+    }
+
+    /**
      * True when the current queue is a self-contained collection (album, artist page, playlist):
      * playback must stop at its end instead of being extended with radio/autoplay suggestions.
      * Cleared whenever the queue is rebuilt around a single song or an explicit radio.
@@ -321,18 +363,33 @@ object PlayerManager {
     }
 
     /**
-     * Replaces the currently playing item in place with [videoSong] (its `forceVideo` flag set) and
-     * restarts it, so the user's "play the video version" choice switches to the clip stream/poster
-     * without disturbing the rest of the queue.
+     * Replaces the currently playing item in place with [videoSong] (its `forceVideo` flag set),
+     * so the user's Video-mode choice switches to the clip stream/poster without disturbing the
+     * rest of the queue. Playback resumes at the position the audio stream was at (YT Music-like).
      */
     fun replaceCurrentWithVideo(videoSong: Song) {
+        replaceCurrentPreservingPosition(videoSong)
+    }
+
+    /**
+     * The Song-mode counterpart of [replaceCurrentWithVideo]: swaps the current (video) item back
+     * to [audioSong] (its `forceVideo` flag cleared), keeping queue and playback position.
+     */
+    fun replaceCurrentWithAudio(audioSong: Song) {
+        replaceCurrentPreservingPosition(audioSong)
+    }
+
+    private fun replaceCurrentPreservingPosition(song: Song) {
         val controller = currentController ?: return
         val index = controller.currentMediaItemIndex
         if (index == C.INDEX_UNSET) {
             return
         }
-        controller.replaceMediaItem(index, videoSong.mediaItem)
-        controller.seekTo(index, 0L)
+        val positionMs = controller.currentPosition.coerceAtLeast(0L)
+        controller.replaceMediaItem(index, song.mediaItem)
+        // The swapped-in item carries a different stream URI, so seek back to where the previous
+        // variant was instead of restarting from 0.
+        controller.seekTo(index, positionMs)
         controller.prepare()
         controller.play()
     }

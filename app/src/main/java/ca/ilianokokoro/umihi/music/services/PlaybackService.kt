@@ -217,6 +217,7 @@ class PlaybackService : MediaLibraryService() {
                     mediaItem?.mediaMetadata?.artworkData?.cappedTo(),
                 )
                 updateCurrentMediaItemThumbnail(mediaItem)
+                applyAudioOffloadForItem(mediaItem)
                 val songId = mediaItem?.mediaId ?: return
                 applyTrackVolume(songId, reason)
                 // Restoring the last queue is not a new listen and must not affect history/stats.
@@ -675,6 +676,40 @@ class PlaybackService : MediaLibraryService() {
                 throw e
             } catch (_: Exception) {
                 // Ignore: prefetch is opportunistic, real resolution happens on playback.
+            }
+        }
+    }
+
+    /**
+     * Audio offload cannot drive a video renderer: while a Video-mode (forceVideo) item is
+     * current, offload is forced off regardless of the user's setting, and the preference is
+     * re-applied as soon as an audio item plays again.
+     */
+    private fun applyAudioOffloadForItem(mediaItem: MediaItem?) {
+        val forceVideo = mediaItem?.mediaMetadata?.extras
+            ?.getBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, false) ?: false
+
+        serviceScope.launch {
+            val offloadEnabled = !forceVideo && datastoreRepository.getSettings().useAudioOffload
+            val mode = if (offloadEnabled) {
+                TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
+            } else {
+                TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
+            }
+            withContext(Dispatchers.Main) {
+                val current = player.trackSelectionParameters.audioOffloadPreferences.audioOffloadMode
+                if (current != mode) {
+                    player.trackSelectionParameters =
+                        player.trackSelectionParameters
+                            .buildUpon()
+                            .setAudioOffloadPreferences(
+                                player.trackSelectionParameters.audioOffloadPreferences
+                                    .buildUpon()
+                                    .setAudioOffloadMode(mode)
+                                    .build()
+                            )
+                            .build()
+                }
             }
         }
     }

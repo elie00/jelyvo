@@ -26,6 +26,14 @@ data class PlayerState(
     val lyrics: ApiResult<Lyrics> = ApiResult.Loading,
     val areLyricsShown: Boolean = false,
     val abLoop: AbLoop? = null,
+    // True when the current item is a video or has a linked music-video variant: shows the
+    // Song|Video pill toggle at the top of the player.
+    val hasVideoVariant: Boolean = false,
+    // True while a Song<->Video mode switch is resolving streams; debounces the pill toggle.
+    val isSwitchingPlaybackMode: Boolean = false,
+    // True while the video fills the whole screen (landscape rotation or the fullscreen button),
+    // hiding all player chrome behind auto-hiding overlay controls. Video mode only.
+    val isVideoFullscreen: Boolean = false,
 )
 
 data class PlaybackProgress(

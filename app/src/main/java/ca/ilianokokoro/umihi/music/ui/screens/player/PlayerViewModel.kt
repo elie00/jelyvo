@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.ui.screens.player
 
 import android.app.Application
 import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -13,6 +14,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
@@ -41,6 +43,11 @@ class PlayerViewModel(application: Application) :
     private val songRepository = SongRepository()
     private var lyricsJob: Job? = null
     private var lyricsSongId: String? = null
+
+    // Per-youtubeId result of the video-variant (watch-next counterpart) lookup, so each track is
+    // probed at most once per player screen. A null value means "probed, no video variant".
+    private val videoVariantCache = mutableMapOf<String, Song?>()
+    private var videoVariantJob: Job? = null
 
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -182,48 +189,219 @@ class PlayerViewModel(application: Application) :
         }
     }
 
-    /**
-     * "Play the video version" of the current title: streams the music-video clip (instead of the
-     * official-audio counterpart) and shows its poster. The clip poster is fetched from the player
-     * response first so the artwork switches deterministically; on failure the current cover is
-     * kept and only the stream switches. A no-op for local (on-device) tracks.
-     *
-     * Note: whether a distinct video version actually exists is not probed up front (that needs an
-     * extra watch-next round-trip). When there is none, YouTube resolves the same track and the
-     * result is simply the default audio — a safe fallback.
-     */
+    /** Menu entry point ("Play video version"): same flow as the player's Song|Video pill. */
     fun playCurrentAsVideo() {
+        setPlaybackMode(video = true)
+    }
+
+    /**
+     * Song|Video pill toggle: switches the current item between its audio-preferred stream and the
+     * muxed music-video stream, in place (queue and playback position are both kept). The chosen
+     * mode is remembered in [PlayerManager] for the rest of the session. Defensive: when no video
+     * stream can be resolved, a toast is shown and playback stays in audio mode.
+     */
+    fun setPlaybackMode(video: Boolean) {
+        switchPlaybackMode(video, fromUser = true)
+    }
+
+    private fun switchPlaybackMode(video: Boolean, fromUser: Boolean) {
         val current = _uiState.value.queue.getOrNull(_uiState.value.currentIndex) ?: return
-        if (current.isLocal) {
+        if (current.isLocal || _uiState.value.isSwitchingPlaybackMode) {
             return
         }
         PlayerManager.currentController ?: return
 
+        if (fromUser) {
+            PlayerManager.setVideoModePreferred(video)
+        }
+
+        if (current.forceVideo == video) {
+            return
+        }
+
         viewModelScope.launch {
-            var clipThumbnail: String? = null
+            _uiState.update { it.copy(isSwitchingPlaybackMode = true) }
             try {
-                songRepository.getSongInfo(current.youtubeId).collect { result ->
+                if (video) {
+                    switchToVideoMode(current, fromUser)
+                } else {
+                    switchToSongMode(current)
+                }
+            } finally {
+                _uiState.update { it.copy(isSwitchingPlaybackMode = false) }
+            }
+        }
+    }
+
+    /**
+     * Video mode: plays the muxed stream of the current item's video variant (the watch-next
+     * counterpart when the item is an audio track, the item itself when it already is a video).
+     * The stream is pre-resolved before touching the queue so a failure leaves audio playing
+     * untouched — with a toast when the switch was user-initiated.
+     */
+    private suspend fun switchToVideoMode(current: Song, fromUser: Boolean) {
+        val variant = videoVariantCache[current.youtubeId] ?: current
+
+        val hasVideoStream = try {
+            YoutubeDataExtractor.probeVideoStream(variant)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            printe(
+                message = "Failed to resolve video stream for ${variant.youtubeId}: ${e.message}",
+                exception = e
+            )
+            false
+        }
+
+        if (!hasVideoStream) {
+            if (fromUser) {
+                Toast.makeText(
+                    getApplication(),
+                    getApplication<Application>().getString(R.string.video_mode_unavailable),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            return
+        }
+
+        // 16:9 clip poster: the counterpart already carries one; when the item plays as itself,
+        // fetch it from the player response so the artwork switches deterministically.
+        var poster = variant.thumbnailHref
+            .takeIf { it.isNotBlank() && variant.youtubeId != current.youtubeId }
+        if (poster == null) {
+            try {
+                songRepository.getSongInfo(variant.youtubeId).collect { result ->
                     if (result is ApiResult.Success) {
-                        clipThumbnail = result.data.thumbnailHref
+                        poster = result.data.thumbnailHref
                     }
                 }
             } catch (e: Exception) {
                 printe(message = "Failed to fetch video artwork: ${e.message}", exception = e)
             }
-
-            val videoSong = current.copy(
-                thumbnailHref = clipThumbnail?.takeIf { it.isNotBlank() } ?: current.thumbnailHref,
-                thumbnailPath = null,
-            ).also {
-                it.forceVideo = true
-                it.artistId = current.artistId
-                it.albumId = current.albumId
-                it.albumName = current.albumName
-                it.isSuggestion = current.isSuggestion
-            }
-
-            PlayerManager.replaceCurrentWithVideo(videoSong)
         }
+
+        // Remember the audio-mode item so toggling back restores it exactly (cover included).
+        PlayerManager.rememberAudioOriginal(variant.youtubeId, current)
+
+        val videoSong = current.copy(
+            youtubeId = variant.youtubeId,
+            duration = variant.duration.takeIf { it.isNotBlank() } ?: current.duration,
+            thumbnailHref = poster?.takeIf { it.isNotBlank() } ?: current.thumbnailHref,
+            thumbnailPath = null,
+            streamUrl = null,
+            audioFilePath = null,
+        ).also {
+            it.forceVideo = true
+            it.isVideo = true
+            it.artistId = current.artistId
+            it.albumId = current.albumId
+            it.albumName = current.albumName
+            it.isSuggestion = current.isSuggestion
+        }
+
+        // Offloaded audio cannot drive a video renderer: keep it off while a video item is current.
+        PlayerManager.setAudioOffloadEnabled(false)
+        PlayerManager.replaceCurrentWithVideo(videoSong)
+    }
+
+    /**
+     * Song mode: swaps the current video item back to its remembered audio original (or, failing
+     * that, the same item with `forceVideo` cleared so the resolution pipeline re-applies the
+     * audio-preferred counterpart swap), keeping queue and playback position.
+     */
+    private suspend fun switchToSongMode(current: Song) {
+        val original = PlayerManager.getAudioOriginal(current.youtubeId)
+
+        val audioSong = original ?: current.copy(
+            thumbnailPath = null,
+            streamUrl = null,
+        ).also {
+            it.forceVideo = false
+            it.isVideo = current.isVideo
+            it.artistId = current.artistId
+            it.albumId = current.albumId
+            it.albumName = current.albumName
+            it.isSuggestion = current.isSuggestion
+        }
+
+        // Restore the user's audio-offload preference now that no video surface is needed.
+        val settings = datastoreRepository.getSettings()
+        PlayerManager.setAudioOffloadEnabled(settings.useAudioOffload)
+        PlayerManager.replaceCurrentWithAudio(audioSong)
+    }
+
+    /**
+     * Decides whether the current item can offer Video mode: video items (playing as either
+     * variant) always can; audio tracks are probed once per id through the watch-next counterpart
+     * lookup. When the session's last chosen mode is Video, an eligible new track is switched
+     * over automatically (silently keeping audio when its video stream cannot be resolved).
+     */
+    private fun updateVideoVariant(song: Song?) {
+        videoVariantJob?.cancel()
+
+        if (song == null || song.isLocal) {
+            _uiState.update { it.copy(hasVideoVariant = false) }
+            return
+        }
+
+        if (song.forceVideo || song.isVideo) {
+            _uiState.update { it.copy(hasVideoVariant = true) }
+            maybeApplyPreferredVideoMode(song)
+            return
+        }
+
+        if (videoVariantCache.containsKey(song.youtubeId)) {
+            val hasVariant = videoVariantCache[song.youtubeId] != null
+            _uiState.update { it.copy(hasVideoVariant = hasVariant) }
+            if (hasVariant) {
+                maybeApplyPreferredVideoMode(song)
+            }
+            return
+        }
+
+        _uiState.update { it.copy(hasVideoVariant = false) }
+        videoVariantJob = viewModelScope.launch {
+            val variant = try {
+                YoutubeDataExtractor.extractVideoCounterpart(
+                    YoutubeApiClient.next(song.youtubeId)
+                )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                printe(
+                    message = "Video variant lookup failed for ${song.youtubeId}: ${e.message}",
+                    exception = e
+                )
+                null
+            }
+            videoVariantCache[song.youtubeId] = variant
+
+            // Only surface the result if this track is still the one playing.
+            val state = _uiState.value
+            val stillCurrent = state.queue.getOrNull(state.currentIndex)
+                ?.youtubeId == song.youtubeId
+            if (stillCurrent) {
+                _uiState.update { it.copy(hasVideoVariant = variant != null) }
+                if (variant != null) {
+                    maybeApplyPreferredVideoMode(song)
+                }
+            }
+        }
+    }
+
+    private fun maybeApplyPreferredVideoMode(song: Song) {
+        if (PlayerManager.videoModePreferred.value && !song.forceVideo) {
+            switchPlaybackMode(video = true, fromUser = false)
+        }
+    }
+
+    /**
+     * Fullscreen video (landscape rotation or the fullscreen button on the surface). Only
+     * meaningful while the current item plays in Video mode; the screen clears it otherwise.
+     */
+    fun setVideoFullscreen(fullscreen: Boolean) {
+        _uiState.update { it.copy(isVideoFullscreen = fullscreen) }
     }
 
     fun setSleepTimerSheetVisibility(show: Boolean) {
@@ -358,6 +536,7 @@ class PlayerViewModel(application: Application) :
             lyricsSongId = current.youtubeId
             loadLyrics(current)
         }
+        updateVideoVariant(current)
     }
 
     private fun loadLyrics(song: Song) {
