@@ -45,6 +45,7 @@ import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.schabi.newpipe.extractor.NewPipe
 
@@ -110,7 +111,10 @@ class MainActivity : ComponentActivity() {
         }
 
         ScreenAwakeManager.registerActivity(this)
-        VersionManager.initialize(this)
+        // Off the first-frame critical path: the packageInfo lookup and Room DB handle build in
+        // initialize() aren't needed to draw the UI. All consumers (update check, settings) run
+        // later and self-ensure initialization, so this stays correct without blocking onCreate.
+        lifecycleScope.launch(Dispatchers.IO) { VersionManager.initialize(applicationContext) }
         initNewPipe()
         initPictureInPicture()
 

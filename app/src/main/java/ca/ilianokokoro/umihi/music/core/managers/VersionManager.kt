@@ -57,7 +57,20 @@ object VersionManager {
                 String()
             }
         }
-        versionRepository = AppDatabase.getInstance(context).versionRepository()
+        if (!::versionRepository.isInitialized) {
+            versionRepository = AppDatabase.getInstance(context).versionRepository()
+        }
+    }
+
+    /**
+     * Guarantees [initialize] has run before a consumer touches [versionRepository]/[versionName].
+     * Idempotent and off the main thread: the caller may run [initialize] on a background dispatcher
+     * so the packageInfo lookup and Room handle build never block the first frame.
+     */
+    private suspend fun ensureInitialized(context: Context) {
+        if (versionName == null || !::versionRepository.isInitialized) {
+            withContext(Dispatchers.IO) { initialize(context.applicationContext) }
+        }
     }
 
     fun getVersionName(): String {
@@ -76,6 +89,8 @@ object VersionManager {
         if (!BuildConfig.UPDATER_ENABLED) {
             return
         }
+
+        ensureInitialized(context)
 
         val settings = getSettings(context)
         if (!settings.updateChecking && !manualCheck) {
