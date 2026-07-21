@@ -60,7 +60,8 @@ fun MiniPlayer(
                 0.30f
             )
         ),
-        elevation = CardDefaults.cardElevation(4.dp)
+        // Flat: the mini player sits welded on the navigation bar's surface, no shadow between.
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
             modifier = Modifier

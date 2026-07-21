@@ -28,7 +28,9 @@ import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Close
@@ -82,6 +84,7 @@ import ca.ilianokokoro.umihi.music.ui.components.dialog.PlaylistCreationDialog
 import ca.ilianokokoro.umihi.music.ui.components.materialu.MaterialUButton
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 
 private enum class LibraryTab(@StringRes val labelRes: Int) {
@@ -380,8 +383,12 @@ private fun AllSectionsContent(
         }
     }
 
+    val gridState = rememberLazyGridState()
+    DockScrollToTopEffect(gridState)
+
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
+        state = gridState,
         columns = GridCells.Adaptive(minSize = 150.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -576,8 +583,12 @@ private fun OnDeviceTab(
 
     val sourceName = stringResource(R.string.on_device)
 
+    val listState = rememberLazyListState()
+    DockScrollToTopEffect(listState)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(
             top = 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
@@ -650,8 +661,12 @@ private fun PlaylistsTab(
     onCreatePlaylist: () -> Unit,
     onImportPlaylist: () -> Unit,
 ) {
+    val gridState = rememberLazyGridState()
+    DockScrollToTopEffect(gridState)
+
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
+        state = gridState,
         columns = GridCells.Adaptive(minSize = 150.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -759,8 +774,12 @@ private fun LikedSongsTab(
 
     val sourceName = stringResource(R.string.liked_songs)
 
+    val listState = rememberLazyListState()
+    DockScrollToTopEffect(listState)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(
             top = 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
@@ -846,8 +865,12 @@ private fun SavedAlbumsTab(
         return
     }
 
+    val gridState = rememberLazyGridState()
+    DockScrollToTopEffect(gridState)
+
     LazyVerticalGrid(
         modifier = Modifier.fillMaxSize(),
+        state = gridState,
         columns = GridCells.Adaptive(minSize = 150.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -910,8 +933,12 @@ private fun FollowedArtistsTab(
         return
     }
 
+    val listState = rememberLazyListState()
+    DockScrollToTopEffect(listState)
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
+        state = listState,
         contentPadding = PaddingValues(
             top = 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,

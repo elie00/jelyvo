@@ -71,6 +71,7 @@ import androidx.compose.foundation.layout.size
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
 
@@ -206,7 +207,11 @@ fun SearchScreen(
                 } else if (uiState.search.isBlank() &&
                     (uiState.recentSearches.isNotEmpty() || uiState.moodSections.isNotEmpty())
                 ) {
+                    val browseListState = rememberLazyListState()
+                    DockScrollToTopEffect(browseListState)
+
                     LazyColumn(
+                        state = browseListState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
                     ) {
@@ -291,6 +296,7 @@ fun SearchScreen(
                         val topResult = uiState.screenState.topResult
                         if (results.isNotEmpty() || topResult != null) {
                             val listState = rememberLazyListState()
+                            DockScrollToTopEffect(listState)
 
                             // Infinite scroll: load the next page as we approach the end.
                             LaunchedEffect(listState, results.size, uiState.continuation) {

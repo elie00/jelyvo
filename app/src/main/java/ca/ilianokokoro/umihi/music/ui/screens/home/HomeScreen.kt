@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +38,7 @@ import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
+import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
 import ca.ilianokokoro.umihi.music.ui.components.home.ResumeListeningRow
 
@@ -76,12 +78,16 @@ fun HomeScreen(
                                 textAlign = TextAlign.Center
                             )
                         } else {
+                            val gridState = rememberLazyGridState()
+                            DockScrollToTopEffect(gridState)
+
                             PullToRefreshBox(
                                 isRefreshing = uiState.isRefreshing,
                                 onRefresh = homeViewModel::refresh
                             ) {
                                 LazyVerticalGrid(
                                     modifier = Modifier.fillMaxSize(),
+                                    state = gridState,
                                     columns = GridCells.Adaptive(minSize = 150.dp),
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
