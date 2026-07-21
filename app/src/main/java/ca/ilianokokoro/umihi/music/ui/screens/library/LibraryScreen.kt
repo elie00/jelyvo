@@ -94,6 +94,12 @@ private enum class LibraryTab(@StringRes val labelRes: Int) {
     OnDevice(R.string.on_device),
 }
 
+/**
+ * Sections that need no YouTube account. Shown as the only available chips while logged out so
+ * on-device playback and local playlists stay reachable without signing in.
+ */
+private val LOCAL_LIBRARY_TABS = listOf(LibraryTab.Playlists, LibraryTab.OnDevice)
+
 /** How many songs a stacked section previews before its "show all" button. */
 private const val SECTION_SONG_PREVIEW_COUNT = 5
 
@@ -228,21 +234,68 @@ fun LibraryScreen(
                         }
                     }
 
-                    ScreenState.LoggedOut -> Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(
-                            stringResource(R.string.log_in_message),
-                            textAlign = TextAlign.Center
-                        )
-                        FilledTonalButton(
-                            onClick = onSettingsButtonPress,
-                            shapes = ButtonDefaults.shapes()
+                    ScreenState.LoggedOut -> {
+                        // Logged out: no account content, but on-device playback and local
+                        // playlists need no sign-in, so expose a reduced library restricted to
+                        // the local chips, with a banner prompting sign-in for account content.
+                        val localSelectedTab = selectedTab?.takeIf { it in LOCAL_LIBRARY_TABS }
+
+                        LoggedOutBanner(onSettingsButtonPress = onSettingsButtonPress)
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text(stringResource(R.string.open_settings))
+                            LOCAL_LIBRARY_TABS.forEach { tab ->
+                                val selected = localSelectedTab == tab
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = {
+                                        selectedTabOrdinal = if (selected) -1 else tab.ordinal
+                                    },
+                                    label = {
+                                        Text(
+                                            stringResource(tab.labelRes),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    },
+                                    leadingIcon = if (selected) {
+                                        {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Close,
+                                                contentDescription = stringResource(R.string.clear_filter),
+                                                modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                            )
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                )
+                            }
                         }
+
+                        LibraryContent(
+                            library = Library(),
+                            playlists = emptyList(),
+                            localPlaylists = uiState.localPlaylists,
+                            localSongs = uiState.localSongs,
+                            localSongsLoaded = uiState.localSongsLoaded,
+                            onLoadLocalSongs = libraryViewModel::loadLocalSongs,
+                            selectedTab = localSelectedTab,
+                            onSelectTab = { selectedTabOrdinal = it.ordinal },
+                            onOpenPlayer = onOpenPlayer,
+                            onPlaylistPressed = onPlaylistPressed,
+                            onLocalPlaylistPressed = onLocalPlaylistPressed,
+                            // Creating an account playlist requires sign-in.
+                            onCreatePlaylist = null,
+                            onImportPlaylist = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
+                            onOpenAlbum = onOpenAlbum,
+                            onOpenArtist = onOpenArtist,
+                        )
                     }
 
                     ScreenState.Loading -> Box(
@@ -271,6 +324,30 @@ fun LibraryScreen(
     }
 }
 
+/** Compact sign-in prompt shown above the reduced logged-out library. */
+@Composable
+private fun LoggedOutBanner(onSettingsButtonPress: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.library_logged_out_banner),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        FilledTonalButton(
+            onClick = onSettingsButtonPress,
+            shapes = ButtonDefaults.shapes(),
+        ) {
+            Text(stringResource(R.string.log_in))
+        }
+    }
+}
+
 @Composable
 private fun LibraryContent(
     library: Library,
@@ -284,7 +361,7 @@ private fun LibraryContent(
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
-    onCreatePlaylist: () -> Unit,
+    onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
@@ -358,7 +435,7 @@ private fun AllSectionsContent(
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
-    onCreatePlaylist: () -> Unit,
+    onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
@@ -664,7 +741,7 @@ private fun PlaylistsTab(
     localPlaylists: List<LocalPlaylist>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
-    onCreatePlaylist: () -> Unit,
+    onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
 ) {
     val gridState = rememberLazyGridState()
@@ -703,7 +780,7 @@ private fun LazyGridScope.playlistItems(
     localPlaylists: List<LocalPlaylist>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
-    onCreatePlaylist: () -> Unit,
+    onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
 ) {
     item(key = "playlist-actions", span = { GridItemSpan(maxLineSpan) }) {
@@ -713,11 +790,15 @@ private fun LazyGridScope.playlistItems(
                 icon = Icons.Rounded.FileOpen,
                 text = stringResource(R.string.import_playlist)
             )
-            MaterialUButton(
-                onClick = onCreatePlaylist,
-                icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                text = stringResource(R.string.create_playlist)
-            )
+            // Creating a playlist writes to the connected account, so it is only offered
+            // when signed in (null callback while logged out).
+            if (onCreatePlaylist != null) {
+                MaterialUButton(
+                    onClick = onCreatePlaylist,
+                    icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                    text = stringResource(R.string.create_playlist)
+                )
+            }
         }
     }
 
