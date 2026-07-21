@@ -55,6 +55,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
 import ca.ilianokokoro.umihi.music.ui.screens.library.LibraryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.LocalPlaylistScreen
+import ca.ilianokokoro.umihi.music.ui.screens.moods.MoodCategoryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
@@ -299,6 +300,15 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 application = app,
                                 onOpenArtist = { song -> song.artistId?.let { id -> backStack.add(ArtistScreenKey(id, song.artist)) } },
                                 onOpenAlbum = { id, name, cover -> backStack.add(AlbumScreenKey(id, name, cover)) },
+                                onOpenMoodCategory = { category ->
+                                    backStack.add(
+                                        MoodCategoryScreenKey(
+                                            browseId = category.browseId,
+                                            params = category.params,
+                                            title = category.title,
+                                        )
+                                    )
+                                },
                             )
                         }
 
@@ -327,6 +337,25 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 },
                                 onOpenAlbum = { id, name, cover ->
                                     backStack.add(AlbumScreenKey(id, name, cover))
+                                },
+                                application = app
+                            )
+                        }
+
+                        is MoodCategoryScreenKey -> NavEntry(key) {
+                            MoodCategoryScreen(
+                                browseId = key.browseId,
+                                params = key.params,
+                                title = key.title,
+                                onBack = backStack::safePop,
+                                onOpenPlaylist = { playlist ->
+                                    backStack.add(PlaylistScreenKey(playlistInfo = playlist))
+                                },
+                                onOpenAlbum = { id, name, cover ->
+                                    backStack.add(AlbumScreenKey(id, name, cover))
+                                },
+                                onOpenArtist = { id, name ->
+                                    backStack.add(ArtistScreenKey(id, name))
                                 },
                                 application = app
                             )

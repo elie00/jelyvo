@@ -46,6 +46,13 @@ data class AlbumScreenKey(
     val albumCover: String = "",
 ) : NavKey
 
+@Serializable
+data class MoodCategoryScreenKey(
+    val browseId: String,
+    val params: String,
+    val title: String,
+) : NavKey
+
 
 data class ScreenUiConfig(
     val showBottomBar: Boolean = true,
@@ -102,6 +109,10 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             )
 
             is AlbumScreenKey -> ScreenUiConfig(
+                showBottomBar = false
+            )
+
+            is MoodCategoryScreenKey -> ScreenUiConfig(
                 showBottomBar = false
             )
 

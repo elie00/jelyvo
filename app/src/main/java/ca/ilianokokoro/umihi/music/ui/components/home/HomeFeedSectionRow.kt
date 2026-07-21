@@ -33,11 +33,13 @@ fun HomeFeedSectionRow(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.fillMaxWidth()) {
-        Text(
-            text = section.title,
-            style = MaterialTheme.typography.headlineSmallEmphasized,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-        )
+        if (section.title.isNotBlank()) {
+            Text(
+                text = section.title,
+                style = MaterialTheme.typography.headlineSmallEmphasized,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+            )
+        }
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
