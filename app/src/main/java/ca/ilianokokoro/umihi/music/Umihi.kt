@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music
 
 import android.app.Application
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
@@ -26,6 +27,9 @@ class Umihi : Application(), SingletonImageLoader.Factory {
         super.onCreate()
 
         NotificationManager.init(this)
+
+        // Wire the response cache's on-disk mirror so the home feed can paint on a cold start.
+        ResponseCache.init(cacheDir)
 
         // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means an
         // already-running schedule is left untouched.
