@@ -26,11 +26,21 @@ class SongDataSource {
         )
     }
 
-    suspend fun search(query: String, filter: SearchFilter): SearchResult {
-        val json = YoutubeApiClient.search(query, filter)
+    suspend fun search(query: String, filter: SearchFilter, paramsOverride: String? = null): SearchResult {
+        val json = YoutubeApiClient.search(query, filter, paramsOverride)
+        // Only the unscoped tab carries a top-result card; keep its entity out of the list rows
+        // so it is not shown twice.
+        val topResult = if (filter == SearchFilter.All) {
+            YoutubeDataExtractor.extractTopResult(json)
+        } else {
+            null
+        }
+        val items = YoutubeDataExtractor.extractSearchItems(json, filter)
         return SearchResult(
-            items = YoutubeDataExtractor.extractSearchItems(json, filter),
+            items = if (topResult == null) items else items.filterNot { it.id == topResult.id },
             continuation = YoutubeDataExtractor.extractContinuationToken(json),
+            topResult = topResult,
+            spellCorrection = YoutubeDataExtractor.extractSpellCorrection(json),
         )
     }
 
