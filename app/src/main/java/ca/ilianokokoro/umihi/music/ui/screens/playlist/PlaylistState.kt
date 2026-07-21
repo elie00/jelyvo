@@ -2,8 +2,10 @@ package ca.ilianokokoro.umihi.music.ui.screens.playlist
 
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import androidx.compose.runtime.Immutable
 
 
+@Immutable
 data class PlaylistState(
     val screenState: ScreenState,
     val isRefreshing: Boolean = false,
@@ -12,6 +14,7 @@ data class PlaylistState(
     val showingSearch: Boolean = false
 )
 
+@Immutable
 sealed class ScreenState {
     data class Success(
         val playlist: Playlist

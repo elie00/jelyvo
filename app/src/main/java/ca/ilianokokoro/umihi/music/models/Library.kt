@@ -1,6 +1,9 @@
 package ca.ilianokokoro.umihi.music.models
 
+import androidx.compose.runtime.Immutable
+
 /** The connected account's collection: liked songs, saved albums and followed artists. */
+@Immutable
 data class Library(
     val likedSongs: List<Song> = emptyList(),
     val savedAlbums: List<SearchItem.Album> = emptyList(),

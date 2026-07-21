@@ -4,8 +4,10 @@ import ca.ilianokokoro.umihi.music.models.MoodCategorySection
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.SpellCorrection
+import androidx.compose.runtime.Immutable
 
 
+@Immutable
 data class SearchState(
     val search: String = String(),
     val screenState: ScreenState = ScreenState.Success(),
@@ -20,6 +22,7 @@ data class SearchState(
 )
 
 
+@Immutable
 sealed class ScreenState {
     data class Success(
         val results: List<SearchItem> = listOf(),

@@ -1,7 +1,9 @@
 package ca.ilianokokoro.umihi.music.ui.screens.settings
 
+import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 
+@Immutable
 data class SettingsState(
     val screenState: ScreenState = ScreenState.Loading,
     val showUpdateChannelDialog: Boolean = false,
@@ -10,6 +12,7 @@ data class SettingsState(
 
 )
 
+@Immutable
 sealed class ScreenState {
     data class Success(
         val settings: UmihiSettings,

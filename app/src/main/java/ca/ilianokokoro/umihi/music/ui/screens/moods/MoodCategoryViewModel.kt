@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.moods
 
 import android.app.Application
+import androidx.compose.runtime.Immutable
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@Immutable
 sealed class MoodCategoryState {
     data object Loading : MoodCategoryState()
     data class Success(val sections: List<HomeFeedSection>) : MoodCategoryState()

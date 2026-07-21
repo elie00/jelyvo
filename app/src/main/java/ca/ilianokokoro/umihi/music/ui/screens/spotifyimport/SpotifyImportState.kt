@@ -1,14 +1,17 @@
 package ca.ilianokokoro.umihi.music.ui.screens.spotifyimport
 
 import ca.ilianokokoro.umihi.music.data.repositories.ImportProgress
+import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.models.spotify.SpotifyPlaylist
 
+@Immutable
 data class SpotifyImportState(
     val screenState: ScreenState = ScreenState.Disconnected,
     // Kept once OAuth completes; null while disconnected.
     val accessToken: String? = null,
 )
 
+@Immutable
 sealed class ScreenState {
     /** No Spotify token yet — show the "Connect Spotify" button. */
     data object Disconnected : ScreenState()

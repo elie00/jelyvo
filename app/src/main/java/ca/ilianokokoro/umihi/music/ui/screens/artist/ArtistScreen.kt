@@ -132,14 +132,14 @@ fun ArtistScreen(
                         }
 
                         page.sections.forEachIndexed { index, section ->
-                            item(key = "section-title-$index") {
+                            item(key = "section-title-$index", contentType = "section-title") {
                                 Text(
                                     text = section.title,
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
                                 )
                             }
-                            item(key = "section-row-$index") {
+                            item(key = "section-row-$index", contentType = "section-row") {
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
@@ -167,7 +167,10 @@ fun ArtistScreen(
                             }
                         }
 
-                        items(items = page.songs, key = { it.youtubeId }) { song ->
+                        items(
+                            items = page.songs,
+                            key = { it.youtubeId },
+                            contentType = { "song" }) { song ->
                             SongListItem(
                                 song = song,
                                 onPress = {

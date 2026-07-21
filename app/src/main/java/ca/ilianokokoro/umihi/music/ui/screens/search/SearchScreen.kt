@@ -361,7 +361,8 @@ fun SearchScreen(
 
                                 items(
                                     items = results,
-                                    key = { it.id }) { item ->
+                                    key = { it.id },
+                                    contentType = { it::class }) { item ->
                                     when (item) {
                                     is SearchItem.Track -> SongListItem(
                                         song = item.song,

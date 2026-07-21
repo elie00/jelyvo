@@ -4,8 +4,10 @@ import ca.ilianokokoro.umihi.music.models.Library
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
+import androidx.compose.runtime.Immutable
 
 
+@Immutable
 data class LibraryState(
     val screenState: ScreenState = ScreenState.Loading,
     val isRefreshing: Boolean = false,
@@ -17,6 +19,7 @@ data class LibraryState(
     val importMessage: Int? = null,
 )
 
+@Immutable
 sealed class ScreenState {
     data class Success(val library: Library) : ScreenState()
     data object LoggedOut : ScreenState()

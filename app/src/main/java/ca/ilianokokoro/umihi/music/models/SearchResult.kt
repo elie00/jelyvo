@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.models
 
+import androidx.compose.runtime.Immutable
+
 /**
  * A page of search results plus the continuation token used to load the next page (null when there
  * are no more results). [topResult] is the unscoped ("All") search's top-result card entity, kept
@@ -23,6 +25,7 @@ data class SearchResult(
  * verbatim through [originalParams]; when false the results are for the query as typed and
  * [correctedQuery] is only suggested ("Did you mean…").
  */
+@Immutable
 data class SpellCorrection(
     val correctedQuery: String,
     /** searchEndpoint params of the corrected query's link, forcing that exact search. */
@@ -42,6 +45,7 @@ enum class SearchFilter(val params: String) {
     Artists("EgWKAQIgAWoKEAkQChAFEAMQBA=="),
 }
 
+@Immutable
 sealed interface SearchItem {
     val id: String
 

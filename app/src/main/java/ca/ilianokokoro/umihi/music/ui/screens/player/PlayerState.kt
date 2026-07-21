@@ -4,8 +4,10 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.managers.AbLoop
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.Song
+import androidx.compose.runtime.Immutable
 
 
+@Immutable
 data class PlayerState(
     val queue: List<Song> = emptyList(),
     val currentIndex: Int = -1,
@@ -36,6 +38,7 @@ data class PlayerState(
     val isVideoFullscreen: Boolean = false,
 )
 
+@Immutable
 data class PlaybackProgress(
     val position: Float = 0f,
     val duration: Float = 0f,

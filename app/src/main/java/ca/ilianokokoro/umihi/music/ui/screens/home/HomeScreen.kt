@@ -133,7 +133,10 @@ fun HomeScreen(
                                         }
                                     }
                                     if (uiState.recentlyPlayed.isNotEmpty()) {
-                                        item(span = { GridItemSpan(maxLineSpan) }) {
+                                        item(
+                                            key = "recently-played",
+                                            span = { GridItemSpan(maxLineSpan) },
+                                        ) {
                                             RecentlyPlayedRow(
                                                 songs = uiState.recentlyPlayed,
                                                 onSongClick = { PlayerManager.playSong(it) }
@@ -143,6 +146,7 @@ fun HomeScreen(
                                     if (newReleases.isNotEmpty()) {
                                         item(
                                             key = "new-releases",
+                                            contentType = "feed-section",
                                             span = { GridItemSpan(maxLineSpan) },
                                         ) {
                                             HomeFeedSectionRow(
@@ -164,6 +168,7 @@ fun HomeScreen(
                                     homeSections.forEach { section ->
                                         item(
                                             key = "home-${section.title}",
+                                            contentType = "feed-section",
                                             span = { GridItemSpan(maxLineSpan) },
                                         ) {
                                             HomeFeedSectionRow(

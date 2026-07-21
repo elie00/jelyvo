@@ -215,7 +215,10 @@ fun AlbumScreen(
                             }
                         }
 
-                        items(items = playableSongs, key = { it.youtubeId }) { song ->
+                        items(
+                            items = playableSongs,
+                            key = { it.youtubeId },
+                            contentType = { "song" }) { song ->
                             SongListItem(
                                 song = song,
                                 onPress = {
@@ -256,7 +259,7 @@ fun AlbumScreen(
                         }
 
                         sections.forEachIndexed { index, section ->
-                            item(key = "album-section-title-$index") {
+                            item(key = "album-section-title-$index", contentType = "section-title") {
                                 Text(
                                     text = section.title,
                                     style = MaterialTheme.typography.titleMedium,
@@ -267,7 +270,7 @@ fun AlbumScreen(
                                     )
                                 )
                             }
-                            item(key = "album-section-row-$index") {
+                            item(key = "album-section-row-$index", contentType = "section-row") {
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(

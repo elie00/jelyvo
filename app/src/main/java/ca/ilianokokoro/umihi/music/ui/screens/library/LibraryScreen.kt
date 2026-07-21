@@ -50,7 +50,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -137,8 +136,8 @@ fun LibraryScreen(
         }
     }
 
-    val deletedPlaylistIds by sharedViewModel.deletedPlaylistIds.collectAsState()
-    val playlistRefreshNeeded by sharedViewModel.playlistRefreshNeeded.collectAsState()
+    val deletedPlaylistIds by sharedViewModel.deletedPlaylistIds.collectAsStateWithLifecycle()
+    val playlistRefreshNeeded by sharedViewModel.playlistRefreshNeeded.collectAsStateWithLifecycle()
 
     LaunchedEffect(deletedPlaylistIds, playlistRefreshNeeded) {
         when {
@@ -414,6 +413,7 @@ private fun AllSectionsContent(
             items(
                 items = library.likedSongs.take(SECTION_SONG_PREVIEW_COUNT),
                 key = { "liked-${it.youtubeId}" },
+                contentType = { "song" },
                 span = { GridItemSpan(maxLineSpan) },
             ) { song ->
                 LikedSongListItem(
@@ -433,7 +433,11 @@ private fun AllSectionsContent(
 
         if (library.savedAlbums.isNotEmpty()) {
             sectionHeader(key = "header-albums", titleRes = R.string.saved_albums)
-            items(items = library.savedAlbums, key = { "album-${it.id}" }) { album ->
+            items(
+                items = library.savedAlbums,
+                key = { "album-${it.id}" },
+                contentType = { "album" },
+            ) { album ->
                 LibraryAlbumCard(
                     album = album,
                     onClick = { onOpenAlbum(album.id, album.title, album.thumbnail) },
@@ -446,6 +450,7 @@ private fun AllSectionsContent(
             items(
                 items = library.followedArtists,
                 key = { "artist-${it.id}" },
+                contentType = { "artist" },
                 span = { GridItemSpan(maxLineSpan) },
             ) { artist ->
                 ArtistListItem(artist = artist, onOpenArtist = onOpenArtist)
@@ -457,6 +462,7 @@ private fun AllSectionsContent(
             items(
                 items = localSongs.take(SECTION_SONG_PREVIEW_COUNT),
                 key = { "local-${it.youtubeId}" },
+                contentType = { "song" },
                 span = { GridItemSpan(maxLineSpan) },
             ) { song ->
                 LocalSongListItem(
@@ -475,7 +481,7 @@ private fun AllSectionsContent(
 }
 
 private fun LazyGridScope.sectionHeader(key: String, @StringRes titleRes: Int) {
-    item(key = key, span = { GridItemSpan(maxLineSpan) }) {
+    item(key = key, contentType = "header", span = { GridItemSpan(maxLineSpan) }) {
         Text(
             text = stringResource(titleRes),
             style = MaterialTheme.typography.titleLarge,
@@ -489,7 +495,7 @@ private fun LazyGridScope.showAllItem(key: String, itemCount: Int, onShowAll: ()
     if (itemCount <= SECTION_SONG_PREVIEW_COUNT) {
         return
     }
-    item(key = key, span = { GridItemSpan(maxLineSpan) }) {
+    item(key = key, contentType = "show-all", span = { GridItemSpan(maxLineSpan) }) {
         TextButton(onClick = onShowAll) {
             Text(stringResource(R.string.show_all))
         }
@@ -716,7 +722,11 @@ private fun LazyGridScope.playlistItems(
     }
 
     if (localPlaylists.isNotEmpty()) {
-        item(key = "header-on-device-playlists", span = { GridItemSpan(maxLineSpan) }) {
+        item(
+            key = "header-on-device-playlists",
+            contentType = "header",
+            span = { GridItemSpan(maxLineSpan) },
+        ) {
             Text(
                 text = stringResource(R.string.on_device_playlists),
                 style = MaterialTheme.typography.titleMedium,
@@ -725,7 +735,8 @@ private fun LazyGridScope.playlistItems(
         }
         items(
             items = localPlaylists,
-            key = { "local-playlist-${it.id}" }
+            key = { "local-playlist-${it.id}" },
+            contentType = { "playlist" },
         ) { local ->
             PlaylistCard(
                 playlistInfo = PlaylistInfo(id = local.id, title = local.name),
@@ -735,7 +746,11 @@ private fun LazyGridScope.playlistItems(
     }
 
     if (playlists.isNotEmpty()) {
-        item(key = "header-account-playlists", span = { GridItemSpan(maxLineSpan) }) {
+        item(
+            key = "header-account-playlists",
+            contentType = "header",
+            span = { GridItemSpan(maxLineSpan) },
+        ) {
             Text(
                 text = stringResource(R.string.account_playlists),
                 style = MaterialTheme.typography.titleMedium,
@@ -751,7 +766,8 @@ private fun LazyGridScope.playlistItems(
                 playlist.id,
                 index
             )
-        }
+        },
+        contentType = { _, _ -> "playlist" },
     ) { _, playlist ->
         PlaylistCard(
             playlistInfo = playlist,

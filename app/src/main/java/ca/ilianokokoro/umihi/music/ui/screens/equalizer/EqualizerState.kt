@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.ui.screens.equalizer
 
+import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 
 /**
@@ -16,6 +17,7 @@ import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
  * @param bassBoost       Bass boost strength, 0..1000.
  * @param currentOutput   The active audio output the shown profile belongs to.
  */
+@Immutable
 data class EqualizerState(
     val available: Boolean = false,
     val enabled: Boolean = false,
@@ -33,6 +35,7 @@ data class EqualizerState(
  * @param centerFreqMilliHz Center frequency in milli hertz (as reported by the effect).
  * @param levelMilliBel    Current gain of this band in millibel.
  */
+@Immutable
 data class BandState(
     val index: Int,
     val centerFreqMilliHz: Int,
