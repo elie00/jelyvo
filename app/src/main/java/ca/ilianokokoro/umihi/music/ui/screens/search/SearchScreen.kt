@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.horizontalScroll
@@ -32,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,21 +48,31 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.models.MoodCategory
+import ca.ilianokokoro.umihi.music.models.MoodCategorySection
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
+import ca.ilianokokoro.umihi.music.models.SpellCorrection
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import androidx.compose.foundation.layout.size
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
+import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
 
 
 @Composable
@@ -67,6 +80,7 @@ fun SearchScreen(
     application: Application,
     onOpenArtist: (Song) -> Unit = {},
     onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
+    onOpenMoodCategory: (MoodCategory) -> Unit = {},
     searchViewModel: SearchViewModel = viewModel(
         factory =
             SearchViewModel.Factory(application = application)
@@ -189,49 +203,82 @@ fun SearchScreen(
                             HorizontalDivider()
                         }
                     }
-                } else if (uiState.search.isBlank() && uiState.recentSearches.isNotEmpty()) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
-                        item(key = "recent_searches_header") {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 16.dp, end = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.recent_searches),
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                                TextButton(onClick = searchViewModel::clearRecentSearches) {
-                                    Text(stringResource(R.string.recent_searches_clear_all))
+                } else if (uiState.search.isBlank() &&
+                    (uiState.recentSearches.isNotEmpty() || uiState.moodSections.isNotEmpty())
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
+                    ) {
+                        if (uiState.recentSearches.isNotEmpty()) {
+                            item(key = "recent_searches_header") {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 16.dp, end = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.recent_searches),
+                                        style = MaterialTheme.typography.titleMedium,
+                                    )
+                                    TextButton(onClick = searchViewModel::clearRecentSearches) {
+                                        Text(stringResource(R.string.recent_searches_clear_all))
+                                    }
                                 }
                             }
-                        }
-                        items(uiState.recentSearches, key = { it }) { query ->
-                            ListItem(
-                                headlineContent = { Text(query) },
-                                leadingContent = {
-                                    Icon(
-                                        imageVector = Icons.Default.History,
-                                        contentDescription = null,
-                                    )
-                                },
-                                trailingContent = {
-                                    IconButton(
-                                        onClick = { searchViewModel.removeRecentSearch(query) }
-                                    ) {
+                            items(uiState.recentSearches, key = { it }) { query ->
+                                ListItem(
+                                    headlineContent = { Text(query) },
+                                    leadingContent = {
                                         Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = stringResource(R.string.recent_search_remove),
+                                            imageVector = Icons.Default.History,
+                                            contentDescription = null,
                                         )
-                                    }
-                                },
-                                modifier = Modifier.clickable {
-                                    focusManager.clearFocus()
-                                    searchViewModel.selectSuggestion(query)
-                                },
-                            )
+                                    },
+                                    trailingContent = {
+                                        IconButton(
+                                            onClick = { searchViewModel.removeRecentSearch(query) }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = stringResource(R.string.recent_search_remove),
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.clickable {
+                                        focusManager.clearFocus()
+                                        searchViewModel.selectSuggestion(query)
+                                    },
+                                )
+                            }
+                        }
+                        if (uiState.moodSections.isNotEmpty()) {
+                            item(key = "moods_and_genres_header") {
+                                Text(
+                                    text = stringResource(R.string.moods_and_genres),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top = 16.dp,
+                                        bottom = 4.dp,
+                                    ),
+                                )
+                            }
+                            items(
+                                items = uiState.moodSections,
+                                key = { "mood_section_${it.title}" },
+                            ) { section ->
+                                MoodSectionChips(
+                                    section = section,
+                                    onOpenMoodCategory = { category ->
+                                        focusManager.clearFocus()
+                                        onOpenMoodCategory(category)
+                                    },
+                                )
+                            }
                         }
                     }
                 } else when (uiState.screenState) {
@@ -241,7 +288,8 @@ fun SearchScreen(
 
                     is ScreenState.Success -> {
                         val results = uiState.screenState.results
-                        if (results.isNotEmpty()) {
+                        val topResult = uiState.screenState.topResult
+                        if (results.isNotEmpty() || topResult != null) {
                             val listState = rememberLazyListState()
 
                             // Infinite scroll: load the next page as we approach the end.
@@ -265,6 +313,46 @@ fun SearchScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                             ) {
+                                uiState.screenState.spellCorrection?.let { correction ->
+                                    item(key = "spell_correction") {
+                                        SpellCorrectionHeader(
+                                            correction = correction,
+                                            onSearch = searchViewModel::searchCorrection,
+                                        )
+                                    }
+                                }
+
+                                if (topResult != null) {
+                                    item(key = "top_result") {
+                                        TopResultCard(
+                                            item = topResult,
+                                            onPlay = { searchViewModel.playTopResult(topResult) },
+                                            onOpen = {
+                                                when (topResult) {
+                                                    is SearchItem.Track ->
+                                                        PlayerManager.playSong(topResult.song)
+
+                                                    is SearchItem.Album -> onOpenAlbum(
+                                                        topResult.id,
+                                                        topResult.title,
+                                                        topResult.thumbnail,
+                                                    )
+
+                                                    is SearchItem.Artist -> onOpenArtist(
+                                                        Song(
+                                                            youtubeId = "",
+                                                            artist = topResult.name
+                                                        ).also {
+                                                            it.artistId = topResult.id
+                                                        }
+                                                    )
+                                                }
+                                            },
+                                            modifier = Modifier.padding(bottom = 8.dp),
+                                        )
+                                    }
+                                }
+
                                 items(
                                     items = results,
                                     key = { it.id }) { item ->
@@ -331,6 +419,12 @@ fun SearchScreen(
                                 verticalArrangement = Arrangement.Center
 
                             ) {
+                                uiState.screenState.spellCorrection?.let { correction ->
+                                    SpellCorrectionHeader(
+                                        correction = correction,
+                                        onSearch = searchViewModel::searchCorrection,
+                                    )
+                                }
                                 Text(stringResource(R.string.no_results))
                             }
                         }
@@ -341,6 +435,108 @@ fun SearchScreen(
         }
     }
 
+}
+
+/**
+ * The spell-correction header shown above the result rows, mirroring YT Music: a clickable
+ * "Did you mean <corrected>" suggestion, or "Showing results for <corrected>" followed by a
+ * clickable "Search instead for <original>" when the results were auto-corrected. [onSearch]
+ * reruns the search with the tapped link's query and searchEndpoint params.
+ */
+@Composable
+private fun SpellCorrectionHeader(
+    correction: SpellCorrection,
+    onSearch: (query: String, params: String?) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        if (correction.autoCorrected) {
+            Text(
+                text = correctionText(
+                    R.string.search_showing_results_for,
+                    correction.correctedQuery,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            correction.originalQuery?.let { original ->
+                Text(
+                    text = correctionText(R.string.search_instead_for, original),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable {
+                        onSearch(original, correction.originalParams)
+                    },
+                )
+            }
+        } else {
+            Text(
+                text = correctionText(
+                    R.string.search_did_you_mean,
+                    correction.correctedQuery,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable {
+                    onSearch(correction.correctedQuery, correction.correctedParams)
+                },
+            )
+        }
+    }
+}
+
+/** Formats a "%1$s" string resource with [query] rendered in bold italics, YT Music style. */
+@Composable
+private fun correctionText(templateRes: Int, query: String): AnnotatedString {
+    val template = stringResource(templateRes)
+    val queryStyle = SpanStyle(fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)
+    return buildAnnotatedString {
+        val placeholder = "%1\$s"
+        val index = template.indexOf(placeholder)
+        if (index == -1) {
+            append(template)
+            append(" ")
+            withStyle(queryStyle) { append(query) }
+        } else {
+            append(template.substring(0, index))
+            withStyle(queryStyle) { append(query) }
+            append(template.substring(index + placeholder.length))
+        }
+    }
+}
+
+/** One "Moods & genres" hub section rendered as a wrapping row of category chips. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MoodSectionChips(
+    section: MoodCategorySection,
+    onOpenMoodCategory: (MoodCategory) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        if (section.title.isNotBlank()) {
+            Text(
+                text = section.title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            section.categories.forEach { category ->
+                SuggestionChip(
+                    onClick = { onOpenMoodCategory(category) },
+                    label = { Text(category.title) },
+                )
+            }
+        }
+    }
 }
 
 @Composable

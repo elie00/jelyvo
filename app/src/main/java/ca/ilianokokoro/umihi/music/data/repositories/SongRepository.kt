@@ -20,9 +20,10 @@ class SongRepository {
     fun search(
         query: String,
         filter: SearchFilter = SearchFilter.Songs,
+        paramsOverride: String? = null,
     ): Flow<ApiResult<SearchResult>> =
-        cachedApiFlow(key = "search:${filter.name}:$query") {
-            songDataSource.search(query, filter)
+        cachedApiFlow(key = "search:${filter.name}:${paramsOverride.orEmpty()}:$query") {
+            songDataSource.search(query, filter, paramsOverride)
         }
 
     suspend fun searchMore(

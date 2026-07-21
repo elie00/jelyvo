@@ -203,16 +203,25 @@ object YoutubeApiClient {
         )
     }
 
-    suspend fun search(query: String, filter: SearchFilter = SearchFilter.Songs): String {
+    /**
+     * [paramsOverride] replaces the filter's scope params when non-null, e.g. to rerun a spell
+     * correction link's exact searchEndpoint params.
+     */
+    suspend fun search(
+        query: String,
+        filter: SearchFilter = SearchFilter.Songs,
+        paramsOverride: String? = null,
+    ): String {
         val base = YoutubeAuthHelper.buildContextBody(
             idName = "query",
             id = query,
             settings = null,
         )
+        val params = paramsOverride ?: filter.params
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
-            if (filter.params.isNotEmpty()) {
-                put("params", filter.params)
+            if (params.isNotEmpty()) {
+                put("params", params)
             }
         }
         return requestWithBody(
