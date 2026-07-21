@@ -1,23 +1,36 @@
 package ca.ilianokokoro.umihi.music
 
 import android.Manifest
+import android.app.PendingIntent
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.Configuration
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
@@ -27,6 +40,7 @@ import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
+import ca.ilianokokoro.umihi.music.ui.components.PipVideoOverlay
 import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
@@ -40,6 +54,31 @@ class MainActivity : ComponentActivity() {
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {}
+
+    /** Mirrors [isInPictureInPictureMode] into Compose so the video-only PiP layer can be shown. */
+    private var isInPipMode by mutableStateOf(false)
+
+    /** Handles the PiP window's play/pause remote action. */
+    private val pipActionReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != Constants.Player.Pip.ACTION_PLAY_PAUSE) {
+                return
+            }
+            val controller = PlayerManager.currentController ?: return
+            if (controller.isPlaying) {
+                controller.pause()
+            } else {
+                controller.play()
+            }
+        }
+    }
+
+    /** Keeps the PiP play/pause remote action in sync with the actual playback state. */
+    private val pipPlayerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            updatePipParams()
+        }
+    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,16 +94,25 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(initialValue = DatastoreRepository.ThemeColor.Dynamic)
 
             UmihiMusicTheme(themeColor = themeColor) {
-                NavigationRoot(
-                    modifier = Modifier.fillMaxSize()
-                )
-                UpdateDialog(lifecycleScope)
+                Box(modifier = Modifier.fillMaxSize()) {
+                    NavigationRoot(
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    UpdateDialog(lifecycleScope)
+
+                    // In PiP the whole activity is rendered in the tiny window: cover the app UI
+                    // with a video-only layer so the window shows just the letterboxed video.
+                    if (isInPipMode) {
+                        PipVideoOverlay(modifier = Modifier.fillMaxSize())
+                    }
+                }
             }
         }
 
         ScreenAwakeManager.registerActivity(this)
         VersionManager.initialize(this)
         initNewPipe()
+        initPictureInPicture()
 
         handleShareIntent(intent)
         handleViewIntent(intent)
@@ -91,8 +139,107 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            unregisterReceiver(pipActionReceiver)
+        }
+        PlayerManager.currentController?.removeListener(pipPlayerListener)
         ScreenAwakeManager.unregisterActivity(this)
         super.onDestroy()
+    }
+
+    /**
+     * Home/recents during video playback: hand the video off to a picture-in-picture window.
+     * Pure audio playback never triggers PiP (the media notification already covers it).
+     */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return
+        }
+        if (PlayerManager.getCurrentSong()?.forceVideo != true || !PlayerManager.isPlaying) {
+            return
+        }
+
+        try {
+            enterPictureInPictureMode(buildPipParams(isPlaying = true))
+        } catch (_: IllegalStateException) {
+            // PiP refused (disabled by the user/device): regular background playback continues.
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        isInPipMode = isInPictureInPictureMode
+        PlayerManager.setInPipMode(isInPictureInPictureMode)
+    }
+
+    private fun initPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return
+        }
+
+        ContextCompat.registerReceiver(
+            this,
+            pipActionReceiver,
+            IntentFilter(Constants.Player.Pip.ACTION_PLAY_PAUSE),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        // The controller connects asynchronously (and may reconnect): (re-)attach the listener
+        // that keeps the PiP remote action synced with the playback state.
+        lifecycleScope.launch {
+            PlayerManager.controllerState.collect { controller ->
+                controller?.removeListener(pipPlayerListener)
+                controller?.addListener(pipPlayerListener)
+            }
+        }
+    }
+
+    private fun updatePipParams() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPipMode) {
+            return
+        }
+        setPictureInPictureParams(buildPipParams(PlayerManager.isPlaying))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun buildPipParams(isPlaying: Boolean): PictureInPictureParams {
+        val playPauseIntent = PendingIntent.getBroadcast(
+            this,
+            Constants.Player.Pip.REQUEST_CODE_PLAY_PAUSE,
+            Intent(Constants.Player.Pip.ACTION_PLAY_PAUSE).setPackage(packageName),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val iconRes = if (isPlaying) {
+            android.R.drawable.ic_media_pause
+        } else {
+            android.R.drawable.ic_media_play
+        }
+        val title = getString(if (isPlaying) R.string.pause else R.string.play)
+
+        return PictureInPictureParams.Builder()
+            .setAspectRatio(
+                Rational(
+                    Constants.Player.Pip.ASPECT_RATIO_WIDTH,
+                    Constants.Player.Pip.ASPECT_RATIO_HEIGHT
+                )
+            )
+            .setActions(
+                listOf(
+                    RemoteAction(
+                        Icon.createWithResource(this, iconRes),
+                        title,
+                        title,
+                        playPauseIntent
+                    )
+                )
+            )
+            .build()
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -35,10 +35,14 @@
         <meta-data
             android:name="android.max_aspect"
             android:value="2.4" />
+        <!-- configChanges + supportsPictureInPicture: video playback keeps its surface across
+             rotation and enters PiP when the user leaves the app while a video is playing. -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
             android:exported="true"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:supportsPictureInPicture="true">
             <!-- Default -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
