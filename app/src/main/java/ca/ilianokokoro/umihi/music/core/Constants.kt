@@ -218,6 +218,8 @@ object Constants {
             const val LOCAL_URI = "local-uri"
             const val IS_SUGGESTION = "is-suggestion"
             const val FORCE_VIDEO = "force-video"
+            const val IS_VIDEO = "is-video"
+            const val VIEW_COUNT = "view-count"
         }
     }
 
@@ -226,6 +228,17 @@ object Constants {
         const val IMAGE_TRANSITION_DELAY = 200
         const val COLOR_TRANSITION_DURATION = 500
         val SPEEDS = listOf(0.25f, 0.5f, 0.75f, 1f, 2f, 3f, 5f)
+
+        // Fullscreen video: overlay controls auto-hide after this idle delay while playing.
+        const val FULLSCREEN_CONTROLS_HIDE_DELAY_MS = 3_000L
+
+        object Pip {
+            // Broadcast action of the picture-in-picture window's play/pause remote action.
+            const val ACTION_PLAY_PAUSE = "ca.ilianokokoro.umihi.music.pip.PLAY_PAUSE"
+            const val REQUEST_CODE_PLAY_PAUSE = 4210
+            const val ASPECT_RATIO_WIDTH = 16
+            const val ASPECT_RATIO_HEIGHT = 9
+        }
 
         object Tracking {
             const val WATCHTIME_INTERVAL_MS = 15_000L
@@ -259,6 +272,7 @@ object Constants {
             const val LIKED_ALBUMS_BROWSE_ID = "FEmusic_liked_albums"
             const val LIBRARY_ARTISTS_BROWSE_ID = "FEmusic_library_corpus_artists"
             const val LIBRARY_LANDING_BROWSE_ID = "FEmusic_library_landing"
+            const val MOODS_AND_GENRES_BROWSE_ID = "FEmusic_moods_and_genres"
 
             // Disabled as it was causing issues
 //            object Fields {

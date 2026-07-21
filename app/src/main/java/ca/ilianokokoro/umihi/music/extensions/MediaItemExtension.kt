@@ -26,5 +26,7 @@ fun MediaItem?.toSong(): Song {
             extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_SUGGESTION, false) ?: false
         it.forceVideo =
             extras?.getBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, false) ?: false
+        it.isVideo = extras?.getBoolean(Constants.ExoPlayer.SongMetadata.IS_VIDEO, false) ?: false
+        it.viewCount = extras?.getString(Constants.ExoPlayer.SongMetadata.VIEW_COUNT)
     }
 }

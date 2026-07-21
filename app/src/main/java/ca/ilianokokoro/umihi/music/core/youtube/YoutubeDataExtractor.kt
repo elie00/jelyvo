@@ -16,10 +16,13 @@ import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistSection
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
+import ca.ilianokokoro.umihi.music.models.MoodCategory
+import ca.ilianokokoro.umihi.music.models.MoodCategorySection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
+import ca.ilianokokoro.umihi.music.models.SpellCorrection
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -37,6 +40,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.Request
 import org.schabi.newpipe.extractor.ServiceList
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -448,7 +452,17 @@ object YoutubeDataExtractor {
                 // whose payload is a playable videoId, so they share the same extraction.
                 val songItems = mutableListOf<JsonObject>()
                 collectSongItems(root, songItems)
-                songItems.mapNotNull { extractSong(it)?.let(SearchItem::Track) }
+                songItems.mapNotNull { item ->
+                    extractSong(item)?.also { song ->
+                        // Every row of the Videos tab is a video, even when its watch payload
+                        // does not expose a musicVideoType.
+                        if (filter == SearchFilter.Videos && !song.isVideo) {
+                            song.isVideo = true
+                            song.viewCount = item["musicResponsiveListItemRenderer"]
+                                ?.safeObject()?.let(::extractViewCount)
+                        }
+                    }?.let(SearchItem::Track)
+                }
             }
             SearchFilter.Albums, SearchFilter.Artists -> {
                 // Scoped album/artist search returns musicResponsiveListItemRenderer list rows
@@ -464,17 +478,15 @@ object YoutubeDataExtractor {
             }
 
             SearchFilter.All -> {
-                // "Top results" mixes entity types: the top-result card shelf, the musicShelf list
-                // rows (classified per item: album/artist browseId, else a track) and the
-                // album/artist carousel tiles (musicTwoRowItemRenderer).
-                val cards = mutableListOf<JsonObject>()
-                collectCardShelves(root, cards)
+                // "Top results" mixes entity types: the musicShelf list rows (classified per item:
+                // album/artist browseId, else a track) and the album/artist carousel tiles
+                // (musicTwoRowItemRenderer). The top-result card shelf is surfaced separately
+                // through [extractTopResult] so the UI can render it as a dedicated card.
                 val rows = mutableListOf<JsonObject>()
                 collectSongItems(root, rows)
                 val tiles = mutableListOf<JsonObject>()
                 collectTwoRowItems(root, tiles)
-                cards.mapNotNull { it.cardToSearchItem() } +
-                        rows.mapNotNull { it.toMixedSearchItem() } +
+                rows.mapNotNull { it.toMixedSearchItem() } +
                         tiles.mapNotNull { it.twoRowToSearchItem() }
             }
         }.distinctBy(SearchItem::id)
@@ -509,6 +521,61 @@ object YoutubeDataExtractor {
         return (listRows.mapNotNull { it.toMixedSearchItem() as? SearchItem.Artist } +
                 tiles.mapNotNull { it.toSearchItem(SearchFilter.Artists) as? SearchItem.Artist })
             .distinctBy(SearchItem.Artist::id)
+    }
+
+    /**
+     * The search response's spell correction, when the query looked misspelled: either a
+     * `showingResultsForRenderer` (results were auto-corrected, the original query is offered
+     * back) or a `didYouMeanRenderer` (results match the typed query, a correction is suggested).
+     * Null when the response carries neither.
+     */
+    fun extractSpellCorrection(jsonString: String): SpellCorrection? {
+        var correction: SpellCorrection? = null
+
+        fun JsonObject.searchEndpoint(key: String): JsonObject? =
+            this[key]?.safeObject()?.get("searchEndpoint")?.safeObject()
+
+        fun JsonObject?.endpointQuery(): String? =
+            this?.get("query")?.jsonPrimitive?.contentOrNull
+
+        fun JsonObject?.endpointParams(): String? =
+            this?.get("params")?.jsonPrimitive?.contentOrNull
+
+        fun JsonObject.toCorrection(autoCorrected: Boolean): SpellCorrection? {
+            val correctedEndpoint = searchEndpoint("correctedQueryEndpoint")
+            val correctedQuery = correctedEndpoint.endpointQuery()
+                ?: this["correctedQuery"].runsText().takeIf(String::isNotBlank)
+                ?: return null
+            val originalEndpoint = searchEndpoint("originalQueryEndpoint")
+            return SpellCorrection(
+                correctedQuery = correctedQuery,
+                correctedParams = correctedEndpoint.endpointParams(),
+                originalQuery = originalEndpoint.endpointQuery()
+                    ?: this["originalQuery"].runsText().takeIf(String::isNotBlank),
+                originalParams = originalEndpoint.endpointParams(),
+                autoCorrected = autoCorrected,
+            )
+        }
+
+        fun walk(element: JsonElement) {
+            if (correction != null) return
+            when (element) {
+                is JsonObject -> {
+                    element["showingResultsForRenderer"]?.safeObject()
+                        ?.toCorrection(autoCorrected = true)
+                        ?.let { correction = it }
+                        ?: element["didYouMeanRenderer"]?.safeObject()
+                            ?.toCorrection(autoCorrected = false)
+                            ?.let { correction = it }
+                    element.values.forEach(::walk)
+                }
+
+                is JsonArray -> element.forEach(::walk)
+                else -> Unit
+            }
+        }
+        walk(Json.parseToJsonElement(jsonString))
+        return correction
     }
 
     fun extractSearchSuggestions(jsonString: String): List<String> {
@@ -552,30 +619,98 @@ object YoutubeDataExtractor {
         }
     }
 
-    /** Classifies a top-result card (musicCardShelfRenderer) into an album or artist item. */
+    /**
+     * The unscoped ("All") search's top-result card (musicCardShelfRenderer), classified into an
+     * artist, album or track item. Null when the response carries no card the app can render.
+     */
+    fun extractTopResult(jsonString: String): SearchItem? {
+        val cards = mutableListOf<JsonObject>()
+        collectCardShelves(Json.parseToJsonElement(jsonString), cards)
+        return cards.firstNotNullOfOrNull { it.cardToSearchItem() }
+    }
+
+    /**
+     * Classifies a top-result card (musicCardShelfRenderer) into an album, artist or track item.
+     * The card's title run navigates either to an entity page (browseEndpoint) or, for song/video
+     * top results, straight to playback (watchEndpoint).
+     */
     private fun JsonObject.cardToSearchItem(): SearchItem? {
-        val browseId = this["title"]?.safeObject()?.get("runs")?.safeArray()
+        val titleRun = this["title"]?.safeObject()?.get("runs")?.safeArray()
             ?.firstOrNull()?.safeObject()
-            ?.get("navigationEndpoint")?.safeObject()
-            ?.get("browseEndpoint")?.safeObject()
-            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        val endpoint = titleRun?.get("navigationEndpoint")?.safeObject()
+        val browseId = endpoint?.get("browseEndpoint")?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull
         val title = this["title"].runsText()
         val thumbnail = this["thumbnail"]?.let(::getBestThumbnailUrl).orEmpty()
         return when {
-            browseId.startsWith("UC") -> SearchItem.Artist(
+            browseId?.startsWith("UC") == true -> SearchItem.Artist(
                 id = browseId,
                 name = title,
                 thumbnail = thumbnail,
             )
 
-            browseId.startsWith("MPRE") -> SearchItem.Album(
+            browseId?.startsWith("MPRE") == true -> SearchItem.Album(
                 id = browseId,
                 title = title,
                 subtitle = this["subtitle"].runsText(),
                 thumbnail = thumbnail,
             )
 
-            else -> null
+            else -> cardToTrack(titleRun, title, thumbnail)?.let(SearchItem::Track)
+        }
+    }
+
+    /**
+     * A song/video top-result card: its title run carries a watchEndpoint instead of a browseId.
+     * Subtitle runs read "Song • Artist • 3:45" (or "Video • Artist • 1.2M views • 3:45").
+     */
+    private fun JsonObject.cardToTrack(
+        titleRun: JsonObject?,
+        title: String,
+        thumbnail: String,
+    ): Song? {
+        val videoId = titleRun?.get("navigationEndpoint")?.safeObject()
+            ?.get("watchEndpoint")?.safeObject()
+            ?.get("videoId")?.jsonPrimitive?.contentOrNull ?: return null
+
+        val subtitleParts = this["subtitle"]?.safeObject()
+            ?.get("runs")?.safeArray()
+            ?.mapNotNull { it.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull?.trim() }
+            ?.filter { it.isNotEmpty() && it != "•" }
+            .orEmpty()
+        // First run is the entity type ("Song"/"Video"), the second the artist; the duration is
+        // the trailing "m:ss"-shaped run.
+        val artist = subtitleParts.getOrNull(1).orEmpty()
+        val duration = subtitleParts.lastOrNull { it.matches(DURATION_REGEX) }.orEmpty()
+
+        val isExplicit = this["subtitleBadges"]
+            ?.safeArray()
+            ?.any { badge ->
+                badge.safeObject()
+                    ?.get("musicInlineBadgeRenderer")
+                    ?.safeObject()
+                    ?.get("icon")
+                    ?.safeObject()
+                    ?.get("iconType")
+                    ?.jsonPrimitive
+                    ?.contentOrNull == "MUSIC_EXPLICIT_BADGE"
+            } ?: false
+
+        return Song(
+            youtubeId = videoId,
+            title = title,
+            artist = artist,
+            duration = duration,
+            thumbnailHref = thumbnail,
+            isExplicit = isExplicit,
+        ).also { song ->
+            val videoType = titleRun?.let(::musicVideoType)
+            song.isVideo = videoType != null && videoType != MUSIC_VIDEO_TYPE_ATV
+            if (song.isVideo) {
+                // On video cards the run between the artist and the duration is the view count.
+                song.viewCount = subtitleParts.drop(2)
+                    .firstOrNull { !it.matches(DURATION_REGEX) }
+            }
         }
     }
 
@@ -681,7 +816,68 @@ object YoutubeDataExtractor {
             .distinctBy { section -> section.title to section.items.firstOrNull() }
     }
 
-    private fun collectHomeShelves(element: JsonElement, output: MutableList<HomeShelf>) {
+    /**
+     * Parses a generic browse page (e.g. a mood/genre category opened via its params browse) into
+     * home-style sections. Unlike [extractHomeFeed] it also walks plain `gridRenderer` sections,
+     * whose headers may be absent, so untitled sections are kept.
+     */
+    fun extractBrowseSections(jsonString: String): List<HomeFeedSection> {
+        val shelves = mutableListOf<HomeShelf>()
+        collectHomeShelves(Json.parseToJsonElement(jsonString), shelves, includeGrids = true)
+        return shelves.mapNotNull { it.toSection(allowBlankTitle = true) }
+            .filter { it.items.isNotEmpty() }
+            .distinctBy { section -> section.title to section.items.firstOrNull() }
+    }
+
+    /**
+     * Parses the FEmusic_moods_and_genres hub: `gridRenderer` sections ("Moods & moments",
+     * "Genres") whose items are `musicNavigationButtonRenderer` chips carrying the category's
+     * `browseEndpoint` (browseId + params).
+     */
+    fun extractMoodsAndGenres(jsonString: String): List<MoodCategorySection> {
+        val sections = mutableListOf<MoodCategorySection>()
+
+        fun walk(element: JsonElement) {
+            when (element) {
+                is JsonObject -> {
+                    element["gridRenderer"]?.safeObject()?.let { grid ->
+                        val title = grid["header"]?.safeObject()
+                            ?.get("gridHeaderRenderer")?.safeObject()
+                            ?.get("title").runsText()
+                        val categories = grid["items"]?.safeArray().orEmpty()
+                            .mapNotNull { it.toMoodCategory() }
+                        if (categories.isNotEmpty()) {
+                            sections += MoodCategorySection(title = title, categories = categories)
+                        }
+                        return
+                    }
+                    element.values.forEach(::walk)
+                }
+                is JsonArray -> element.forEach(::walk)
+                else -> Unit
+            }
+        }
+
+        walk(Json.parseToJsonElement(jsonString))
+        return sections
+    }
+
+    private fun JsonElement.toMoodCategory(): MoodCategory? {
+        val renderer = safeObject()
+            ?.get("musicNavigationButtonRenderer")?.safeObject() ?: return null
+        val title = renderer["buttonText"].runsText().ifBlank { return null }
+        val endpoint = renderer["clickCommand"]?.safeObject()
+            ?.get("browseEndpoint")?.safeObject() ?: return null
+        val browseId = endpoint["browseId"]?.jsonPrimitive?.contentOrNull ?: return null
+        val params = endpoint["params"]?.jsonPrimitive?.contentOrNull ?: return null
+        return MoodCategory(title = title, browseId = browseId, params = params)
+    }
+
+    private fun collectHomeShelves(
+        element: JsonElement,
+        output: MutableList<HomeShelf>,
+        includeGrids: Boolean = false,
+    ) {
         when (element) {
             is JsonObject -> {
                 element["musicCarouselShelfRenderer"]?.safeObject()?.let {
@@ -692,26 +888,37 @@ object YoutubeDataExtractor {
                     output += HomeShelf(it, isCarousel = false)
                     return
                 }
-                element.values.forEach { collectHomeShelves(it, output) }
+                if (includeGrids) {
+                    element["gridRenderer"]?.safeObject()?.let {
+                        output += HomeShelf(it, isCarousel = false, isGrid = true)
+                        return
+                    }
+                }
+                element.values.forEach { collectHomeShelves(it, output, includeGrids) }
             }
-            is JsonArray -> element.forEach { collectHomeShelves(it, output) }
+            is JsonArray -> element.forEach { collectHomeShelves(it, output, includeGrids) }
             else -> Unit
         }
     }
 
-    private fun HomeShelf.toSection(): HomeFeedSection? {
-        val title = if (isCarousel) {
-            renderer["header"]?.safeObject()
+    private fun HomeShelf.toSection(allowBlankTitle: Boolean = false): HomeFeedSection? {
+        val title = when {
+            isCarousel -> renderer["header"]?.safeObject()
                 ?.let { header ->
                     header["musicCarouselShelfBasicHeaderRenderer"]
                         ?: header["musicCarouselShelfHeaderRenderer"]
                 }
                 ?.safeObject()?.get("title").runsText()
-        } else {
-            renderer["title"].runsText()
-        }.ifBlank { return null }
 
-        val items = renderer["contents"]?.safeArray().orEmpty()
+            isGrid -> renderer["header"]?.safeObject()
+                ?.get("gridHeaderRenderer")?.safeObject()
+                ?.get("title").runsText()
+
+            else -> renderer["title"].runsText()
+        }
+        if (title.isBlank() && !allowBlankTitle) return null
+
+        val items = renderer[if (isGrid) "items" else "contents"]?.safeArray().orEmpty()
             .mapNotNull { item ->
                 extractSong(item)?.let(HomeFeedItem::Track)
                     ?: item.toHomeTwoRowItem()
@@ -784,6 +991,7 @@ object YoutubeDataExtractor {
     private data class HomeShelf(
         val renderer: JsonObject,
         val isCarousel: Boolean,
+        val isGrid: Boolean = false,
     )
 
 
@@ -1178,6 +1386,9 @@ object YoutubeDataExtractor {
 
     private const val MUSIC_VIDEO_TYPE_ATV = "MUSIC_VIDEO_TYPE_ATV"
 
+    /** A "m:ss" / "h:mm:ss" display duration, as YouTube formats track lengths. */
+    private val DURATION_REGEX = Regex("""\d+:\d{2}(:\d{2})?""")
+
     /**
      * From a watch-next response, returns the audio ("song") version of a music video, or null
      * when the item already is pure audio or has no counterpart. YouTube links both versions of a
@@ -1206,6 +1417,38 @@ object YoutubeDataExtractor {
         }
 
         return parsePanelVideo(counterpart)
+    }
+
+    /**
+     * From a watch-next response, returns the music-video ("clip") variant of the playing track:
+     * the panel's primary renderer when it already is a video, or its non-ATV `counterpart`
+     * when the primary is the official audio. Null when no video variant is linked at all —
+     * which is how the player decides whether to offer the Song|Video toggle.
+     */
+    fun extractVideoCounterpart(jsonString: String): Song? {
+        val wrapper = findFirstObject(
+            Json.parseToJsonElement(jsonString),
+            listOf("playlistPanelVideoWrapperRenderer")
+        ) ?: return null
+
+        val primary = wrapper["primaryRenderer"]?.safeObject()
+            ?.get("playlistPanelVideoRenderer")?.safeObject()
+        val primaryType = primary?.let { musicVideoType(it) }
+        if (primaryType != null && primaryType != MUSIC_VIDEO_TYPE_ATV) {
+            return parsePanelVideo(primary)?.also { it.isVideo = true }
+        }
+
+        val counterpart = wrapper["counterpart"]?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("counterpartRenderer")?.safeObject()
+            ?.get("playlistPanelVideoRenderer")?.safeObject()
+            ?: return null
+
+        val counterpartType = musicVideoType(counterpart)
+        if (counterpartType == null || counterpartType == MUSIC_VIDEO_TYPE_ATV) {
+            return null
+        }
+
+        return parsePanelVideo(counterpart)?.also { it.isVideo = true }
     }
 
     private fun musicVideoType(renderer: JsonObject): String? {
@@ -1486,8 +1729,84 @@ object YoutubeDataExtractor {
             it.albumId = album?.first
             it.albumName = album?.second
             it.artistId = artistRef?.first
+            // A row whose watch payload declares a non-ATV musicVideoType (OMV/UGC/…) is a video
+            // result: it gets the wide 16:9 thumbnail and, when exposed, a view-count subtitle.
+            val videoType = listItemMusicVideoType(songContent)
+            it.isVideo = videoType != null && videoType != MUSIC_VIDEO_TYPE_ATV
+            if (it.isVideo) {
+                it.viewCount = extractViewCount(songContent)
+            }
         }
 
+    }
+
+    /**
+     * The `musicVideoType` of a musicResponsiveListItemRenderer row, read from the title run's
+     * watchEndpoint or, failing that, the play-button overlay endpoint. Null when the row does not
+     * expose a watch config (e.g. album track rows navigating through playlistItemData).
+     */
+    private fun listItemMusicVideoType(songContent: JsonObject): String? {
+        val titleRuns = songContent["flexColumns"]?.safeArray()?.getOrNull(0)
+            ?.safeObject()?.get("musicResponsiveListItemFlexColumnRenderer")?.safeObject()
+            ?.get("text")?.safeObject()?.get("runs")?.safeArray()
+        titleRuns?.forEach { run ->
+            run.safeObject()?.get("navigationEndpoint")?.safeObject()
+                ?.get("watchEndpoint")?.safeObject()
+                ?.let { watchEndpointMusicVideoType(it) }
+                ?.let { return it }
+        }
+
+        return songContent["overlay"]?.safeObject()
+            ?.get("musicItemThumbnailOverlayRenderer")?.safeObject()
+            ?.get("content")?.safeObject()
+            ?.get("musicPlayButtonRenderer")?.safeObject()
+            ?.get("playNavigationEndpoint")?.safeObject()
+            ?.get("watchEndpoint")?.safeObject()
+            ?.let { watchEndpointMusicVideoType(it) }
+    }
+
+    private fun watchEndpointMusicVideoType(watchEndpoint: JsonObject): String? {
+        return watchEndpoint["watchEndpointMusicSupportedConfigs"]?.safeObject()
+            ?.get("watchEndpointMusicConfig")?.safeObject()
+            ?.get("musicVideoType")?.jsonPrimitive?.contentOrNull
+    }
+
+    /**
+     * View count of a video row, parsed from the subtitle runs (e.g.
+     * "Artist • 1.2M views • 3:45", fr "1,2 M de vues"). The API localizes the wording, so the
+     * match is a heuristic: a run starting with a digit and containing a view keyword. Null when
+     * the subtitle does not carry one.
+     */
+    private fun extractViewCount(songContent: JsonObject): String? {
+        val flexColumns = songContent["flexColumns"]?.safeArray() ?: return null
+
+        // Column 0 is the title — the view count lives in the subtitle columns.
+        for (column in flexColumns.drop(1)) {
+            val runs = column.safeObject()?.get("musicResponsiveListItemFlexColumnRenderer")
+                ?.safeObject()
+                ?.get("text")
+                ?.safeObject()
+                ?.get("runs")
+                ?.safeArray()
+                ?: continue
+
+            for (run in runs) {
+                val text = run.safeObject()?.get("text")
+                    ?.jsonPrimitive
+                    ?.contentOrNull
+                    ?.trim()
+                    ?: continue
+
+                val lower = text.lowercase()
+                if (text.firstOrNull()?.isDigit() == true &&
+                    ("view" in lower || "vue" in lower)
+                ) {
+                    return text
+                }
+            }
+        }
+
+        return null
     }
 
     /**
@@ -1546,11 +1865,49 @@ object YoutubeDataExtractor {
     }
 
 
+    /**
+     * Session-only cache of resolved muxed (video) streams, keyed by youtubeId. Video URLs are
+     * never persisted to the DB (the clip and audio variants share the same id), so this keeps a
+     * pre-flight [probeVideoStream] check and the subsequent data-source resolution from paying
+     * for two round-trips. In-memory only: cleared with the process.
+     */
+    private val videoStreamCache = ConcurrentHashMap<String, ResolvedAudioStream>()
+
+    /**
+     * Pre-flight check for video mode: resolves [song]'s stream with the video preference and
+     * reports whether an actual muxed (audio+video) stream came back — false when YouTube only
+     * exposed audio for this id. The resolved URL is kept in [videoStreamCache] so the playback
+     * data source reuses it instead of resolving again. Throws when resolution fails entirely.
+     */
+    suspend fun probeVideoStream(song: Song): Boolean {
+        videoStreamCache[song.youtubeId]?.let { cached ->
+            if (isYoutubeUrlValid(cached.url)) {
+                return cached.isVideo
+            }
+            videoStreamCache.remove(song.youtubeId)
+        }
+
+        val resolved = getSongUrlFromYoutube(song, forceVideo = true)
+        videoStreamCache[song.youtubeId] = resolved
+        return resolved.isVideo
+    }
+
     suspend fun getSongPlayerUrl(
         context: Context,
         song: Song,
         allowLocal: Boolean = false
     ): String {
+        if (song.forceVideo) {
+            videoStreamCache[song.youtubeId]?.let { cached ->
+                if (isYoutubeUrlValid(cached.url)) {
+                    PlaybackLoudnessStore.update(song.youtubeId, cached.loudnessDb)
+                    printd("${song.youtubeId} : Got video url from session cache")
+                    return cached.url
+                }
+                videoStreamCache.remove(song.youtubeId)
+            }
+        }
+
         val localSongRepository = AppDatabase.getInstance(context).songRepository()
         var savedSong: Song? = null
         try {
@@ -1587,6 +1944,8 @@ object YoutubeDataExtractor {
                 streamUrl = resolved.url,
                 loudnessDb = resolved.loudnessDb,
             )
+        } else {
+            videoStreamCache[song.youtubeId] = resolved
         }
         PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
         printd("${song.youtubeId} : Got url from YouTube and saved song")
@@ -1656,7 +2015,7 @@ object YoutubeDataExtractor {
         // the user explicitly asked for the video version.
         val playbackSong = if (forceVideo) song else resolvePreferredAudioSong(song)
 
-        val fastUrl = resolveAndroidVrStreamUrl(playbackSong.youtubeId)
+        val fastUrl = resolveAndroidVrStreamUrl(playbackSong.youtubeId, preferVideo = forceVideo)
 
         if (fastUrl != null) {
             return fastUrl
@@ -1665,10 +2024,9 @@ object YoutubeDataExtractor {
         printd("${song.youtubeId} : Falling back to NewPipe")
         repeat(retries) { attempt ->
             try {
-                return ResolvedAudioStream(
-                    url = withContext(Dispatchers.IO) { resolveNewPipeStreamUrl(playbackSong) },
-                    loudnessDb = null,
-                )
+                return withContext(Dispatchers.IO) {
+                    resolveNewPipeStreamUrl(playbackSong, preferVideo = forceVideo)
+                }
             } catch (e: Throwable) {
                 lastError = e
 
@@ -1714,6 +2072,7 @@ object YoutubeDataExtractor {
     private suspend fun resolveAndroidVrStreamUrl(
         videoId: String,
         retries: Int = Constants.YoutubeApi.RETRY_COUNT,
+        preferVideo: Boolean = false,
     ): ResolvedAudioStream? = withContext(Dispatchers.IO) {
         suspend fun executeRequest(): ResolvedAudioStream? {
             val response = YoutubeApiClient.getPlayerInfo(
@@ -1723,7 +2082,7 @@ object YoutubeDataExtractor {
                 //   fields = Constants.YoutubeApi.PlayerInfo.Fields.STREAM,
             )
 
-            return extractStreamFromAndroidVrResponse(response)
+            return extractStreamFromAndroidVrResponse(response, preferVideo)
         }
 
         repeat(retries) { attempt ->
@@ -1752,22 +2111,47 @@ object YoutubeDataExtractor {
         null
     }
 
-    private fun resolveNewPipeStreamUrl(song: Song): String {
+    private fun resolveNewPipeStreamUrl(
+        song: Song,
+        preferVideo: Boolean = false,
+    ): ResolvedAudioStream {
         val service = ServiceList.YouTube
         val extractor = service.getStreamExtractor(song.youtubeUrl)
 
         extractor.fetchPage()
+
+        if (preferVideo) {
+            // Muxed (audio+video) streams only: video-only streams would need a second audio URI
+            // merged in, which the single-URI resolving data source cannot carry.
+            val bestVideoStream = extractor.videoStreams
+                .filter { it.content.isNotBlank() && !it.isVideoOnly }
+                .maxByOrNull { stream ->
+                    stream.resolution.takeWhile { it.isDigit() }.toIntOrNull() ?: 0
+                }
+
+            if (bestVideoStream != null) {
+                return ResolvedAudioStream(
+                    url = bestVideoStream.content,
+                    loudnessDb = null,
+                    isVideo = true,
+                )
+            }
+        }
 
         val bestAudioStream = extractor.audioStreams
             .filter { it.content.isNotBlank() }
             .maxByOrNull { it.averageBitrate }
             ?: error("No valid audio streams found")
 
-        return bestAudioStream.content
+        return ResolvedAudioStream(
+            url = bestAudioStream.content,
+            loudnessDb = null,
+        )
     }
 
     private fun extractStreamFromAndroidVrResponse(
         text: String,
+        preferVideo: Boolean = false,
     ): ResolvedAudioStream? {
         val root = Json.parseToJsonElement(text).jsonObject
 
@@ -1793,6 +2177,35 @@ object YoutubeDataExtractor {
             ?.get("reason")
             ?.jsonPrimitive
             ?.contentOrNull
+
+        // Video mode: prefer a muxed (progressive audio+video) entry from `streamingData.formats`
+        // — a single URL playable by ProgressiveMediaSource, unlike video-only adaptive formats.
+        // When none is exposed, fall through to the audio-only branch below (safe fallback).
+        val muxedUrl = if (preferVideo) {
+            root["streamingData"]
+                ?.safeObject()
+                ?.get("formats")
+                ?.safeArray()
+                ?.asSequence()
+                ?.mapNotNull { it.safeObject() }
+                ?.filter {
+                    it["url"]?.jsonPrimitive?.contentOrNull?.isNotBlank() == true
+                }
+                ?.filter {
+                    it["mimeType"]
+                        ?.jsonPrimitive
+                        ?.contentOrNull
+                        ?.startsWith("video/", ignoreCase = true) == true
+                }
+                ?.maxByOrNull {
+                    it["bitrate"]?.jsonPrimitive?.intOrNull ?: 0
+                }
+                ?.get("url")
+                ?.jsonPrimitive
+                ?.contentOrNull
+        } else {
+            null
+        }
 
         val directUrl = root["streamingData"]
             ?.safeObject()
@@ -1828,6 +2241,10 @@ object YoutubeDataExtractor {
             printe("ANDROID_VR Failed ($status). Reason : $reason ")
         }
 
+        if (muxedUrl != null) {
+            return ResolvedAudioStream(muxedUrl, loudnessDb, isVideo = true)
+        }
+
         return directUrl?.let { ResolvedAudioStream(it, loudnessDb) }
     }
 
@@ -1853,6 +2270,9 @@ object YoutubeDataExtractor {
 private data class ResolvedAudioStream(
     val url: String,
     val loudnessDb: Double?,
+    // True when [url] is a muxed (audio+video) stream, false for an audio-only stream. Lets
+    // callers detect that a video request silently fell back to audio.
+    val isVideo: Boolean = false,
 )
 
 

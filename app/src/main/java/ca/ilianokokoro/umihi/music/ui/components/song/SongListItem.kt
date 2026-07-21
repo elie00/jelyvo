@@ -3,9 +3,7 @@ package ca.ilianokokoro.umihi.music.ui.components.song
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
@@ -37,7 +35,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.models.Song
-import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
 
@@ -62,16 +59,7 @@ fun SongListItem(
         modifier = modifier
             .combinedClickable(onClick = onPress, onLongClick = { expanded = true }),
         leadingContent = {
-            Box(
-                modifier = Modifier
-                    .size(60.dp)
-                    .aspectRatio(1f)
-            ) {
-                SquareImage(
-                    uri = song.thumbnailPath ?: song.thumbnailHref,
-                    modifier = Modifier.matchParentSize()
-                )
-            }
+            SongThumbnail(song = song)
         },
         trailingContent = {
             IconButton(onClick = { expanded = true }) {
@@ -163,13 +151,8 @@ fun SongListItem(
                     )
                 }
 
-                if (song.isExplicit) {
-                    ExplicitBadge()
-                }
-
-
                 Text(
-                    text = "${song.artist} ${stringResource(R.string.dot)} ${song.duration}",
+                    text = songSubtitle(song),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.basicMarquee()
@@ -179,12 +162,36 @@ fun SongListItem(
         colors = ListItemDefaults.colors(),
         verticalAlignment = Alignment.CenterVertically,
         content = {
-            Text(
-                text = song.title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.basicMarquee()
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = song.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .basicMarquee()
+                )
+                if (song.isExplicit) {
+                    ExplicitBadge()
+                }
+            }
         },
     )
+}
+
+/**
+ * Subtitle line of a track row: "Artist • 3:45" for songs, "Artist • 1.2M views • 3:45" for
+ * video rows. Blank/absent parts are skipped so the separators never dangle.
+ */
+@Composable
+internal fun songSubtitle(song: Song): String {
+    val separator = stringResource(R.string.dot)
+    return listOfNotNull(
+        song.artist.takeIf(String::isNotBlank),
+        song.viewCount.takeIf { song.isVideo }?.takeIf(String::isNotBlank),
+        song.duration.takeIf(String::isNotBlank),
+    ).joinToString(" $separator ")
 }

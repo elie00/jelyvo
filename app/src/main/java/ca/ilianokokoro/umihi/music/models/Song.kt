@@ -65,6 +65,17 @@ data class Song(
     @Ignore
     var forceVideo: Boolean = false
 
+    // Video result (music video / UGC clip, or a row from the Videos search tab) as opposed to an
+    // official-audio song. Drives the wide 16:9 row thumbnail and the view-count subtitle.
+    // Transient; carried in the MediaItem extras so queue rows keep the video presentation.
+    @Ignore
+    var isVideo: Boolean = false
+
+    // Human-readable view count (e.g. "1.2M views") parsed from the search subtitle runs of a
+    // video row. Only set when [isVideo] is true and the API exposed it. Transient.
+    @Ignore
+    var viewCount: String? = null
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()
@@ -85,6 +96,10 @@ data class Song(
             if (forceVideo) {
                 extras.putBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, true)
             }
+            if (isVideo) {
+                extras.putBoolean(Constants.ExoPlayer.SongMetadata.IS_VIDEO, true)
+            }
+            viewCount?.let { extras.putString(Constants.ExoPlayer.SongMetadata.VIEW_COUNT, it) }
 
             val playbackUri = when {
                 isLocal -> localUri ?: youtubeUrl

@@ -28,6 +28,7 @@
     <string name="login_success">Login success</string>
     <string name="download">Download</string>
     <string name="dot" translatable="false">•</string>
+    <string name="explicit">Explicit</string>
     <string name="open_settings">Open Settings</string>
     <string name="more">more</string>
     <string name="join_discord_server">Join the Discord server</string>
@@ -128,6 +129,13 @@
     <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
     <string name="start_radio">Start radio</string>
     <string name="play_video_version">Play video version</string>
+    <string name="player_mode_song">Song</string>
+    <string name="player_mode_video">Video</string>
+    <string name="video_mode_unavailable">Video isn\'t available for this song</string>
+    <string name="fullscreen">Fullscreen</string>
+    <string name="back">Back</string>
+    <string name="seek_forward_10">Forward 10 seconds</string>
+    <string name="seek_backward_10">Rewind 10 seconds</string>
     <string name="share">Share</string>
     <string name="share_song_text" translatable="false">%1$s • %2$s\n%3$s</string>
     <string name="starting_radio">Starting radio…</string>
@@ -200,9 +208,18 @@
     <string name="search_videos">Videos</string>
     <string name="search_albums">Albums</string>
     <string name="search_artists">Artists</string>
+    <string name="search_did_you_mean">Did you mean %1$s</string>
+    <string name="search_showing_results_for">Showing results for %1$s</string>
+    <string name="search_instead_for">Search instead for %1$s</string>
+    <string name="top_result">Top result</string>
+    <string name="top_result_song">Song</string>
+    <string name="top_result_video">Video</string>
+    <string name="top_result_album">Album</string>
+    <string name="top_result_artist">Artist</string>
     <string name="recent_searches">Recent searches</string>
     <string name="recent_searches_clear_all">Clear all</string>
     <string name="recent_search_remove">Remove recent search</string>
+    <string name="moods_and_genres">Moods &amp; genres</string>
     <string name="listening_stats">Listening stats</string>
     <string name="downloads">Downloads</string>
     <string name="playback_widget_description">Now playing controls</string>

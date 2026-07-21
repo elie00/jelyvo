@@ -3,11 +3,8 @@ package ca.ilianokokoro.umihi.music.ui.components.song
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
@@ -32,7 +29,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Song
-import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -56,17 +52,7 @@ fun QueueSongListItem(
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onPress),
         leadingContent = {
-            Box(
-                modifier = Modifier
-                    .size(innerHeight)
-                    .aspectRatio(1f)
-            ) {
-                SquareImage(
-                    uri = song.thumbnailPath ?: song.thumbnailHref,
-                    modifier = Modifier.matchParentSize()
-                )
-            }
-
+            SongThumbnail(song = song, size = innerHeight)
         },
         trailingContent = {
 
@@ -116,21 +102,12 @@ fun QueueSongListItem(
             }
         },
         supportingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(3.dp),
-            ) {
-                if (song.isExplicit) {
-                    ExplicitBadge()
-                }
-
-                Text(
-                    "${song.artist} ${stringResource(R.string.dot)} ${song.duration}",
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.basicMarquee()
-                )
-            }
+            Text(
+                songSubtitle(song),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.basicMarquee()
+            )
         },
         colors = if (isCurrentSong) {
             ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
@@ -138,7 +115,24 @@ fun QueueSongListItem(
             ListItemDefaults.colors()
         },
         verticalAlignment = Alignment.CenterVertically,
-        content = { Text(song.title, modifier = Modifier.basicMarquee()) },
+        content = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    song.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .basicMarquee()
+                )
+                if (song.isExplicit) {
+                    ExplicitBadge()
+                }
+            }
+        },
     )
 
 }
