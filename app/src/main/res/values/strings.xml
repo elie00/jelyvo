@@ -237,6 +237,13 @@
     <string name="stats_period_year">Year</string>
     <string name="stats_period_all">All time</string>
     <string name="listening_activity">Listening activity</string>
+    <string name="wrapped_title">Your %1$d in music</string>
+    <string name="wrapped_total_plays">Total plays</string>
+    <string name="wrapped_listening_time">Listening time</string>
+    <string name="wrapped_hours_minutes">%1$dh %2$dmin</string>
+    <string name="wrapped_top_artist">Top artist</string>
+    <string name="wrapped_top_track">Top track</string>
+    <string name="wrapped_most_active_day">Most active day</string>
     <string name="library">Library</string>
     <string name="liked_songs">Liked songs</string>
     <string name="saved_albums">Albums</string>

@@ -40,4 +40,18 @@ data class ListeningStatsState(
     val topTracks: List<TrackListeningStat> = emptyList(),
     val topArtists: List<ArtistListeningStat> = emptyList(),
     val dailyCounts: Map<LocalDate, Int> = emptyMap(),
+    val wrapped: WrappedStats? = null,
+)
+
+/** Year-in-review summary shown in the highlighted "Wrapped" card. */
+@Immutable
+data class WrappedStats(
+    val year: Int,
+    val totalPlays: Int,
+    /** Estimated total listening time; 0 when no duration information is available. */
+    val listeningTimeMs: Long,
+    val topTrack: TrackListeningStat?,
+    val topArtist: ArtistListeningStat?,
+    val mostActiveDay: LocalDate?,
+    val mostActiveDayPlays: Int,
 )

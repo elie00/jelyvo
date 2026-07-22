@@ -33,6 +33,7 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ListeningHeatmap
+import ca.ilianokokoro.umihi.music.ui.screens.stats.components.WrappedCard
 
 @Composable
 fun ListeningStatsScreen(
@@ -73,6 +74,15 @@ fun ListeningStatsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            state.wrapped?.let { wrapped ->
+                item {
+                    WrappedCard(
+                        wrapped = wrapped,
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+                    )
+                }
+            }
+
             item {
                 PeriodSelector(
                     selected = state.period,

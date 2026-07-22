@@ -230,6 +230,13 @@
     <string name="stats_period_year">Année</string>
     <string name="stats_period_all">Tout</string>
     <string name="listening_activity">Activité d’écoute</string>
+    <string name="wrapped_title">Votre année %1$d en musique</string>
+    <string name="wrapped_total_plays">Écoutes totales</string>
+    <string name="wrapped_listening_time">Temps d’écoute</string>
+    <string name="wrapped_hours_minutes">%1$d h %2$d min</string>
+    <string name="wrapped_top_artist">Top artiste</string>
+    <string name="wrapped_top_track">Top titre</string>
+    <string name="wrapped_most_active_day">Jour le plus actif</string>
     <string name="library">Bibliothèque</string>
     <string name="liked_songs">Titres aimés</string>
     <string name="saved_albums">Albums</string>
