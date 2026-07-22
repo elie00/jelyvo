@@ -59,6 +59,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -69,6 +70,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.extensions.containsNormalized
 import ca.ilianokokoro.umihi.music.models.Library
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
@@ -85,6 +87,7 @@ import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
+import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 
 private enum class LibraryTab(@StringRes val labelRes: Int) {
     Playlists(R.string.playlists),
@@ -230,6 +233,9 @@ fun LibraryScreen(
                                 onImportPlaylist = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                                 onOpenAlbum = onOpenAlbum,
                                 onOpenArtist = onOpenArtist,
+                                likedSongsSearchQuery = uiState.likedSongsSearchQuery,
+                                debouncedLikedSongsSearchQuery = uiState.debouncedLikedSongsSearchQuery,
+                                onLikedSongsSearchQueryChange = libraryViewModel::onLikedSongsSearchQueryChange,
                             )
                         }
                     }
@@ -295,6 +301,9 @@ fun LibraryScreen(
                             onImportPlaylist = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                             onOpenAlbum = onOpenAlbum,
                             onOpenArtist = onOpenArtist,
+                            likedSongsSearchQuery = uiState.likedSongsSearchQuery,
+                            debouncedLikedSongsSearchQuery = uiState.debouncedLikedSongsSearchQuery,
+                            onLikedSongsSearchQueryChange = libraryViewModel::onLikedSongsSearchQueryChange,
                         )
                     }
 
@@ -365,6 +374,9 @@ private fun LibraryContent(
     onImportPlaylist: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
+    likedSongsSearchQuery: String,
+    debouncedLikedSongsSearchQuery: String,
+    onLikedSongsSearchQueryChange: (String) -> Unit,
 ) {
     when (selectedTab) {
         null -> AllSectionsContent(
@@ -395,6 +407,9 @@ private fun LibraryContent(
 
         LibraryTab.LikedSongs -> LikedSongsTab(
             songs = library.likedSongs,
+            searchQuery = likedSongsSearchQuery,
+            debouncedSearchQuery = debouncedLikedSongsSearchQuery,
+            onSearchQueryChange = onLikedSongsSearchQueryChange,
             onOpenPlayer = onOpenPlayer,
             onOpenAlbum = onOpenAlbum,
             onOpenArtist = onOpenArtist,
@@ -860,6 +875,9 @@ private fun LazyGridScope.playlistItems(
 @Composable
 private fun LikedSongsTab(
     songs: List<Song>,
+    searchQuery: String,
+    debouncedSearchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     onOpenPlayer: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
@@ -870,6 +888,19 @@ private fun LikedSongsTab(
     }
 
     val sourceName = stringResource(R.string.liked_songs)
+    val focusManager = LocalFocusManager.current
+
+    // Accent- and case-insensitive local filter on title and artist.
+    val filteredSongs = remember(songs, debouncedSearchQuery) {
+        if (debouncedSearchQuery.isBlank()) {
+            songs
+        } else {
+            songs.filter { song ->
+                song.title.containsNormalized(debouncedSearchQuery) ||
+                        song.artist.containsNormalized(debouncedSearchQuery)
+            }
+        }
+    }
 
     val listState = rememberLazyListState()
     DockScrollToTopEffect(listState)
@@ -884,34 +915,57 @@ private fun LikedSongsTab(
             end = 8.dp,
         ),
     ) {
-        item(key = "play-shuffle") {
-            PlayShuffleRow(
-                onPlay = {
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.map { it.mediaItem },
-                        sourceName = sourceName
-                    )
-                },
-                onShuffle = {
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.shuffled().map { it.mediaItem },
-                        sourceName = sourceName
-                    )
-                },
+        item(key = "search-bar") {
+            SearchBar(
                 modifier = Modifier.padding(bottom = 8.dp),
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                onSearch = {},
+                onClear = { onSearchQueryChange("") },
+                focusManager = focusManager,
             )
         }
 
-        items(items = songs, key = { it.youtubeId }) { song ->
-            LikedSongListItem(
-                song = song,
-                songs = songs,
-                onOpenPlayer = onOpenPlayer,
-                onOpenAlbum = onOpenAlbum,
-                onOpenArtist = onOpenArtist,
-            )
+        if (filteredSongs.isEmpty()) {
+            item(key = "no-results") {
+                Text(
+                    text = stringResource(R.string.no_results),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                )
+            }
+        } else {
+            item(key = "play-shuffle") {
+                PlayShuffleRow(
+                    onPlay = {
+                        onOpenPlayer()
+                        PlayerManager.playQueue(
+                            filteredSongs.map { it.mediaItem },
+                            sourceName = sourceName
+                        )
+                    },
+                    onShuffle = {
+                        onOpenPlayer()
+                        PlayerManager.playQueue(
+                            filteredSongs.shuffled().map { it.mediaItem },
+                            sourceName = sourceName
+                        )
+                    },
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+
+            items(items = filteredSongs, key = { it.youtubeId }) { song ->
+                LikedSongListItem(
+                    song = song,
+                    songs = filteredSongs,
+                    onOpenPlayer = onOpenPlayer,
+                    onOpenAlbum = onOpenAlbum,
+                    onOpenArtist = onOpenArtist,
+                )
+            }
         }
     }
 }
