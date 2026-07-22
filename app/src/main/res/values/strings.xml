@@ -232,6 +232,10 @@
     <string name="top_tracks">Top tracks</string>
     <string name="top_artists">Top artists</string>
     <string name="no_listening_stats">Listen to a few tracks to see your monthly stats here.</string>
+    <string name="stats_period_week">Week</string>
+    <string name="stats_period_month">Month</string>
+    <string name="stats_period_year">Year</string>
+    <string name="stats_period_all">All time</string>
     <string name="library">Library</string>
     <string name="liked_songs">Liked songs</string>
     <string name="saved_albums">Albums</string>

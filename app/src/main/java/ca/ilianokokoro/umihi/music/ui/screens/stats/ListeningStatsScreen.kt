@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -49,7 +53,7 @@ fun ListeningStatsScreen(
                     androidx.compose.foundation.layout.Column {
                         Text(stringResource(R.string.listening_stats))
                         Text(
-                            text = stringResource(R.string.this_month),
+                            text = stringResource(state.period.labelRes),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -68,6 +72,13 @@ fun ListeningStatsScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            item {
+                PeriodSelector(
+                    selected = state.period,
+                    onSelect = viewModel::selectPeriod,
+                )
+            }
+
             if (!hasStats) {
                 item {
                     Text(
@@ -147,6 +158,37 @@ fun ListeningStatsScreen(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun PeriodSelector(
+    selected: StatsPeriod,
+    onSelect: (StatsPeriod) -> Unit,
+) {
+    val periods = StatsPeriod.entries
+
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+    ) {
+        periods.forEachIndexed { index, period ->
+            SegmentedButton(
+                selected = period == selected,
+                onClick = { onSelect(period) },
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = periods.size,
+                ),
+                label = {
+                    Text(
+                        text = stringResource(period.labelRes),
+                        maxLines = 1,
+                    )
+                },
+            )
         }
     }
 }
