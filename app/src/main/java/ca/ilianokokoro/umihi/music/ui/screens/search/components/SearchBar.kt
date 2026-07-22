@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,7 @@ fun SearchBar(
     onValueChange: (String) -> Unit,
     onSearch: () -> Unit,
     onVoiceSearch: (() -> Unit)? = null,
+    onClear: (() -> Unit)? = null,
     focusRequester: FocusRequester? = null,
     focusManager: FocusManager? = null,
 ) {
@@ -40,13 +42,20 @@ fun SearchBar(
             .focusRequester(focusRequester)
     }
 
+    // A non-empty query shows a clear button (when supported); otherwise voice search.
+    val showClear = onClear != null && value.isNotEmpty()
+
     MaterialUInput(
         modifier = searchModifier,
         value = value,
         onValueChange = onValueChange,
         leadingIcon = Icons.Rounded.Search,
-        trailingIcon = onVoiceSearch?.let { Icons.Rounded.Mic },
-        onTrailingIconClick = onVoiceSearch,
+        trailingIcon = when {
+            showClear -> Icons.Rounded.Close
+            onVoiceSearch != null -> Icons.Rounded.Mic
+            else -> null
+        },
+        onTrailingIconClick = if (showClear) onClear else onVoiceSearch,
         placeholder = stringResource(R.string.search),
         singleLine = true,
         colors = TextFieldDefaults.colors(
