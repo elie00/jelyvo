@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.extensions.containsNormalized
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
@@ -264,14 +265,8 @@ fun PlaylistScreen(
                                     songs
                                 } else {
                                     songs.filter { song ->
-                                        song.title.contains(
-                                            uiState.searchQuery,
-                                            ignoreCase = true
-                                        ) ||
-                                                song.artist.contains(
-                                                    uiState.searchQuery,
-                                                    ignoreCase = true
-                                                )
+                                        song.title.containsNormalized(uiState.searchQuery) ||
+                                                song.artist.containsNormalized(uiState.searchQuery)
                                     }
                                 }
 
