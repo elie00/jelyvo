@@ -202,6 +202,7 @@
     <string name="stats_period_month">Mois</string>
     <string name="stats_period_year">Année</string>
     <string name="stats_period_all">Tout</string>
+    <string name="listening_activity">Activité d’écoute</string>
     <string name="library">Bibliothèque</string>
     <string name="liked_songs">Titres aimés</string>
     <string name="saved_albums">Albums</string>

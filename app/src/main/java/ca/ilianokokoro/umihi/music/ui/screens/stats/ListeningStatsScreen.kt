@@ -32,6 +32,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ListeningHeatmap
 
 @Composable
 fun ListeningStatsScreen(
@@ -77,6 +78,16 @@ fun ListeningStatsScreen(
                     selected = state.period,
                     onSelect = viewModel::selectPeriod,
                 )
+            }
+
+            if (state.dailyCounts.isNotEmpty()) {
+                item { StatsSectionTitle(stringResource(R.string.listening_activity)) }
+                item {
+                    ListeningHeatmap(
+                        dailyCounts = state.dailyCounts,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
+                }
             }
 
             if (!hasStats) {

@@ -236,6 +236,7 @@
     <string name="stats_period_month">Month</string>
     <string name="stats_period_year">Year</string>
     <string name="stats_period_all">All time</string>
+    <string name="listening_activity">Listening activity</string>
     <string name="library">Library</string>
     <string name="liked_songs">Liked songs</string>
     <string name="saved_albums">Albums</string>

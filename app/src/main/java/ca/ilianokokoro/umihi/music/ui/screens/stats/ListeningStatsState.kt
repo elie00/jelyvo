@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.ArtistListeningStat
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
+import java.time.LocalDate
 import java.util.Calendar
 
 /** Time window used to compute the top tracks / top artists rankings. */
@@ -38,4 +39,5 @@ data class ListeningStatsState(
     val period: StatsPeriod = StatsPeriod.MONTH,
     val topTracks: List<TrackListeningStat> = emptyList(),
     val topArtists: List<ArtistListeningStat> = emptyList(),
+    val dailyCounts: Map<LocalDate, Int> = emptyMap(),
 )
