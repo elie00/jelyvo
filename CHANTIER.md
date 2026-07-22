@@ -61,7 +61,9 @@ Lecture confinée album/artiste (`a88b0c2`), vrai plein écran S24 Ultra (`ecb33
 ## Reste à faire
 
 1. **Validation sur device (S24 Ultra)** : rien de la vague 4 ni des vagues UI/vidéo/perfs n'a été vérifié sur téléphone — recompiler l'APK, installer par-dessus, dérouler : vidéo/PiP, hors-ligne + purge, notifications de sorties, gestes + recherche vocale, égaliseur par sortie, crossfade, thème pochette, perfs de démarrage.
-2. **Trous restants du plan vague 4** (à vérifier dans le code avant d'attaquer) : paroles synchronisées LRCLIB (seul `098d800` — message localisé — apparaît), sleep timer + vitesse de lecture, sauvegarde/restauration locale, stats enrichies (Wrapped/heatmap), Wear OS, recherche dans les likés.
+2. **Trous restants du plan vague 4** (vérifiés dans le code le 2026-07-22) :
+   - ✅ Déjà faits, rien à coder : paroles synchronisées LRCLIB (`LyricsDataSource` + parsing LRC dans `models/Lyrics.kt` + `LyricsPanel.kt`), sleep timer avec option « fin du titre » (`SleepTimerBottomSheet.kt`), vitesse de lecture (`SpeedSelectorBottomSheet.kt`).
+   - ❌ Vraiment manquants : **sauvegarde/restauration locale** complète (seul l'export/import JSON des playlists locales existe), **stats enrichies** Wrapped/top par période/heatmap (`ListeningStatsScreen` ne fait que le classement mensuel), **Wear OS** (aucun module `:wear` dans `settings.gradle.kts` ; Android Auto lui est en place), **recherche dans les likés** (aucun champ de recherche dans les écrans library/playlist).
 3. **Build de contrôle** `assembleStandaloneRelease` après tout nouveau lot + APK arm64 pour livraison.
 
 ## Environnement de build (PC de bureau — À REFAIRE sur l'autre PC)
