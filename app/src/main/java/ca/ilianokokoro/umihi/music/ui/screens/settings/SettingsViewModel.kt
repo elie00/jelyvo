@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.settings
 
 import android.app.Application
+import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.widget.Toast
@@ -14,6 +15,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.media3.common.util.UnstableApi
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ExoCache
+import ca.ilianokokoro.umihi.music.core.backup.BackupManager
+import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
@@ -177,6 +180,70 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY,
             value
         )
+    }
+
+    fun updateShowRestoreConfirm(value: Boolean) {
+        _uiState.update {
+            it.copy(showRestoreConfirm = value)
+        }
+        if (!value) {
+            pendingRestoreUri = null
+        }
+    }
+
+    /** Uri picked through ACTION_OPEN_DOCUMENT, kept until the user confirms the restore. */
+    private var pendingRestoreUri: Uri? = null
+
+    fun requestRestore(uri: Uri) {
+        pendingRestoreUri = uri
+        _uiState.update {
+            it.copy(showRestoreConfirm = true)
+        }
+    }
+
+    fun backupData(uri: Uri) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(backupInProgress = true) }
+            try {
+                BackupManager.exportToUri(_application, uri)
+                showToast(R.string.backup_success)
+            } catch (e: Exception) {
+                LogHelper.printe("Backup export failed", exception = e)
+                showToast(R.string.backup_error)
+            } finally {
+                _uiState.update { it.copy(backupInProgress = false) }
+            }
+        }
+    }
+
+    fun confirmRestore() {
+        val uri = pendingRestoreUri
+        updateShowRestoreConfirm(false)
+        if (uri == null) {
+            return
+        }
+        viewModelScope.launch {
+            _uiState.update { it.copy(backupInProgress = true) }
+            try {
+                BackupManager.restoreFromUri(_application, uri)
+                showToast(R.string.restore_success)
+            } catch (e: Exception) {
+                LogHelper.printe("Backup restore failed", exception = e)
+                showToast(R.string.restore_error)
+            } finally {
+                _uiState.update { it.copy(backupInProgress = false) }
+                // The restored preferences must be reflected by the screen right away.
+                getSettings()
+            }
+        }
+    }
+
+    private fun showToast(messageRes: Int) {
+        Toast.makeText(
+            _application,
+            _application.getString(messageRes),
+            Toast.LENGTH_LONG
+        ).show()
     }
 
     fun checkForUpdates() {

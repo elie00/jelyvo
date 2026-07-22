@@ -274,6 +274,17 @@
     <string name="spotify_import_complete">Importation terminée</string>
     <string name="spotify_import_matched_summary">%1$d des %2$d titres associés sur YouTube.</string>
     <string name="spotify_import_failed_summary">%1$d n\'ont pas pu être associés.</string>
+    <string name="backup_restore_section">Sauvegarde et restauration</string>
+    <string name="backup_data_title">Sauvegarder les données</string>
+    <string name="backup_data_subtitle">Exporter l\'historique d\'écoute, les playlists locales et les réglages dans un fichier</string>
+    <string name="restore_data_title">Restaurer les données</string>
+    <string name="restore_data_subtitle">Remplacer les données actuelles par un fichier de sauvegarde</string>
+    <string name="restore_confirm_title">Restaurer cette sauvegarde ?</string>
+    <string name="restore_confirm_text">Votre historique d\'écoute, vos playlists locales et vos réglages seront remplacés par le contenu du fichier de sauvegarde. Cette action est irréversible.</string>
+    <string name="backup_success">Sauvegarde enregistrée</string>
+    <string name="backup_error">Échec de la sauvegarde</string>
+    <string name="restore_success">Données restaurées. Redémarrez l\'application pour appliquer tous les changements.</string>
+    <string name="restore_error">Échec de la restauration : le fichier est invalide ou non pris en charge</string>
     <plurals name="play_count">
         <item quantity="one">%d écoute</item>
         <item quantity="other">%d écoutes</item>

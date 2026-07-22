@@ -8,7 +8,9 @@ data class SettingsState(
     val screenState: ScreenState = ScreenState.Loading,
     val showUpdateChannelDialog: Boolean = false,
     val showDownloadDeleteConfirm: Boolean = false,
-    val showThemeColorDialog: Boolean = false
+    val showThemeColorDialog: Boolean = false,
+    val showRestoreConfirm: Boolean = false,
+    val backupInProgress: Boolean = false
 
 )
 

@@ -3,6 +3,8 @@ package ca.ilianokokoro.umihi.music.ui.screens.settings
 import android.app.Activity
 import android.app.Application
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.automirrored.outlined.FeaturedPlayList
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.Delete
@@ -33,6 +36,7 @@ import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
+import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Waves
@@ -61,6 +65,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.backup.BackupManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
@@ -368,6 +373,42 @@ fun SettingsScreen(
                             )
                         }
 
+                        val backupLauncher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.CreateDocument("application/json")
+                        ) { uri ->
+                            uri?.let { settingsViewModel.backupData(it) }
+                        }
+                        val restoreLauncher = rememberLauncherForActivityResult(
+                            ActivityResultContracts.OpenDocument()
+                        ) { uri ->
+                            uri?.let { settingsViewModel.requestRestore(it) }
+                        }
+                        SettingsSection(
+                            title = stringResource(R.string.backup_restore_section)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.backup_data_title),
+                                subtitle = stringResource(R.string.backup_data_subtitle),
+                                leadingIcon = Icons.Outlined.Backup,
+                                onClick = {
+                                    if (!uiState.backupInProgress) {
+                                        backupLauncher.launch(BackupManager.SUGGESTED_FILE_NAME)
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.restore_data_title),
+                                subtitle = stringResource(R.string.restore_data_subtitle),
+                                leadingIcon = Icons.Outlined.SettingsBackupRestore,
+                                onClick = {
+                                    if (!uiState.backupInProgress) {
+                                        restoreLauncher.launch(arrayOf("application/json"))
+                                    }
+                                }
+                            )
+                        }
+
                         SettingsSection(
                             title = stringResource(R.string.smart_offline)
                         ) {
@@ -497,6 +538,15 @@ fun SettingsScreen(
                                 },
                                 onDismiss = {
                                     settingsViewModel.updateShowDownloadDeleteConfirm(false)
+                                }
+                            )
+                        } else if (uiState.showRestoreConfirm) {
+                            ConfirmDialog(
+                                title = stringResource(R.string.restore_confirm_title),
+                                text = stringResource(R.string.restore_confirm_text),
+                                onConfirm = settingsViewModel::confirmRestore,
+                                onDismiss = {
+                                    settingsViewModel.updateShowRestoreConfirm(false)
                                 }
                             )
                         }

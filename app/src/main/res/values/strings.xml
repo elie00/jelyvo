@@ -281,6 +281,17 @@
     <string name="spotify_import_complete">Import complete</string>
     <string name="spotify_import_matched_summary">%1$d of %2$d tracks matched on YouTube.</string>
     <string name="spotify_import_failed_summary">%1$d could not be matched.</string>
+    <string name="backup_restore_section">Backup and restore</string>
+    <string name="backup_data_title">Back up data</string>
+    <string name="backup_data_subtitle">Export listening history, local playlists and settings to a file</string>
+    <string name="restore_data_title">Restore data</string>
+    <string name="restore_data_subtitle">Replace the current data with a backup file</string>
+    <string name="restore_confirm_title">Restore this backup?</string>
+    <string name="restore_confirm_text">Your listening history, local playlists and settings will be replaced by the content of the backup file. This cannot be undone.</string>
+    <string name="backup_success">Backup saved</string>
+    <string name="backup_error">Backup failed</string>
+    <string name="restore_success">Data restored. Restart the app to apply every change.</string>
+    <string name="restore_error">Restore failed: the file is invalid or unsupported</string>
     <plurals name="play_count">
         <item quantity="one">%d play</item>
         <item quantity="other">%d plays</item>
