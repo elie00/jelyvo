@@ -19,9 +19,11 @@ import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -36,9 +38,39 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private val _uiState = MutableStateFlow(LibraryState())
     val uiState = _uiState.asStateFlow()
 
+    private val likedSongsSearchQueryFlow = MutableStateFlow("")
+
     init {
         load()
         observeLocalPlaylists()
+        observeLikedSongsSearchQuery()
+    }
+
+    /** Debounces the liked-songs search field before it is applied as a filter. */
+    @OptIn(FlowPreview::class)
+    private fun observeLikedSongsSearchQuery() {
+        viewModelScope.launch {
+            likedSongsSearchQueryFlow
+                .debounce(LIKED_SONGS_SEARCH_DEBOUNCE_MS)
+                .collect { query ->
+                    _uiState.update { it.copy(debouncedLikedSongsSearchQuery = query) }
+                }
+        }
+    }
+
+    fun onLikedSongsSearchQueryChange(query: String) {
+        _uiState.update { currentState ->
+            if (query.isBlank()) {
+                // Clearing should restore the full list right away, without waiting.
+                currentState.copy(
+                    likedSongsSearchQuery = query,
+                    debouncedLikedSongsSearchQuery = "",
+                )
+            } else {
+                currentState.copy(likedSongsSearchQuery = query)
+            }
+        }
+        likedSongsSearchQueryFlow.value = query
     }
 
     private fun observeLocalPlaylists() {
@@ -248,6 +280,9 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     }
 
     companion object {
+        /** Light debounce so filtering does not run on every keystroke. */
+        private const val LIKED_SONGS_SEARCH_DEBOUNCE_MS = 250L
+
         fun Factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 LibraryViewModel(application)

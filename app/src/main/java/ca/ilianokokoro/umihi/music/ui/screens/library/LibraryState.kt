@@ -17,6 +17,10 @@ data class LibraryState(
     val localSongsLoaded: Boolean = false,
     /** One-shot message (string resource id) to surface an import result; null when consumed. */
     val importMessage: Int? = null,
+    /** Raw text of the liked-songs search field, updated on every keystroke. */
+    val likedSongsSearchQuery: String = "",
+    /** [likedSongsSearchQuery] after a short debounce; drives the actual filtering. */
+    val debouncedLikedSongsSearchQuery: String = "",
 )
 
 @Immutable
