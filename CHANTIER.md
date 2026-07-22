@@ -58,12 +58,22 @@ Lecture confinée album/artiste (`a88b0c2`), vrai plein écran S24 Ultra (`ecb33
 - **Passe perfs du 21/07** : cache accueil persisté sur disque + concurrence OkHttp (`55f41a4`), stabilisation des states / recyclage des listes hétérogènes (`7af360b`), init version hors main thread (`e6dc34b`).
 - **Divers** : test normalisation loudness (`6655a49`), Bibliothèque hors connexion : audio local + playlists locales visibles déconnecté (`dbd7d8b`).
 
+## Vague 5 (2026-07-22, workflow) — ✅ trous vague 4 comblés, build vert, poussé
+
+Audit préalable : paroles synchronisées LRCLIB, sleep timer (option « fin du titre ») et vitesse de lecture étaient **déjà faits** (`LyricsPanel.kt`, `SleepTimerBottomSheet.kt`, `SpeedSelectorBottomSheet.kt`). Les 3 vrais manques ont été implémentés :
+
+| Commits | Contenu |
+|---|---|
+| `7952708`, `219b517` | **Sauvegarde/restauration locale** : `core/backup/BackupManager.kt`, JSON versionné (v1) via SAF — historique, playlists locales, file, prefs DataStore (thème/lecteur/égaliseur/recherches). Exclus volontairement : cookies + data-sync-id (Keystore lié à l'appareil), fichiers audio téléchargés. 2 entrées dans Réglages + confirmation avant restauration |
+| `7b1b8b3`, `b40aeaf`, `5d7afc9`, `00a6db2` | **Stats enrichies** : `play_history` avait déjà `playedAt` par écoute → aucune migration Room. Sélecteur Semaine/Mois/Année/Tout (segmented buttons), heatmap Canvas 26 semaines type GitHub (`ListeningHeatmap.kt`), carte Wrapped annuelle en dégradé (`WrappedCard.kt` : total, temps d'écoute, top artiste/titre, jour le plus actif) |
+| `ebcd4d2`, `96be95f`, `6a0ee21`, `2cb4c17`, `6a57907`, `be20da8` | **Recherche dans les likés** : SearchBar M3 (loupe + clear) sur l'onglet Titres likés, filtre titre+artiste insensible casse/accents (`containsNormalized`), debounce 250 ms, Play/Shuffle agit sur la liste filtrée ; barre des playlists passée au même filtre normalisé + clear. `LocalPlaylistScreen` volontairement non filtré (conflit avec le drag-drop/persistOrder) |
+
+Build `assembleStandaloneRelease` **vert du premier coup** (8m52, 0 fix), APK ~5,9 Mo, poussé `e4e639a..be20da8`. Restent hors périmètre : **Wear OS** (aucun module `:wear`).
+
 ## Reste à faire
 
-1. **Validation sur device (S24 Ultra)** : rien de la vague 4 ni des vagues UI/vidéo/perfs n'a été vérifié sur téléphone — recompiler l'APK, installer par-dessus, dérouler : vidéo/PiP, hors-ligne + purge, notifications de sorties, gestes + recherche vocale, égaliseur par sortie, crossfade, thème pochette, perfs de démarrage.
-2. **Trous restants du plan vague 4** (vérifiés dans le code le 2026-07-22) :
-   - ✅ Déjà faits, rien à coder : paroles synchronisées LRCLIB (`LyricsDataSource` + parsing LRC dans `models/Lyrics.kt` + `LyricsPanel.kt`), sleep timer avec option « fin du titre » (`SleepTimerBottomSheet.kt`), vitesse de lecture (`SpeedSelectorBottomSheet.kt`).
-   - ❌ Vraiment manquants : **sauvegarde/restauration locale** complète (seul l'export/import JSON des playlists locales existe), **stats enrichies** Wrapped/top par période/heatmap (`ListeningStatsScreen` ne fait que le classement mensuel), **Wear OS** (aucun module `:wear` dans `settings.gradle.kts` ; Android Auto lui est en place), **recherche dans les likés** (aucun champ de recherche dans les écrans library/playlist).
+1. **Validation sur device (S24 Ultra)** : rien des vagues 4/5 ni des vagues UI/vidéo/perfs n'a été vérifié sur téléphone — installer l'APK fraîchement compilé (`app/build/outputs/apk/standalone/release/UmihiMusic.apk`) par-dessus, dérouler : vidéo/PiP, hors-ligne + purge, notifications de sorties, gestes + recherche vocale, égaliseur par sortie, crossfade, thème pochette, perfs de démarrage, **backup/restore, stats (périodes/heatmap/Wrapped), recherche likés**.
+2. **Wear OS** : seul trou restant de la vague 4 (précédent réussi sur suivi-musculation : module `:wear` P1/P2).
 3. **Build de contrôle** `assembleStandaloneRelease` après tout nouveau lot + APK arm64 pour livraison.
 
 ## Environnement de build (PC de bureau — À REFAIRE sur l'autre PC)
