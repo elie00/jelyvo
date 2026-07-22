@@ -4,7 +4,9 @@ import android.content.Context
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.ArtistListeningStat
+import ca.ilianokokoro.umihi.music.models.DailyPlayCount
 import ca.ilianokokoro.umihi.music.models.ResumeItem
+import ca.ilianokokoro.umihi.music.models.TrackPlayDuration
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +33,14 @@ class HistoryRepository(context: Context) {
 
     fun topArtists(since: Long, limit: Int = STATS_LIMIT): Flow<List<ArtistListeningStat>> =
         localHistoryDataSource.getTopArtists(since, limit)
+
+    fun dailyPlayCounts(since: Long): Flow<List<DailyPlayCount>> =
+        localHistoryDataSource.getDailyPlayCounts(since)
+
+    fun playCount(since: Long): Flow<Int> = localHistoryDataSource.getPlayCount(since)
+
+    fun trackPlayDurations(since: Long): Flow<List<TrackPlayDuration>> =
+        localHistoryDataSource.getTrackPlayDurations(since)
 
     suspend fun record(song: Song, playedAt: Long) {
         if (song.youtubeId.isBlank()) return

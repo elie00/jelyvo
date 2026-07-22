@@ -6,7 +6,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.ArtistListeningStat
+import ca.ilianokokoro.umihi.music.models.DailyPlayCount
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
+import ca.ilianokokoro.umihi.music.models.TrackPlayDuration
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -103,6 +105,35 @@ interface LocalHistoryDataSource {
         """
     )
     fun getTopArtists(since: Long, limit: Int): Flow<List<ArtistListeningStat>>
+
+    /** Play counts grouped by local-time day, oldest first. */
+    @Query(
+        """
+        SELECT strftime('%Y-%m-%d', playedAt / 1000, 'unixepoch', 'localtime') AS day,
+               COUNT(*) AS playCount
+        FROM play_history
+        WHERE playedAt >= :since
+        GROUP BY day
+        ORDER BY day ASC
+        """
+    )
+    fun getDailyPlayCounts(since: Long): Flow<List<DailyPlayCount>>
+
+    @Query("SELECT COUNT(*) FROM play_history WHERE playedAt >= :since")
+    fun getPlayCount(since: Long): Flow<Int>
+
+    /** One row per distinct track with its play count and best known duration. */
+    @Query(
+        """
+        SELECT MAX(duration) AS duration,
+               MAX(durationMs) AS durationMs,
+               COUNT(*) AS playCount
+        FROM play_history
+        WHERE playedAt >= :since
+        GROUP BY youtubeId
+        """
+    )
+    fun getTrackPlayDurations(since: Long): Flow<List<TrackPlayDuration>>
 
     @Query("DELETE FROM play_history")
     suspend fun clear()

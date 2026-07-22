@@ -29,3 +29,22 @@ data class ArtistListeningStat(
     val playCount: Int,
     val lastPlayedAt: Long,
 )
+
+/** Number of plays recorded on a single local-time day ("yyyy-MM-dd"). Feeds the heatmap. */
+@Immutable
+data class DailyPlayCount(
+    val day: String,
+    val playCount: Int,
+)
+
+/**
+ * Per-track play count with the best known duration, used to estimate total listening time.
+ * [durationMs] comes from playback progress tracking and may be 0; [duration] is the
+ * display string ("m:ss" / "h:mm:ss") that came with the track metadata.
+ */
+@Immutable
+data class TrackPlayDuration(
+    val duration: String,
+    val durationMs: Long,
+    val playCount: Int,
+)
