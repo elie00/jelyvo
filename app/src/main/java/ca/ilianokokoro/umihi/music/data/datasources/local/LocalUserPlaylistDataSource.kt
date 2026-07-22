@@ -22,4 +22,11 @@ interface LocalUserPlaylistDataSource {
 
     @Query("DELETE FROM local_playlists WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    /** Full dump used by the local backup export. */
+    @Query("SELECT * FROM local_playlists ORDER BY createdAt ASC")
+    suspend fun getAll(): List<LocalPlaylist>
+
+    @Query("DELETE FROM local_playlists")
+    suspend fun deleteAll()
 }

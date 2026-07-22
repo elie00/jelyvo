@@ -14,6 +14,13 @@ interface LocalHistoryDataSource {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entry: PlayHistoryEntry)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(entries: List<PlayHistoryEntry>)
+
+    /** Full dump, oldest first, used by the local backup export. */
+    @Query("SELECT * FROM play_history ORDER BY playedAt ASC, id ASC")
+    suspend fun getAll(): List<PlayHistoryEntry>
+
     @Query(
         """
         SELECT latest.* FROM play_history AS latest
