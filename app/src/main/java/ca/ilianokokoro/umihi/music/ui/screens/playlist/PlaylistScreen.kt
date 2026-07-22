@@ -129,6 +129,7 @@ fun PlaylistScreen(
                             onSearch = {
                                 focusRequester.freeFocus()
                             },
+                            onClear = { playlistViewModel.onSearchQueryChange("") },
                             focusManager = focusManager,
                             focusRequester = focusRequester,
                         )
