@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
+import android.animation.ValueAnimator
 import android.os.Build
+import android.provider.Settings
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.RepeatMode
@@ -52,15 +54,27 @@ private const val SCRIM_ALPHA_LIGHT = 0.68f
 @Composable
 fun PlayerArtworkBackground(
     artworkUri: String?,
+    isPlaying: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.background(playerBackgroundBrush())) {
         val uri = artworkUri?.takeIf { it.isNotBlank() && it != "null" }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && uri != null) {
-            DriftingBlurredArtwork(
-                uri = uri,
-                modifier = Modifier.matchParentSize()
-            )
+            val context = LocalContext.current
+            val shouldDrift = isPlaying && remember(context) {
+                systemAnimationsEnabled(context)
+            }
+            if (shouldDrift) {
+                DriftingBlurredArtwork(
+                    uri = uri,
+                    modifier = Modifier.matchParentSize()
+                )
+            } else {
+                StaticBlurredArtwork(
+                    uri = uri,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -75,6 +89,38 @@ fun PlayerArtworkBackground(
                     )
             )
         }
+    }
+}
+
+@Composable
+private fun StaticBlurredArtwork(
+    uri: String,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    Crossfade(
+        targetState = uri,
+        animationSpec = tween(Constants.Player.BACKGROUND_CROSSFADE_DURATION),
+        label = "staticArtworkCrossfade",
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = ARTWORK_SCALE
+                scaleY = ARTWORK_SCALE
+            }
+            .blur(ARTWORK_BLUR_RADIUS),
+    ) { targetUri ->
+        val request = remember(targetUri) {
+            ImageRequest.Builder(context)
+                .data(targetUri)
+                .size(ARTWORK_DECODE_SIZE)
+                .build()
+        }
+        AsyncImage(
+            model = request,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
@@ -169,4 +215,18 @@ private fun playerBackgroundBrush(): Brush {
         0f to lerp(colorScheme.surfaceContainerLow, colorScheme.primaryContainer, 0.35f),
         1f to colorScheme.surfaceContainerLow,
     )
+}
+
+private fun systemAnimationsEnabled(context: android.content.Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ValueAnimator.areAnimatorsEnabled()
+    } else {
+        runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) > 0f
+        }.getOrDefault(true)
+    }
 }

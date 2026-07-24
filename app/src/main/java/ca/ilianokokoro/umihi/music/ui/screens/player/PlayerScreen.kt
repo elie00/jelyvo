@@ -177,6 +177,7 @@ fun PlayerScreen(
         if (!isFullscreenVideo) {
             PlayerArtworkBackground(
                 artworkUri = currentSong?.thumbnailPath ?: currentSong?.thumbnailHref,
+                isPlaying = uiState.isPlaying,
                 modifier = Modifier.matchParentSize()
             )
         }
