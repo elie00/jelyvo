@@ -3,7 +3,9 @@ package ca.ilianokokoro.umihi.music.ui.screens.player.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -12,6 +14,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
@@ -21,10 +24,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -85,23 +91,46 @@ fun QueueBottomSheet(
             val sourceName by PlayerManager.queueSourceName.collectAsStateWithLifecycle()
             val isRadio by PlayerManager.isRadioQueue.collectAsStateWithLifecycle()
 
-            Column(modifier = modifier.padding(start = 8.dp, bottom = 12.dp)) {
-                Text(
-                    text = stringResource(R.string.playing_now),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                // Queue provenance, mirroring YT Music: the source collection's name when the
-                // queue was built from one, "Radio" for a radio queue, nothing otherwise.
-                val provenance = when {
-                    sourceName != null -> stringResource(R.string.playing_from, sourceName!!)
-                    isRadio -> stringResource(R.string.radio)
-                    else -> null
-                }
-                if (provenance != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp, bottom = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.queue),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    // Queue provenance, mirroring YT Music: the source collection's name when the
+                    // queue was built from one, "Radio" for a radio queue, nothing otherwise.
+                    val provenance = when {
+                        sourceName != null -> stringResource(R.string.playing_from, sourceName!!)
+                        isRadio -> stringResource(R.string.radio)
+                        else -> stringResource(R.string.playing_now)
+                    }
                     Text(
                         text = provenance,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Surface(
+                    shape = MaterialTheme.shapes.large,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ) {
+                    Text(
+                        text = pluralStringResource(
+                            R.plurals.song_count,
+                            mutableSongList.size,
+                            mutableSongList.size,
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                     )
                 }
             }

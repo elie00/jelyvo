@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.song
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
@@ -46,6 +49,15 @@ fun QueueSongListItem(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val innerHeight = 60.dp
+    val containerColor by animateColorAsState(
+        targetValue = if (isCurrentSong) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f)
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        animationSpec = tween(durationMillis = 180),
+        label = "queueItemContainer",
+    )
 
     ListItem(
         modifier = Modifier
@@ -109,19 +121,27 @@ fun QueueSongListItem(
                 modifier = Modifier.basicMarquee()
             )
         },
-        colors = if (isCurrentSong) {
-            ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
-        } else {
-            ListItemDefaults.colors()
-        },
+        colors = ListItemDefaults.colors(containerColor = containerColor),
         verticalAlignment = Alignment.CenterVertically,
         content = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                if (isCurrentSong) {
+                    Icon(
+                        imageVector = Icons.Rounded.GraphicEq,
+                        contentDescription = stringResource(R.string.playing_now),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 Text(
                     song.title,
+                    color = if (isCurrentSong) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier

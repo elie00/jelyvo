@@ -14,6 +14,10 @@
     <string name="shuffle">Lecture aléatoire</string>
     <string name="repeat">Lecture en boucle</string>
     <string name="songs">%1$d titres</string>
+    <plurals name="song_count">
+        <item quantity="one">%1$d titre</item>
+        <item quantity="other">%1$d titres</item>
+    </plurals>
     <string name="error">Erreur</string>
     <string name="previous">Précédent</string>
     <string name="next">Suivant</string>

@@ -14,6 +14,10 @@
     <string name="shuffle">Shuffle</string>
     <string name="repeat">Repeat</string>
     <string name="songs">%1$d songs</string>
+    <plurals name="song_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
     <string name="error">Error</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
