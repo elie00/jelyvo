@@ -9,11 +9,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
+import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,12 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
@@ -47,10 +51,9 @@ import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.schabi.newpipe.extractor.NewPipe
 
 class MainActivity : ComponentActivity() {
-    private val songRepository: SongRepository = SongRepository()
+    private val songRepository by lazy { SongRepository() }
     private val datastoreRepository by lazy { DatastoreRepository(applicationContext) }
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -58,6 +61,8 @@ class MainActivity : ComponentActivity() {
 
     /** Mirrors [isInPictureInPictureMode] into Compose so the video-only PiP layer can be shown. */
     private var isInPipMode by mutableStateOf(false)
+    private var postFirstFrameInitialized = false
+    private var pipReceiverRegistered = false
 
     /** Handles the PiP window's play/pause remote action. */
     private val pipActionReceiver = object : BroadcastReceiver() {
@@ -87,12 +92,24 @@ class MainActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
-        initCaoc()
-
         enableEdgeToEdge()
+        setContentView(StartupShellView(this))
+        initializeAfterFirstFrame(savedInstanceState == null)
+
+        handleShareIntent(intent)
+        handleViewIntent(intent)
+
+        ScreenAwakeManager.registerActivity(this)
+
+        //    debugPrintDataStores()
+    }
+
+    private fun setAppContent() {
         setContent {
             val themeColor by datastoreRepository.themeColor
-                .collectAsStateWithLifecycle(initialValue = DatastoreRepository.ThemeColor.Dynamic)
+                .collectAsStateWithLifecycle(
+                    initialValue = DatastoreRepository.ThemeColor.Dynamic
+                )
 
             UmihiMusicTheme(themeColor = themeColor) {
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -109,25 +126,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-
-        ScreenAwakeManager.registerActivity(this)
-        // Off the first-frame critical path: the packageInfo lookup and Room DB handle build in
-        // initialize() aren't needed to draw the UI. All consumers (update check, settings) run
-        // later and self-ensure initialization, so this stays correct without blocking onCreate.
-        lifecycleScope.launch(Dispatchers.IO) { VersionManager.initialize(applicationContext) }
-        initNewPipe()
-        initPictureInPicture()
-
-        handleShareIntent(intent)
-        handleViewIntent(intent)
-
-        requestNotificationPermission()
-
-        if (savedInstanceState == null) {
-            checkForUpdate()
-        }
-
-        //    debugPrintDataStores()
     }
 
 //    private fun debugPrintDataStores() {
@@ -137,13 +135,52 @@ class MainActivity : ComponentActivity() {
 //    }
 
 
-    override fun onStart() {
-        super.onStart()
-        PlayerManager.connectController(this)
+    /**
+     * ExoPlayer/MediaSession construction, crash-handler setup and permission IPC are useful but
+     * none are required to paint the launch screen. Running them after the first traversal prevents
+     * the playback service from consuming the main thread inside time-to-first-frame.
+     */
+    private fun initializeAfterFirstFrame(checkForUpdate: Boolean) {
+        window.decorView.doOnPreDraw {
+            // A normal post can replace the native view before RenderThread has latched its buffer.
+            // One additional vsync guarantees the skeleton is the measured first app frame.
+            window.decorView.postDelayed(startup@{
+                if (isFinishing || isDestroyed) return@startup
+                setAppContent()
+                initializeRuntimeAfterAppFrame(checkForUpdate)
+            }, FIRST_FRAME_LATCH_DELAY_MS)
+        }
+    }
+
+    private fun initializeRuntimeAfterAppFrame(checkForUpdate: Boolean) {
+        window.decorView.doOnPreDraw {
+            window.decorView.post {
+                if (isFinishing || isDestroyed) return@post
+
+                PlayerManager.connectController(this@MainActivity)
+                if (!postFirstFrameInitialized) {
+                    postFirstFrameInitialized = true
+                    // PackageInfo and Room setup are useful later, never for launch rendering.
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        VersionManager.initialize(applicationContext)
+                    }
+                    initCaoc()
+                    initPictureInPicture()
+                    requestNotificationPermission()
+                    if (checkForUpdate) {
+                        checkForUpdate()
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val FIRST_FRAME_LATCH_DELAY_MS = 32L
     }
 
     override fun onDestroy() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (pipReceiverRegistered) {
             unregisterReceiver(pipActionReceiver)
         }
         PlayerManager.currentController?.removeListener(pipPlayerListener)
@@ -192,6 +229,7 @@ class MainActivity : ComponentActivity() {
             IntentFilter(Constants.Player.Pip.ACTION_PLAY_PAUSE),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        pipReceiverRegistered = true
 
         // The controller connects asynchronously (and may reconnect): (re-)attach the listener
         // that keeps the PiP remote action synced with the playback state.
@@ -329,10 +367,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun initNewPipe() {
-        NewPipe.init(YoutubeExtractor())
-    }
-
     private fun initCaoc() {
         CaocConfig.Builder.create()
             .backgroundMode(CaocConfig.BACKGROUND_MODE_CRASH)
@@ -343,6 +377,48 @@ class MainActivity : ComponentActivity() {
     private fun checkForUpdate() {
         lifecycleScope.launch {
             VersionManager.checkForUpdates(this@MainActivity)
+        }
+    }
+}
+
+/**
+ * Native dependency-light first frame. It replaces the platform splash with the app's actual
+ * layout silhouette while Compose, downloadable fonts and navigation load for the following frame.
+ */
+private class StartupShellView(context: Context) : View(context) {
+    private val density = resources.displayMetrics.density
+    private val isDark = resources.configuration.uiMode and
+        Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    private val backgroundPaint = Paint().apply {
+        color = if (isDark) 0xFF222017.toInt() else 0xFFFFF8E7.toInt()
+    }
+    private val placeholderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = if (isDark) 0xFF3A382F.toInt() else 0xFFE8E0CC.toInt()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        canvas.drawPaint(backgroundPaint)
+
+        val horizontal = 20f * density
+        val top = 48f * density
+        val radius = 12f * density
+        canvas.drawRoundRect(
+            RectF(horizontal, top, width * 0.44f, top + 28f * density),
+            radius,
+            radius,
+            placeholderPaint,
+        )
+
+        var itemTop = top + 56f * density
+        repeat(3) {
+            canvas.drawRoundRect(
+                RectF(horizontal, itemTop, width - horizontal, itemTop + 88f * density),
+                radius,
+                radius,
+                placeholderPaint,
+            )
+            itemTop += 100f * density
         }
     }
 }

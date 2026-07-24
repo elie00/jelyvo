@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music
 
 import android.app.Application
+import androidx.work.Configuration
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
@@ -18,22 +19,34 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toOkioPath
 
-class Umihi : Application(), SingletonImageLoader.Factory {
+class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provider {
+
+    /**
+     * Disables WorkManager's eager ContentProvider startup. The first scheduler call (delayed below)
+     * initializes it with this configuration after the launch frames are already visible.
+     */
+    override val workManagerConfiguration: Configuration by lazy {
+        Configuration.Builder().build()
+    }
 
     override fun onCreate() {
         super.onCreate()
 
-        NotificationManager.init(this)
-
         // Wire the response cache's on-disk mirror so the home feed can paint on a cold start.
         ResponseCache.init(cacheDir)
 
-        // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means an
-        // already-running schedule is left untouched.
+        // Notification-channel binder calls and WorkManager class loading are not needed for the
+        // first frame. Give the activity a clean launch window before background maintenance starts.
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            delay(BACKGROUND_INIT_DELAY_MS)
+            NotificationManager.init(this@Umihi)
+
+            // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means
+            // an already-running schedule is left untouched.
             val datastoreRepository = DatastoreRepository(this@Umihi)
 
             if (datastoreRepository.notifyNewReleases.first()) {
@@ -83,5 +96,6 @@ class Umihi : Application(), SingletonImageLoader.Factory {
         private const val IMAGE_CACHE_DIR = "image_cache"
         private const val DISK_CACHE_SIZE_BYTES = 250L * 1024 * 1024
         private const val MEMORY_CACHE_PERCENT = 0.25
+        private const val BACKGROUND_INIT_DELAY_MS = 750L
     }
 }

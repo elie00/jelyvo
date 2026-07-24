@@ -22,16 +22,28 @@ class BaselineProfileGenerator {
     val rule = BaselineProfileRule()
 
     @Test
-    fun generate() = rule.collect(
+    fun startup() = rule.collect(
         packageName = PACKAGE_NAME,
+        maxIterations = 3,
+        stableIterations = 1,
         includeInStartupProfile = true,
     ) {
         pressHome()
         startActivityAndWait()
+    }
 
+    @Test
+    fun criticalJourneys() = rule.collect(
+        packageName = PACKAGE_NAME,
+        maxIterations = 3,
+        stableIterations = 1,
+        includeInStartupProfile = false,
+    ) {
+        pressHome()
+        startActivityAndWait()
         device.waitForIdle()
 
-        // Best-effort navigation to capture more screens; failures don't invalidate the profile.
+        // These screens benefit from AOT compilation but must not pollute startup dex layout.
         runCatching {
             device.findObject(By.text("Search"))?.click()
             device.wait(Until.hasObject(By.text("Search")), 3_000)
