@@ -32,7 +32,9 @@ import ca.ilianokokoro.umihi.music.models.Version
         LocalPlaylist::class,
     ],
     version = Constants.Database.VERSION,
-    exportSchema = false
+    // Exported to app/schemas (see ksp room.schemaLocation) and committed: the JSON is the
+    // baseline a future MigrationTestHelper diffs the next version against.
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun songRepository(): LocalSongDataSource
@@ -63,14 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java, Constants.Database.NAME
             )
-                .addMigrations(
-                    MIGRATION_9_10,
-                    MIGRATION_10_11,
-                    MIGRATION_11_12,
-                    MIGRATION_12_13,
-                    MIGRATION_13_14,
-                    MIGRATION_14_15
-                )
+                .addMigrations(*MIGRATIONS)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
 
@@ -158,5 +153,17 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `${Constants.Database.PLAYER_QUEUE_TABLE}` ADD COLUMN `isRadio` INTEGER NOT NULL DEFAULT 0")
             }
         }
+
+        // Declared last on purpose: companion properties initialize top-down, so hoisting this
+        // above the migrations above would capture nulls. `internal` so the unit test can assert
+        // the chain has no gap (a missing hop is silently swallowed by the destructive fallback).
+        internal val MIGRATIONS: Array<Migration> = arrayOf(
+            MIGRATION_9_10,
+            MIGRATION_10_11,
+            MIGRATION_11_12,
+            MIGRATION_12_13,
+            MIGRATION_13_14,
+            MIGRATION_14_15,
+        )
     }
 }

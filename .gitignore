@@ -42,7 +42,8 @@ hprof*.
 *.dm
 
 # Schemas
-/app/schemas/*
+# /app/schemas is intentionally tracked: the exported Room schema is the baseline that a
+# migration test diffs the next database version against, so it must be in the repo.
 
 # GitHub
 keystore.properties
