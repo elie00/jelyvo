@@ -43,6 +43,7 @@ import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
+import ca.ilianokokoro.umihi.music.data.repositories.StartupPreferences
 import ca.ilianokokoro.umihi.music.ui.components.PipVideoOverlay
 import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
@@ -299,7 +300,7 @@ class MainActivity : ComponentActivity() {
 
     override fun attachBaseContext(newBase: Context) {
         // Synchronous SharedPreferences mirror read: no DataStore I/O before the first frame.
-        val useSpecialLanguage = DatastoreRepository.getUseSpecialLanguageSync(newBase)
+        val useSpecialLanguage = StartupPreferences.useSpecialLanguage(newBase)
 
         val context = if (useSpecialLanguage) {
             val locale = java.util.Locale.forLanguageTag(Constants.Locale.Special.CODE)

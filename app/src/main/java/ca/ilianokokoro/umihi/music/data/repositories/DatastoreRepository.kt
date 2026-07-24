@@ -153,14 +153,11 @@ class DatastoreRepository(private val context: Context) {
 
     /**
      * Keeps a plain SharedPreferences mirror of the special-language flag so
-     * [getUseSpecialLanguageSync] can read it synchronously in `attachBaseContext` without
+     * [StartupPreferences] can read it synchronously in `attachBaseContext` without
      * blocking the first frame on a DataStore read. DataStore stays the source of truth.
      */
     private fun mirrorUseSpecialLanguage(value: Boolean) {
-        val prefs = context.getSharedPreferences(STARTUP_PREFS_NAME, Context.MODE_PRIVATE)
-        if (prefs.getBoolean(STARTUP_USE_SPECIAL_LANGUAGE, false) != value) {
-            prefs.edit().putBoolean(STARTUP_USE_SPECIAL_LANGUAGE, value).apply()
-        }
+        StartupPreferences.setUseSpecialLanguage(context, value)
     }
 
     /**
@@ -297,9 +294,6 @@ class DatastoreRepository(private val context: Context) {
     }
 
     companion object {
-        private const val STARTUP_PREFS_NAME = "umihi_startup"
-        private const val STARTUP_USE_SPECIAL_LANGUAGE = "use_special_language"
-
         private val sharedScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         @Volatile
@@ -314,15 +308,6 @@ class DatastoreRepository(private val context: Context) {
             }
         }
 
-        /**
-         * Synchronous read of the special-language flag for `attachBaseContext`, backed by the
-         * SharedPreferences mirror instead of DataStore so the first frame is never blocked on
-         * a DataStore file open/parse.
-         */
-        fun getUseSpecialLanguageSync(context: Context): Boolean {
-            return context.getSharedPreferences(STARTUP_PREFS_NAME, Context.MODE_PRIVATE)
-                .getBoolean(STARTUP_USE_SPECIAL_LANGUAGE, false)
-        }
     }
 
     enum class UpdateChannel {
