@@ -4,3 +4,9 @@ base_url: "https://api.crowdin.com"
 files:
     - source: /app/src/main/res/values/strings.xml
       translation: /app/src/main/res/values-%android_code%/%original_file_name%
+      # %android_code% resolves fr to fr-rFR, which only fr-FR devices read. French lives in the
+      # unqualified values-fr so fr-CA/fr-BE/fr-CH fall back to it instead of losing strings;
+      # without this override Crowdin would recreate values-fr-rFR on every sync.
+      languages_mapping:
+          android_code:
+              fr: fr
