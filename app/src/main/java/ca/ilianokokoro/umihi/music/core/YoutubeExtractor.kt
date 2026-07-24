@@ -8,7 +8,9 @@ import org.schabi.newpipe.extractor.downloader.Downloader
 import org.schabi.newpipe.extractor.downloader.Request
 import org.schabi.newpipe.extractor.downloader.Response
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
+import org.schabi.newpipe.extractor.NewPipe
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicBoolean
 
 internal class YoutubeExtractor : Downloader() {
     private val cookieStore = HashMap<String, String>()
@@ -83,6 +85,18 @@ internal class YoutubeExtractor : Downloader() {
 
     companion object {
         const val RECAPTCHA_COOKIES_KEY = "recaptcha_cookies"
+
+        private val initialized = AtomicBoolean(false)
+
+        /**
+         * NewPipe is only the fallback resolver. Initializing it lazily keeps its class graph off
+         * app startup while still making service/widget-only playback safe.
+         */
+        fun ensureInitialized() {
+            if (initialized.compareAndSet(false, true)) {
+                NewPipe.init(YoutubeExtractor())
+            }
+        }
     }
 
 

@@ -14,11 +14,14 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.ResumeItem
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 
@@ -51,6 +54,10 @@ private fun ResumeCard(
     onClick: () -> Unit,
 ) {
     val song = item.song
+    val context = LocalContext.current
+    LaunchedEffect(song.youtubeId) {
+        PlayerManager.prewarmStream(context, song)
+    }
     Column(
         modifier = Modifier
             .width(120.dp)

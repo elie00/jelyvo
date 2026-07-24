@@ -15,12 +15,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 
 @Composable
@@ -32,6 +35,7 @@ fun HomeFeedSectionRow(
     onOpenArtist: (HomeFeedItem.Artist) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Column(modifier.fillMaxWidth()) {
         if (section.title.isNotBlank()) {
             Text(
@@ -54,6 +58,9 @@ fun HomeFeedSectionRow(
                 val onClick: () -> Unit
                 when (item) {
                     is HomeFeedItem.Track -> {
+                        LaunchedEffect(item.song.youtubeId) {
+                            PlayerManager.prewarmStream(context, item.song)
+                        }
                         title = item.song.title
                         subtitle = item.song.artist
                         thumbnail = item.song.thumbnailPath ?: item.song.thumbnailHref

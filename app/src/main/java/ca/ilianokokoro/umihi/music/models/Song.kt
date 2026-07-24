@@ -105,6 +105,7 @@ data class Song(
                 isLocal -> localUri ?: youtubeUrl
                 // The prefix already carries a "?v=" query, so the marker is appended with "&".
                 forceVideo -> "$youtubeUrl&${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1"
+                isVideo -> "$youtubeUrl&${Constants.YoutubeApi.SOURCE_VIDEO_PARAM}=1"
                 else -> youtubeUrl
             }
 
@@ -161,13 +162,14 @@ data class Song(
             // Split off any appended playback markers (e.g. "&umihiForceVideo=1") so the
             // youtubeId stays clean while the flag is recovered from the URI.
             val forceVideo = raw.contains("${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1")
+            val sourceVideo = raw.contains("${Constants.YoutubeApi.SOURCE_VIDEO_PARAM}=1")
             return Song(youtubeId = raw.substringBefore("&")).also {
                 it.forceVideo = forceVideo
+                it.isVideo = sourceVideo || forceVideo
             }
         }
 
     }
 
 }
-
 

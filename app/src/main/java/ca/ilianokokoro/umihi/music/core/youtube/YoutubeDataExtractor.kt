@@ -5,7 +5,7 @@ import android.widget.Toast
 import androidx.core.net.toUri
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
-import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
+import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
@@ -37,7 +37,6 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.Request
 import org.schabi.newpipe.extractor.ServiceList
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
@@ -1872,6 +1871,7 @@ object YoutubeDataExtractor {
      * for two round-trips. In-memory only: cleared with the process.
      */
     private val videoStreamCache = ConcurrentHashMap<String, ResolvedAudioStream>()
+    private val audioStreamCache = ConcurrentHashMap<String, ResolvedAudioStream>()
 
     /**
      * Pre-flight check for video mode: resolves [song]'s stream with the video preference and
@@ -1881,7 +1881,7 @@ object YoutubeDataExtractor {
      */
     suspend fun probeVideoStream(song: Song): Boolean {
         videoStreamCache[song.youtubeId]?.let { cached ->
-            if (isYoutubeUrlValid(cached.url)) {
+            if (isPlaybackUrlFresh(cached.url)) {
                 return cached.isVideo
             }
             videoStreamCache.remove(song.youtubeId)
@@ -1897,15 +1897,14 @@ object YoutubeDataExtractor {
         song: Song,
         allowLocal: Boolean = false
     ): String {
-        if (song.forceVideo) {
-            videoStreamCache[song.youtubeId]?.let { cached ->
-                if (isYoutubeUrlValid(cached.url)) {
-                    PlaybackLoudnessStore.update(song.youtubeId, cached.loudnessDb)
-                    printd("${song.youtubeId} : Got video url from session cache")
-                    return cached.url
-                }
-                videoStreamCache.remove(song.youtubeId)
+        val sessionCache = if (song.forceVideo) videoStreamCache else audioStreamCache
+        sessionCache[song.youtubeId]?.let { cached ->
+            if (isPlaybackUrlFresh(cached.url)) {
+                PlaybackLoudnessStore.update(song.youtubeId, cached.loudnessDb)
+                printd("${song.youtubeId} : Got url from session cache")
+                return cached.url
             }
+            sessionCache.remove(song.youtubeId)
         }
 
         val localSongRepository = AppDatabase.getInstance(context).songRepository()
@@ -1928,8 +1927,12 @@ object YoutubeDataExtractor {
             }
 
             if (savedSong.streamUrl != null) {
-                if (isYoutubeUrlValid(savedSong.streamUrl)) {
+                if (isPlaybackUrlFresh(savedSong.streamUrl)) {
                     PlaybackLoudnessStore.update(song.youtubeId, savedSong.loudnessDb)
+                    audioStreamCache[song.youtubeId] = ResolvedAudioStream(
+                        url = savedSong.streamUrl,
+                        loudnessDb = savedSong.loudnessDb,
+                    )
                     printd("${song.youtubeId} : Got url from saved")
                     return savedSong.streamUrl
                 }
@@ -1939,6 +1942,7 @@ object YoutubeDataExtractor {
 
         val resolved = getSongUrlFromYoutube(song, forceVideo = song.forceVideo)
         if (!song.forceVideo) {
+            audioStreamCache[song.youtubeId] = resolved
             localSongRepository.setStreamInfo(
                 songId = song.youtubeId,
                 streamUrl = resolved.url,
@@ -2011,9 +2015,13 @@ object YoutubeDataExtractor {
     ): ResolvedAudioStream {
         var lastError: Throwable? = null
 
-        // Prefer the official audio (ATV) version over a music-video clip when one exists, unless
-        // the user explicitly asked for the video version.
-        val playbackSong = if (forceVideo) song else resolvePreferredAudioSong(song)
+        // Ordinary tracks already point at their official audio, so only video rows need the
+        // watch-next counterpart lookup. This removes one full API RTT from almost every tap.
+        val playbackSong = if (!forceVideo && song.isVideo) {
+            resolvePreferredAudioSong(song)
+        } else {
+            song
+        }
 
         val fastUrl = resolveAndroidVrStreamUrl(playbackSong.youtubeId, preferVideo = forceVideo)
 
@@ -2115,6 +2123,7 @@ object YoutubeDataExtractor {
         song: Song,
         preferVideo: Boolean = false,
     ): ResolvedAudioStream {
+        YoutubeExtractor.ensureInitialized()
         val service = ServiceList.YouTube
         val extractor = service.getStreamExtractor(song.youtubeUrl)
 
@@ -2248,23 +2257,6 @@ object YoutubeDataExtractor {
         return directUrl?.let { ResolvedAudioStream(it, loudnessDb) }
     }
 
-    private suspend fun isYoutubeUrlValid(url: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val request = Request.Builder()
-                .url(url)
-                .head()
-                .build()
-
-            UmihiHttpClient.client
-                .newCall(request)
-                .execute()
-                .use { response ->
-                    response.code in 200..399
-                }
-        } catch (_: Exception) {
-            false
-        }
-    }
 }
 
 private data class ResolvedAudioStream(

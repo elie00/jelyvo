@@ -13,12 +13,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 
 @Composable
@@ -49,6 +52,10 @@ private fun RecentlyPlayedCard(
     song: Song,
     onClick: () -> Unit,
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(song.youtubeId) {
+        PlayerManager.prewarmStream(context, song)
+    }
     Column(
         modifier = Modifier
             .width(120.dp)

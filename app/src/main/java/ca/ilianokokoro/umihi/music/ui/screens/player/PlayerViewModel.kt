@@ -48,6 +48,7 @@ class PlayerViewModel(application: Application) :
     // probed at most once per player screen. A null value means "probed, no video variant".
     private val videoVariantCache = mutableMapOf<String, Song?>()
     private var videoVariantJob: Job? = null
+    private var videoStreamPrewarmJob: Job? = null
 
     private val playerListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -267,8 +268,7 @@ class PlayerViewModel(application: Application) :
 
         // 16:9 clip poster: the counterpart already carries one; when the item plays as itself,
         // fetch it from the player response so the artwork switches deterministically.
-        var poster = variant.thumbnailHref
-            .takeIf { it.isNotBlank() && variant.youtubeId != current.youtubeId }
+        var poster = variant.thumbnailHref.takeIf { it.isNotBlank() }
         if (poster == null) {
             try {
                 songRepository.getSongInfo(variant.youtubeId).collect { result ->
@@ -301,6 +301,7 @@ class PlayerViewModel(application: Application) :
         }
 
         // Offloaded audio cannot drive a video renderer: keep it off while a video item is current.
+        videoStreamPrewarmJob?.cancel()
         PlayerManager.setAudioOffloadEnabled(false)
         PlayerManager.replaceCurrentWithVideo(videoSong)
     }
@@ -339,11 +340,17 @@ class PlayerViewModel(application: Application) :
      */
     private fun updateVideoVariant(song: Song?) {
         videoVariantJob?.cancel()
+        videoStreamPrewarmJob?.cancel()
 
         if (song == null || song.isLocal) {
             _uiState.update { it.copy(hasVideoVariant = false) }
             return
         }
+
+        // Direct YouTube links are initially modeled like audio tracks even when their own id is a
+        // muxed music video. Start that safe probe immediately instead of gating prewarming on the
+        // optional watch-next counterpart lookup (which can be rate-limited independently).
+        prewarmVideoStream(song)
 
         if (song.forceVideo || song.isVideo) {
             _uiState.update { it.copy(hasVideoVariant = true) }
@@ -352,9 +359,11 @@ class PlayerViewModel(application: Application) :
         }
 
         if (videoVariantCache.containsKey(song.youtubeId)) {
-            val hasVariant = videoVariantCache[song.youtubeId] != null
+            val cachedVariant = videoVariantCache[song.youtubeId]
+            val hasVariant = cachedVariant != null
             _uiState.update { it.copy(hasVideoVariant = hasVariant) }
             if (hasVariant) {
+                prewarmVideoStream(cachedVariant)
                 maybeApplyPreferredVideoMode(song)
             }
             return
@@ -384,6 +393,7 @@ class PlayerViewModel(application: Application) :
             if (stillCurrent) {
                 _uiState.update { it.copy(hasVideoVariant = variant != null) }
                 if (variant != null) {
+                    prewarmVideoStream(variant)
                     maybeApplyPreferredVideoMode(song)
                 }
             }
@@ -393,6 +403,27 @@ class PlayerViewModel(application: Application) :
     private fun maybeApplyPreferredVideoMode(song: Song) {
         if (PlayerManager.videoModePreferred.value && !song.forceVideo) {
             switchPlaybackMode(video = true, fromUser = false)
+        }
+    }
+
+    /**
+     * The player discovers video availability while audio is already playing. Resolve the signed
+     * muxed URL during that idle time so tapping Video only has to attach the renderer and buffer.
+     */
+    private fun prewarmVideoStream(video: Song) {
+        if (PlayerManager.videoModePreferred.value || video.forceVideo) return
+        videoStreamPrewarmJob?.cancel()
+        videoStreamPrewarmJob = viewModelScope.launch {
+            try {
+                // Do not make speculative video resolution compete with the title the user just
+                // asked to hear. Audio reaches PLAYING first; video then warms during playback.
+                delay(VIDEO_PREWARM_START_DELAY_MS)
+                YoutubeDataExtractor.probeVideoStream(video)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Best effort: the explicit Video action retains its normal error handling.
+            }
         }
     }
 
@@ -677,11 +708,14 @@ class PlayerViewModel(application: Application) :
     }
 
     override fun onCleared() {
+        videoStreamPrewarmJob?.cancel()
         PlayerManager.currentController?.removeListener(playerListener)
         super.onCleared()
     }
 
     companion object {
+        private const val VIDEO_PREWARM_START_DELAY_MS = 750L
+
         fun Factory(
             application: Application,
         ): ViewModelProvider.Factory =

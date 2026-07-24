@@ -67,4 +67,20 @@ class SongTest {
         assertNotEquals(a.uid, b.uid)
         assertNotEquals(a, b)
     }
+
+    @Test
+    fun `playback URL markers preserve video resolution intent`() {
+        val sourceVideo = Song.createFromYoutubeUrl(
+            "https://www.youtube.com/watch?v=video-id&umihiSourceVideo=1"
+        )
+        val forcedVideo = Song.createFromYoutubeUrl(
+            "https://www.youtube.com/watch?v=video-id&umihiForceVideo=1"
+        )
+
+        assertEquals("video-id", sourceVideo.youtubeId)
+        assertTrue(sourceVideo.isVideo)
+        assertFalse(sourceVideo.forceVideo)
+        assertTrue(forcedVideo.isVideo)
+        assertTrue(forcedVideo.forceVideo)
+    }
 }

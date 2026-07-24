@@ -13,6 +13,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
@@ -32,7 +33,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -52,6 +56,8 @@ object PlayerManager {
 
     @Volatile
     private var controller: MediaController? = null
+    @Volatile
+    private var pendingSong: Song? = null
 
     private val _controllerState = MutableStateFlow<MediaController?>(null)
     val controllerState: StateFlow<MediaController?> = _controllerState.asStateFlow()
@@ -65,6 +71,8 @@ object PlayerManager {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val radioRepository = RadioRepository()
+    private val streamPrewarmGate = Semaphore(2)
+    private val streamPrewarmIds = ConcurrentHashMap.newKeySet<String>()
 
     private var sleepTimerJob: Job? = null
     private var sleepTimerEndOfSongListener: Player.Listener? = null
@@ -193,6 +201,10 @@ object PlayerManager {
                     synchronized(this@PlayerManager) {
                         controller = built
                         _controllerState.value = built
+                    }
+                    pendingSong?.let { song ->
+                        pendingSong = null
+                        playSong(song)
                     }
                 } catch (e: CancellationException) {
                     throw e
@@ -353,13 +365,48 @@ object PlayerManager {
     }
 
     fun playSong(song: Song) {
-        val controller = currentController ?: return
+        val controller = currentController
+        if (controller == null) {
+            // A tap or deep link can land while the post-first-frame media service is connecting.
+            // Keep the latest request instead of dropping it.
+            pendingSong = song
+            return
+        }
 
         isCollectionQueue = false
         setQueueProvenance(sourceName = null, isRadio = false)
         controller.setMediaItem(song.mediaItem)
         controller.prepare()
         controller.play()
+    }
+
+    /**
+     * Resolves visible rows opportunistically. By the time a user taps one, playback can take the
+     * in-memory signed URL path instead of waiting for the YouTube player endpoint. Concurrency is
+     * deliberately low so this never starves artwork or the active stream.
+     */
+    fun prewarmStream(context: Context, song: Song) {
+        if (song.isLocal || song.youtubeId.isBlank() || !streamPrewarmIds.add(song.youtubeId)) {
+            return
+        }
+        val applicationContext = context.applicationContext
+        scope.launch {
+            streamPrewarmGate.withPermit {
+                try {
+                    YoutubeDataExtractor.getSongPlayerUrl(
+                        context = applicationContext,
+                        song = song,
+                        allowLocal = true,
+                    )
+                } catch (e: CancellationException) {
+                    streamPrewarmIds.remove(song.youtubeId)
+                    throw e
+                } catch (_: Exception) {
+                    // A regular playback attempt can retry later.
+                    streamPrewarmIds.remove(song.youtubeId)
+                }
+            }
+        }
     }
 
     /**

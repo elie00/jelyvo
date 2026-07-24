@@ -119,6 +119,13 @@ object Constants {
     }
 
     object ExoPlayer {
+        // The interaction budget applies both to a new item and to the audio/video in-place swap,
+        // which ExoPlayer classifies as a rebuffer.
+        const val MIN_BUFFER_MS = 5_000
+        const val MAX_BUFFER_MS = 30_000
+        const val BUFFER_FOR_PLAYBACK_MS = 50
+        const val BUFFER_AFTER_REBUFFER_MS = 50
+
         val AUDIO_MIME_MAP = mapOf(
             // AAC
             "audio/mp4a-latm" to "aac",
@@ -262,6 +269,8 @@ object Constants {
         // Playback URI marker: appended to a track's stream URI to request the music-video clip
         // stream (and its poster) instead of the default official-audio counterpart.
         const val FORCE_VIDEO_PARAM = "umihiForceVideo"
+        // Lets the resolver skip the watch-next counterpart request for ordinary audio tracks.
+        const val SOURCE_VIDEO_PARAM = "umihiSourceVideo"
         const val ORIGIN = "https://music.youtube.com"
         const val API_KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30"
         const val USER_AGENT =

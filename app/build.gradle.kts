@@ -172,9 +172,9 @@ androidComponents {
             val flavor = variant.flavorName
             output.outputFileName.set(
                 when (flavor) {
-                    "standalone" -> "UmihiMusic.apk"
-                    "store" -> "UmihiMusic-store.apk"
-                    else -> "UmihiMusic-$flavor.apk"
+                    "standalone" -> "Umihi.apk"
+                    "store" -> "Umihi-store.apk"
+                    else -> "Umihi-$flavor.apk"
                 }
             )
         }
@@ -225,6 +225,7 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.datasource)
+    implementation(libs.androidx.media3.datasource.okhttp)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

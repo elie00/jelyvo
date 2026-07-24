@@ -22,9 +22,11 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSourceBitmapLoader
 import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
+import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.analytics.AnalyticsListener
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -36,6 +38,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
+import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
@@ -121,7 +124,7 @@ class PlaybackService : MediaLibraryService() {
         playerQueueRepository = PlayerQueueRepository(applicationContext)
         exoCache = ExoCache(application)
 
-        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+        val httpDataSourceFactory = OkHttpDataSource.Factory(UmihiHttpClient.client)
             .setUserAgent(Util.getUserAgent(this, packageName))
 
         val defaultDataSourceFactory = DefaultDataSource.Factory(this, httpDataSourceFactory)
@@ -144,11 +147,26 @@ class PlaybackService : MediaLibraryService() {
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                Constants.ExoPlayer.MIN_BUFFER_MS,
+                Constants.ExoPlayer.MAX_BUFFER_MS,
+                Constants.ExoPlayer.BUFFER_FOR_PLAYBACK_MS,
+                Constants.ExoPlayer.BUFFER_AFTER_REBUFFER_MS,
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+
+        val renderersFactory = DefaultRenderersFactory(this)
+            .experimentalSetEnableMediaCodecVideoRendererPrewarming(true)
+
         player = ExoPlayer.Builder(this)
+            .setRenderersFactory(renderersFactory)
             .setAudioAttributes(audioAttributes, true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .setHandleAudioBecomingNoisy(true)
             .setDeviceVolumeControlEnabled(true)
+            .setLoadControl(loadControl)
             .setMediaSourceFactory(DefaultMediaSourceFactory(resolvingFactory))
             .build()
         player.addAnalyticsListener(
