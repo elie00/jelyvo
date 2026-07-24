@@ -40,6 +40,8 @@
     <string name="play_next_toast">Playing this song next</string>
     <string name="added_queue_toast">Added song to the queue</string>
     <string name="playing_now">Playing Now</string>
+    <string name="lyrics">Lyrics</string>
+    <string name="show_artwork">Artwork</string>
     <string name="playing_from">Playing from: %1$s</string>
     <string name="radio">Radio</string>
     <string name="queue_section_up_next">Up next in queue</string>

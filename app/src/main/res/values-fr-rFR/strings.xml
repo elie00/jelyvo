@@ -39,6 +39,8 @@
     <string name="play_next_toast">Lecture de ce titre suivant</string>
     <string name="added_queue_toast">Ajout du titre à la file d\'attente</string>
     <string name="playing_now">En cours de lecture</string>
+    <string name="lyrics">Paroles</string>
+    <string name="show_artwork">Pochette</string>
     <string name="playing_from">À partir de : %1$s</string>
     <string name="radio">Radio</string>
     <string name="queue_section_up_next">À suivre dans la file d\'attente</string>
