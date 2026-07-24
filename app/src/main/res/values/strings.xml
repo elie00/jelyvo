@@ -297,6 +297,7 @@
     <string name="equalizer_output_speaker">Speaker</string>
     <string name="spotify_connect_description">Connect your Spotify account to import your playlists and liked songs.</string>
     <string name="spotify_connect_button">Connect Spotify</string>
+    <string name="spotify_import_unavailable">Spotify import isn\'t available in this build.</string>
     <string name="spotify_choose_what_to_import">Choose what to import</string>
     <string name="spotify_liked_songs_subtitle">Your saved tracks</string>
     <string name="spotify_playlist_tracks">%1$d tracks</string>

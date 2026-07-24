@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.spotify.SpotifyConstants
 import ca.ilianokokoro.umihi.music.data.repositories.ImportProgress
 import ca.ilianokokoro.umihi.music.models.spotify.SpotifyPlaylist
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
@@ -113,13 +114,22 @@ private fun ConnectContent(onStartAuth: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = stringResource(R.string.spotify_connect_description),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onStartAuth) {
-            Text(stringResource(R.string.spotify_connect_button))
+        if (SpotifyConstants.IS_CONFIGURED) {
+            Text(
+                text = stringResource(R.string.spotify_connect_description),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = onStartAuth) {
+                Text(stringResource(R.string.spotify_connect_button))
+            }
+        } else {
+            // Still reachable through a restored back stack (rememberNavBackStack is saveable), so
+            // say so plainly instead of offering a button that can only end on a Spotify error page.
+            Text(
+                text = stringResource(R.string.spotify_import_unavailable),
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
 }

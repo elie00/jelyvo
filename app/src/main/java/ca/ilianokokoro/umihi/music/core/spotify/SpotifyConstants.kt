@@ -1,18 +1,29 @@
 package ca.ilianokokoro.umihi.music.core.spotify
 
+import ca.ilianokokoro.umihi.music.BuildConfig
+
 /**
  * Constants for the Spotify import feature.
  *
  * Auth flow used: Authorization Code with PKCE (no client secret — safe for a mobile client).
  *
- * TODO(missing): Register the app on https://developer.spotify.com/dashboard, then:
- *   1. Paste the real Client ID into [CLIENT_ID].
- *   2. Add [REDIRECT_URI] ("umihi://spotify-callback") to the app's "Redirect URIs" in the dashboard.
- * Until both are done the OAuth flow will fail at runtime.
+ * The feature is hidden unless [CLIENT_ID] is supplied at build time (-PspotifyClientId=<id>, or a
+ * `spotifyClientId=<id>` line in the gitignored local.properties), so no build ships a fake id.
+ *
+ * TODO(missing): TWO things are still required before the flow works end to end:
+ *   1. Register the app on https://developer.spotify.com/dashboard, add [REDIRECT_URI]
+ *      ("umihi://spotify-callback") to its "Redirect URIs", then build with that client id.
+ *   2. Wire the redirect back: MainActivity.handleViewIntent ignores umihi://spotify-callback, so
+ *      nothing calls [SpotifyAuthHelper.parseAuthorizationCode] / [SpotifyAuthHelper.exchangeCodeForToken]
+ *      / SpotifyImportViewModel.onAuthCompleted, and the PKCE verifier built in NavigationRoot is
+ *      discarded. Until that glue exists the screen stays on "Disconnected" even with a valid id.
  */
 object SpotifyConstants {
-    /** Placeholder — replace once the app is registered on the Spotify developer dashboard. */
-    const val CLIENT_ID = "TODO_SET_SPOTIFY_CLIENT_ID"
+    /** Empty unless a client id was supplied at build time — see [IS_CONFIGURED]. */
+    val CLIENT_ID: String = BuildConfig.SPOTIFY_CLIENT_ID
+
+    /** Gates the Spotify entry points: with no client id the OAuth flow can only fail. */
+    val IS_CONFIGURED: Boolean = CLIENT_ID.isNotBlank()
 
     /** Must match EXACTLY the redirect URI registered on the Spotify dashboard AND the manifest intent-filter. */
     const val REDIRECT_URI = "umihi://spotify-callback"
