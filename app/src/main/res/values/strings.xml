@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Umihi Music</string>
+    <string name="app_name" translatable="false">Umihi</string>
     <string name="playlists">Playlists</string>
     <string name="settings">Settings</string>
     <string name="back_description">Previous screen</string>
