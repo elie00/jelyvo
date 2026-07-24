@@ -23,8 +23,10 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,6 +42,7 @@ class PlayerViewModel(application: Application) :
     private val _uiState = MutableStateFlow(PlayerState())
     val uiState = _uiState.asStateFlow()
     private val datastoreRepository = DatastoreRepository(application)
+    private val localPlaylistRepository = LocalPlaylistRepository(application)
     private val lyricsRepository = LyricsRepository()
     private val songRepository = SongRepository()
     private var lyricsJob: Job? = null
@@ -155,6 +158,47 @@ class PlayerViewModel(application: Application) :
                 // Revert on failure
                 _uiState.update { it.copy(isLiked = isCurrentlyLiked, isLiking = false) }
                 printe(message = "Failed to toggle like: ${e.message}", exception = e)
+            }
+        }
+    }
+
+    fun saveQueueAsPlaylist(name: String, songs: List<Song>) {
+        val playlistName = name.trim()
+        if (
+            playlistName.isEmpty() ||
+            songs.isEmpty() ||
+            _uiState.value.isSavingQueue
+        ) {
+            return
+        }
+
+        _uiState.update { it.copy(isSavingQueue = true) }
+        viewModelScope.launch {
+            try {
+                localPlaylistRepository.create(
+                    name = playlistName,
+                    songs = songs.map(LocalPlaylistSong::fromSong),
+                )
+                Toast.makeText(
+                    getApplication(),
+                    getApplication<Application>().getString(
+                        R.string.queue_saved_toast,
+                        playlistName,
+                    ),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            } catch (exception: Exception) {
+                printe(
+                    message = "Failed to save queue as playlist: ${exception.message}",
+                    exception = exception,
+                )
+                Toast.makeText(
+                    getApplication(),
+                    R.string.queue_save_failed_toast,
+                    Toast.LENGTH_LONG,
+                ).show()
+            } finally {
+                _uiState.update { it.copy(isSavingQueue = false) }
             }
         }
     }

@@ -82,6 +82,12 @@
     <string name="get_song_failed">Impossible d\'obtenir les informations du titre</string>
     <string name="playback_failed">La lecture s\'est arrêtée. Vérifiez votre connexion et réessayez.</string>
     <string name="queue_empty">Aucun titre dans la file d\'attente</string>
+    <string name="save_queue">Enregistrer la file</string>
+    <string name="save_queue_title">Enregistrer cette file</string>
+    <string name="my_queue">Ma file</string>
+    <string name="queue_save_description">%1$d titres resteront disponibles dans votre bibliothèque sur cet appareil.</string>
+    <string name="queue_saved_toast">« %1$s » enregistrée dans votre bibliothèque</string>
+    <string name="queue_save_failed_toast">Impossible d’enregistrer cette file</string>
     <string name="cancel_playlist_download">Annuler le téléchargement de la playlist</string>
     <string name="cancel_playlist_download_text">Annuler le téléchargement en cours de la playlist ?</string>
     <string name="remove_download">Supprimer le téléchargement</string>

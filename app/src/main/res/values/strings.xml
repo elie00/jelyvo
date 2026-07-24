@@ -89,6 +89,12 @@
     <string name="get_song_failed">Failed to get Song Information</string>
     <string name="playback_failed">Playback stopped. Check your connection and try again.</string>
     <string name="queue_empty">No songs in the queue</string>
+    <string name="save_queue">Save queue</string>
+    <string name="save_queue_title">Save this queue</string>
+    <string name="my_queue">My queue</string>
+    <string name="queue_save_description">%1$d tracks will stay available in your on-device library.</string>
+    <string name="queue_saved_toast">“%1$s” saved to your library</string>
+    <string name="queue_save_failed_toast">Could not save this queue</string>
     <string name="cancel_playlist_download">Cancel Playlist Download</string>
     <string name="cancel_playlist_download_text">Cancel the ongoing playlist download ?</string>
     <string name="remove_download">Remove Download</string>

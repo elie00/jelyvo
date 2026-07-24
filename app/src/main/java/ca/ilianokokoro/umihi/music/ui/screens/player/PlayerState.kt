@@ -16,6 +16,7 @@ data class PlayerState(
     val isLoading: Boolean = true,
     val isSeekBarHeld: Boolean = false,
     val isQueueModalShown: Boolean = false,
+    val isSavingQueue: Boolean = false,
     val isSleepTimerModalShown: Boolean = false,
     val sleepTimerRemainingSeconds: Long? = null,
     val isSpeedSelectorShown: Boolean = false,
