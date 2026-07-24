@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FeaturedPlayList
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
-import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
@@ -41,8 +40,6 @@ import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material.icons.outlined.Wifi
-import androidx.compose.material.icons.outlined.SystemUpdate
-import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -62,7 +59,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.backup.BackupManager
@@ -74,7 +70,6 @@ import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
-import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateChannelDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
@@ -463,45 +458,6 @@ fun SettingsScreen(
                             }
                         }
 
-                        if (BuildConfig.UPDATER_ENABLED) {
-                            SettingsSection(
-                                title = stringResource(R.string.updates)
-                            ) {
-                                SettingsItem(
-                                    title = stringResource(R.string.check_for_updates),
-                                    subtitle = stringResource(R.string.check_update_setting_description),
-                                    leadingIcon = Icons.Outlined.Update,
-                                    onClick = settingsViewModel::checkForUpdates
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                BooleanSettingItem(
-                                    title = stringResource(R.string.auto_update_title),
-                                    subtitle = stringResource(R.string.auto_update_subtitle),
-                                    leadingIcon = Icons.Outlined.Autorenew,
-                                    value = screenState.settings.updateChecking,
-                                    onToggle = {
-                                        settingsViewModel.updateSetting(
-                                            PreferenceKeys.AUTO_UPDATE,
-                                            it
-                                        )
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                SettingsItem(
-                                    title = stringResource(R.string.change_update_channel),
-                                    subtitle = stringResource(
-                                        R.string.current_update_channel_body,
-                                        screenState.settings.updateChannel
-                                    ),
-                                    leadingIcon = Icons.Outlined.SystemUpdate,
-                                    onClick = {
-                                        settingsViewModel.updateShowUpdateChannelDialog(true)
-                                    }
-                                )
-                            }
-                        }
-
                         if (uiState.showThemeColorDialog) {
                             ThemeColorDialog(
                                 selectedOption = screenState.settings.themeColor,
@@ -513,19 +469,6 @@ fun SettingsScreen(
                                 },
                                 onClose = {
                                     settingsViewModel.updateShowThemeColorDialog(false)
-                                }
-                            )
-                        } else if (uiState.showUpdateChannelDialog) {
-                            UpdateChannelDialog(
-                                selectedOption = screenState.settings.updateChannel,
-                                onChange = {
-                                    settingsViewModel.updateSetting(
-                                        PreferenceKeys.UPDATE_CHANNEL,
-                                        it.toString()
-                                    )
-                                },
-                                onClose = {
-                                    settingsViewModel.updateShowUpdateChannelDialog(false)
                                 }
                             )
                         } else if (uiState.showDownloadDeleteConfirm) {

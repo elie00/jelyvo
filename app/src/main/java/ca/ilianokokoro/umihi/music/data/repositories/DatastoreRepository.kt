@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import ca.ilianokokoro.umihi.music.BuildConfig
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
@@ -18,7 +17,6 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_LIKED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_QUOTA_GB
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
@@ -29,7 +27,6 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.UPDATE_CHANNEL
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
 import ca.ilianokokoro.umihi.music.core.ResponseCache
@@ -56,12 +53,10 @@ class DatastoreRepository(private val context: Context) {
     object PreferenceKeys {
         val COOKIES = stringPreferencesKey(Constants.Datastore.COOKIES_KEY)
         val DATA_SYNC_ID = stringPreferencesKey(Constants.Datastore.DATA_SYNC_ID)
-        val UPDATE_CHANNEL = stringPreferencesKey(Constants.Datastore.UPDATE_CHANNEL_KEY)
         val SHOW_PODCAST_PLAYLIST = booleanPreferencesKey(Constants.Datastore.SHOW_PODCAST_PLAYLIST)
         val USE_SPECIAL_LANGUAGE = booleanPreferencesKey(Constants.Datastore.USE_SPECIAL_LANGUAGE)
         val USE_AUDIO_OFFLOAD = booleanPreferencesKey(Constants.Datastore.USE_AUDIO_OFFLOAD)
         val KEEP_SCREEN_ON = booleanPreferencesKey(Constants.Datastore.KEEP_SCREEN_ON)
-        val AUTO_UPDATE = booleanPreferencesKey(Constants.Datastore.AUTO_UPDATE)
         val SEND_PLAYBACK_DATA = booleanPreferencesKey(Constants.Datastore.SEND_PLAYBACK_DATA)
         val DOWNLOAD_ON_METERED = booleanPreferencesKey(Constants.Datastore.DOWNLOAD_ON_METERED)
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
@@ -93,17 +88,10 @@ class DatastoreRepository(private val context: Context) {
         get() = sharedSettings(context.applicationContext).filterNotNull()
 
     private fun settingsSource(): Flow<UmihiSettings> = context.dataStore.data.map {
-        val updateChannel = it[UPDATE_CHANNEL]?.let { value -> UpdateChannel.valueOf(value) }
-            ?: if (BuildConfig.IS_BETA) {
-                UpdateChannel.Beta
-            } else {
-                UpdateChannel.Stable
-            }
         val showPodcastPlaylist = it[SHOW_PODCAST_PLAYLIST] ?: true
         val useSpecialLanguage = it[USE_SPECIAL_LANGUAGE] ?: false
         val useAudioOffload = it[USE_AUDIO_OFFLOAD] ?: false
         val keepScreenOn = it[KEEP_SCREEN_ON] ?: false
-        val updateChecking = it[AUTO_UPDATE] ?: true
         val sendPlaybackData = it[SEND_PLAYBACK_DATA] ?: false
         val downloadOnMetered = it[DOWNLOAD_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
@@ -126,7 +114,6 @@ class DatastoreRepository(private val context: Context) {
         mirrorUseSpecialLanguage(useSpecialLanguage)
 
         UmihiSettings(
-            updateChannel = updateChannel,
             showPodcastPlaylist = showPodcastPlaylist,
             cookies = cookies,
             dataSyncId = dataSyncId,
@@ -134,7 +121,6 @@ class DatastoreRepository(private val context: Context) {
             useAudioOffload = useAudioOffload,
             keepScreenOn = keepScreenOn,
             sendPlaybackData = sendPlaybackData,
-            updateChecking = updateChecking,
             downloadOnMetered = downloadOnMetered,
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
@@ -308,11 +294,6 @@ class DatastoreRepository(private val context: Context) {
             }
         }
 
-    }
-
-    enum class UpdateChannel {
-        Stable,
-        Beta
     }
 
     enum class ThemeColor {

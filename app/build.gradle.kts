@@ -76,15 +76,11 @@ android {
         create("standalone") {
             isDefault = true
             dimension = "version"
-            // Fork of ilianoKokoro/umihi-music: the upstream auto-updater is disabled so the
-            // app never offers to install the original author's releases over this build.
-            buildConfigField("boolean", "UPDATER_ENABLED", "false")
         }
 
         create("store") {
             versionNameSuffix = "-store"
             dimension = "version"
-            buildConfigField("boolean", "UPDATER_ENABLED", "false")
         }
     }
 

@@ -5,27 +5,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 object Constants {
-    const val BETA_SUFFIX = "-beta"
-
     object Url {
         const val DISCORD_INVITE = "https://discord.gg/mSPeHS5cF6"
-
-        object Github {
-            object Beta {
-                const val API =
-                    "https://api.github.com/repos/ilianoKokoro/umihi-music/releases/tags/beta"
-                const val DOWNLOAD =
-                    "https://github.com/ilianoKokoro/umihi-music/releases/download/beta/UmihiMusic.apk"
-            }
-
-            object Release {
-                const val API =
-                    "https://api.github.com/repos/ilianoKokoro/umihi-music/releases/latest"
-                const val DOWNLOAD =
-                    "https://github.com/ilianoKokoro/umihi-music/releases/latest/download/UmihiMusic.apk"
-
-            }
-        }
     }
 
     object Downloads {
@@ -34,8 +15,6 @@ object Constants {
         const val THUMBNAILS_FOLDER = "thumbnails_downloads"
         const val AUDIO_FILES_FOLDER = "audio_files_downloads"
         const val DOWNLOADED_PLAYLIST_ID = "_downloaded_"
-
-        const val UPDATE_APK = "update.apk"
 
         // Offline auto-download (see OfflineSyncWorker).
         const val AUTO_DOWNLOAD_QUOTA_GB_DEFAULT = 4
@@ -84,13 +63,11 @@ object Constants {
     object Datastore {
         const val NAME = "umihi-mobile"
         const val COOKIES_KEY = "cookies"
-        const val UPDATE_CHANNEL_KEY = "update-channel"
         const val DATA_SYNC_ID = "data-sync-id"
         const val SHOW_PODCAST_PLAYLIST = "show-podcast-playlist"
         const val USE_SPECIAL_LANGUAGE = "use-special-language"
         const val USE_AUDIO_OFFLOAD = "use-audio-offload"
         const val KEEP_SCREEN_ON = "keep-screen-on"
-        const val AUTO_UPDATE = "auto-update"
         const val SEND_PLAYBACK_DATA = "send-playback-data"
         const val DOWNLOAD_ON_METERED = "download-on-metered"
         const val AUTOPLAY = "autoplay"

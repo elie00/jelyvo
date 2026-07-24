@@ -3,12 +3,9 @@ package ca.ilianokokoro.umihi.music.models
 import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.UpdateChannel
 
 @Immutable
 data class UmihiSettings(
-    val updateChannel: UpdateChannel = UpdateChannel.Stable,
-    val updateChecking: Boolean = true,
     val cookies: Cookies,
     val dataSyncId: String?,
     val showPodcastPlaylist: Boolean = true,

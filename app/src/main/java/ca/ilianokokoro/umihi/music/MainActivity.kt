@@ -45,7 +45,6 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.data.repositories.StartupPreferences
 import ca.ilianokokoro.umihi.music.ui.components.PipVideoOverlay
-import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
@@ -97,7 +96,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContentView(StartupShellView(this))
-        initializeAfterFirstFrame(savedInstanceState == null)
+        initializeAfterFirstFrame()
 
         handleShareIntent(intent)
         handleViewIntent(intent)
@@ -121,7 +120,6 @@ class MainActivity : ComponentActivity() {
                     NavigationRoot(
                         modifier = Modifier.fillMaxSize()
                     )
-                    UpdateDialog(lifecycleScope)
 
                     // In PiP the whole activity is rendered in the tiny window: cover the app UI
                     // with a video-only layer so the window shows just the letterboxed video.
@@ -145,19 +143,19 @@ class MainActivity : ComponentActivity() {
      * none are required to paint the launch screen. Running them after the first traversal prevents
      * the playback service from consuming the main thread inside time-to-first-frame.
      */
-    private fun initializeAfterFirstFrame(checkForUpdate: Boolean) {
+    private fun initializeAfterFirstFrame() {
         window.decorView.doOnPreDraw {
             // A normal post can replace the native view before RenderThread has latched its buffer.
             // One additional vsync guarantees the skeleton is the measured first app frame.
             window.decorView.postDelayed(startup@{
                 if (isFinishing || isDestroyed) return@startup
                 setAppContent()
-                initializeRuntimeAfterAppFrame(checkForUpdate)
+                initializeRuntimeAfterAppFrame()
             }, FIRST_FRAME_LATCH_DELAY_MS)
         }
     }
 
-    private fun initializeRuntimeAfterAppFrame(checkForUpdate: Boolean) {
+    private fun initializeRuntimeAfterAppFrame() {
         window.decorView.doOnPreDraw {
             window.decorView.post {
                 if (isFinishing || isDestroyed) return@post
@@ -166,16 +164,13 @@ class MainActivity : ComponentActivity() {
                 if (!postFirstFrameInitialized) {
                     postFirstFrameInitialized = true
                     ScreenAwakeManager.registerActivity(this@MainActivity)
-                    // PackageInfo and Room setup are useful later, never for launch rendering.
+                    // The PackageInfo lookup is useful later, never for launch rendering.
                     lifecycleScope.launch(Dispatchers.IO) {
                         VersionManager.initialize(applicationContext)
                     }
                     initCaoc()
                     initPictureInPicture()
                     requestNotificationPermission()
-                    if (checkForUpdate) {
-                        checkForUpdate()
-                    }
                 }
             }
         }
@@ -382,12 +377,6 @@ class MainActivity : ComponentActivity() {
             .backgroundMode(CaocConfig.BACKGROUND_MODE_CRASH)
             .trackActivities(true)
             .apply()
-    }
-
-    private fun checkForUpdate() {
-        lifecycleScope.launch {
-            VersionManager.checkForUpdates(this@MainActivity)
-        }
     }
 }
 

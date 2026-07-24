@@ -20,7 +20,6 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
-import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
 import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
@@ -70,16 +69,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 Toast.LENGTH_LONG
             ).show()
 
-        }
-    }
-
-    fun updateShowUpdateChannelDialog(value: Boolean) {
-        viewModelScope.launch {
-            _uiState.update {
-                _uiState.value.copy(
-                    showUpdateChannelDialog = value
-                )
-            }
         }
     }
 
@@ -244,12 +233,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _application.getString(messageRes),
             Toast.LENGTH_LONG
         ).show()
-    }
-
-    fun checkForUpdates() {
-        viewModelScope.launch {
-            VersionManager.checkForUpdates(context = _application, manualCheck = true)
-        }
     }
 
     fun isLoggedIn(): Boolean {
