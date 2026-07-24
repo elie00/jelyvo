@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import ca.ilianokokoro.umihi.music.R
@@ -62,6 +63,15 @@ class PlayerViewModel(application: Application) :
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             updateIsLoadingState()
+        }
+
+        override fun onPlayerError(error: PlaybackException) {
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    isPlaying = false,
+                )
+            }
         }
 
         override fun onTimelineChanged(timeline: Timeline, reason: Int) {

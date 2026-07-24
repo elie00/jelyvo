@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
@@ -78,8 +79,16 @@ fun MiniPlayerWrapper(
                         songIsLoading = false
                     }
 
-                    else -> {}
+                    Player.STATE_IDLE,
+                    Player.STATE_ENDED -> {
+                        songIsLoading = false
+                    }
                 }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                songIsLoading = false
+                songIsPlaying = false
             }
         }
         player?.addListener(listener)
