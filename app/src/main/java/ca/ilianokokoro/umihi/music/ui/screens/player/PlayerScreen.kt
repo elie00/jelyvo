@@ -359,7 +359,9 @@ fun PlayerScreen(
         QueueBottomSheet(
             changeVisibility = playerViewModel::setQueueVisibility,
             songs = uiState.queue,
-            currentIndex = uiState.currentIndex
+            currentIndex = uiState.currentIndex,
+            isSavingQueue = uiState.isSavingQueue,
+            onSaveQueue = playerViewModel::saveQueueAsPlaylist,
         )
     }
 

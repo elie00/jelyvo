@@ -7,16 +7,25 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,12 +59,17 @@ fun QueueBottomSheet(
     changeVisibility: (visible: Boolean) -> Unit,
     songs: List<Song>,
     currentIndex: Int,
+    isSavingQueue: Boolean = false,
+    onSaveQueue: (name: String, songs: List<Song>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     val hapticFeedback = LocalHapticFeedback.current
 
     var mutableSongList by remember(songs) { mutableStateOf(songs) }
     var startIndex by remember { mutableIntStateOf(0) }
+    var isSaveDialogShown by remember { mutableStateOf(false) }
+    val sourceName by PlayerManager.queueSourceName.collectAsStateWithLifecycle()
+    val isRadio by PlayerManager.isRadioQueue.collectAsStateWithLifecycle()
 
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
@@ -88,9 +102,6 @@ fun QueueBottomSheet(
             modifier = modifier
                 .fillMaxSize()
         ) {
-            val sourceName by PlayerManager.queueSourceName.collectAsStateWithLifecycle()
-            val isRadio by PlayerManager.isRadioQueue.collectAsStateWithLifecycle()
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -132,6 +143,22 @@ fun QueueBottomSheet(
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                     )
+                }
+                FilledTonalIconButton(
+                    onClick = { isSaveDialogShown = true },
+                    enabled = mutableSongList.isNotEmpty() && !isSavingQueue,
+                ) {
+                    if (isSavingQueue) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                            contentDescription = stringResource(R.string.save_queue),
+                        )
+                    }
                 }
             }
 
@@ -211,6 +238,19 @@ fun QueueBottomSheet(
             }
         }
     }
+
+    if (isSaveDialogShown) {
+        SaveQueueDialog(
+            initialName = sourceName?.takeIf(String::isNotBlank)
+                ?: stringResource(R.string.my_queue),
+            songCount = mutableSongList.size,
+            onDismiss = { isSaveDialogShown = false },
+            onConfirm = { name ->
+                isSaveDialogShown = false
+                onSaveQueue(name, mutableSongList)
+            },
+        )
+    }
 }
 
 @Composable
@@ -220,5 +260,54 @@ private fun QueueSectionHeader(text: String) {
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+    )
+}
+
+@Composable
+private fun SaveQueueDialog(
+    initialName: String,
+    songCount: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var name by remember(initialName) { mutableStateOf(initialName) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.save_queue_title),
+                fontWeight = FontWeight.Bold,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = stringResource(R.string.queue_save_description, songCount),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.playlist_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name.trim()) },
+                enabled = name.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.save_queue))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.close))
+            }
+        },
     )
 }
