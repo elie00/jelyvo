@@ -5,8 +5,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
@@ -19,6 +20,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,20 +99,24 @@ fun QueueSongListItem(
                     }
                 }
 
-                Icon(
-                    imageVector = Icons.Rounded.DragHandle,
-                    contentDescription = stringResource(R.string.reorder),
-                    modifier =
-                        with(scope) {
-                            Modifier
-                                .height(innerHeight)
-                                .draggableHandle(
-                                    onDragStarted = { onDragStarted() },
-                                    onDragStopped =
-                                        onDragStopped,
-                                )
-                        },
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = with(scope) {
+                        Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(48.dp)
+                            .draggableHandle(
+                                onDragStarted = { onDragStarted() },
+                                onDragStopped = onDragStopped,
+                            )
+                    },
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.DragHandle,
+                        contentDescription = stringResource(R.string.reorder),
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
             }
         },
         supportingContent = {
