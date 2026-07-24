@@ -17,8 +17,15 @@ import android.app.NotificationManager as AndroidNotificationManager
 object NotificationManager {
     private lateinit var androidNotificationManager: AndroidNotificationManager
     private lateinit var pendingIntent: PendingIntent
+    @Volatile
+    private var initialized = false
 
+    @Synchronized
     fun init(context: Context) {
+        if (initialized) {
+            return
+        }
+
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
         pendingIntent = PendingIntent.getActivity(
             context,
@@ -44,6 +51,7 @@ object NotificationManager {
         } else {
             printe("Could not start the notification channels because the android version is too old")
         }
+        initialized = true
     }
 
     fun showPlaylistDownloadWaitingForWifi(
@@ -275,6 +283,7 @@ object NotificationManager {
         context: Context,
         channel: NotificationChannels
     ): NotificationCompat.Builder {
+        init(context.applicationContext)
         return NotificationCompat.Builder(
             context,
             channel.channelId

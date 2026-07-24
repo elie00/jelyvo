@@ -1,14 +1,8 @@
 package ca.ilianokokoro.umihi.music
 
 import android.app.Application
-import android.os.Handler
-import android.os.Looper
 import androidx.work.Configuration
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
-import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
-import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
-import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -16,58 +10,16 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import okio.Path.Companion.toOkioPath
 
 class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provider {
 
     /**
-     * Disables WorkManager's eager ContentProvider startup. The first scheduler call (delayed below)
-     * initializes it with this configuration after the launch frames are already visible.
+     * Disables WorkManager's eager ContentProvider startup. Feature toggles initialize it only
+     * when they actually schedule or cancel background work.
      */
     override val workManagerConfiguration: Configuration by lazy {
         Configuration.Builder().build()
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-
-        // Avoid loading coroutine, DataStore and WorkManager internals while Android is waiting for
-        // the first app frame. The main looper is already initialized by the process, so this tiny
-        // delayed hand-off adds virtually no work to Application.onCreate().
-        Handler.createAsync(Looper.getMainLooper()).postDelayed({
-            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                initializeBackgroundMaintenance()
-            }
-        }, BACKGROUND_INIT_DELAY_MS)
-    }
-
-    private suspend fun initializeBackgroundMaintenance() {
-            NotificationManager.init(this@Umihi)
-
-            // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means
-            // an already-running schedule is left untouched.
-            val datastoreRepository = DatastoreRepository(this@Umihi)
-
-            if (datastoreRepository.notifyNewReleases.first()) {
-                NewReleasesScheduler.schedule(this@Umihi)
-            } else {
-                NewReleasesScheduler.cancel(this@Umihi)
-            }
-
-            // (Re)schedule the periodic offline auto-download to match the persisted toggle.
-            if (datastoreRepository.autoDownload.first()) {
-                OfflineSyncScheduler.schedule(
-                    this@Umihi,
-                    datastoreRepository.autoDownloadWifiOnly.first()
-                )
-            } else {
-                OfflineSyncScheduler.cancel(this@Umihi)
-            }
     }
 
     /**
@@ -99,6 +51,5 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
         private const val IMAGE_CACHE_DIR = "image_cache"
         private const val DISK_CACHE_SIZE_BYTES = 250L * 1024 * 1024
         private const val MEMORY_CACHE_PERCENT = 0.25
-        private const val BACKGROUND_INIT_DELAY_MS = 750L
     }
 }
