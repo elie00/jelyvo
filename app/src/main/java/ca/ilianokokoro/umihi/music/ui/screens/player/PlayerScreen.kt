@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -193,14 +194,14 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
 
             ) {
-                if (uiState.hasVideoVariant) {
-                    PlaybackModeToggle(
-                        isVideoMode = currentSong?.forceVideo == true,
-                        enabled = !uiState.isSwitchingPlaybackMode,
-                        onSelectMode = playerViewModel::setPlaybackMode,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
+                PlayerTopBar(
+                    onBack = onBack,
+                    onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
+                    hasVideoVariant = uiState.hasVideoVariant,
+                    isVideoMode = isVideoMode,
+                    isModeSwitchEnabled = !uiState.isSwitchingPlaybackMode,
+                    onSelectMode = playerViewModel::setPlaybackMode,
+                )
 
                 ArtworkOrLyrics(
                     currentSong = currentSong,
@@ -214,13 +215,13 @@ fun PlayerScreen(
                     artworkModifier = artworkModifier,
                     modifier = Modifier
                         .fillMaxHeight()
-                        .weight(1f)
+                        .weight(1.08f)
                 )
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
-                        .padding(horizontal = 8.dp),
+                        .weight(0.92f)
+                        .padding(horizontal = 20.dp),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -231,7 +232,7 @@ fun PlayerScreen(
                         isLiking = uiState.isLiking,
                         onToggleLike = playerViewModel::toggleLike,
                         onArtistClick = { playerViewModel.openArtist(onOpenArtist) },
-                        onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
+                        showMoreButton = false,
                     )
                     PlayerControls(
                         isPlaying = uiState.isPlaying,
@@ -485,6 +486,75 @@ fun Thumbnail(
                             onHorizontalDrag = { _, dragAmount -> dragTotal += dragAmount }
                         )
                     }
+            )
+        }
+    }
+}
+
+/**
+ * Stable player chrome: back and overflow stay in the same place while the center slot switches
+ * between the quiet "now playing" label and Song/Video mode. This prevents the artwork from
+ * jumping when video availability resolves asynchronously.
+ */
+@Composable
+private fun PlayerTopBar(
+    onBack: () -> Unit,
+    onMoreClick: () -> Unit,
+    hasVideoVariant: Boolean,
+    isVideoMode: Boolean,
+    isModeSwitchEnabled: Boolean,
+    onSelectMode: (Boolean) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        IconButton(
+            onClick = onBack,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .clip(CircleShape),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = stringResource(R.string.back),
+            )
+        }
+
+        if (hasVideoVariant) {
+            PlaybackModeToggle(
+                isVideoMode = isVideoMode,
+                enabled = isModeSwitchEnabled,
+                onSelectMode = onSelectMode,
+            )
+        } else {
+            Text(
+                text = stringResource(R.string.playing_now),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        IconButton(
+            onClick = onMoreClick,
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .clip(CircleShape),
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.MoreVert,
+                contentDescription = stringResource(R.string.more),
             )
         }
     }
@@ -905,6 +975,7 @@ fun SongInfo(
     onToggleLike: () -> Unit = {},
     onArtistClick: () -> Unit = {},
     onMoreClick: () -> Unit = {},
+    showMoreButton: Boolean = true,
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -987,16 +1058,18 @@ fun SongInfo(
                 }
             }
 
-            IconButton(
-                onClick = onMoreClick,
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.MoreVert,
-                    contentDescription = stringResource(R.string.more)
-                )
+            if (showMoreButton) {
+                IconButton(
+                    onClick = onMoreClick,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.MoreVert,
+                        contentDescription = stringResource(R.string.more)
+                    )
+                }
             }
         }
     }

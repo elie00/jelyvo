@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -107,6 +106,15 @@ fun PlayerControls(
                 onUpdateSeekBarHeldState(false)
             },
 
+            thumb = {
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            },
+
             track = { sliderState ->
                 LinearWavyProgressIndicator(
                     progress = { sliderState.coercedValueAsFraction },
@@ -198,8 +206,11 @@ fun PlayerControls(
 
         // Secondary controls: ghost icon buttons, active states get a pill background
         Row(
-            modifier = Modifier.fillMaxHeight(),
-            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
