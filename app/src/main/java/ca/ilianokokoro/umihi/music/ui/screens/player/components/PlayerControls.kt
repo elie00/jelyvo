@@ -55,12 +55,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
+import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.speedLabel
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
@@ -247,9 +251,15 @@ fun PlayerControls(
                     },
                     icon = Icons.Rounded.Speed,
                     contentDescription = stringResource(R.string.playback_speed),
+                    statusText = playbackSpeed
+                        .takeIf { it != 1.0f }
+                        ?.speedLabel(),
                 )
 
                 // Sleep Timer
+                val sleepTimerStatus = sleepTimerRemainingSeconds
+                    ?.coerceAtLeast(0L)
+                    ?.let(::formatTimerStatus)
                 GhostToggleButton(
                     checked = sleepTimerRemainingSeconds != null,
                     onCheckedChange = {
@@ -258,6 +268,10 @@ fun PlayerControls(
                     },
                     icon = Icons.Rounded.Timer,
                     contentDescription = stringResource(R.string.sleep_timer),
+                    statusText = sleepTimerStatus,
+                    stateDescription = sleepTimerStatus?.let { remaining ->
+                        "$remaining, ${stringResource(R.string.sleep_timer_remaining)}"
+                    },
                 )
 
                 // Queue
@@ -419,6 +433,8 @@ private fun GhostToggleButton(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     showDotIndicator: Boolean = false,
+    statusText: String? = null,
+    stateDescription: String? = statusText,
 ) {
     IconToggleButton(
         checked = checked,
@@ -431,14 +447,37 @@ private fun GhostToggleButton(
         modifier = modifier
             .minimumInteractiveComponentSize()
             .size(SecondaryButtonSize)
-            .clip(RoundedCornerShape(percent = 50)),
+            .clip(RoundedCornerShape(percent = 50))
+            .semantics {
+                stateDescription?.let { this.stateDescription = it }
+            },
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(SecondaryIconSize)
+                modifier = Modifier
+                    .offset(y = if (statusText == null) 0.dp else (-4).dp)
+                    .size(if (statusText == null) SecondaryIconSize else 20.dp)
             )
+            statusText?.let { status ->
+                Text(
+                    text = status,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 8.sp,
+                        lineHeight = 8.sp,
+                        fontFeatureSettings = "tnum",
+                    ),
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 4.dp),
+                )
+            }
             if (showDotIndicator) {
                 Box(
                     modifier = Modifier
@@ -451,4 +490,10 @@ private fun GhostToggleButton(
             }
         }
     }
+}
+
+private fun formatTimerStatus(totalSeconds: Long): String {
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%d:%02d".format(minutes, seconds)
 }
