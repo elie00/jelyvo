@@ -2,8 +2,12 @@ package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +45,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -219,7 +225,10 @@ fun PlayerControls(
                 // Speed
                 GhostToggleButton(
                     checked = playbackSpeed != 1.0f,
-                    onCheckedChange = { onOpenSpeedSelector() },
+                    onCheckedChange = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onOpenSpeedSelector()
+                    },
                     icon = Icons.Rounded.Speed,
                     contentDescription = stringResource(R.string.playback_speed),
                 )
@@ -227,14 +236,20 @@ fun PlayerControls(
                 // Sleep Timer
                 GhostToggleButton(
                     checked = sleepTimerRemainingSeconds != null,
-                    onCheckedChange = { onOpenSleepTimer() },
+                    onCheckedChange = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onOpenSleepTimer()
+                    },
                     icon = Icons.Rounded.Timer,
                     contentDescription = stringResource(R.string.sleep_timer),
                 )
 
                 // Queue
                 IconButton(
-                    onClick = onOpenQueue,
+                    onClick = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                        onOpenQueue()
+                    },
                     colors = IconButtonDefaults.iconButtonColors(
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     ),
@@ -252,7 +267,10 @@ fun PlayerControls(
                 // Shuffle
                 GhostToggleButton(
                     checked = shuffleEnabled,
-                    onCheckedChange = { PlayerManager.toggleShuffleMode() },
+                    onCheckedChange = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                        PlayerManager.toggleShuffleMode()
+                    },
                     icon = Icons.Rounded.Shuffle,
                     contentDescription = stringResource(R.string.shuffle),
                 )
@@ -260,12 +278,15 @@ fun PlayerControls(
                 // Repeat
                 GhostToggleButton(
                     checked = repeatMode == Player.REPEAT_MODE_ALL || repeatMode == Player.REPEAT_MODE_ONE,
-                    onCheckedChange = { PlayerManager.cycleRepeatMode() },
+                    onCheckedChange = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                        PlayerManager.cycleRepeatMode()
+                    },
                     icon = when (repeatMode) {
                         Player.REPEAT_MODE_ONE -> Icons.Rounded.RepeatOne
                         else -> Icons.Rounded.Repeat
                     },
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.repeat),
                     showDotIndicator = repeatMode == Player.REPEAT_MODE_ONE,
                 )
             }
@@ -284,6 +305,13 @@ private fun PlayPauseMorphButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.96f else 1f,
+        animationSpec = tween(durationMillis = if (isPressed) 90 else 140),
+        label = "playPausePressScale",
+    )
     val cornerRadius: Dp by animateDpAsState(
         targetValue = if (isPlaying && !isLoading) {
             22.dp
@@ -302,9 +330,14 @@ private fun PlayPauseMorphButton(
         shape = RoundedCornerShape(cornerRadius),
         color = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
+        interactionSource = interactionSource,
         modifier = modifier
             .minimumInteractiveComponentSize()
-            .size(PlayPauseButtonSize),
+            .size(PlayPauseButtonSize)
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            },
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (isLoading) {
