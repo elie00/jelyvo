@@ -91,6 +91,8 @@ fun PlayerControls(
     val player by PlayerManager.controllerState.collectAsStateWithLifecycle()
     val repeatMode = ComposeHelper.rememberRepeatMode(player)
     val shuffleEnabled = ComposeHelper.rememberShuffleMode(player)
+    val seekEnabled = !isLoading && progress.duration > 0f
+    val safeDuration = progress.duration.coerceAtLeast(1f)
 
     Column(
         modifier = modifier
@@ -99,8 +101,9 @@ fun PlayerControls(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Slider(
-            value = progress.position,
-            valueRange = 0f..progress.duration,
+            value = progress.position.coerceIn(0f, safeDuration),
+            valueRange = 0f..safeDuration,
+            enabled = seekEnabled,
 
             onValueChange = { newValue ->
                 onUpdateSeekBarHeldState(true)
@@ -108,6 +111,7 @@ fun PlayerControls(
             },
 
             onValueChangeFinished = {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
                 onSeekPlayer()
                 onUpdateSeekBarHeldState(false)
             },
@@ -117,7 +121,13 @@ fun PlayerControls(
                     modifier = Modifier
                         .size(14.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
+                        .background(
+                            if (seekEnabled) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
+                            }
+                        )
                 )
             },
 
@@ -126,7 +136,7 @@ fun PlayerControls(
                     progress = { sliderState.coercedValueAsFraction },
                     modifier = Modifier.fillMaxWidth(),
                     // Flat track while paused, wavy while playing
-                    amplitude = { if (isPlaying) 1f else 0f },
+                    amplitude = { if (isPlaying && seekEnabled) 1f else 0f },
                 )
             },
 
@@ -149,12 +159,18 @@ fun PlayerControls(
             ) {
                 Text(
                     text = progress.position.toTimeString(),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum",
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = progress.duration.toTimeString(),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum",
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
