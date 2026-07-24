@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music
 
 import android.app.Application
+import android.os.Handler
+import android.os.Looper
 import androidx.work.Configuration
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
@@ -18,7 +20,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okio.Path.Companion.toOkioPath
 
@@ -35,10 +36,17 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
     override fun onCreate() {
         super.onCreate()
 
-        // Notification-channel binder calls and WorkManager class loading are not needed for the
-        // first frame. Give the activity a clean launch window before background maintenance starts.
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-            delay(BACKGROUND_INIT_DELAY_MS)
+        // Avoid loading coroutine, DataStore and WorkManager internals while Android is waiting for
+        // the first app frame. The main looper is already initialized by the process, so this tiny
+        // delayed hand-off adds virtually no work to Application.onCreate().
+        Handler.createAsync(Looper.getMainLooper()).postDelayed({
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                initializeBackgroundMaintenance()
+            }
+        }, BACKGROUND_INIT_DELAY_MS)
+    }
+
+    private suspend fun initializeBackgroundMaintenance() {
             NotificationManager.init(this@Umihi)
 
             // (Re)schedule the periodic new-releases check to match the persisted toggle. KEEP means
@@ -60,7 +68,6 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
             } else {
                 OfflineSyncScheduler.cancel(this@Umihi)
             }
-        }
     }
 
     /**
