@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+   Auto Backup rules for API 30 and below (API 31+ uses data_extraction_rules.xml).
+   Only excludes: everything else is still backed up.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Session store: files/datastore/umihi-mobile.preferences_pb (+ its .tmp/.lock siblings)
+         holds the encrypted YouTube cookie and the data-sync id. The AES key that protects it
+         lives in the Android Keystore and never leaves the device, so a restored copy is an
+         undecryptable blob; the rest of the settings share the same file and go with it. -->
+    <exclude domain="file" path="datastore" />
+    <!-- Downloaded audio + thumbnails. Gigabytes against a 25 MB backup quota: including them
+         would make the whole backup fail. -->
+    <exclude domain="file" path="downloads" />
+    <!-- Room DB (umihi-music + SQLite sidecars): songs store absolute audioFilePath /
+         thumbnailPath values under files/downloads, which is not restored, so restored rows
+         would advertise downloads that cannot be played. -->
+    <exclude domain="database" path="umihi-music" />
+    <exclude domain="database" path="umihi-music-wal" />
+    <exclude domain="database" path="umihi-music-shm" />
+    <exclude domain="database" path="umihi-music-journal" />
 </full-backup-content>

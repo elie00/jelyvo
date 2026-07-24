@@ -109,7 +109,9 @@ class DatastoreRepository(private val context: Context) {
             Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_MAX
         )
         val cookies = cookies.first()
-        val dataSyncId = dataSyncId.first()
+        // onBehalfOfUser identifies the signed-in channel; without a cookie there is no session to
+        // act on behalf of, so a failed decrypt reads as fully logged out.
+        val dataSyncId = if (cookies.isEmpty()) null else dataSyncId.first()
 
         mirrorUseSpecialLanguage(useSpecialLanguage)
 
@@ -238,7 +240,9 @@ class DatastoreRepository(private val context: Context) {
 
     val cookies = context.dataStore.data.map {
         val stored = it[COOKIES] ?: String()
-        Cookies(if (stored.isEmpty()) stored else KeystoreCrypto.decrypt(stored))
+        // A null decrypt means the key is gone (restored data, wiped Keystore): read it as logged
+        // out rather than handing a corrupt cookie to the API layer.
+        Cookies(if (stored.isEmpty()) stored else KeystoreCrypto.decrypt(stored).orEmpty())
     }
 
     val dataSyncId: Flow<String?> = flow {
@@ -257,8 +261,15 @@ class DatastoreRepository(private val context: Context) {
 
     suspend fun saveCookies(cookies: Cookies) {
         val raw = cookies.toRawCookie()
+        val stored = if (raw.isEmpty()) raw else KeystoreCrypto.encrypt(raw)
         context.dataStore.edit {
-            it[COOKIES] = if (raw.isEmpty()) raw else KeystoreCrypto.encrypt(raw)
+            // No ciphertext means encryption failed: drop the session rather than persist the
+            // cookie in clear.
+            if (stored == null) {
+                it.remove(COOKIES)
+            } else {
+                it[COOKIES] = stored
+            }
         }
         // Cached responses belong to the previous account state (login/logout).
         ResponseCache.clear()
