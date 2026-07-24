@@ -917,6 +917,8 @@ private fun FullscreenVideoControls(
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
+    val seekEnabled = !uiState.isLoading && uiState.playbackProgress.duration > 0f
+    val safeDuration = uiState.playbackProgress.duration.coerceAtLeast(1f)
 
     Box(
         modifier = modifier
@@ -999,13 +1001,15 @@ private fun FullscreenVideoControls(
                 .padding(horizontal = 24.dp, vertical = 12.dp)
         ) {
             Slider(
-                value = uiState.playbackProgress.position,
-                valueRange = 0f..uiState.playbackProgress.duration,
+                value = uiState.playbackProgress.position.coerceIn(0f, safeDuration),
+                valueRange = 0f..safeDuration,
+                enabled = seekEnabled,
                 onValueChange = { newValue ->
                     onUpdateSeekBarHeldState(true)
                     onSeek(newValue)
                 },
                 onValueChangeFinished = {
+                    haptic.performHapticFeedback(HapticFeedbackType.GestureEnd)
                     onSeekPlayer()
                     onUpdateSeekBarHeldState(false)
                 },
@@ -1014,7 +1018,7 @@ private fun FullscreenVideoControls(
                         progress = { sliderState.coercedValueAsFraction },
                         modifier = Modifier.fillMaxWidth(),
                         // Flat track while paused, wavy while playing
-                        amplitude = { if (uiState.isPlaying) 1f else 0f },
+                        amplitude = { if (uiState.isPlaying && seekEnabled) 1f else 0f },
                     )
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -1026,12 +1030,18 @@ private fun FullscreenVideoControls(
             ) {
                 Text(
                     text = uiState.playbackProgress.position.toTimeString(),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum",
+                    ),
                     color = Color.White
                 )
                 Text(
                     text = uiState.playbackProgress.duration.toTimeString(),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum",
+                    ),
                     color = Color.White
                 )
             }
