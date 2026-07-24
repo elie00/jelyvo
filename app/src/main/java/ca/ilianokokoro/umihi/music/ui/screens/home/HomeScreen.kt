@@ -8,23 +8,32 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -189,17 +198,47 @@ fun HomeScreen(
                         }
                     }
 
-                    ScreenState.LoggedOut -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    ScreenState.LoggedOut -> Column(
+                        modifier = Modifier.padding(horizontal = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(124.dp),
+                            shape = RoundedCornerShape(36.dp),
+                            color = Color(0xFF171A22),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_umihi_foreground),
+                                contentDescription = null,
+                                tint = Color.Unspecified,
+                                modifier = Modifier.padding(8.dp),
+                            )
+                        }
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
                         Text(
                             stringResource(R.string.log_in_message),
-                            textAlign = TextAlign.Center
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
                         )
                         FilledTonalButton(
                             onClick = onSettingsButtonPress,
                             shapes = ButtonDefaults.shapes()
-                        )
-                        {
-                            Text(stringResource(R.string.open_settings))
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.Login,
+                                contentDescription = null,
+                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                            )
+                            Text(
+                                text = stringResource(R.string.log_in),
+                                modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
+                            )
                         }
                     }
 

@@ -4,7 +4,7 @@
     <string name="settings">Paramètres</string>
     <string name="back_description">Écran précédent</string>
     <string name="no_playlists">Aucune playlist trouvée</string>
-    <string name="log_in_message">Veuillez vous connecter à votre compte YouTube pour utiliser l\'application</string>
+    <string name="log_in_message">Connectez votre compte YouTube pour retrouver votre bibliothèque, vos playlists et vos recommandations dans Umihi.</string>
     <string name="library_logged_out_banner">Connectez-vous à votre compte YouTube pour retrouver vos titres likés, albums enregistrés et artistes suivis.</string>
     <string name="playlist_cover">Couverture de la playlist</string>
     <string name="log_in">Connexion</string>
