@@ -18,6 +18,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
@@ -552,9 +554,32 @@ private fun PlayerTopBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .pointerInput(onBack) {
+                var downwardDrag = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { downwardDrag = 0f },
+                    onDragEnd = {
+                        if (downwardDrag >= 72.dp.toPx()) {
+                            onBack()
+                        }
+                    },
+                    onVerticalDrag = { change, dragAmount ->
+                        downwardDrag = (downwardDrag + dragAmount).coerceAtLeast(0f)
+                        change.consume()
+                    },
+                )
+            }
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .size(width = 34.dp, height = 4.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.28f)),
+        )
+
         IconButton(
             onClick = onBack,
             colors = IconButtonDefaults.iconButtonColors(
@@ -566,7 +591,7 @@ private fun PlayerTopBar(
                 .clip(CircleShape),
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                imageVector = Icons.Rounded.KeyboardArrowDown,
                 contentDescription = stringResource(R.string.back),
             )
         }
