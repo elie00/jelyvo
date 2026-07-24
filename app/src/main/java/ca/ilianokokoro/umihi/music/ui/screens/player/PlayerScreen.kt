@@ -1014,6 +1014,20 @@ private fun FullscreenVideoControls(
                     onSeekPlayer()
                     onUpdateSeekBarHeldState(false)
                 },
+                thumb = {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (seekEnabled) {
+                                    Color.White
+                                } else {
+                                    Color.White.copy(alpha = 0.38f)
+                                }
+                            )
+                    )
+                },
                 track = { sliderState ->
                     LinearWavyProgressIndicator(
                         progress = { sliderState.coercedValueAsFraction },
