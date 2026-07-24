@@ -9,6 +9,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,11 +54,13 @@ fun MiniPlayer(
     onClick: () -> Unit,
     onPlayPause: () -> Unit,
     onSkipNext: () -> Unit,
+    onSkipPrevious: () -> Unit,
     isPlaying: Boolean,
     isLoading: Boolean,
     progressFraction: Float,
 ) {
     val controlsInteractionSources = List(2) { ComposeHelper.rememberInteractionSource() }
+    val haptic = LocalHapticFeedback.current
 
     Card(
         modifier = modifier
@@ -92,7 +98,36 @@ fun MiniPlayer(
                         ) togetherWith fadeOut(tween(90))
                 },
                 label = "miniPlayerTrack",
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .pointerInput(currentSong.youtubeId) {
+                        var dragTotal = 0f
+                        val threshold = size.width * 0.18f
+                        detectHorizontalDragGestures(
+                            onDragStart = { dragTotal = 0f },
+                            onDragEnd = {
+                                when {
+                                    dragTotal <= -threshold -> {
+                                        haptic.performHapticFeedback(
+                                            HapticFeedbackType.GestureThresholdActivate
+                                        )
+                                        onSkipNext()
+                                    }
+
+                                    dragTotal >= threshold -> {
+                                        haptic.performHapticFeedback(
+                                            HapticFeedbackType.GestureThresholdActivate
+                                        )
+                                        onSkipPrevious()
+                                    }
+                                }
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                dragTotal += dragAmount
+                                change.consume()
+                            },
+                        )
+                    },
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SquareImage(
