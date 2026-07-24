@@ -12,7 +12,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
-import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -21,6 +20,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,11 +43,11 @@ fun MiniPlayer(
     onClick: () -> Unit,
     onPlayPause: () -> Unit,
     onSkipNext: () -> Unit,
-    onSkipPrevious: () -> Unit,
     isPlaying: Boolean,
     isLoading: Boolean,
+    progressFraction: Float,
 ) {
-    val controlsInteractionSources = List(3) { ComposeHelper.rememberInteractionSource() }
+    val controlsInteractionSources = List(2) { ComposeHelper.rememberInteractionSource() }
 
     Card(
         modifier = modifier
@@ -63,10 +63,16 @@ fun MiniPlayer(
         // Flat: the mini player sits welded on the navigation bar's surface, no shadow between.
         elevation = CardDefaults.cardElevation(0.dp)
     ) {
+        LinearWavyProgressIndicator(
+            progress = { progressFraction },
+            modifier = Modifier.fillMaxWidth(),
+            amplitude = { if (isPlaying) 1f else 0f },
+        )
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             SquareImage(
@@ -103,25 +109,6 @@ fun MiniPlayer(
             ) {
                 customItem(
                     {
-                        FilledIconButton(
-                            onClick = onSkipPrevious,
-                            shapes = IconButtonDefaults.shapes(),
-                            interactionSource = controlsInteractionSources[0],
-                            modifier = Modifier.animateWidth(
-                                interactionSource = controlsInteractionSources[0]
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.SkipPrevious,
-                                contentDescription = stringResource(R.string.previous),
-                            )
-                        }
-                    },
-                    {}
-                )
-
-                customItem(
-                    {
                         FilledIconToggleButton(
                             enabled = !isLoading,
                             checked = isPlaying && !isLoading,
@@ -132,9 +119,9 @@ fun MiniPlayer(
                             },
                             shapes = IconButtonDefaults.toggleableShapes()
                                 .copy(checkedShape = IconButtonDefaults.shapes().shape),
-                            interactionSource = controlsInteractionSources[1],
+                            interactionSource = controlsInteractionSources[0],
                             modifier = Modifier.animateWidth(
-                                interactionSource = controlsInteractionSources[1]
+                                interactionSource = controlsInteractionSources[0]
                             )
                         ) {
                             if (isLoading) {
@@ -149,7 +136,9 @@ fun MiniPlayer(
                                 }
                                 Icon(
                                     imageVector = icon,
-                                    contentDescription = icon.name,
+                                    contentDescription = stringResource(
+                                        if (isPlaying) R.string.pause else R.string.play
+                                    ),
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -163,9 +152,9 @@ fun MiniPlayer(
                         FilledIconButton(
                             onClick = onSkipNext,
                             shapes = IconButtonDefaults.shapes(),
-                            interactionSource = controlsInteractionSources[2],
+                            interactionSource = controlsInteractionSources[1],
                             modifier = Modifier.animateWidth(
-                                interactionSource = controlsInteractionSources[2]
+                                interactionSource = controlsInteractionSources[1]
                             )
                         ) {
                             Icon(

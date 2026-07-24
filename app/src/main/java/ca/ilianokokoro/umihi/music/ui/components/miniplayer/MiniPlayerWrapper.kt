@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -27,6 +29,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
+import kotlinx.coroutines.delay
 
 @Composable
 fun MiniPlayerWrapper(
@@ -42,6 +45,9 @@ fun MiniPlayerWrapper(
     }
     var songIsLoading by remember(player) {
         mutableStateOf(player?.playbackState == Player.STATE_BUFFERING)
+    }
+    var progressFraction by remember(player) {
+        mutableFloatStateOf(0f)
     }
 
     val bottomInsetPx: Int = with(LocalDensity.current) {
@@ -80,6 +86,23 @@ fun MiniPlayerWrapper(
         onDispose { player?.removeListener(listener) }
     }
 
+    // A lightweight ticker keeps Umihi's signature pulse accurate without involving the
+    // full-player ViewModel. It stops whenever playback pauses or the dock is hidden.
+    LaunchedEffect(player, currentSong?.youtubeId, songIsPlaying, showMiniPlayer) {
+        while (true) {
+            val duration = player?.duration ?: 0L
+            progressFraction = if (duration > 0L) {
+                ((player?.currentPosition ?: 0L).toFloat() / duration.toFloat())
+                    .coerceIn(0f, 1f)
+            } else {
+                0f
+            }
+
+            if (songIsPlaying != true || !showMiniPlayer) break
+            delay(500)
+        }
+    }
+
     AnimatedVisibility(
         visible = currentSong != null && showMiniPlayer,
         enter = slideInVertically(initialOffsetY = { it + bottomInsetPx }),
@@ -106,9 +129,9 @@ fun MiniPlayerWrapper(
                     }
                 },
                 onSkipNext = { player?.seekToNext() },
-                onSkipPrevious = { player?.seekToPrevious() },
                 isPlaying = songIsPlaying == true,
-                isLoading = songIsLoading
+                isLoading = songIsLoading,
+                progressFraction = progressFraction,
             )
         }
     }
