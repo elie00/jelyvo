@@ -39,6 +39,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
@@ -291,7 +292,15 @@ class PlaybackService : MediaLibraryService() {
                 if (consecutivePlaybackErrors >= queueSize ||
                     consecutivePlaybackErrors >= MAX_CONSECUTIVE_PLAYBACK_ERRORS
                 ) {
-                    Toast.makeText(applicationContext, error.message, Toast.LENGTH_LONG).show()
+                    printe(
+                        message = "Playback stopped after $consecutivePlaybackErrors consecutive errors",
+                        exception = error,
+                    )
+                    Toast.makeText(
+                        applicationContext,
+                        getString(R.string.playback_failed),
+                        Toast.LENGTH_LONG,
+                    ).show()
                     player.pause()
                     return
                 }
