@@ -2,7 +2,6 @@ package ca.ilianokokoro.umihi.music
 
 import android.app.Application
 import androidx.work.Configuration
-import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
@@ -35,9 +34,6 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
 
     override fun onCreate() {
         super.onCreate()
-
-        // Wire the response cache's on-disk mirror so the home feed can paint on a cold start.
-        ResponseCache.init(cacheDir)
 
         // Notification-channel binder calls and WorkManager class loading are not needed for the
         // first frame. Give the activity a clean launch window before background maintenance starts.

@@ -22,13 +22,11 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -38,6 +36,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
@@ -55,34 +54,37 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val songRepository by lazy { SongRepository() }
     private val datastoreRepository by lazy { DatastoreRepository(applicationContext) }
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) {}
 
     /** Mirrors [isInPictureInPictureMode] into Compose so the video-only PiP layer can be shown. */
-    private var isInPipMode by mutableStateOf(false)
+    private val isInPipModeState by lazy(LazyThreadSafetyMode.NONE) {
+        mutableStateOf(false)
+    }
     private var postFirstFrameInitialized = false
     private var pipReceiverRegistered = false
 
     /** Handles the PiP window's play/pause remote action. */
-    private val pipActionReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action != Constants.Player.Pip.ACTION_PLAY_PAUSE) {
-                return
-            }
-            val controller = PlayerManager.currentController ?: return
-            if (controller.isPlaying) {
-                controller.pause()
-            } else {
-                controller.play()
+    private val pipActionReceiver by lazy(LazyThreadSafetyMode.NONE) {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action != Constants.Player.Pip.ACTION_PLAY_PAUSE) {
+                    return
+                }
+                val controller = PlayerManager.currentController ?: return
+                if (controller.isPlaying) {
+                    controller.pause()
+                } else {
+                    controller.play()
+                }
             }
         }
     }
 
     /** Keeps the PiP play/pause remote action in sync with the actual playback state. */
-    private val pipPlayerListener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            updatePipParams()
+    private val pipPlayerListener by lazy(LazyThreadSafetyMode.NONE) {
+        object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                updatePipParams()
+            }
         }
     }
 
@@ -99,12 +101,14 @@ class MainActivity : ComponentActivity() {
         handleShareIntent(intent)
         handleViewIntent(intent)
 
-        ScreenAwakeManager.registerActivity(this)
-
         //    debugPrintDataStores()
     }
 
     private fun setAppContent() {
+        // The native launch frame does not consume the response cache. Initialize its JSON and
+        // disk machinery only when Compose is about to create the home feed.
+        ResponseCache.init(cacheDir)
+
         setContent {
             val themeColor by datastoreRepository.themeColor
                 .collectAsStateWithLifecycle(
@@ -120,7 +124,7 @@ class MainActivity : ComponentActivity() {
 
                     // In PiP the whole activity is rendered in the tiny window: cover the app UI
                     // with a video-only layer so the window shows just the letterboxed video.
-                    if (isInPipMode) {
+                    if (isInPipModeState.value) {
                         PipVideoOverlay(modifier = Modifier.fillMaxSize())
                     }
                 }
@@ -160,6 +164,7 @@ class MainActivity : ComponentActivity() {
                 PlayerManager.connectController(this@MainActivity)
                 if (!postFirstFrameInitialized) {
                     postFirstFrameInitialized = true
+                    ScreenAwakeManager.registerActivity(this@MainActivity)
                     // PackageInfo and Room setup are useful later, never for launch rendering.
                     lifecycleScope.launch(Dispatchers.IO) {
                         VersionManager.initialize(applicationContext)
@@ -177,6 +182,7 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val FIRST_FRAME_LATCH_DELAY_MS = 32L
+        private const val REQUEST_CODE_NOTIFICATION_PERMISSION = 1001
     }
 
     override fun onDestroy() {
@@ -214,7 +220,7 @@ class MainActivity : ComponentActivity() {
         newConfig: Configuration
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        isInPipMode = isInPictureInPictureMode
+        isInPipModeState.value = isInPictureInPictureMode
         PlayerManager.setInPipMode(isInPictureInPictureMode)
     }
 
@@ -242,7 +248,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updatePipParams() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPipMode) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !isInPipModeState.value) {
             return
         }
         setPictureInPictureParams(buildPipParams(PlayerManager.isPlaying))
@@ -363,7 +369,10 @@ class MainActivity : ComponentActivity() {
 
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            requestPermissions(
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                REQUEST_CODE_NOTIFICATION_PERMISSION,
+            )
         }
     }
 
