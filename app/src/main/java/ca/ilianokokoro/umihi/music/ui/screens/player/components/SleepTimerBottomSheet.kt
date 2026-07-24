@@ -25,6 +25,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
@@ -80,7 +82,9 @@ fun SleepTimerBottomSheet(
                     ) {
                         Text(
                             text = "%d:%02d".format(minutes, seconds),
-                            style = MaterialTheme.typography.headlineLarge,
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontFeatureSettings = "tnum",
+                            ),
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
@@ -124,7 +128,9 @@ fun SleepTimerBottomSheet(
 
                 Text(
                     text = stringResource(R.string.minutes, sliderValue),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFeatureSettings = "tnum",
+                    ),
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
@@ -132,6 +138,7 @@ fun SleepTimerBottomSheet(
 
                 val range =
                     Constants.Ui.Player.SleepTimer.STEP_VALUE.toFloat()..(Constants.Ui.Player.SleepTimer.STEP_VALUE * Constants.Ui.Player.SleepTimer.STEP_AMOUNT).toFloat()
+                val sliderStateDescription = stringResource(R.string.minutes, sliderValue)
 
                 Slider(
                     value = sliderValue.toFloat(),
@@ -144,7 +151,11 @@ fun SleepTimerBottomSheet(
                     },
                     valueRange = range,
                     steps = Constants.Ui.Player.SleepTimer.STEP_AMOUNT - 2,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            stateDescription = sliderStateDescription
+                        },
                 )
 
                 val minLabel = Constants.Ui.Player.SleepTimer.STEP_VALUE
@@ -157,12 +168,16 @@ fun SleepTimerBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.short_minutes, minLabel),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFeatureSettings = "tnum",
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = stringResource(R.string.short_minutes, maxLabel),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontFeatureSettings = "tnum",
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

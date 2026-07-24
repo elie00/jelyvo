@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -67,11 +69,17 @@ fun SpeedSelectorBottomSheet(
             val speeds = Constants.Player.SPEEDS
             val initialIndex = speeds.indexOf(currentSpeed).coerceAtLeast(0)
             var sliderIndex by remember { mutableFloatStateOf(initialIndex.toFloat()) }
+            val selectedSpeed = speeds[
+                sliderIndex.roundToInt().coerceIn(0, speeds.lastIndex)
+            ]
+            val selectedSpeedLabel = selectedSpeed.speedLabel()
 
 
             Text(
-                text = speeds[sliderIndex.roundToInt().coerceIn(0, speeds.lastIndex)].speedLabel(),
-                style = MaterialTheme.typography.titleMedium,
+                text = selectedSpeedLabel,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontFeatureSettings = "tnum",
+                ),
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
@@ -82,14 +90,18 @@ fun SpeedSelectorBottomSheet(
                     val snapped =
                         newValue.roundToInt().toFloat().coerceIn(0f, speeds.lastIndex.toFloat())
                     if (snapped != sliderIndex) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
                     }
                     sliderIndex = snapped
                     onSelectSpeed(speeds[snapped.roundToInt()])
                 },
                 valueRange = 0f..speeds.lastIndex.toFloat(),
                 steps = speeds.size - 2,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        stateDescription = selectedSpeedLabel
+                    },
             )
 
             Row(
@@ -98,12 +110,16 @@ fun SpeedSelectorBottomSheet(
             ) {
                 Text(
                     text = speeds.first().speedLabel(),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFeatureSettings = "tnum",
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
                     text = speeds.last().speedLabel(),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFeatureSettings = "tnum",
+                    ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
