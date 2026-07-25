@@ -214,6 +214,12 @@
     <string name="audio_quality_high">High</string>
     <string name="data_saver_title">Data Saver</string>
     <string name="data_saver_description">Uses the lowest audio quality while on mobile data</string>
+    <string name="cast_unavailable">Casting is unavailable on this device</string>
+    <string name="cast_no_compatible_tracks">This queue contains no tracks Chromecast can play</string>
+    <plurals name="cast_local_tracks_skipped">
+        <item quantity="one">%d local track was skipped</item>
+        <item quantity="other">%d local tracks were skipped</item>
+    </plurals>
     <string name="download_on_metered_description">Allows downloading songs and playlists using your mobile data plan</string>
     <string name="smart_offline"><![CDATA[Smart Offline]]></string>
     <string name="auto_download_title">Auto-download offline</string>

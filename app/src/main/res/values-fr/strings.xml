@@ -207,6 +207,12 @@
     <string name="audio_quality_high">Élevée</string>
     <string name="data_saver_title">Économie de données</string>
     <string name="data_saver_description">Utilise la qualité audio la plus faible sur les réseaux mobiles</string>
+    <string name="cast_unavailable">La diffusion est indisponible sur cet appareil</string>
+    <string name="cast_no_compatible_tracks">Cette file ne contient aucun titre compatible avec Chromecast</string>
+    <plurals name="cast_local_tracks_skipped">
+        <item quantity="one">%d titre local a été ignoré</item>
+        <item quantity="other">%d titres locaux ont été ignorés</item>
+    </plurals>
     <string name="download_on_metered_description">Permet de télécharger des titres et des playlists en utilisant votre forfait de données mobiles</string>
     <string name="smart_offline"><![CDATA[Hors ligne intelligent]]></string>
     <string name="auto_download_title">Téléchargement automatique hors ligne</string>

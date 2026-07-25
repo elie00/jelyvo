@@ -41,6 +41,8 @@ import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.cast.CastManager
+import ca.ilianokokoro.umihi.music.core.cast.planCastHandover
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
@@ -367,6 +369,7 @@ class PlaybackService : MediaLibraryService() {
             .setBitmapLoader(CacheBitmapLoader(DataSourceBitmapLoader.Builder(this).build()))
             .build()
 
+        observeCastSessions()
         restoreQueueAndStartPersistence()
         startAudioVolumeManagement()
         startAudioOutputEqualizer()
@@ -511,6 +514,122 @@ class PlaybackService : MediaLibraryService() {
                 }
             }
         }
+    }
+
+    private fun observeCastSessions() {
+        serviceScope.launch {
+            CastManager.sessionPlayer.collect { castPlayer ->
+                withContext(Dispatchers.Main.immediate) {
+                    if (castPlayer != null) {
+                        startCasting(castPlayer)
+                    } else {
+                        stopCasting()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun startCasting(castPlayer: Player) {
+        if (isCasting) return
+        val session = mediaLibrarySession ?: return
+        if (castPlayer.applicationLooper != player.applicationLooper) {
+            Toast.makeText(
+                applicationContext,
+                getString(R.string.cast_unavailable),
+                Toast.LENGTH_LONG,
+            ).show()
+            CastManager.endCurrentSession()
+            return
+        }
+
+        val snapshot = captureQueueSnapshot()
+        val plan = planCastHandover(
+            songs = snapshot.songs,
+            currentIndex = snapshot.currentIndex,
+            positionMs = snapshot.positionMs,
+        )
+        if (plan.songs.isEmpty()) {
+            Toast.makeText(
+                applicationContext,
+                getString(R.string.cast_no_compatible_tracks),
+                Toast.LENGTH_LONG,
+            ).show()
+            CastManager.endCurrentSession()
+            return
+        }
+
+        val wasPlaying = player.playWhenReady
+        castPlayer.setMediaItems(
+            plan.songs.map { it.mediaItem },
+            plan.startIndex,
+            plan.startPositionMs,
+        )
+        castPlayer.repeatMode = snapshot.repeatMode
+        castPlayer.shuffleModeEnabled = snapshot.shuffleEnabled
+
+        player.removeListener(sessionListener)
+        try {
+            session.setPlayer(castPlayer)
+            isCasting = true
+            castPlayer.addListener(sessionListener)
+        } catch (_: IllegalArgumentException) {
+            player.addListener(sessionListener)
+            CastManager.endCurrentSession()
+            Toast.makeText(
+                applicationContext,
+                getString(R.string.cast_unavailable),
+                Toast.LENGTH_LONG,
+            ).show()
+            return
+        }
+
+        castPlayer.prepare()
+        castPlayer.playWhenReady = wasPlaying
+        player.pause()
+        if (plan.skippedLocalCount > 0) {
+            Toast.makeText(
+                applicationContext,
+                resources.getQuantityString(
+                    R.plurals.cast_local_tracks_skipped,
+                    plan.skippedLocalCount,
+                    plan.skippedLocalCount,
+                ),
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
+    private fun stopCasting() {
+        if (!isCasting) return
+        val session = mediaLibrarySession ?: return
+        val castPlayer = activePlayer
+        val wasPlaying = castPlayer.playWhenReady
+        val items = List(castPlayer.mediaItemCount) { index ->
+            castPlayer.getMediaItemAt(index).toSong().mediaItem
+        }
+        val currentIndex = castPlayer.currentMediaItemIndex
+            .coerceIn(0, (items.size - 1).coerceAtLeast(0))
+        val positionMs = castPlayer.currentPosition.coerceAtLeast(0L)
+        val repeatMode = castPlayer.repeatMode
+        val shuffleEnabled = castPlayer.shuffleModeEnabled
+
+        if (items.isEmpty()) {
+            player.clearMediaItems()
+        } else {
+            player.setMediaItems(items, currentIndex, positionMs)
+        }
+        player.repeatMode = repeatMode
+        player.shuffleModeEnabled = shuffleEnabled
+
+        castPlayer.removeListener(sessionListener)
+        session.setPlayer(player)
+        isCasting = false
+        player.addListener(sessionListener)
+        if (items.isNotEmpty()) player.prepare()
+        player.playWhenReady = wasPlaying
+        castPlayer.pause()
+        castPlayer.release()
     }
 
     /**
