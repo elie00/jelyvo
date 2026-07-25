@@ -13,6 +13,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.extensions.toSong
@@ -550,6 +551,20 @@ object PlayerManager {
         if (index in 0 until controller.mediaItemCount) {
             controller.removeMediaItem(index)
         }
+    }
+
+    /**
+     * Removes already queued copies of rejected autoplay suggestions. Descending removals preserve
+     * indices; pure filtering protects the playing item and anything explicitly queued by the user.
+     */
+    fun removeHiddenSuggestions(hidden: Set<String>) {
+        val controller = currentController ?: return
+        val indices = NotInterestedFilter.hiddenSuggestionIndices(
+            queue = getQueue(),
+            hidden = hidden,
+            currentIndex = controller.currentMediaItemIndex,
+        )
+        indices.sortedDescending().forEach(controller::removeMediaItem)
     }
 
     fun clearQueue() {

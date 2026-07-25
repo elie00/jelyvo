@@ -37,6 +37,7 @@ import androidx.glance.appwidget.updateAll
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
+import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.R
@@ -49,6 +50,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
+import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
@@ -458,13 +460,26 @@ class PlaybackService : MediaLibraryService() {
 
     private fun restoreQueueAndStartPersistence() {
         serviceScope.launch {
+            // Hydrate before restoring or fetching radio so rejected tracks cannot re-enter through
+            // a persisted suggestion after a cold start.
+            NotInterestedStore.hydrate(applicationContext, serviceScope)
             val restored = playerQueueRepository.restore()
             withContext(Dispatchers.Main) {
                 if (restored != null && player.mediaItemCount == 0) {
                     isRestoringQueue = true
+                    val hiddenIndices = NotInterestedFilter.hiddenSuggestionIndices(
+                        queue = restored.songs,
+                        hidden = NotInterestedStore.hiddenIds,
+                        currentIndex = restored.currentIndex,
+                    ).toSet()
                     player.setMediaItems(
-                        restored.songs.map { it.mediaItem },
-                        restored.currentIndex,
+                        restored.songs
+                            .filterIndexed { index, _ -> index !in hiddenIndices }
+                            .map { it.mediaItem },
+                        NotInterestedFilter.indexAfterRemovals(
+                            restored.currentIndex,
+                            hiddenIndices,
+                        ),
                         restored.positionMs,
                     )
                     player.repeatMode = restored.repeatMode

@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
+import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.data.datasources.RadioDataSource
 import ca.ilianokokoro.umihi.music.extensions.toException
 import ca.ilianokokoro.umihi.music.models.Song
@@ -16,7 +18,14 @@ class RadioRepository {
     fun getRelated(seed: Song): Flow<ApiResult<List<Song>>> {
         return flow {
             emit(ApiResult.Loading)
-            emit(ApiResult.Success(radioDataSource.getRelatedSongs(seed)))
+            emit(
+                ApiResult.Success(
+                    NotInterestedFilter.excludeHidden(
+                        songs = radioDataSource.getRelatedSongs(seed),
+                        hidden = NotInterestedStore.hiddenIds,
+                    )
+                )
+            )
         }.catch { e ->
             emit(ApiResult.Error(e.toException()))
         }.flowOn(Dispatchers.IO)

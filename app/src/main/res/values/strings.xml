@@ -334,4 +334,5 @@
     <string name="sort_duration">Duration</string>
     <string name="filter_songs">Filter songs</string>
     <string name="reorder_disabled_while_sorted">Reordering is paused while a filter or a sort is active</string>
+    <string name="not_interested_toast">Won\'t be suggested again</string>
 </resources>
