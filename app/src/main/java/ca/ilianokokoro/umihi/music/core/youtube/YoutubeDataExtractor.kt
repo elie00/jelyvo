@@ -10,6 +10,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.ConnectivityHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
+import ca.ilianokokoro.umihi.music.core.cast.castContentType
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
@@ -1942,17 +1943,58 @@ object YoutubeDataExtractor {
         context: Context,
         song: Song,
         allowLocal: Boolean = false
-    ): String {
+    ): String = resolvePlayback(
+        context = context,
+        song = song,
+        allowLocal = allowLocal,
+        minRemainingSeconds = STREAM_EXPIRY_SAFETY_SECONDS,
+    ).url
+
+    /**
+     * Resolves a receiver-accessible stream even when the same song has been downloaded locally.
+     * Cast URLs use a wider freshness margin because queued MediaInfo objects may be consumed much
+     * later than the current local item.
+     */
+    suspend fun getCastableStream(
+        context: Context,
+        song: Song,
+        minRemainingSeconds: Long = CAST_URL_MIN_LIFETIME_SECONDS,
+    ): CastableStream {
+        val resolved = resolvePlayback(
+            context = context,
+            song = song,
+            allowLocal = false,
+            minRemainingSeconds = minRemainingSeconds,
+        )
+        return CastableStream(
+            url = resolved.url,
+            contentType = castContentType(resolved.mimeType, resolved.url),
+        )
+    }
+
+    private suspend fun resolvePlayback(
+        context: Context,
+        song: Song,
+        allowLocal: Boolean,
+        minRemainingSeconds: Long,
+    ): ResolvedAudioStream {
         val quality = effectiveAudioQuality(context)
         invalidateStreamsIfQualityChanged(context, quality)
 
         val sessionCache = if (song.forceVideo) videoStreamCache else audioStreamCache
         sessionCache[song.youtubeId]?.let { cached ->
-            if (isPlaybackUrlFresh(cached.url)) {
+            if (
+                isPlaybackUrlFresh(
+                    url = cached.url,
+                    minRemainingSeconds = minRemainingSeconds,
+                )
+            ) {
                 PlaybackLoudnessStore.update(song.youtubeId, cached.loudnessDb)
                 printd("${song.youtubeId} : Got url from session cache")
-                return cached.url
+                return cached
             }
+            // A stricter Cast lookup may evict a URL local playback would still have reused. The
+            // replacement is resolved and cached immediately with enough lifetime for the queue.
             sessionCache.remove(song.youtubeId)
         }
 
@@ -1972,18 +2014,29 @@ object YoutubeDataExtractor {
             if (allowLocal && savedSong.audioFilePath != null) {
                 PlaybackLoudnessStore.update(song.youtubeId, savedSong.loudnessDb)
                 printd("${song.youtubeId} : Was downloaded")
-                return savedSong.audioFilePath
+                return ResolvedAudioStream(
+                    url = savedSong.audioFilePath,
+                    loudnessDb = savedSong.loudnessDb,
+                )
             }
 
             if (savedSong.streamUrl != null) {
-                if (isPlaybackUrlFresh(savedSong.streamUrl)) {
+                if (
+                    isPlaybackUrlFresh(
+                        url = savedSong.streamUrl,
+                        minRemainingSeconds = minRemainingSeconds,
+                    )
+                ) {
                     PlaybackLoudnessStore.update(song.youtubeId, savedSong.loudnessDb)
-                    audioStreamCache[song.youtubeId] = ResolvedAudioStream(
+                    val cached = ResolvedAudioStream(
                         url = savedSong.streamUrl,
                         loudnessDb = savedSong.loudnessDb,
                     )
+                    // Room's Song row does not persist the stream MIME type. Cast therefore derives
+                    // it from the signed URL, then falls back to audio/mp4.
+                    audioStreamCache[song.youtubeId] = cached
                     printd("${song.youtubeId} : Got url from saved")
-                    return savedSong.streamUrl
+                    return cached
                 }
                 printd("${song.youtubeId} : Saved url was invalid")
             }
@@ -2006,7 +2059,7 @@ object YoutubeDataExtractor {
         }
         PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
         printd("${song.youtubeId} : Got url from YouTube and saved song")
-        return resolved.url
+        return resolved
     }
 
     private suspend fun effectiveAudioQuality(context: Context): AudioQuality {
@@ -2354,6 +2407,11 @@ private data class ResolvedAudioStream(
     // True when [url] is a muxed (audio+video) stream, false for an audio-only stream. Lets
     // callers detect that a video request silently fell back to audio.
     val isVideo: Boolean = false,
+)
+
+data class CastableStream(
+    val url: String,
+    val contentType: String,
 )
 
 

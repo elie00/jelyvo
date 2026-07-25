@@ -2,7 +2,7 @@ package ca.ilianokokoro.umihi.music.core.youtube
 
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
-private const val STREAM_EXPIRY_SAFETY_SECONDS = 5L * 60L
+internal const val STREAM_EXPIRY_SAFETY_SECONDS = 5L * 60L
 
 /**
  * Cast queue items can sit on the receiver longer than local prefetch entries. Require enough
