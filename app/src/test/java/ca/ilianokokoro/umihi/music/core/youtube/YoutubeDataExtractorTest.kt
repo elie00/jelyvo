@@ -447,4 +447,68 @@ class YoutubeDataExtractorTest {
     fun `extractSongInfo throws on a non-object response`() {
         YoutubeDataExtractor.extractSongInfo("[]")
     }
+
+    /**
+     * lengthSeconds is a free-form string in the player response; a non-numeric value must degrade
+     * to "0:00" instead of failing the whole parse.
+     */
+    @Test
+    fun `extractSongInfo falls back to a zero duration on a non-numeric lengthSeconds`() {
+        val response = """
+            {
+              "videoDetails": {
+                "videoId": "dQw4w9WgXcQ",
+                "title": "Never Gonna Give You Up",
+                "author": "Rick Astley",
+                "lengthSeconds": "N/A"
+              }
+            }
+            """
+
+        val song = YoutubeDataExtractor.extractSongInfo(response)
+
+        assertEquals("dQw4w9WgXcQ", song.youtubeId)
+        assertEquals("Never Gonna Give You Up", song.title)
+        assertEquals("0:00", song.duration)
+    }
+
+    /** videoDetails present but the field absent — live streams ship responses like this. */
+    @Test
+    fun `extractSongInfo falls back to a zero duration when lengthSeconds is missing`() {
+        val response = """
+            {
+              "videoDetails": {
+                "videoId": "dQw4w9WgXcQ",
+                "title": "Never Gonna Give You Up",
+                "author": "Rick Astley"
+              }
+            }
+            """
+
+        val song = YoutubeDataExtractor.extractSongInfo(response)
+
+        assertEquals("dQw4w9WgXcQ", song.youtubeId)
+        assertEquals("Rick Astley", song.artist)
+        assertEquals("0:00", song.duration)
+    }
+
+    /** 99999999999 is numeric but overflows Int; it must degrade like any other bad value. */
+    @Test
+    fun `extractSongInfo falls back to a zero duration on an out-of-range lengthSeconds`() {
+        val response = """
+            {
+              "videoDetails": {
+                "videoId": "dQw4w9WgXcQ",
+                "title": "Never Gonna Give You Up",
+                "author": "Rick Astley",
+                "lengthSeconds": "99999999999"
+              }
+            }
+            """
+
+        val song = YoutubeDataExtractor.extractSongInfo(response)
+
+        assertEquals("dQw4w9WgXcQ", song.youtubeId)
+        assertEquals("0:00", song.duration)
+    }
 }

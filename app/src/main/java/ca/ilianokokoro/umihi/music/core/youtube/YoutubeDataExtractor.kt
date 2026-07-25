@@ -969,8 +969,12 @@ object YoutubeDataExtractor {
         val videoId = details?.get("videoId")?.jsonPrimitive?.contentOrNull ?: ""
         val title = details?.get("title")?.jsonPrimitive?.contentOrNull ?: ""
         val author = details?.get("author")?.jsonPrimitive?.contentOrNull ?: ""
+        // lengthSeconds arrives as a free-form string and is not always a plain Int (live and
+        // upcoming items omit or garble it, and values past Int.MAX_VALUE have been seen). Falling
+        // back to 0 renders as "0:00" and keeps the rest of the song usable, instead of failing the
+        // whole parse into an ApiResult.Error that loses the track.
         val lengthSeconds: Int =
-            details?.get("lengthSeconds")?.jsonPrimitive?.contentOrNull?.toInt()
+            details?.get("lengthSeconds")?.jsonPrimitive?.contentOrNull?.toIntOrNull()
                 ?: 0
 
         val isExplicit = json["microformat"]
