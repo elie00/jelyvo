@@ -37,6 +37,7 @@ import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ResponseCache
+import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
@@ -49,6 +50,7 @@ import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -168,6 +170,10 @@ class MainActivity : ComponentActivity() {
                     lifecycleScope.launch(Dispatchers.IO) {
                         VersionManager.initialize(applicationContext)
                     }
+                    CastManager.initializeIfSupported(
+                        applicationContext,
+                        Dispatchers.IO.asExecutor(),
+                    )
                     initCaoc()
                     initPictureInPicture()
                     requestNotificationPermission()
