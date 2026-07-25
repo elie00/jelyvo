@@ -1,7 +1,7 @@
 # Chantier Umihi Music — fork elie00
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-07-25, branche `main` propre à `5b7daf5`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-07-25, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 
 ## Contexte général
 
@@ -101,6 +101,30 @@ Constats relevés pendant la vague 6 et instruits ligne par ligne. Ordre d'appli
 
 **Suite de tests : 8 classes, 54 tests, tous verts** (JUnit 4.13.2, JVM uniquement — pas de source set `androidTest`).
 
+## Vague 8 (2026-07-25, reprise Claude/Codex) — ✅ terminée et poussée
+
+Le travail interrompu a été repris en micro-commits. L’état courant compte **21 classes / 126 tests
+JVM**, un build debug vert et un build release minifié vert.
+
+- Playlists locales : recherche/tri cohérents avec la lecture, drag désactivé tant que la vue est
+  transformée ; playlists distantes également filtrables/triables.
+- Gestes : swipe d’un titre vers J’aime ou la file.
+- Autoplay : « Pas intéressé », persistance bornée, purge de la file et remise à zéro dans Réglages.
+- Qualité : Faible/Normale/Élevée, choix réel du flux Android VR/NewPipe, économiseur automatique
+  sur réseau mobile et invalidation cohérente des URL mises en cache.
+- Sauvegarde : la description des playlists locales survit désormais à l’export/restauration, avec
+  compatibilité des anciens JSON.
+- Chromecast : SDK différé après la première image, résolution en URL HTTPS signée, MIME transmis,
+  fenêtre de pré-résolution, conservation de la file complète, bascule de la `MediaLibrarySession`,
+  retour au téléphone, sélecteur Compose et dégradation visible des fichiers/commandes incompatibles.
+
+Validation locale : APK release de 6,5 Mo installé sur émulateur arm64, aucun crash observé. Le
+démarrage release profilé a atteint 245 ms sur une mesure mais reste variable sur l’émulateur
+(jusqu’à environ 800 ms) : la cible < 300 ms doit donc être confirmée en série sur le S24 Ultra,
+pas déclarée garantie à partir d’un meilleur cas. Le lancement des titres profite du préchauffage
+des lignes visibles, du cache de session et du chemin Android VR ; un premier titre non préchauffé
+reste dépendant du réseau.
+
 ### Ce qui est prouvé vs seulement écrit
 
 Prouvé hors device : les deux chemins du client id Spotify ; le garde-fou de migration Room **dans les deux sens** (rouge si `VERSION` passe à 16 sans `Migration(15,16)`) ; les 3 tests `lengthSeconds` (rouges si le garde est retiré) ; les 11 tests d'URL ; l'absence de `REQUEST_INSTALL_PACKAGES` dans l'APK via `aapt2` ; R8 qui jette les règles mortes (34 avant → 0 après) ; lint identique à **249 erreurs avant et après** l'ensemble des travaux.
@@ -118,20 +142,25 @@ Prouvé hors device : les deux chemins du client id Spotify ; le garde-fou de mi
 | Régénérer les baseline profiles ? | **Non** : exige un device rooté, et la dernière tentative (`055f358`) a été revert par `60dff64` pour perte de couverture réelle |
 | Supprimer `crowdin.yml` avec le workflow Crowdin ? | **Non** : le mapping `fr: fr` y est indispensable pour ne pas recréer `values-fr-rFR` |
 
-## Cast / Chromecast — ❌ rejeté le 2026-07-25, ne pas re-litiger
+## Cast / Chromecast — ✅ implémenté, validation physique restante
 
-Instruit puis abandonné. Le refus n'est pas un manque d'effort, il est **structurel** :
+Le rejet précédent est obsolète. Les obstacles identifiés ont été traités sans serveur HTTP local :
 
-1. **Aucun `MediaItem` de l'app ne porte une URL jouable.** `Song.mediaItem` fixe l'URI à `https://www.youtube.com/watch?v=<id>` ; l'URL googlevideo signée n'existe qu'à l'intérieur du `ResolvingDataSource` (`YoutubeDataSourceFactory.kt`), **sur l'appareil**, au moment du chargement. `CastPlayer` sérialise `localConfiguration.uri` tel quel vers le récepteur, et il n'existe aucun équivalent de `ResolvingDataSource` côté Chromecast. Un `CastPlayer` posé tel quel enverrait une **page HTML** au récepteur pour chaque titre.
-2. **Toute la bibliothèque hors-ligne est incastable par construction.** Les téléchargements vivent dans `filesDir/downloads/…` (stockage interne privé) et le `FileProvider` a été supprimé en `026e614` ; les titres MediaStore portent une URI `content://`. Un Chromecast récupère le média en HTTP sur le réseau local et ne peut ouvrir ni l'un ni l'autre.
-3. **Les URLs signées portent un paramètre `ip`.** Derrière du NAT IPv4 le téléphone et le Chromecast partagent une adresse publique et ça peut passer ; en IPv6 natif le récepteur a une autre adresse et le CDN répond 403. Panne « marche chez moi, pas chez toi » que l'app ne peut pas détecter.
-4. **Une file poussée d'un bloc au récepteur contient des URLs qui meurent en cours de session**, sans rien pour les re-résoudre — ce qui force un envoi titre par titre et détruit la lecture enchaînée du récepteur.
+1. `CastResolvingPlayer` remplace les URL `watch?v=` par des URL CDN HTTPS signées avant
+   consommation et transmet le MIME réel au Default Media Receiver.
+2. La file complète reste visible ; la position courante et deux successeurs sont renouvelés avec
+   une marge de validité de 30 minutes. Les ajouts et remplacements de file passent par le même
+   wrapper.
+3. La `MediaLibrarySession` conserve son contrôleur et change seulement de `Player`, ce qui préserve
+   le mini-player, Android Auto, la file, le widget et la reprise lors du retour au téléphone.
+4. Les titres MediaStore sont exclus explicitement. Un téléchargement YouTube reste castable par
+   résolution réseau ; aucun fichier privé n’est exposé sur le LAN.
+5. Le SDK ne démarre qu’après la première image et disparaît proprement des appareils sans Google
+   Play Services. Le picker est 100 % Compose/MediaRouter, sans migration AppCompat.
 
-Corrections utiles au passage : un récepteur personnalisé n'est **pas** requis pour démarrer (le Default Media Receiver joue des URLs HTTPS arbitraires) — il ne servirait qu'à re-résoudre les URLs mortes, et exigerait un app id enregistré plus une page HTTPS hébergée publiquement, que ce fork n'a pas. Par ailleurs `media3-cast` tire `play-services-cast-framework` (absent des appareils dé-googlisés) et `MediaRouteButton` exige un thème AppCompat, alors que `Theme.UmihiMusic` étend `android:Theme.Material.NoActionBar` et `MainActivity` est une `ComponentActivity` nue.
-
-**Piste à tester sur appareil à la place** : le sélecteur de sortie Android route peut-être déjà l'app vers une enceinte Chromecast-built-in, puisque la `MediaLibrarySession` est publiée (`PlaybackService`). Cela couvre « joue ça sur mon enceinte » avec le téléphone comme décodeur — donc `ResolvingDataSource`, téléchargements et fichiers locaux continuent tous de fonctionner. À vérifier avant d'envisager quoi que ce soit d'autre.
-
-⚠️ Option explicitement écartée : caster les téléchargements via un serveur HTTP local. C'est le seul chemin sans problème d'URL signée, mais il exposerait des fichiers privés de l'app à tout le réseau local sans authentification, plus une exception trafic en clair — l'exact opposé du durcissement de la vague 6 (`7441616`).
+Limite connue : les URL signées peuvent rester sensibles à la topologie IP du réseau et aucun
+Chromecast physique n’était disponible pendant cette session. Valider une session longue, le
+passage IPv4/IPv6, la prélecture et le retour téléphone sur le réseau réel avant diffusion large.
 
 ## Décisions encore ouvertes
 
@@ -142,9 +171,13 @@ Corrections utiles au passage : un récepteur personnalisé n'est **pas** requis
 
 ## Reste à faire
 
-1. **Validation sur device (S24 Ultra)** : rien des vagues 4/5 ni des vagues UI/vidéo/perfs n'a été vérifié sur téléphone — installer l'APK fraîchement compilé (`app/build/outputs/apk/standalone/release/Umihi.apk`, renommé par `c96021c`) par-dessus, dérouler : vidéo/PiP, hors-ligne + purge, notifications de sorties, gestes + recherche vocale, égaliseur par sortie, crossfade, thème pochette, perfs de démarrage, **backup/restore, stats (périodes/heatmap/Wrapped), recherche likés**. **À ajouter depuis la vague 7** : partager un lien `/embed/`, `/v/`, `/shorts/` et `m.youtube.com` depuis YouTube et vérifier que le titre se lance ; et surtout **restaurer une sauvegarde sur un second appareil** pour valider que la session se lit bien comme « déconnecté » — c'est le seul point de la vague 6 qu'aucune vérification hors device ne couvre.
+1. **Validation sur device (S24 Ultra + Chromecast)** : installer l’APK release courant et dérouler
+   vidéo/PiP, hors-ligne, backup/restore, audio local, qualité/data saver, gestes, « Pas intéressé »,
+   recherche/tri de playlists, liens partagés et session Cast longue avec retour téléphone. Mesurer
+   au moins 10 cold starts et 20 lancements de titres/vidéos préchauffés pour juger le p95 < 300 ms.
 2. **Wear OS** : seul trou restant de la vague 4 (précédent réussi sur suivi-musculation : module `:wear` P1/P2).
-3. **Build de contrôle** `assembleStandaloneRelease` après tout nouveau lot + APK arm64 pour livraison.
+3. **Build de contrôle** `assembleStandaloneRelease` après tout nouveau lot. Le build de cette vague
+   est vert ; APK : `app/build/outputs/apk/standalone/release/Umihi.apk`.
 
 ## Environnement de build (PC de bureau — À REFAIRE sur l'autre PC)
 

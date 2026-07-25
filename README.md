@@ -19,9 +19,10 @@ IzzyOnDroid, no Obtainium. You build it yourself and install the APK by hand.
 - It keeps upstream's application id (`ca.ilianokokoro.umihi.music`), so it **cannot be installed
   alongside** the original app.
 
-Verification is partial and stated honestly: 54 JVM unit tests across 8 classes pass, but there is
-no instrumented test suite, and most of the features below have **not yet been exercised on a
-device**. Treat it as working-but-unvalidated.
+Verification is partial and stated honestly: **126 JVM unit tests across 21 classes** pass, both
+debug and minified release APKs build, and the release APK has been installed and smoke-tested on
+an arm64 Android emulator. There is still no instrumented test suite; Chromecast hand-off still
+needs a physical receiver test and the full matrix needs a pass on the target phone.
 
 ## Features ✨
 
@@ -35,18 +36,24 @@ Added by this fork:
 **Playback** — crossfade (a volume fade around gapless transitions, 0–12 s) · A–B loop · sleep
 timer, including "end of current track" · playback speed · equalizer with a **separate profile per
 audio output** (speaker / wired / Bluetooth) · loudness normalization · resume where you left off ·
-seeded radio and autoplay, with suggestions kept visually separate from your own queue.
+three audio-quality levels and a mobile-data saver · seeded radio and autoplay, with suggestions
+kept visually separate from your own queue · swipe a title to like it or add it to the queue ·
+exclude unwanted autoplay suggestions.
 
 **Video** — Song ⇄ Video toggle on the player · fullscreen landscape · picture-in-picture.
+
+**Cast** — Chromecast device picker in the player · queue and position hand-off between phone and
+receiver · signed stream refresh before the receiver consumes queued tracks · explicit handling of
+local-only files and unsupported remote controls.
 
 **Offline & local files** — auto-download of liked songs under a **storage quota** (auto-downloads
 are purge-eligible, manual ones never are) · Wi-Fi-only and metered-network switches · plays audio
 files already on the phone (MediaStore).
 
 **Library & playlists** — on-device playlists you can create, rename, reorder by dragging, edit and
-delete, with **JSON export/import** via SAF · save the current queue as a playlist · account library
-(liked songs / saved albums / followed artists) with filter chips · accent- and case-insensitive
-search inside liked songs · new-release notifications for followed artists.
+delete, search and sort, with **JSON export/import** via SAF · save the current queue as a playlist ·
+account library (liked songs / saved albums / followed artists) with filter chips · accent- and
+case-insensitive search inside liked songs · new-release notifications for followed artists.
 
 **Discovery** — tabbed search with a Videos tab, top-result card, spell corrections, removable
 recent searches, moods & genres browsing · voice search · home refocused on discovery.
