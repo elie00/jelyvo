@@ -14,6 +14,7 @@ import androidx.media3.session.SessionToken
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
+import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.extensions.toSong
@@ -62,6 +63,8 @@ object PlayerManager {
 
     private val _controllerState = MutableStateFlow<MediaController?>(null)
     val controllerState: StateFlow<MediaController?> = _controllerState.asStateFlow()
+    val isCasting: StateFlow<Boolean> = CastManager.isCasting
+    val castDeviceName: StateFlow<String?> = CastManager.deviceName
 
     val currentController: MediaController?
         get() = controller?.takeIf { it.isConnected }
@@ -599,6 +602,8 @@ object PlayerManager {
 
     @OptIn(UnstableApi::class)
     fun setAudioOffloadEnabled(value: Boolean) {
+        // Audio offload is a local decoder feature and has no meaning on the receiver.
+        if (isCasting.value) return
         val controller = currentController ?: return
 
         val mode = if (value) {
@@ -682,6 +687,8 @@ object PlayerManager {
     }
 
     fun setPlaybackSpeed(speed: Float) {
+        // The Default Media Receiver does not advertise speed control.
+        if (isCasting.value) return
         currentController?.setPlaybackSpeed(speed)
         _playbackSpeed.value = speed
     }

@@ -18,9 +18,10 @@ import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 @Composable
 fun PlaybackAudioInfoPill(
     info: PlaybackAudioInfo,
+    labelOverride: String? = null,
     modifier: Modifier = Modifier,
 ) {
-    val label = info.getDisplayLabel(LocalResources.current)
+    val label = labelOverride ?: info.getDisplayLabel(LocalResources.current)
     val hasLabel = label.isNotBlank()
 
     Surface(

@@ -552,7 +552,13 @@ class PlaybackService : MediaLibraryService() {
         if (plan.songs.isEmpty()) {
             Toast.makeText(
                 applicationContext,
-                getString(R.string.cast_no_compatible_tracks),
+                getString(
+                    if (snapshot.songs.size == 1) {
+                        R.string.cast_error_local_track
+                    } else {
+                        R.string.cast_no_compatible_tracks
+                    }
+                ),
                 Toast.LENGTH_LONG,
             ).show()
             CastManager.endCurrentSession()

@@ -89,6 +89,8 @@ fun PlayerControls(
     onOpenSpeedSelector: () -> Unit,
     playbackSpeed: Float,
     sleepTimerRemainingSeconds: Long?,
+    isCasting: Boolean = false,
+    castDeviceName: String? = null,
     audioInfo: PlaybackAudioInfo = PlaybackAudioInfo(),
 ) {
     val hapticFeedback = LocalHapticFeedback.current
@@ -181,6 +183,14 @@ fun PlayerControls(
 
             PlaybackAudioInfoPill(
                 info = audioInfo,
+                labelOverride = if (isCasting) {
+                    stringResource(
+                        R.string.cast_connected_to,
+                        castDeviceName ?: stringResource(R.string.cast_device),
+                    )
+                } else {
+                    null
+                },
                 modifier = Modifier
                     .align(Alignment.Center)
                     .padding(horizontal = 58.dp),
@@ -245,6 +255,7 @@ fun PlayerControls(
                 // Speed
                 GhostToggleButton(
                     checked = playbackSpeed != 1.0f,
+                    enabled = !isCasting,
                     onCheckedChange = {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
                         onOpenSpeedSelector()
@@ -297,6 +308,7 @@ fun PlayerControls(
                 // Shuffle
                 GhostToggleButton(
                     checked = shuffleEnabled,
+                    enabled = !isCasting,
                     onCheckedChange = {
                         hapticFeedback.performHapticFeedback(HapticFeedbackType.ToggleOn)
                         PlayerManager.toggleShuffleMode()
@@ -428,6 +440,7 @@ private fun SkipButton(
 @Composable
 private fun GhostToggleButton(
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
     icon: ImageVector,
     contentDescription: String?,
@@ -438,6 +451,7 @@ private fun GhostToggleButton(
 ) {
     IconToggleButton(
         checked = checked,
+        enabled = enabled,
         onCheckedChange = onCheckedChange,
         colors = IconButtonDefaults.iconToggleButtonColors(
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.cast
 
 import android.content.Context
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.media3.cast.CastPlayer
 import androidx.media3.common.ForwardingPlayer
@@ -8,6 +9,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import ca.ilianokokoro.umihi.music.core.youtube.CAST_URL_MIN_LIFETIME_SECONDS
+import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.helpers.ConnectivityHelper
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.isPlaybackUrlFresh
 import ca.ilianokokoro.umihi.music.extensions.toSong
@@ -16,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Keeps CastPlayer's full queue visible while replacing receiver-inaccessible watch-page URLs with
@@ -27,6 +31,8 @@ internal class CastResolvingPlayer(
     private val castPlayer: CastPlayer,
     private val scope: CoroutineScope,
 ) : ForwardingPlayer(castPlayer) {
+    private val resolvingMediaIds = ConcurrentHashMap.newKeySet<String>()
+    private val resumeAfterResolutionIds = ConcurrentHashMap.newKeySet<String>()
 
     private val transitionListener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -139,6 +145,10 @@ internal class CastResolvingPlayer(
         if (!unresolved.needsCastResolution()) return
         val song = unresolved.toSong()
         if (!song.isCastable()) return
+        if (recoverCurrent && resumeAfterResolution) {
+            resumeAfterResolutionIds += unresolved.mediaId
+        }
+        if (!resolvingMediaIds.add(unresolved.mediaId)) return
 
         scope.launch {
             try {
@@ -150,15 +160,40 @@ internal class CastResolvingPlayer(
                         return@withContext
                     }
                     castPlayer.replaceMediaItem(index, resolved)
-                    if (recoverCurrent && castPlayer.currentMediaItemIndex == index) {
+                    if (
+                        (recoverCurrent || unresolved.mediaId in resumeAfterResolutionIds) &&
+                        castPlayer.currentMediaItemIndex == index
+                    ) {
                         castPlayer.seekTo(index, 0L)
-                        if (resumeAfterResolution) castPlayer.play()
+                        if (
+                            resumeAfterResolution ||
+                            resumeAfterResolutionIds.remove(unresolved.mediaId)
+                        ) {
+                            castPlayer.play()
+                        }
                     }
                 }
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
-                // PlaybackService reports the resulting Cast load error and can skip the item.
+                withContext(Dispatchers.Main.immediate) {
+                    val message = if (ConnectivityHelper.hasInternetConnection(context)) {
+                        context.getString(R.string.cast_error_resolve_failed, song.title)
+                    } else {
+                        context.getString(R.string.cast_error_offline)
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    if (
+                        (recoverCurrent || unresolved.mediaId in resumeAfterResolutionIds) &&
+                        castPlayer.currentMediaItemIndex == index &&
+                        castPlayer.hasNextMediaItem()
+                    ) {
+                        castPlayer.seekToNextMediaItem()
+                    }
+                }
+            } finally {
+                resolvingMediaIds -= unresolved.mediaId
+                resumeAfterResolutionIds -= unresolved.mediaId
             }
         }
     }

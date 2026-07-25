@@ -93,7 +93,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.Song
@@ -127,13 +126,14 @@ fun PlayerScreen(
 ) {
     val uiState = playerViewModel.uiState.collectAsStateWithLifecycle().value
     val playbackData = PlayerManager.audioInfo.collectAsStateWithLifecycle().value
-    val isCasting by CastManager.isCasting.collectAsStateWithLifecycle()
+    val isCasting by PlayerManager.isCasting.collectAsStateWithLifecycle()
+    val castDeviceName by PlayerManager.castDeviceName.collectAsStateWithLifecycle()
     val isCastRouteAvailable = rememberIsCastRouteAvailable()
     var showCastDevicePicker by remember { mutableStateOf(false) }
     val orientation = LocalConfiguration.current.orientation
     val currentSong = uiState.queue.getOrNull(uiState.currentIndex)
     val isVideoMode = currentSong?.forceVideo == true
-    val isFullscreenVideo = isVideoMode && uiState.isVideoFullscreen
+    val isFullscreenVideo = isVideoMode && !isCasting && uiState.isVideoFullscreen
 
     // Rotating to landscape while in Video mode goes fullscreen; rotating back to portrait (or
     // leaving Video mode) exits. The fullscreen button on the surface can enter it from portrait.
@@ -216,7 +216,7 @@ fun PlayerScreen(
                     showCastButton = isCastRouteAvailable || isCasting,
                     isCasting = isCasting,
                     onCastClick = { showCastDevicePicker = true },
-                    hasVideoVariant = uiState.hasVideoVariant,
+                    hasVideoVariant = uiState.hasVideoVariant && !isCasting,
                     isVideoMode = isVideoMode,
                     isModeSwitchEnabled = !uiState.isSwitchingPlaybackMode,
                     onSelectMode = playerViewModel::setPlaybackMode,
@@ -231,6 +231,7 @@ fun PlayerScreen(
                     onSeekForward = { playerViewModel.seekBy(10_000L) },
                     onSeekBackward = { playerViewModel.seekBy(-10_000L) },
                     onEnterFullscreen = { playerViewModel.setVideoFullscreen(true) },
+                    isCasting = isCasting,
                     artworkModifier = artworkModifier,
                     modifier = Modifier
                         .fillMaxHeight()
@@ -271,6 +272,8 @@ fun PlayerScreen(
                         },
                         playbackSpeed = uiState.playbackSpeed,
                         sleepTimerRemainingSeconds = uiState.sleepTimerRemainingSeconds,
+                        isCasting = isCasting,
+                        castDeviceName = castDeviceName,
                         audioInfo = playbackData,
                     )
                 }
@@ -289,7 +292,7 @@ fun PlayerScreen(
                         .weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (uiState.hasVideoVariant) {
+                    if (uiState.hasVideoVariant && !isCasting) {
                         PlaybackModeToggle(
                             isVideoMode = currentSong?.forceVideo == true,
                             enabled = !uiState.isSwitchingPlaybackMode,
@@ -306,6 +309,7 @@ fun PlayerScreen(
                         onSeekForward = { playerViewModel.seekBy(10_000L) },
                         onSeekBackward = { playerViewModel.seekBy(-10_000L) },
                         onEnterFullscreen = { playerViewModel.setVideoFullscreen(true) },
+                        isCasting = isCasting,
                         artworkModifier = artworkModifier,
                         modifier = Modifier
                             .fillMaxSize()
@@ -348,6 +352,8 @@ fun PlayerScreen(
                         },
                         playbackSpeed = uiState.playbackSpeed,
                         sleepTimerRemainingSeconds = uiState.sleepTimerRemainingSeconds,
+                        isCasting = isCasting,
+                        castDeviceName = castDeviceName,
                         audioInfo = playbackData,
                     )
                 }
@@ -358,7 +364,7 @@ fun PlayerScreen(
     }
 
 
-    if (uiState.isSpeedSelectorShown) {
+    if (uiState.isSpeedSelectorShown && !isCasting) {
         SpeedSelectorBottomSheet(
             changeVisibility = playerViewModel::setSpeedSelectorVisibility,
             currentSpeed = uiState.playbackSpeed,
@@ -414,6 +420,7 @@ private fun ArtworkOrLyrics(
     onSeekForward: () -> Unit = {},
     onSeekBackward: () -> Unit = {},
     onEnterFullscreen: () -> Unit = {},
+    isCasting: Boolean = false,
     artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
 ) {
@@ -426,7 +433,7 @@ private fun ArtworkOrLyrics(
                     .fillMaxSize()
                     .clickable(onClick = onToggle)
             )
-        } else if (currentSong?.forceVideo == true) {
+        } else if (currentSong?.forceVideo == true && !isCasting) {
             VideoSurface(
                 onToggle = onToggle,
                 onSkipNext = onSkipNext,

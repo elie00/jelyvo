@@ -27,7 +27,10 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 @Composable
 fun PipVideoOverlay(modifier: Modifier = Modifier) {
     val controller = PlayerManager.controllerState.collectAsStateWithLifecycle().value
+    val isCasting by PlayerManager.isCasting.collectAsStateWithLifecycle()
     var surfaceView by remember { mutableStateOf<SurfaceView?>(null) }
+
+    if (isCasting) return
 
     Box(
         modifier = modifier.background(Color.Black),

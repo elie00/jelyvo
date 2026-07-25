@@ -212,6 +212,11 @@
     <string name="cast_choose_device">Choisir un appareil</string>
     <string name="cast_stop">Arrêter la diffusion</string>
     <string name="cast_no_devices">Aucun Chromecast n’est disponible pour le moment</string>
+    <string name="cast_device">Appareil Cast</string>
+    <string name="cast_connected_to">Lecture sur %1$s</string>
+    <string name="cast_error_resolve_failed">Impossible d’envoyer « %1$s » vers Chromecast</string>
+    <string name="cast_error_offline">Connectez-vous à Internet pour continuer la diffusion</string>
+    <string name="cast_error_local_track">Ce titre local est disponible uniquement sur cet appareil</string>
     <string name="cast_no_compatible_tracks">Cette file ne contient aucun titre compatible avec Chromecast</string>
     <plurals name="cast_local_tracks_skipped">
         <item quantity="one">%d titre local a été ignoré</item>

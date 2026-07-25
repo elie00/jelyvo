@@ -209,6 +209,7 @@ class MainActivity : ComponentActivity() {
         if (PlayerManager.getCurrentSong()?.forceVideo != true || !PlayerManager.isPlaying) {
             return
         }
+        if (PlayerManager.isCasting.value) return
 
         try {
             enterPictureInPictureMode(buildPipParams(isPlaying = true))
