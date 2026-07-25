@@ -1,11 +1,16 @@
 package ca.ilianokokoro.umihi.music.ui.screens.localplaylist
 
 /**
- * Number of non-song items rendered above the song rows in [LocalPlaylistScreen]'s LazyColumn (the
- * play/shuffle row). The reorder callback reports FLAT LazyColumn indices, so every index it hands
- * back has to be shifted by this before it can address the song list.
+ * Number of non-song items rendered above the song rows in [LocalPlaylistScreen]'s LazyColumn: the
+ * cover/description header, then the play/shuffle row. The reorder callback reports FLAT LazyColumn
+ * indices, so every index it hands back has to be shifted by this before it can address the song
+ * list.
+ *
+ * MUST match the number of `item()` calls preceding `itemsIndexed` in that screen — an `item` whose
+ * content composes to nothing still occupies an index. Adding one without bumping this moves the
+ * wrong song and throws on the last row; ReorderMathTest is what catches it.
  */
-internal const val SONG_LIST_HEADER_ITEMS = 1
+internal const val SONG_LIST_HEADER_ITEMS = 2
 
 /**
  * Moves a song inside [songs] from one flat LazyColumn index to another.

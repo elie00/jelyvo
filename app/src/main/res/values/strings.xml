@@ -280,6 +280,8 @@
     <string name="export_playlist">Export playlist</string>
     <string name="import_playlist">Import</string>
     <string name="playlist_name">Playlist name</string>
+    <string name="edit_description">Edit description</string>
+    <string name="playlist_description">Description</string>
     <string name="on_device_playlists">On-device playlists</string>
     <string name="account_playlists">Account playlists</string>
     <string name="playlist_imported">Playlist imported</string>

@@ -40,6 +40,7 @@ class LocalPlaylistViewModel(
                             loading = false,
                             notFound = false,
                             name = playlist.name,
+                            description = playlist.description.orEmpty(),
                             songs = repository.songsOf(playlist),
                         )
                     }
@@ -85,6 +86,13 @@ class LocalPlaylistViewModel(
         if (trimmed.isEmpty()) return
         viewModelScope.launch {
             repository.rename(playlistId, trimmed)
+        }
+    }
+
+    /** Unlike [rename], a blank value is accepted: it clears the description back to NULL. */
+    fun updateDescription(description: String) {
+        viewModelScope.launch {
+            repository.updateDescription(playlistId, description)
         }
     }
 

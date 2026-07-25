@@ -7,12 +7,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Upload
@@ -34,22 +37,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.components.EditableSongItem
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -72,6 +77,7 @@ fun LocalPlaylistScreen(
 
     var menuExpanded by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
+    var showDescriptionDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -88,6 +94,8 @@ fun LocalPlaylistScreen(
         items = moveByFlatIndex(items, from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
+
+    val coverUris = remember(items) { items.mosaicCoverUris() }
 
     FadingStatusBarWrapper {
         Scaffold(topBar = {
@@ -121,6 +129,14 @@ fun LocalPlaylistScreen(
                                 onClick = {
                                     menuExpanded = false
                                     showRenameDialog = true
+                                }
+                            )
+                            MaterialUDropdownItem(
+                                leadingIcon = Icons.Rounded.Description,
+                                text = stringResource(R.string.edit_description),
+                                onClick = {
+                                    menuExpanded = false
+                                    showDescriptionDialog = true
                                 }
                             )
                             MaterialUDropdownItem(
@@ -171,6 +187,13 @@ fun LocalPlaylistScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    item(key = "header") {
+                        LocalPlaylistHeader(
+                            description = uiState.description,
+                            coverUris = coverUris,
+                        )
+                    }
+
                     item(key = "play-shuffle") {
                         PlayShuffleRow(
                             onPlay = {
@@ -244,6 +267,35 @@ fun LocalPlaylistScreen(
         )
     }
 
+    if (showDescriptionDialog) {
+        var newDescription by remember { mutableStateOf(uiState.description) }
+        AlertDialog(
+            onDismissRequest = { showDescriptionDialog = false },
+            title = { Text(stringResource(R.string.edit_description)) },
+            text = {
+                OutlinedTextField(
+                    value = newDescription,
+                    onValueChange = { newDescription = it },
+                    label = { Text(stringResource(R.string.playlist_description)) },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Blank is accepted here, unlike rename: it clears the description.
+                        viewModel.updateDescription(newDescription)
+                        showDescriptionDialog = false
+                    }
+                ) { Text(stringResource(R.string.confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDescriptionDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -263,5 +315,42 @@ fun LocalPlaylistScreen(
                 }
             },
         )
+    }
+}
+
+/**
+ * Cover + description block above the play/shuffle row. Both parts are optional: a playlist with no
+ * artwork and no note renders nothing at all rather than an empty gap.
+ */
+@Composable
+private fun LocalPlaylistHeader(
+    description: String,
+    coverUris: List<String>,
+) {
+    if (coverUris.isEmpty() && description.isBlank()) {
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (coverUris.isNotEmpty()) {
+            PlaylistMosaicCover(
+                uris = coverUris,
+                modifier = Modifier.size(180.dp),
+            )
+        }
+        if (description.isNotBlank()) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 12.dp, start = 16.dp, end = 16.dp),
+            )
+        }
     }
 }

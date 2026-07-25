@@ -60,6 +60,12 @@ class LocalPlaylistRepository(application: Application) {
         dao.upsert(existing.copy(name = name))
     }
 
+    suspend fun updateDescription(id: String, description: String) {
+        val existing = dao.getById(id) ?: return
+        // Unlike rename, a blank value is meaningful: it clears the note back to NULL.
+        dao.upsert(existing.copy(description = description.trim().ifBlank { null }))
+    }
+
     suspend fun delete(id: String) = dao.deleteById(id)
 
     suspend fun updateSongs(id: String, songs: List<LocalPlaylistSong>) {
