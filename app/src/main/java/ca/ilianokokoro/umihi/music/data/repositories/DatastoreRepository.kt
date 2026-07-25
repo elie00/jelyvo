@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
@@ -69,6 +70,7 @@ class DatastoreRepository(private val context: Context) {
         val AUTO_DOWNLOAD_WIFI_ONLY = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_WIFI_ONLY)
         val AUTO_DOWNLOAD_QUOTA_GB = intPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_QUOTA_GB)
         val RECENT_SEARCHES = stringPreferencesKey(Constants.Datastore.RECENT_SEARCHES)
+        val NOT_INTERESTED = stringPreferencesKey(Constants.Datastore.NOT_INTERESTED)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -236,6 +238,28 @@ class DatastoreRepository(private val context: Context) {
         }
         return runCatching { Json.decodeFromString<List<String>>(stored) }
             .getOrDefault(emptyList())
+    }
+
+    /** YouTube ids rejected from autoplay and radio, most recent first. */
+    val notInterested: Flow<List<String>> = context.dataStore.data.map {
+        NotInterestedFilter.decode(it[PreferenceKeys.NOT_INTERESTED])
+    }
+
+    suspend fun addNotInterested(youtubeId: String) {
+        context.dataStore.edit { prefs ->
+            val updated = NotInterestedFilter.add(
+                current = NotInterestedFilter.decode(prefs[PreferenceKeys.NOT_INTERESTED]),
+                youtubeId = youtubeId,
+                max = Constants.Datastore.NOT_INTERESTED_MAX,
+            )
+            prefs[PreferenceKeys.NOT_INTERESTED] = NotInterestedFilter.encode(updated)
+        }
+    }
+
+    suspend fun clearNotInterested() {
+        context.dataStore.edit {
+            it.remove(PreferenceKeys.NOT_INTERESTED)
+        }
     }
 
     val cookies = context.dataStore.data.map {

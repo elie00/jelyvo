@@ -81,6 +81,11 @@ object Constants {
         const val AUTO_DOWNLOAD_QUOTA_GB = "auto-download-quota-gb"
         const val RECENT_SEARCHES = "recent-searches"
         const val RECENT_SEARCHES_MAX = 20
+        const val NOT_INTERESTED = "not-interested"
+
+        // DataStore rewrites the complete preferences file on every edit. Two hundred YouTube ids
+        // stay below roughly 3 KB while leaving ample room for deliberate rejections.
+        const val NOT_INTERESTED_MAX = 200
     }
 
     object Database {
