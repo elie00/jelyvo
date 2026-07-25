@@ -34,4 +34,40 @@ class PlaybackUrlFreshnessTest {
             )
         )
     }
+
+    @Test
+    fun `twenty minutes left is fresh locally but too short for cast`() {
+        val url = "https://cdn.example/audio?expire=2200"
+
+        assertTrue(isPlaybackUrlFresh(url = url, nowEpochSeconds = 1_000))
+        assertFalse(
+            isPlaybackUrlFresh(
+                url = url,
+                nowEpochSeconds = 1_000,
+                minRemainingSeconds = CAST_URL_MIN_LIFETIME_SECONDS,
+            )
+        )
+    }
+
+    @Test
+    fun `cast accepts a URL beyond its stricter margin`() {
+        assertTrue(
+            isPlaybackUrlFresh(
+                url = "https://cdn.example/audio?expire=2801",
+                nowEpochSeconds = 1_000,
+                minRemainingSeconds = CAST_URL_MIN_LIFETIME_SECONDS,
+            )
+        )
+    }
+
+    @Test
+    fun `freshness margin remains strict at the boundary`() {
+        assertFalse(
+            isPlaybackUrlFresh(
+                url = "https://cdn.example/audio?expire=2800",
+                nowEpochSeconds = 1_000,
+                minRemainingSeconds = CAST_URL_MIN_LIFETIME_SECONDS,
+            )
+        )
+    }
 }
