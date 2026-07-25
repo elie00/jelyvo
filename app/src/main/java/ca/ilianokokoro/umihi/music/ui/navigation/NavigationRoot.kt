@@ -359,6 +359,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onOpenAlbum = { id, name, cover ->
                                     backStack.add(AlbumScreenKey(id, name, cover))
                                 },
+                                onOpenArtist = { id, name ->
+                                    backStack.add(ArtistScreenKey(id, name))
+                                },
                                 application = app
                             )
                         }

@@ -7,6 +7,10 @@ data class Artist(
     val name: String,
     val thumbnailHref: String = "",
     val channelUrl: String,
+    /** Header biography, when the artist page ships one. Often several paragraphs. */
+    val description: String? = null,
+    /** Human-readable subscriber count, e.g. "12M subscribers". Localized by the API. */
+    val subscriberCount: String? = null,
 )
 
 @Immutable
@@ -22,12 +26,14 @@ data class ArtistAlbum(
         get() = Regex("""\b(19|20)\d{2}\b""").find(subtitle)?.value?.toIntOrNull()
 }
 
-/** A carousel section of an artist page (e.g. "Albums", "Singles", "Videos"). */
+/** A carousel section of an artist page (e.g. "Albums", "Singles", "Videos", "Fans might also like"). */
 @Immutable
 data class ArtistSection(
     val title: String,
     val albums: List<ArtistAlbum> = emptyList(),
     val videos: List<Song> = emptyList(),
+    /** Related artists — the "Fans might also like" shelf. Their channel id is [Artist.channelUrl]. */
+    val artists: List<Artist> = emptyList(),
 )
 
 @Immutable

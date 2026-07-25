@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.AlbumHeaderInfo
+import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistSection
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
@@ -1259,7 +1260,7 @@ object YoutubeDataExtractor {
         collectCarouselShelves(Json.parseToJsonElement(jsonString), shelves)
         return shelves
             .mapNotNull { it.toArtistSection() }
-            .filter { it.albums.isNotEmpty() || it.videos.isNotEmpty() }
+            .filter { it.albums.isNotEmpty() || it.videos.isNotEmpty() || it.artists.isNotEmpty() }
     }
 
     private fun collectCarouselShelves(element: JsonElement, out: MutableList<JsonObject>) {
@@ -1287,15 +1288,18 @@ object YoutubeDataExtractor {
 
         val albums = mutableListOf<ArtistAlbum>()
         val videos = mutableListOf<Song>()
+        val artists = mutableListOf<Artist>()
         for (item in contents) {
             val obj = item.safeObject() ?: continue
             obj.toArtistAlbum()?.let { albums.add(it); continue }
+            obj.toRelatedArtist()?.let { artists.add(it); continue }
             obj.toArtistVideo()?.let { videos.add(it) }
         }
         return ArtistSection(
             title = title,
             albums = albums.distinctBy { it.browseId },
             videos = videos.distinctBy { it.youtubeId },
+            artists = artists.distinctBy { it.channelUrl },
         )
     }
 
@@ -1313,6 +1317,33 @@ object YoutubeDataExtractor {
             ?.get("thumbnails")?.safeArray()?.lastOrNull()
             ?.safeObject()?.get("url")?.jsonPrimitive?.contentOrNull ?: ""
         return Song(youtubeId = videoId, title = title, thumbnailHref = thumbnail)
+    }
+
+    /**
+     * A "Fans might also like" card: same musicTwoRowItemRenderer shape as an album, but its
+     * browseEndpoint carries a channel id (UC…) instead of an MPRE album id. These were previously
+     * dropped, which silently emptied the shelf and made extractArtistSections filter it out.
+     */
+    private fun JsonObject.toRelatedArtist(): Artist? {
+        val renderer = this["musicTwoRowItemRenderer"]?.safeObject() ?: return null
+        val browseId = renderer["navigationEndpoint"]?.safeObject()
+            ?.get("browseEndpoint")?.safeObject()
+            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
+        if (!browseId.startsWith("UC")) {
+            return null
+        }
+        val name = renderer["title"]?.safeObject()
+            ?.get("runs")?.safeArray()?.firstOrNull()
+            ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        if (name.isBlank()) {
+            return null
+        }
+        val thumbnail = renderer["thumbnailRenderer"]?.safeObject()
+            ?.get("musicThumbnailRenderer")?.safeObject()
+            ?.get("thumbnail")?.safeObject()
+            ?.get("thumbnails")?.safeArray()?.lastOrNull()
+            ?.safeObject()?.get("url")?.jsonPrimitive?.contentOrNull ?: ""
+        return Artist(name = name, thumbnailHref = thumbnail, channelUrl = browseId)
     }
 
     private fun JsonObject.toArtistAlbum(): ArtistAlbum? {
@@ -1518,6 +1549,44 @@ object YoutubeDataExtractor {
     }
 
     /** Reads the artist header thumbnail (largest) from an artist page, if present. */
+    /** Header biography of an artist page. Null when the artist has none. */
+    fun extractArtistDescription(jsonString: String): String? {
+        val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
+            ?: return null
+        for (key in HEADER_RENDERER_KEYS) {
+            val renderer = header[key]?.safeObject() ?: continue
+            // Immersive headers put the bio in a plain "description" runs block; responsive ones
+            // wrap it in a musicDescriptionShelfRenderer.
+            val text = renderer["description"]?.let { description ->
+                description.safeObject()
+                    ?.get("musicDescriptionShelfRenderer")?.safeObject()
+                    ?.get("description").runsText()
+                    .takeIf { it.isNotBlank() }
+                    ?: description.runsText()
+            }
+            if (!text.isNullOrBlank()) {
+                return text
+            }
+        }
+        return null
+    }
+
+    /** Human-readable subscriber count ("12M subscribers"), as localized by the API. */
+    fun extractArtistSubscriberCount(jsonString: String): String? {
+        val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
+            ?: return null
+        for (key in HEADER_RENDERER_KEYS) {
+            val text = header[key]?.safeObject()
+                ?.get("subscriptionButton")?.safeObject()
+                ?.get("subscribeButtonRenderer")?.safeObject()
+                ?.get("subscriberCountText").runsText()
+            if (text.isNotBlank()) {
+                return text
+            }
+        }
+        return null
+    }
+
     fun extractArtistThumbnail(jsonString: String): String? {
         val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
             ?: return null

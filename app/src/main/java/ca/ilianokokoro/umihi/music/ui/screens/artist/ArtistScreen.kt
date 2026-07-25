@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +59,7 @@ fun ArtistScreen(
     onBack: () -> Unit,
     onOpenPlayer: () -> Unit,
     onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
+    onOpenArtist: (String, String) -> Unit = { _, _ -> },
     application: Application,
     artistViewModel: ArtistViewModel = viewModel(
         factory = ArtistViewModel.Factory(application, artistId, artistName)
@@ -85,6 +88,9 @@ fun ArtistScreen(
                 is ArtistState.Success -> {
                     val page = state.page
                     var showAllSongs by rememberSaveable(page.artist.channelUrl) {
+                        mutableStateOf(false)
+                    }
+                    var bioExpanded by rememberSaveable(page.artist.channelUrl) {
                         mutableStateOf(false)
                     }
                     LazyColumn(
@@ -118,6 +124,27 @@ fun ArtistScreen(
                                         fontFamily = nunitoFontFamily
                                     )
                                 )
+                                page.artist.subscriberCount?.takeIf { it.isNotBlank() }?.let {
+                                    Text(
+                                        text = it,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                page.artist.description?.takeIf { it.isNotBlank() }?.let { bio ->
+                                    // Bios run to several paragraphs; collapsed by default so they
+                                    // never push the music below the fold.
+                                    Text(
+                                        text = bio,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = if (bioExpanded) Int.MAX_VALUE else 3,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier
+                                            .padding(horizontal = 8.dp)
+                                            .clickable { bioExpanded = !bioExpanded }
+                                    )
+                                }
                                 if (page.songs.isNotEmpty()) {
                                     PlayShuffleRow(
                                         onPlay = {
@@ -168,6 +195,17 @@ fun ArtistScreen(
                                             onClick = {
                                                 onOpenPlayer()
                                                 PlayerManager.playSong(video)
+                                            }
+                                        )
+                                    }
+                                    items(
+                                        items = section.artists,
+                                        key = { it.channelUrl }) { related ->
+                                        RelatedArtistCard(
+                                            thumbnail = related.thumbnailHref,
+                                            name = related.name,
+                                            onClick = {
+                                                onOpenArtist(related.channelUrl, related.name)
                                             }
                                         )
                                     }
@@ -258,6 +296,37 @@ fun ArtistScreen(
                 }
             }
         }
+    }
+}
+
+/** A "Fans might also like" card: circular artwork, the way both YT Music and Spotify show people. */
+@Composable
+private fun RelatedArtistCard(
+    thumbnail: String,
+    name: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(140.dp)
+            .clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        SquareImage(
+            uri = thumbnail,
+            cornerRadius = 0.dp,
+            modifier = Modifier
+                .size(120.dp)
+                .clip(CircleShape)
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

@@ -449,6 +449,80 @@ class YoutubeDataExtractorTest {
     }
 
     /**
+     * A "Fans might also like" shelf holds the same card shape as an album shelf but with channel
+     * ids. Those cards used to match neither parser, which emptied the section and made
+     * extractArtistSections drop it entirely.
+     */
+    @Test
+    fun `extractArtistSections keeps a related-artists shelf`() {
+        val response = """
+            {
+              "contents": {
+                "musicCarouselShelfRenderer": {
+                  "header": {
+                    "musicCarouselShelfBasicHeaderRenderer": {
+                      "title": { "runs": [ { "text": "Fans might also like" } ] }
+                    }
+                  },
+                  "contents": [
+                    {
+                      "musicTwoRowItemRenderer": {
+                        "title": { "runs": [ { "text": "a-ha" } ] },
+                        "navigationEndpoint": { "browseEndpoint": { "browseId": "UCVeMw72tepFl1Zt5fvf9QKQ" } },
+                        "thumbnailRenderer": {
+                          "musicThumbnailRenderer": {
+                            "thumbnail": { "thumbnails": [ { "url": "https://img/aha.jpg", "width": 226, "height": 226 } ] }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+            """
+
+        val section = YoutubeDataExtractor.extractArtistSections(response).single()
+
+        assertEquals("Fans might also like", section.title)
+        assertEquals(listOf("a-ha"), section.artists.map { it.name })
+        assertEquals("UCVeMw72tepFl1Zt5fvf9QKQ", section.artists.single().channelUrl)
+        // A channel card is not an album and not a video.
+        assertTrue(section.albums.isEmpty())
+        assertTrue(section.videos.isEmpty())
+    }
+
+    @Test
+    fun `extractArtistDescription and subscriber count read the header`() {
+        val response = """
+            {
+              "header": {
+                "musicImmersiveHeaderRenderer": {
+                  "title": { "runs": [ { "text": "a-ha" } ] },
+                  "description": { "runs": [ { "text": "Norwegian band formed in Oslo in 1982." } ] },
+                  "subscriptionButton": {
+                    "subscribeButtonRenderer": {
+                      "subscriberCountText": { "runs": [ { "text": "3.1M subscribers" } ] }
+                    }
+                  }
+                }
+              }
+            }
+            """
+
+        assertEquals(
+            "Norwegian band formed in Oslo in 1982.",
+            YoutubeDataExtractor.extractArtistDescription(response),
+        )
+        assertEquals(
+            "3.1M subscribers",
+            YoutubeDataExtractor.extractArtistSubscriberCount(response),
+        )
+        assertNull(YoutubeDataExtractor.extractArtistDescription("{}"))
+        assertNull(YoutubeDataExtractor.extractArtistSubscriberCount("{}"))
+    }
+
+    /**
      * Artist-page song rows carry a play count instead of a view count, and it is what makes the
      * "most streamed" ranking readable. It must be picked up on a plain (non-video) row.
      */

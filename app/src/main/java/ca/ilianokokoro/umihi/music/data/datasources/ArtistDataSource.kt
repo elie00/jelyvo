@@ -46,7 +46,13 @@ class ArtistDataSource {
         val sections = YoutubeDataExtractor.extractArtistSections(response)
 
         ArtistPage(
-            artist = Artist(name = name, thumbnailHref = thumbnail, channelUrl = artistId),
+            artist = Artist(
+                name = name,
+                thumbnailHref = thumbnail,
+                channelUrl = artistId,
+                description = YoutubeDataExtractor.extractArtistDescription(response),
+                subscriberCount = YoutubeDataExtractor.extractArtistSubscriberCount(response),
+            ),
             songs = songs,
             topSongs = topSongs,
             sections = sections,
