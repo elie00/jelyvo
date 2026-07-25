@@ -17,6 +17,12 @@ data class LocalPlaylist(
     val name: String,
     val songsJson: String,
     val createdAt: Long,
+    /**
+     * Free-form note the user can edit. Nullable rather than empty-defaulted: SQLite cannot add a
+     * NOT NULL column without a DEFAULT, and NULL keeps "never described" a single state.
+     * Declared last so the generated CREATE TABLE matches the column ALTER TABLE appends.
+     */
+    val description: String? = null,
 )
 
 /**
@@ -66,3 +72,19 @@ data class PlaylistExportSong(
     val title: String = "",
     val artist: String = "",
 )
+
+/** How many tiles the playlist mosaic cover draws at most. */
+const val MOSAIC_COVER_COUNT = 4
+
+/**
+ * The first [limit] distinct artwork URLs, in playlist order, used to build the mosaic cover.
+ * Lazily evaluated so a 500-track playlist stops at the fourth distinct cover, and blank hrefs are
+ * dropped so a partially-filled mosaic never draws an empty tile.
+ */
+fun List<LocalPlaylistSong>.mosaicCoverUris(limit: Int = MOSAIC_COVER_COUNT): List<String> =
+    asSequence()
+        .map { it.thumbnailHref }
+        .filter { it.isNotBlank() }
+        .distinct()
+        .take(limit)
+        .toList()

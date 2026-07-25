@@ -154,6 +154,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Nullable, like `loudnessDb` and `sourceName` above: a NOT NULL column would need a
+                // DEFAULT here that the entity does not declare.
+                db.execSQL("ALTER TABLE `${Constants.Database.LOCAL_PLAYLISTS_TABLE}` ADD COLUMN `description` TEXT")
+            }
+        }
+
         // Declared last on purpose: companion properties initialize top-down, so hoisting this
         // above the migrations above would capture nulls. `internal` so the unit test can assert
         // the chain has no gap (a missing hop is silently swallowed by the destructive fallback).
@@ -164,6 +172,7 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_12_13,
             MIGRATION_13_14,
             MIGRATION_14_15,
+            MIGRATION_15_16,
         )
     }
 }
