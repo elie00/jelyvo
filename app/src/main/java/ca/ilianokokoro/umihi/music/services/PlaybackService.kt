@@ -85,6 +85,9 @@ class PlaybackService : MediaLibraryService() {
     private var mediaLibrarySession: MediaLibrarySession? = null
     private lateinit var exoCache: ExoCache
     private lateinit var player: ExoPlayer
+    private val activePlayer: Player
+        get() = mediaLibrarySession?.player ?: player
+    @Volatile private var isCasting = false
     private lateinit var datastoreRepository: DatastoreRepository
     private var currentAudioSessionId = C.AUDIO_SESSION_ID_UNSET
     private val songRepository = SongRepository()
@@ -117,6 +120,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private lateinit var callback: UmihiMediaLibraryCallback
+    private lateinit var sessionListener: Player.Listener
 
 
     override fun onCreate() {
@@ -222,7 +226,7 @@ class PlaybackService : MediaLibraryService() {
             }
         }
 
-        player.addListener(object : Player.Listener {
+        sessionListener = object : Player.Listener {
             override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                 scheduleQueuePersistence()
             }
@@ -284,12 +288,12 @@ class PlaybackService : MediaLibraryService() {
                     scheduleQueuePersistence()
                     serviceScope.launch { persistPlaybackPosition() }
                 }
-                updatePlaybackWidget(player.currentMediaItem)
+                updatePlaybackWidget(activePlayer.currentMediaItem)
             }
 
             override fun onPlayerError(error: PlaybackException) {
                 consecutivePlaybackErrors++
-                val queueSize = player.mediaItemCount
+                val queueSize = activePlayer.mediaItemCount
                 // Stop instead of skipping endlessly when every track fails (e.g. offline).
                 if (consecutivePlaybackErrors >= queueSize ||
                     consecutivePlaybackErrors >= MAX_CONSECUTIVE_PLAYBACK_ERRORS
@@ -303,11 +307,11 @@ class PlaybackService : MediaLibraryService() {
                         getString(R.string.playback_failed),
                         Toast.LENGTH_LONG,
                     ).show()
-                    player.pause()
+                    activePlayer.pause()
                     return
                 }
-                player.seekToNext()
-                player.prepare()
+                activePlayer.seekToNext()
+                activePlayer.prepare()
             }
 
             // Expose audio session ID for third-party equalizer apps
@@ -339,7 +343,8 @@ class PlaybackService : MediaLibraryService() {
                     )
                 }
             }
-        })
+        }
+        player.addListener(sessionListener)
 
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         val pendingIntent = PendingIntent.getActivity(
@@ -426,7 +431,7 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         if (::player.isInitialized) {
-            val currentItem = player.currentMediaItem
+            val currentItem = activePlayer.currentMediaItem
             runBlocking(Dispatchers.IO) {
                 PlaybackWidgetStateStore.write(
                     context = applicationContext,
@@ -499,7 +504,7 @@ class PlaybackService : MediaLibraryService() {
         serviceScope.launch {
             while (true) {
                 delay(QUEUE_POSITION_SAVE_INTERVAL_MS)
-                val isPlaying = withContext(Dispatchers.Main) { player.isPlaying }
+                val isPlaying = withContext(Dispatchers.Main) { activePlayer.isPlaying }
                 if (queueRestoreComplete && isPlaying) {
                     persistQueueSnapshot()
                     persistPlaybackPosition()
@@ -516,8 +521,8 @@ class PlaybackService : MediaLibraryService() {
     private suspend fun persistPlaybackPosition() {
         if (isRestoringQueue) return
         val snapshot = withContext(Dispatchers.Main) {
-            val item = player.currentMediaItem ?: return@withContext null
-            Triple(item.mediaId, player.currentPosition, player.duration)
+            val item = activePlayer.currentMediaItem ?: return@withContext null
+            Triple(item.mediaId, activePlayer.currentPosition, activePlayer.duration)
         } ?: return
         val (songId, positionMs, durationMs) = snapshot
         if (songId.isBlank() || positionMs <= 0) return
@@ -546,6 +551,7 @@ class PlaybackService : MediaLibraryService() {
         serviceScope.launch {
             PlaybackLoudnessStore.updates.collectLatest { update ->
                 withContext(Dispatchers.Main) {
+                    if (isCasting) return@withContext
                     if (player.currentMediaItem?.mediaId == update.videoId) {
                         normalizedVolume = update.volume
                         if (!fadeInActive) player.volume = normalizedVolume
@@ -558,6 +564,7 @@ class PlaybackService : MediaLibraryService() {
             while (true) {
                 delay(AUDIO_FADE_POLL_INTERVAL_MS)
                 withContext(Dispatchers.Main) {
+                    if (isCasting) return@withContext
                     if (fadeInActive || !player.isPlaying || !player.hasNextMediaItem()) {
                         return@withContext
                     }
@@ -575,6 +582,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun applyTrackVolume(videoId: String, transitionReason: Int) {
+        if (isCasting) return
         normalizedVolume = PlaybackLoudnessStore.volumeFor(videoId)
         volumeFadeJob?.cancel()
         if (transitionReason != Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
@@ -625,15 +633,16 @@ class PlaybackService : MediaLibraryService() {
     }
 
     private fun captureQueueSnapshot(): QueueSnapshot {
-        val songs = List(player.mediaItemCount) { index ->
-            player.getMediaItemAt(index).toSong()
+        val current = activePlayer
+        val songs = List(current.mediaItemCount) { index ->
+            current.getMediaItemAt(index).toSong()
         }
         return QueueSnapshot(
             songs = songs,
-            currentIndex = player.currentMediaItemIndex,
-            positionMs = player.currentPosition,
-            repeatMode = player.repeatMode,
-            shuffleEnabled = player.shuffleModeEnabled,
+            currentIndex = current.currentMediaItemIndex,
+            positionMs = current.currentPosition,
+            repeatMode = current.repeatMode,
+            shuffleEnabled = current.shuffleModeEnabled,
             sourceName = PlayerManager.queueSourceName.value,
             isRadio = PlayerManager.isRadioQueue.value,
         )
@@ -701,11 +710,12 @@ class PlaybackService : MediaLibraryService() {
      * press plays almost instantly instead of waiting for on-demand extraction. Best-effort.
      */
     private fun prefetchNextStreamUrl() {
-        val nextIndex = player.currentMediaItemIndex + 1
-        if (nextIndex >= player.mediaItemCount) {
+        val current = activePlayer
+        val nextIndex = current.currentMediaItemIndex + 1
+        if (nextIndex >= current.mediaItemCount) {
             return
         }
-        val nextSong = player.getMediaItemAt(nextIndex).toSong()
+        val nextSong = current.getMediaItemAt(nextIndex).toSong()
         // On-device tracks already have a playable URI; there is no YouTube stream to prefetch.
         if (nextSong.isLocal) {
             return
@@ -728,6 +738,7 @@ class PlaybackService : MediaLibraryService() {
      * re-applied as soon as an audio item plays again.
      */
     private fun applyAudioOffloadForItem(mediaItem: MediaItem?) {
+        if (isCasting) return
         val forceVideo = mediaItem?.mediaMetadata?.extras
             ?.getBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, false) ?: false
 
@@ -828,9 +839,9 @@ class PlaybackService : MediaLibraryService() {
             .build()
 
         withContext(Dispatchers.Main) {
-            if (player.currentMediaItem?.mediaId == mediaItem.mediaId) {
-                player.replaceMediaItem(
-                    player.currentMediaItemIndex,
+            if (activePlayer.currentMediaItem?.mediaId == mediaItem.mediaId) {
+                activePlayer.replaceMediaItem(
+                    activePlayer.currentMediaItemIndex,
                     updated
                 )
             }
@@ -846,18 +857,19 @@ class PlaybackService : MediaLibraryService() {
                 attempts++
             }
             withContext(Dispatchers.Main) {
+                val current = activePlayer
                 when (action) {
                     ACTION_WIDGET_PLAY_PAUSE -> {
-                        if (player.isPlaying) {
-                            player.pause()
-                        } else if (player.mediaItemCount > 0) {
-                            if (player.playbackState == Player.STATE_IDLE) player.prepare()
-                            player.play()
+                        if (current.isPlaying) {
+                            current.pause()
+                        } else if (current.mediaItemCount > 0) {
+                            if (current.playbackState == Player.STATE_IDLE) current.prepare()
+                            current.play()
                         }
                     }
 
-                    ACTION_WIDGET_PREVIOUS -> player.seekToPreviousMediaItem()
-                    ACTION_WIDGET_NEXT -> player.seekToNextMediaItem()
+                    ACTION_WIDGET_PREVIOUS -> current.seekToPreviousMediaItem()
+                    ACTION_WIDGET_NEXT -> current.seekToNextMediaItem()
                 }
             }
         }
@@ -865,7 +877,7 @@ class PlaybackService : MediaLibraryService() {
 
     private fun updatePlaybackWidget(mediaItem: MediaItem?, artworkBytes: ByteArray? = null) {
         serviceScope.launch {
-            val isPlaying = withContext(Dispatchers.Main) { player.isPlaying }
+            val isPlaying = withContext(Dispatchers.Main) { activePlayer.isPlaying }
             PlaybackWidgetStateStore.write(
                 context = applicationContext,
                 mediaItem = mediaItem,
