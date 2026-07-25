@@ -1,220 +1,115 @@
-[![Latest release](https://img.shields.io/github/v/release/ilianoKokoro/umihi-music?style=for-the-badge)](https://github.com/ilianoKokoro/umihi-music/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/ilianoKokoro/umihi-music/total?style=for-the-badge&color=E53935)](https://github.com/ilianoKokoro/umihi-music/releases/latest)
-[![RB Status](https://shields.rbtlog.dev/simple/ca.ilianokokoro.umihi.music?style=for-the-badge)](https://github.com/ilianoKokoro/umihi-music/releases/latest)
-[![Discord Server](https://dcbadge.limes.pink/api/server/https://discord.gg/mSPeHS5cF6)](https://discord.gg/mSPeHS5cF6)
-[![Crowdin](https://img.shields.io/badge/Crowdin-translate%20project-2E3340?style=for-the-badge&logo=crowdin)](https://crowdin.com/project/umihi-music)
+# Umihi Music — personal fork
 
-# Umihi Music
+<img src="fastlane/metadata/android/en-US/images/icon.png" height="72" alt="Umihi Music app icon">
 
-<img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/app/src/main/res/mipmap-xxxhdpi/icon_round.webp" height="72">
+A **Material YouTube Music player** for Android, built with **Kotlin** and **Jetpack Compose**.
 
-A lightweight **Material YouTube Music player** for Android, built with **Kotlin** and **Jetpack
-Compose**.
+> This is a personal hard fork of **[ilianoKokoro/umihi-music](https://github.com/ilianoKokoro/umihi-music)**,
+> licensed GPL-3.0. It has diverged substantially from the original and is **neither supported nor
+> endorsed by the original author**. Please do not take fork problems to the upstream project.
 
-<a href="https://trendshift.io/repositories/58582?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-58582" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/58582" alt="ilianoKokoro%2Fumihi-music | Trendshift" width="250" height="55"/></a>
+## Status ⚠️
 
-<!--
-<a href="https://www.producthunt.com/products/umihi-music?embed=true&utm_source=badge-featured&utm_medium=badge&utm_source=badge-umihi&#0045;music" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1015448&theme=dark&t=1757640480731" alt="Umihi&#0032;Music - A&#0032;simple&#0032;material&#0032;Youtube&#0032;music&#0032;player&#0032;for&#0032;Android | Product Hunt" style="width: 250px; height: 54px; display: block" width="250" height="54" /></a> -->
+**Sideload only.** This fork is not published anywhere — no GitHub release, no F-Droid, no
+IzzyOnDroid, no Obtainium. You build it yourself and install the APK by hand.
 
-Designed for simplicity and smooth performance, Umihi Music lets you enjoy your favorite tracks
-effortlessly.
+- The APK is **debug-signed**, so Play Protect warns on install ("Install anyway").
+- Updating means rebuilding and installing over the top **with the same debug key**. The in-app
+  updater was removed, so nothing updates itself.
+- It keeps upstream's application id (`ca.ilianokokoro.umihi.music`), so it **cannot be installed
+  alongside** the original app.
 
-## Download 📥
-
-<table>
-  <tbody>
-     <tr>
-      <td align="center" colspan="2">
-        <a href="https://github.com/ilianoKokoro/umihi-music/releases/latest">
-          <img src="https://i.postimg.cc/sxWv2J29/badge-github.png" height="70" alt="Get Umihi Music on GitHub">
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/ilianoKokoro/umihi-music/">
-          <img src="https://i.postimg.cc/X7JRYDCT/badge-obtainium.png" height="50" alt="Get Umihi Music on Obtainium">
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://apt.izzysoft.de/packages/ca.ilianokokoro.umihi.music">
-          <img src="https://i.postimg.cc/MHMKVZLQ/image(1).png" height="50" alt="Get Umihi Music on IzzyOnDroid">
-        </a>
-      </td>
-    </tr>
-    <tr>
-      <td align="center">
-        <a href="https://www.openapk.net/umihi-music/ca.ilianokokoro.umihi.music/">
-          <img src="https://www.openapk.net/images/openapk-badge.png" height="75" alt="Get Umihi Music on OpenAPK">
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://unclouded.app/apps/umihi-music">
-          <img src="https://i.postimg.cc/rp63gVP0/badge-unclouded.png" height="50" alt="Get Umihi Music on Unclouded">
-        </a>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-## Support 🛟
-
-Join the Discord server to get update pings, know about announcements and get support about problems
-
-<a href="https://discord.gg/mSPeHS5cF6"><img src="https://img.builtbybit.com/qvILgDj0iYP6hLQQ5ZN4BQYilVv3ZGAZl_UsuYDHZDQ/resize:fill:2000/format:webp/aHR0cHM6Ly9jZG4uanNkZWxpdnIubmV0L2doL2ludGVyZ3Jhdi9kZXZpbnMtYmFkZ2VzL2Fzc2V0cy9jb3p5L3NvY2lhbC9kaXNjb3JkLXBsdXJhbF92ZWN0b3Iuc3Zn" height="60"></a>
+Verification is partial and stated honestly: 54 JVM unit tests across 8 classes pass, but there is
+no instrumented test suite, and most of the features below have **not yet been exercised on a
+device**. Treat it as working-but-unvalidated.
 
 ## Features ✨
 
-- Play your YouTube / YT Music playlists
-- Download music for offline playback
-- Search and play music without logging in
-- Brand accounts login
-- Automatic in-app updates
-- No ads
-- Lightweight and fast
-- Clean Material Expressive design
-- Optimized for modern Android devices
-- Android Auto support
+Inherited from upstream: play your YouTube / YT Music playlists, search and play without signing
+in, brand-account login, offline downloads, Android Auto browsing, 31 languages. Streams come from
+the InnerTube API, so no ads are served — that is a consequence of how it plays, not a feature this
+fork implements.
 
-### Future features (In development)
+Added by this fork:
 
-- [ ] Playlist editing
+**Playback** — crossfade (a volume fade around gapless transitions, 0–12 s) · A–B loop · sleep
+timer, including "end of current track" · playback speed · equalizer with a **separate profile per
+audio output** (speaker / wired / Bluetooth) · loudness normalization · resume where you left off ·
+seeded radio and autoplay, with suggestions kept visually separate from your own queue.
 
-## Screenshots 🖼️
+**Video** — Song ⇄ Video toggle on the player · fullscreen landscape · picture-in-picture.
 
-<p float="left">
-  <img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/home.png" width="200" />
-  <img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/playlist.png" width="200" />
-  <img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/search.png" width="200" />
-  <img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/player.png" width="200" />
-  <img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/queue.png" width="200" />
-  <img src="https://raw.githubusercontent.com/ilianoKokoro/umihi-music/refs/heads/main/fastlane/metadata/android/en-US/images/phoneScreenshots/settings.png" width="200" />
+**Offline & local files** — auto-download of liked songs under a **storage quota** (auto-downloads
+are purge-eligible, manual ones never are) · Wi-Fi-only and metered-network switches · plays audio
+files already on the phone (MediaStore).
 
-</p>
+**Library & playlists** — on-device playlists you can create, rename, reorder by dragging, edit and
+delete, with **JSON export/import** via SAF · save the current queue as a playlist · account library
+(liked songs / saved albums / followed artists) with filter chips · accent- and case-insensitive
+search inside liked songs · new-release notifications for followed artists.
 
-## Beta build 🪲
+**Discovery** — tabbed search with a Videos tab, top-result card, spell corrections, removable
+recent searches, moods & genres browsing · voice search · home refocused on discovery.
 
-**⚠️ This build may not be stable as it is not a release ⚠️**
+**Listening statistics** (local, on-device) — Week / Month / Year / All-time top tracks and artists,
+a 26-week heatmap, and an annual "Wrapped" card.
 
-[![Beta APK Build](https://img.shields.io/github/actions/workflow/status/ilianoKokoro/umihi-music/build-release.yml?style=for-the-badge&label=Beta%20Build)](https://github.com/ilianoKokoro/umihi-music/actions/workflows/build-release.yml)
+**Look & feel** — player theme derived from the current artwork, with a blurred drifting backdrop ·
+7 selectable theme colours including dynamic colour · docked mini-player that auto-hides on scroll ·
+synced lyrics via LRCLIB, no account needed.
 
-<a href="https://github.com/ilianoKokoro/umihi-music/releases/download/beta/UmihiMusic.apk"><img src="https://i.postimg.cc/sxWv2J29/badge-github.png" height="80"></a>
+**System** — home-screen playback widget (Glance) · opens shared YouTube links (`/watch`, `/v/`,
+`/embed/`, `youtu.be`, `m.youtube.com`) · **backup / restore to a JSON file** covering history,
+local playlists, queue and preferences. Session cookies are deliberately excluded from backups: they
+are encrypted with a device-bound Keystore key and could never be decrypted after a restore.
+
+### Not implemented
+
+- **Editing YouTube Music playlists themselves.** Creating and deleting a remote playlist works;
+  adding or removing tracks inside one does not. On-device playlists are fully editable.
+- **Spotify import** — the code is present but hidden and unfinished. It needs a client id at build
+  time (`-PspotifyClientId=…`) *and* the OAuth redirect is still not wired up, so it does not work
+  end to end even when enabled.
+- **Wear OS** — no `:wear` module.
+
+## Build it yourself 🔨
+
+Requires **JDK 21** and the Android SDK (compileSdk 37, minSdk 24).
+
+```bash
+./gradlew assembleStandaloneRelease
+# → app/build/outputs/apk/standalone/release/Umihi.apk
+```
+
+Useful properties:
+
+| Property | Effect |
+|---|---|
+| `-Pbeta=false` | Drops the `-beta` suffix from the version name (the suffix is **on by default**) |
+| `-PtargetAbi=arm64-v8a` | Packages native libs for that ABI only — a noticeably smaller APK. Unset means universal |
+| `-PspotifyClientId=<id>` | Enables the (unfinished) Spotify import entry point |
+| `-PgitHash=<sha>` | Stamps a commit hash into `BuildConfig` |
+
+Without a `keystore.properties` at the repo root, release builds fall back to your local **debug**
+keystore. Share that keystore between machines if you want to install over an existing build.
 
 ## Credits 🎨
 
-**App logo**: Made by [Apelleru](https://www.twitch.tv/apelleru)
+- Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
+- **App logo**: [Apelleru](https://www.twitch.tv/apelleru).
+- **Translations**: inherited from the upstream project's Crowdin, and still shipped here. This fork
+  no longer syncs with it, so the list is frozen as of the fork point — thank you to
+  [ilianoKokoro](https://crowdin.com/profile/ilianoKokoro),
+  [Tusk](https://crowdin.com/profile/frittusk),
+  [Mickael81](https://crowdin.com/profile/Mickael81),
+  [Alina Ye-jin](https://crowdin.com/profile/Alinayejin),
+  [j.bosch](https://crowdin.com/profile/j.bosch),
+  [Vladik01-11](https://crowdin.com/profile/Vladik01-11),
+  [Smashik](https://crowdin.com/profile/Smashik),
+  [jackgr545](https://crowdin.com/profile/jackgr545),
+  [Ori](https://crowdin.com/profile/GerOriki) and
+  [corrigo](https://crowdin.com/profile/corrigo).
 
-## Translations 🉐
+## License 📄
 
-[![Crowdin](https://badges.crowdin.net/umihi-music/localized.svg)](https://crowdin.com/project/umihi-music)
-
-Thank you to all the people who helped translate Umihi Music
-
-<!-- CROWDIN-CONTRIBUTORS-START -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/ilianoKokoro"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/14810202/medium/aba61629e7e73789c121fe6be42f5e3f.png" />
-          <br />
-          <sub><b>ilianoKokoro</b></sub></a>
-        <br />
-        <sub><b>5870 words</b></sub>
-        <br /><sub><b><code title="Afrikaans">af</code></b>, <b><code title="Arabic">ar</code></b>, <b><code title="Catalan">ca</code></b>, <b><code title="Chinese Simplified">zh-CN</code></b>, <b><code title="Chinese Traditional">zh-TW</code></b>, <b><code title="Czech">cs</code></b>, <b><code title="Danish">da</code></b>, <b><code title="Dutch">nl</code></b>, <b><code title="Finnish">fi</code></b>, <b><code title="French">fr</code></b>, <b><code title="German">de</code></b>, <b><code title="Greek">el</code></b>, <b><code title="Hebrew">he</code></b>, <b><code title="Hungarian">hu</code></b>, <b><code title="Italian">it</code></b>, <b><code title="Japanese">ja</code></b>, <b><code title="Korean">ko</code></b>, <b><code title="LOLCAT">lol</code></b>, <b><code title="Norwegian">no</code></b>, <b><code title="Polish">pl</code></b>, <b><code title="Portuguese">pt-PT</code></b>, <b><code title="Portuguese, Brazilian">pt-BR</code></b>, <b><code title="Romanian">ro</code></b>, <b><code title="Russian">ru</code></b>, <b><code title="Serbian (Cyrillic)">sr</code></b>, <b><code title="Spanish">es-ES</code></b>, <b><code title="Swedish">sv-SE</code></b>, <b><code title="Tagalog">tl</code></b>, <b><code title="Turkish">tr</code></b>, <b><code title="Ukrainian">uk</code></b>, <b><code title="Vietnamese">vi</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/frittusk"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17619264/medium/e784698c2018599cbae52322b897cd1f.png" />
-          <br />
-          <sub><b>Tusk</b></sub>
-          <br />
-          <sub><b>(frittusk)</b></sub></a>
-        <br />
-        <sub><b>569 words</b></sub>
-        <br /><sub><b><code title="LOLCAT">lol</code></b>, <b><code title="Tagalog">tl</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/Alinayejin"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/14440508/medium/f02d53d5d23fc5f2d367c0c319829c6c.jpg" />
-          <br />
-          <sub><b>Alina Ye-jin</b></sub>
-          <br />
-          <sub><b>(Alinayejin)</b></sub></a>
-        <br />
-        <sub><b>384 words</b></sub>
-        <br /><sub><b><code title="Korean">ko</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/j.bosch"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17639020/medium/d7c3db7648b323eeb5e39a3a37f110ec_default.png" />
-          <br />
-          <sub><b>j.bosch</b></sub></a>
-        <br />
-        <sub><b>289 words</b></sub>
-        <br /><sub><b><code title="Catalan">ca</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/Mickael81"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16589059/medium/65fcdfc7892c0e034a5b24fcba44b471_default.png" />
-          <br />
-          <sub><b>Mickael81</b></sub></a>
-        <br />
-        <sub><b>629 words</b></sub>
-        <br /><sub><b><code title="French">fr</code></b></sub>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/Vladik01-11"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16623259/medium/0b581be050429f886660aae12f86ee51.jpeg" />
-          <br />
-          <sub><b>Vladik01-11</b></sub></a>
-        <br />
-        <sub><b>66 words</b></sub>
-        <br /><sub><b><code title="Russian">ru</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/Smashik"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16846271/medium/c9f3394aa690c57089ee523b37b7fdc7.png" />
-          <br />
-          <sub><b>Smashik</b></sub></a>
-        <br />
-        <sub><b>48 words</b></sub>
-        <br /><sub><b><code title="Russian">ru</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/jackgr545"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17760733/medium/5190b04c9be7f16d7d9417fcf00806ab.png" />
-          <br />
-          <sub><b>jackgr545</b></sub></a>
-        <br />
-        <sub><b>44 words</b></sub>
-        <br /><sub><b><code title="Chinese Traditional">zh-TW</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/GerOriki"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/16268376/medium/da00e54b08cd40348231d92873a0cd0a_default.png" />
-          <br />
-          <sub><b>Ori</b></sub>
-          <br />
-          <sub><b>(GerOriki)</b></sub></a>
-        <br />
-        <sub><b>32 words</b></sub>
-        <br /><sub><b><code title="Hebrew">he</code></b></sub>
-      </td>
-      <td align="center" valign="top">
-        <a href="https://crowdin.com/profile/corrigo"><img alt="logo" style="width: 48px" src="https://crowdin-static.cf-downloads.crowdin.com/avatar/17457288/medium/ef9cc844691730917c6a23cf8a950089.jpg" />
-          <br />
-          <sub><b>corrigo</b></sub></a>
-        <br />
-        <sub><b>29 words</b></sub>
-        <br /><sub><b><code title="French">fr</code></b></sub>
-      </td>
-    </tr>
-  </tbody>
-</table>
-<!-- CROWDIN-CONTRIBUTORS-END -->
-
-<img alt="Translation status" src="https://badges.awesome-crowdin.com/translation-14810202-878334.png" />
-
-## Star History ✨
-
-<a href="https://www.star-history.com/?type=date&repos=ilianoKokoro%2Fumihi-music">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ilianoKokoro/umihi-music&type=date&theme=dark&legend=top-left&sealed_token=k_RkJanYCwu4XqU4GYKLbX0FkxLGJLx4_dPWi_AfySTEj9eqsvnx628ff-p2z5Z0RLN1M0lmcT3wbr6bRG0__Wmie_CLrdkR7NEQ1VI9ZpgzI6Li2_uR-g" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ilianoKokoro/umihi-music&type=date&legend=top-left&sealed_token=k_RkJanYCwu4XqU4GYKLbX0FkxLGJLx4_dPWi_AfySTEj9eqsvnx628ff-p2z5Z0RLN1M0lmcT3wbr6bRG0__Wmie_CLrdkR7NEQ1VI9ZpgzI6Li2_uR-g" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=ilianoKokoro/umihi-music&type=date&legend=top-left&sealed_token=k_RkJanYCwu4XqU4GYKLbX0FkxLGJLx4_dPWi_AfySTEj9eqsvnx628ff-p2z5Z0RLN1M0lmcT3wbr6bRG0__Wmie_CLrdkR7NEQ1VI9ZpgzI6Li2_uR-g" />
- </picture>
-</a>
+GPL-3.0, inherited from the upstream project. See [LICENSE](LICENSE).
