@@ -118,6 +118,21 @@ Prouvé hors device : les deux chemins du client id Spotify ; le garde-fou de mi
 | Régénérer les baseline profiles ? | **Non** : exige un device rooté, et la dernière tentative (`055f358`) a été revert par `60dff64` pour perte de couverture réelle |
 | Supprimer `crowdin.yml` avec le workflow Crowdin ? | **Non** : le mapping `fr: fr` y est indispensable pour ne pas recréer `values-fr-rFR` |
 
+## Cast / Chromecast — ❌ rejeté le 2026-07-25, ne pas re-litiger
+
+Instruit puis abandonné. Le refus n'est pas un manque d'effort, il est **structurel** :
+
+1. **Aucun `MediaItem` de l'app ne porte une URL jouable.** `Song.mediaItem` fixe l'URI à `https://www.youtube.com/watch?v=<id>` ; l'URL googlevideo signée n'existe qu'à l'intérieur du `ResolvingDataSource` (`YoutubeDataSourceFactory.kt`), **sur l'appareil**, au moment du chargement. `CastPlayer` sérialise `localConfiguration.uri` tel quel vers le récepteur, et il n'existe aucun équivalent de `ResolvingDataSource` côté Chromecast. Un `CastPlayer` posé tel quel enverrait une **page HTML** au récepteur pour chaque titre.
+2. **Toute la bibliothèque hors-ligne est incastable par construction.** Les téléchargements vivent dans `filesDir/downloads/…` (stockage interne privé) et le `FileProvider` a été supprimé en `026e614` ; les titres MediaStore portent une URI `content://`. Un Chromecast récupère le média en HTTP sur le réseau local et ne peut ouvrir ni l'un ni l'autre.
+3. **Les URLs signées portent un paramètre `ip`.** Derrière du NAT IPv4 le téléphone et le Chromecast partagent une adresse publique et ça peut passer ; en IPv6 natif le récepteur a une autre adresse et le CDN répond 403. Panne « marche chez moi, pas chez toi » que l'app ne peut pas détecter.
+4. **Une file poussée d'un bloc au récepteur contient des URLs qui meurent en cours de session**, sans rien pour les re-résoudre — ce qui force un envoi titre par titre et détruit la lecture enchaînée du récepteur.
+
+Corrections utiles au passage : un récepteur personnalisé n'est **pas** requis pour démarrer (le Default Media Receiver joue des URLs HTTPS arbitraires) — il ne servirait qu'à re-résoudre les URLs mortes, et exigerait un app id enregistré plus une page HTTPS hébergée publiquement, que ce fork n'a pas. Par ailleurs `media3-cast` tire `play-services-cast-framework` (absent des appareils dé-googlisés) et `MediaRouteButton` exige un thème AppCompat, alors que `Theme.UmihiMusic` étend `android:Theme.Material.NoActionBar` et `MainActivity` est une `ComponentActivity` nue.
+
+**Piste à tester sur appareil à la place** : le sélecteur de sortie Android route peut-être déjà l'app vers une enceinte Chromecast-built-in, puisque la `MediaLibrarySession` est publiée (`PlaybackService`). Cela couvre « joue ça sur mon enceinte » avec le téléphone comme décodeur — donc `ResolvingDataSource`, téléchargements et fichiers locaux continuent tous de fonctionner. À vérifier avant d'envisager quoi que ce soit d'autre.
+
+⚠️ Option explicitement écartée : caster les téléchargements via un serveur HTTP local. C'est le seul chemin sans problème d'URL signée, mais il exposerait des fichiers privés de l'app à tout le réseau local sans authentification, plus une exception trafic en clair — l'exact opposé du durcissement de la vague 6 (`7441616`).
+
 ## Décisions encore ouvertes
 
 1. **Id de langue Crowdin** : le mapping `fr: fr` de `crowdin.yml` utilise l'id standard, **non vérifié** (pas d'accès à `api.crowdin.com`). À confirmer dans Settings > Languages du projet 878334 **avant la prochaine synchro**, sinon `values-fr-rFR` réapparaît.
