@@ -9,6 +9,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 
 object ComposeHelper {
@@ -59,6 +60,70 @@ object ComposeHelper {
         }
 
         return repeatModeState.intValue
+    }
+
+    /**
+     * Media id of the track the player is on, or null when nothing is loaded. Song.mediaItem sets
+     * mediaId to the youtubeId, so a row can compare it against its own song without asking the
+     * controller for the whole queue.
+     */
+    @Composable
+    fun rememberCurrentMediaId(player: Player?): String? {
+        val mediaIdState = remember { mutableStateOf(player?.currentMediaItem?.mediaId) }
+
+        DisposableEffect(player) {
+            if (player == null) {
+                mediaIdState.value = null
+                return@DisposableEffect onDispose {}
+            }
+
+            // The current item can already differ from what the initial remember captured (the
+            // controller reconnects, or the row scrolled into view mid-track).
+            mediaIdState.value = player.currentMediaItem?.mediaId
+
+            val listener = object : Player.Listener {
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    mediaIdState.value = mediaItem?.mediaId
+                }
+            }
+
+            player.addListener(listener)
+
+            onDispose {
+                player.removeListener(listener)
+            }
+        }
+
+        return mediaIdState.value
+    }
+
+    /** Whether playback is actually running, so a now-playing indicator can rest while paused. */
+    @Composable
+    fun rememberIsPlaying(player: Player?): Boolean {
+        val isPlayingState = remember { mutableStateOf(player?.isPlaying == true) }
+
+        DisposableEffect(player) {
+            if (player == null) {
+                isPlayingState.value = false
+                return@DisposableEffect onDispose {}
+            }
+
+            isPlayingState.value = player.isPlaying
+
+            val listener = object : Player.Listener {
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    isPlayingState.value = isPlaying
+                }
+            }
+
+            player.addListener(listener)
+
+            onDispose {
+                player.removeListener(listener)
+            }
+        }
+
+        return isPlayingState.value
     }
 
     @Composable

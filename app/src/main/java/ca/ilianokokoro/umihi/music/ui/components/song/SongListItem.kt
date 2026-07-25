@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.song
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,12 +31,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
@@ -57,6 +62,23 @@ fun SongListItem(
     LaunchedEffect(song.youtubeId) {
         PlayerManager.prewarmStream(context, song)
     }
+
+    // Observed per row rather than threaded down from each screen: only the visible rows are
+    // composed, and this way every list using SongListItem marks the playing track for free.
+    val controller by PlayerManager.controllerState.collectAsStateWithLifecycle()
+    val currentMediaId = ComposeHelper.rememberCurrentMediaId(controller)
+    val isPlaying = ComposeHelper.rememberIsPlaying(controller)
+    val isCurrentSong = currentMediaId != null && currentMediaId == song.youtubeId
+
+    val containerColor by animateColorAsState(
+        targetValue = if (isCurrentSong) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.38f)
+        } else {
+            Color.Transparent
+        },
+        animationSpec = tween(durationMillis = 180),
+        label = "songItemContainer",
+    )
     val isLoggedIn by remember(context) { LikeManager.isLoggedIn(context) }
         .collectAsStateWithLifecycle(initialValue = false)
 
@@ -164,15 +186,23 @@ fun SongListItem(
                 )
             }
         },
-        colors = ListItemDefaults.colors(),
+        colors = ListItemDefaults.colors(containerColor = containerColor),
         verticalAlignment = Alignment.CenterVertically,
         content = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                if (isCurrentSong) {
+                    NowPlayingIndicator(isPlaying = isPlaying)
+                }
                 Text(
                     text = song.title,
+                    color = if (isCurrentSong) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        Color.Unspecified
+                    },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
