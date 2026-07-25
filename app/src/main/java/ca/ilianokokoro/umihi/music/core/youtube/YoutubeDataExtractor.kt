@@ -7,9 +7,12 @@ import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.helpers.ConnectivityHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
 import ca.ilianokokoro.umihi.music.models.AlbumHeaderInfo
 import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
@@ -26,6 +29,7 @@ import ca.ilianokokoro.umihi.music.models.SpellCorrection
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -1939,6 +1943,9 @@ object YoutubeDataExtractor {
         song: Song,
         allowLocal: Boolean = false
     ): String {
+        val quality = effectiveAudioQuality(context)
+        invalidateStreamsIfQualityChanged(context, quality)
+
         val sessionCache = if (song.forceVideo) videoStreamCache else audioStreamCache
         sessionCache[song.youtubeId]?.let { cached ->
             if (isPlaybackUrlFresh(cached.url)) {
@@ -1982,7 +1989,11 @@ object YoutubeDataExtractor {
             }
         }
 
-        val resolved = getSongUrlFromYoutube(song, forceVideo = song.forceVideo)
+        val resolved = getSongUrlFromYoutube(
+            song,
+            forceVideo = song.forceVideo,
+            quality = quality,
+        )
         if (!song.forceVideo) {
             audioStreamCache[song.youtubeId] = resolved
             localSongRepository.setStreamInfo(
@@ -1996,6 +2007,31 @@ object YoutubeDataExtractor {
         PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
         printd("${song.youtubeId} : Got url from YouTube and saved song")
         return resolved.url
+    }
+
+    private suspend fun effectiveAudioQuality(context: Context): AudioQuality {
+        val repository = DatastoreRepository(context.applicationContext)
+        val preferred = repository.audioQuality.first()
+        if (!repository.dataSaverOnMetered.first()) return preferred
+        return if (ConnectivityHelper.isMeteredNetwork(context)) AudioQuality.Low else preferred
+    }
+
+    /**
+     * Cached signed URLs are quality-specific but do not encode the selected preference in our
+     * database. Flush exactly once when the effective setting changes.
+     */
+    private suspend fun invalidateStreamsIfQualityChanged(
+        context: Context,
+        quality: AudioQuality,
+    ) {
+        val repository = DatastoreRepository(context.applicationContext)
+        if (repository.getLastStreamQuality() == quality) return
+
+        audioStreamCache.clear()
+        videoStreamCache.clear()
+        AppDatabase.getInstance(context).songRepository().clearStreamUrls()
+        repository.setLastStreamQuality(quality)
+        printd("Audio quality changed to $quality: flushed cached stream urls")
     }
 
 
@@ -2054,6 +2090,7 @@ object YoutubeDataExtractor {
         song: Song,
         retries: Int = Constants.YoutubeApi.RETRY_COUNT,
         forceVideo: Boolean = false,
+        quality: AudioQuality = AudioQuality.High,
     ): ResolvedAudioStream {
         var lastError: Throwable? = null
 
@@ -2065,7 +2102,11 @@ object YoutubeDataExtractor {
             song
         }
 
-        val fastUrl = resolveAndroidVrStreamUrl(playbackSong.youtubeId, preferVideo = forceVideo)
+        val fastUrl = resolveAndroidVrStreamUrl(
+            playbackSong.youtubeId,
+            preferVideo = forceVideo,
+            quality = quality,
+        )
 
         if (fastUrl != null) {
             return fastUrl
@@ -2075,7 +2116,11 @@ object YoutubeDataExtractor {
         repeat(retries) { attempt ->
             try {
                 return withContext(Dispatchers.IO) {
-                    resolveNewPipeStreamUrl(playbackSong, preferVideo = forceVideo)
+                    resolveNewPipeStreamUrl(
+                        playbackSong,
+                        preferVideo = forceVideo,
+                        quality = quality,
+                    )
                 }
             } catch (e: Throwable) {
                 lastError = e
@@ -2123,6 +2168,7 @@ object YoutubeDataExtractor {
         videoId: String,
         retries: Int = Constants.YoutubeApi.RETRY_COUNT,
         preferVideo: Boolean = false,
+        quality: AudioQuality = AudioQuality.High,
     ): ResolvedAudioStream? = withContext(Dispatchers.IO) {
         suspend fun executeRequest(): ResolvedAudioStream? {
             val response = YoutubeApiClient.getPlayerInfo(
@@ -2132,7 +2178,7 @@ object YoutubeDataExtractor {
                 //   fields = Constants.YoutubeApi.PlayerInfo.Fields.STREAM,
             )
 
-            return extractStreamFromAndroidVrResponse(response, preferVideo)
+            return extractStreamFromAndroidVrResponse(response, preferVideo, quality)
         }
 
         repeat(retries) { attempt ->
@@ -2164,6 +2210,7 @@ object YoutubeDataExtractor {
     private fun resolveNewPipeStreamUrl(
         song: Song,
         preferVideo: Boolean = false,
+        quality: AudioQuality = AudioQuality.High,
     ): ResolvedAudioStream {
         YoutubeExtractor.ensureInitialized()
         val service = ServiceList.YouTube
@@ -2189,9 +2236,10 @@ object YoutubeDataExtractor {
             }
         }
 
-        val bestAudioStream = extractor.audioStreams
-            .filter { it.content.isNotBlank() }
-            .maxByOrNull { it.averageBitrate }
+        val bestAudioStream = selectAudioStream(
+            streams = extractor.audioStreams.filter { it.content.isNotBlank() },
+            quality = quality,
+        ) { it.averageBitrate }
             ?: error("No valid audio streams found")
 
         return ResolvedAudioStream(
@@ -2203,6 +2251,7 @@ object YoutubeDataExtractor {
     private fun extractStreamFromAndroidVrResponse(
         text: String,
         preferVideo: Boolean = false,
+        quality: AudioQuality = AudioQuality.High,
     ): ResolvedAudioStream? {
         val root = Json.parseToJsonElement(text).jsonObject
 
@@ -2258,27 +2307,13 @@ object YoutubeDataExtractor {
             null
         }
 
-        val directUrl = root["streamingData"]
-            ?.safeObject()
-            ?.get("adaptiveFormats")
-            ?.safeArray()
-            ?.asSequence()
-            ?.mapNotNull { it.safeObject() }
-            ?.filter {
-                it["url"]?.jsonPrimitive?.contentOrNull?.isNotBlank() == true
-            }
-            ?.filter {
-                it["mimeType"]
-                    ?.jsonPrimitive
-                    ?.contentOrNull
-                    ?.startsWith("audio/", ignoreCase = true) == true
-            }
-            ?.maxByOrNull {
-                it["bitrate"]?.jsonPrimitive?.intOrNull ?: 0
-            }
-            ?.get("url")
-            ?.jsonPrimitive
-            ?.contentOrNull
+        val directUrl = selectAudioStreamUrl(
+            adaptiveFormats = root["streamingData"]
+                ?.safeObject()
+                ?.get("adaptiveFormats")
+                ?.safeArray(),
+            quality = quality,
+        )
 
         val loudnessDb = root["playerConfig"]
             ?.safeObject()

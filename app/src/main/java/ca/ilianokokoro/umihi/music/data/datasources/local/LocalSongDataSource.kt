@@ -61,6 +61,9 @@ interface LocalSongDataSource {
         create(updated)
     }
 
+    @Query("UPDATE songs SET streamUrl = NULL")
+    suspend fun clearStreamUrls()
+
     @Query("DELETE FROM songs WHERE youtubeId IN (:songIds)")
     suspend fun deleteByIds(songIds: List<String>)
 
