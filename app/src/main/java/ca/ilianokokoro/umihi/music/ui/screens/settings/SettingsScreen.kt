@@ -24,10 +24,12 @@ import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
+import androidx.compose.material.icons.outlined.DataSaverOn
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LibraryMusic
@@ -72,7 +74,9 @@ import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.AudioQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.audioQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
@@ -371,6 +375,31 @@ fun SettingsScreen(
                         SettingsSection(
                             title = stringResource(R.string.data_and_storage)
                         ) {
+                            SettingsItem(
+                                title = stringResource(R.string.audio_quality_title),
+                                subtitle = stringResource(
+                                    R.string.audio_quality_subtitle,
+                                    audioQualityLabel(screenState.settings.audioQuality),
+                                ),
+                                leadingIcon = Icons.Outlined.HighQuality,
+                                onClick = {
+                                    settingsViewModel.updateShowAudioQualityDialog(true)
+                                },
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            BooleanSettingItem(
+                                title = stringResource(R.string.data_saver_title),
+                                subtitle = stringResource(R.string.data_saver_description),
+                                leadingIcon = Icons.Outlined.DataSaverOn,
+                                value = screenState.settings.dataSaverOnMetered,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.DATA_SAVER_ON_METERED,
+                                        it,
+                                    )
+                                },
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(
                                 title = stringResource(R.string.download_on_metered_title),
                                 subtitle = stringResource(R.string.download_on_metered_description),
@@ -496,6 +525,19 @@ fun SettingsScreen(
                                 onClose = {
                                     settingsViewModel.updateShowThemeColorDialog(false)
                                 }
+                            )
+                        } else if (uiState.showAudioQualityDialog) {
+                            AudioQualityDialog(
+                                selectedOption = screenState.settings.audioQuality,
+                                onChange = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.AUDIO_QUALITY,
+                                        it.toString(),
+                                    )
+                                },
+                                onClose = {
+                                    settingsViewModel.updateShowAudioQualityDialog(false)
+                                },
                             )
                         } else if (uiState.showDownloadDeleteConfirm) {
                             ConfirmDialog(

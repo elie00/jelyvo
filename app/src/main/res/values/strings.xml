@@ -207,6 +207,13 @@
     <string name="notify_new_releases_description">Get notified when artists you follow publish new albums or singles</string>
     <string name="short_minutes">%1$d min</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
+    <string name="audio_quality_title">Audio quality</string>
+    <string name="audio_quality_subtitle">Streaming and downloads: %1$s</string>
+    <string name="audio_quality_low">Low</string>
+    <string name="audio_quality_normal">Normal</string>
+    <string name="audio_quality_high">High</string>
+    <string name="data_saver_title">Data Saver</string>
+    <string name="data_saver_description">Uses the lowest audio quality while on mobile data</string>
     <string name="download_on_metered_description">Allows downloading songs and playlists using your mobile data plan</string>
     <string name="smart_offline"><![CDATA[Smart Offline]]></string>
     <string name="auto_download_title">Auto-download offline</string>

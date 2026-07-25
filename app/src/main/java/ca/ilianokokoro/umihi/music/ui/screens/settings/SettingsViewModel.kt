@@ -85,6 +85,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updateShowAudioQualityDialog(value: Boolean) {
+        _uiState.update {
+            it.copy(showAudioQualityDialog = value)
+        }
+    }
+
     fun updateShowDownloadDeleteConfirm(value: Boolean) {
         viewModelScope.launch {
             _uiState.update {

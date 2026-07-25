@@ -200,6 +200,13 @@
     <string name="notify_new_releases_description">Soyez averti lorsque les artistes que vous suivez publient de nouveaux albums ou singles</string>
     <string name="short_minutes">%1$d min</string>
     <string name="download_on_metered_title">Télécharger via les données mobiles</string>
+    <string name="audio_quality_title">Qualité audio</string>
+    <string name="audio_quality_subtitle">Streaming et téléchargements : %1$s</string>
+    <string name="audio_quality_low">Faible</string>
+    <string name="audio_quality_normal">Normale</string>
+    <string name="audio_quality_high">Élevée</string>
+    <string name="data_saver_title">Économie de données</string>
+    <string name="data_saver_description">Utilise la qualité audio la plus faible sur les réseaux mobiles</string>
     <string name="download_on_metered_description">Permet de télécharger des titres et des playlists en utilisant votre forfait de données mobiles</string>
     <string name="smart_offline"><![CDATA[Hors ligne intelligent]]></string>
     <string name="auto_download_title">Téléchargement automatique hors ligne</string>

@@ -8,6 +8,7 @@ data class SettingsState(
     val screenState: ScreenState = ScreenState.Loading,
     val showDownloadDeleteConfirm: Boolean = false,
     val showThemeColorDialog: Boolean = false,
+    val showAudioQualityDialog: Boolean = false,
     val showRestoreConfirm: Boolean = false,
     val backupInProgress: Boolean = false,
     val notInterestedCount: Int = 0,
