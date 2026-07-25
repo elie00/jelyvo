@@ -13,6 +13,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUDIO_QUALITY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_LIKED
@@ -22,7 +23,9 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SAVER_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.LAST_STREAM_QUALITY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
@@ -60,6 +63,10 @@ class DatastoreRepository(private val context: Context) {
         val KEEP_SCREEN_ON = booleanPreferencesKey(Constants.Datastore.KEEP_SCREEN_ON)
         val SEND_PLAYBACK_DATA = booleanPreferencesKey(Constants.Datastore.SEND_PLAYBACK_DATA)
         val DOWNLOAD_ON_METERED = booleanPreferencesKey(Constants.Datastore.DOWNLOAD_ON_METERED)
+        val AUDIO_QUALITY = stringPreferencesKey(Constants.Datastore.AUDIO_QUALITY)
+        val DATA_SAVER_ON_METERED =
+            booleanPreferencesKey(Constants.Datastore.DATA_SAVER_ON_METERED)
+        val LAST_STREAM_QUALITY = stringPreferencesKey(Constants.Datastore.LAST_STREAM_QUALITY)
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
         val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
@@ -96,6 +103,10 @@ class DatastoreRepository(private val context: Context) {
         val keepScreenOn = it[KEEP_SCREEN_ON] ?: false
         val sendPlaybackData = it[SEND_PLAYBACK_DATA] ?: false
         val downloadOnMetered = it[DOWNLOAD_ON_METERED] ?: false
+        val audioQuality = it[AUDIO_QUALITY]?.let { value ->
+            runCatching { AudioQuality.valueOf(value) }.getOrNull()
+        } ?: AudioQuality.High
+        val dataSaverOnMetered = it[DATA_SAVER_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
         val themeColor = it[THEME_COLOR]?.let { value ->
@@ -126,6 +137,8 @@ class DatastoreRepository(private val context: Context) {
             keepScreenOn = keepScreenOn,
             sendPlaybackData = sendPlaybackData,
             downloadOnMetered = downloadOnMetered,
+            audioQuality = audioQuality,
+            dataSaverOnMetered = dataSaverOnMetered,
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
             themeColor = themeColor,
@@ -158,6 +171,28 @@ class DatastoreRepository(private val context: Context) {
         it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Dynamic
+    }
+
+    /** Lightweight flows used on the latency-sensitive stream-resolution path. */
+    val audioQuality: Flow<AudioQuality> = context.dataStore.data.map {
+        it[AUDIO_QUALITY]?.let { value ->
+            runCatching { AudioQuality.valueOf(value) }.getOrNull()
+        } ?: AudioQuality.High
+    }
+
+    val dataSaverOnMetered: Flow<Boolean> = context.dataStore.data.map {
+        it[DATA_SAVER_ON_METERED] ?: false
+    }
+
+    suspend fun getLastStreamQuality(): AudioQuality =
+        context.dataStore.data.first()[LAST_STREAM_QUALITY]?.let { value ->
+            runCatching { AudioQuality.valueOf(value) }.getOrNull()
+        } ?: AudioQuality.High
+
+    suspend fun setLastStreamQuality(quality: AudioQuality) {
+        context.dataStore.edit {
+            it[LAST_STREAM_QUALITY] = quality.name
+        }
     }
 
     /**
@@ -339,6 +374,12 @@ class DatastoreRepository(private val context: Context) {
         SunsetOrange,
         RoseRed,
         Mono
+    }
+
+    enum class AudioQuality {
+        Low,
+        Normal,
+        High,
     }
 
 }
