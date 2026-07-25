@@ -1,14 +1,15 @@
 # Chantier Umihi Music — fork elie00
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-07-22, branche `main` propre à `dbd7d8b`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-07-25, branche `main` propre à `5b7daf5`, remote `origin = github.com/elie00/umihi-music`.
 
 ## Contexte général
 
 Fork personnel d'`ilianoKokoro/umihi-music` (lecteur YouTube Music, Kotlin + Jetpack Compose, Material 3). Direction assumée : divergence du projet d'origine.
 
 Décisions structurantes déjà actées :
-- **Auto-updater upstream désactivé** (`UPDATER_ENABLED=false` pour la flavor `standalone`) : l'app ne propose plus les releases d'ilianoKokoro. Aucun remote git vers l'upstream.
+- **Auto-updater upstream supprimé** (`026e614`) : le champ `UPDATER_ENABLED` n'existe plus, `GithubDatasource` / `GithubRepository` / `UpdateDialog` ont été retirés, ainsi que la permission `REQUEST_INSTALL_PACKAGES` et le `FileProvider`. L'app ne propose plus les releases d'ilianoKokoro. Aucun remote git vers l'upstream.
+- **Flavor unique** (`5b7daf5`) : la flavor `store` (F-Droid) a été supprimée, elle ne différait plus de `standalone` que par un suffixe. La dimension `version` est conservée pour ne pas renommer les variantes.
 - **APK signé en debug local** (pas de `keystore.properties` dans le repo) → les mises à jour se font en recompilant et installant par-dessus.
 - Téléphone cible : **Samsung S24 Ultra** (arm64, Android récent). minSdk 24, targetSdk 37.
 - Convention de travail : **micro-commits par fonctionnalité + push immédiat** après chaque vague.
@@ -70,9 +71,63 @@ Audit préalable : paroles synchronisées LRCLIB, sleep timer (option « fin du 
 
 Build `assembleStandaloneRelease` **vert du premier coup** (8m52, 0 fix), APK ~5,9 Mo, poussé `e4e639a..be20da8`. Restent hors périmètre : **Wear OS** (aucun module `:wear`).
 
+## Vague 6 (2026-07-24, workflow) — ✅ durcissement, 8 commits `460b0e5..064cbdc`, poussés
+
+Passe d'audit sur l'héritage upstream et la sécurité. **Aucune fonctionnalité utilisateur ajoutée** : que du nettoyage, de la sécurité et des tests.
+
+| Commit | Contenu |
+|---|---|
+| `460b0e5` | i18n : `values-fr-rFR` fusionné dans `values-fr` (fr-CA/fr-BE/fr-CH perdaient 29 strings) + override `fr: fr` dans `crowdin.yml` pour empêcher la régénération du dossier |
+| `026e614` | Suppression de l'auto-updater upstream mort : `GithubDatasource`, `GithubRepository`, `UpdateDialog`, `UpdateChannelDialog`, `DatastoreRepository.UpdateChannel`, permission `REQUEST_INSTALL_PACKAGES`, `FileProvider` + `file_paths.xml`, overlay `app/src/store/AndroidManifest.xml` |
+| `4803066`, `aa8fc66` | CI : retrait du ping Discord et du workflow contributeurs Crowdin, tous deux dépendants de secrets upstream absents ici |
+| `7441616` | Sécurité : DataStore / Room / téléchargements exclus des règles de backup (les deux fichiers XML étaient les templates AS vides) ; `KeystoreCrypto` préfixe `v1:` et renvoie `null` au lieu de rendre le chiffré tel quel |
+| `9fc560d` | Import Spotify masqué derrière `SpotifyConstants.IS_CONFIGURED`, client id injectable par `-PspotifyClientId` ou `local.properties` |
+| `6a7d4ed` | Schéma Room exporté dans `app/schemas` et commité ; chaîne de migrations gardée par `AppDatabaseMigrationsTest` |
+| `064cbdc` | 14 tests de régression sur les parseurs InnerTube (`YoutubeDataExtractorTest`) |
+
+## Vague 7 (2026-07-25, workflow) — ✅ 6 constats de l'audit traités, 7 commits `39ffb12..5b7daf5`, poussés
+
+Constats relevés pendant la vague 6 et instruits ligne par ligne. Ordre d'application 5 → 2 → 1 → 3 → 4 → 6, chaque commit laissant l'arbre compilable et les tests verts.
+
+| Commit | Constat traité |
+|---|---|
+| `39ffb12` | `extractSearchResults` et `extractSearchContinuationSongs` n'avaient **aucun appelant** (orphelins depuis `ec0806f`). Corps du second identique à `extractArtistSongs`, qui reste utilisé → suppression sans perte |
+| `1320122` | `toInt()` non gardé sur `lengthSeconds` : une valeur non numérique faisait perdre **tout le titre** (`ApiResult.Error`) au lieu d'une durée. Passé à `toIntOrNull()`. C'était le dernier parse String→nombre non gardé sous `core/` |
+| `1be4a22` | **Bug réel** : les liens `/embed/` et `/v/` ouvraient l'app et ne faisaient rien, alors que l'intent-filter les annonce. Parsing déplacé dans `YoutubeUrlParser.kt` (pur JVM, `okhttp3.HttpUrl`) — c'est la cause du silence : l'ancien code passait par `android.net.Uri`, intestable en JVM. `URL_REGEX` élargi à `m.youtube.com` |
+| `bc7d695` | `values-eo-rUY` et `values-lol-rUS` (74 clés d'anglais brut, identiques octet pour octet) supprimés. **Sens inverse du correctif français** — voir Pièges connus |
+| `de965e3` | Baseline profiles : documenté pourquoi les règles périmées restent en place (c'est R8 qui les jette au build, pas ProfileInstaller) |
+| `8f2a1a8` | **CI cassée depuis `c96021c`** : l'étape « Collect APKs » cherchait `UmihiMusic.apk` alors que Gradle produit `Umihi.apk`, donc elle échouait à chaque push sur `main` |
+| `5b7daf5` | Flavor `store` supprimée : elle ne différait plus que par un suffixe **et produisait un APK dégradé** (profil baseline invisible depuis `app/src/standaloneRelease` → `baseline.prof` de 13 Ko contre 17 Ko, aucun startup profile). Dimension `version` conservée |
+
+**Suite de tests : 8 classes, 54 tests, tous verts** (JUnit 4.13.2, JVM uniquement — pas de source set `androidTest`).
+
+### Ce qui est prouvé vs seulement écrit
+
+Prouvé hors device : les deux chemins du client id Spotify ; le garde-fou de migration Room **dans les deux sens** (rouge si `VERSION` passe à 16 sans `Migration(15,16)`) ; les 3 tests `lengthSeconds` (rouges si le garde est retiré) ; les 11 tests d'URL ; l'absence de `REQUEST_INSTALL_PACKAGES` dans l'APK via `aapt2` ; R8 qui jette les règles mortes (34 avant → 0 après) ; lint identique à **249 erreurs avant et après** l'ensemble des travaux.
+
+**Non vérifié, à valider sur device** : tout le comportement runtime de `KeystoreCrypto` (impossible en JVM — `android.util.Base64` et `AndroidKeyStore` absents, et pas de source set `androidTest`) : le préfixe `v1:`, le `null` et la lecture « déconnecté » sont **compilés, pas exercés**. Prouver les exclusions de backup demande `adb shell bmgr backupnow` puis une restauration sur un second appareil. Et la livraison réelle des intents `/embed/` et `/v/` par l'OS est déduite du manifeste, jamais observée.
+
+## Décisions tranchées pendant les vagues 6-7
+
+| Question | Décision |
+|---|---|
+| Flavor `store` : garder, supprimer, ou lui redonner un rôle ? | **Supprimée**, dimension `version` conservée. Pas de publication F-Droid prévue ; supprimer les flavors *entièrement* imposerait un `git mv` de 67 550 lignes de profil baseline invérifiable sans build release complet |
+| Supprimer `extractSearchContinuationSongs` avec `extractSearchResults` ? | **Oui**, même cause racine, corps identique à `extractArtistSongs` qui reste |
+| Ajouter `<data android:pathPrefix="/shorts/" />` au manifeste ? | **Non** : le correctif de parsing fait déjà marcher les Shorts via le partage. Revendiquer les Shorts partout est une décision d'identité produit |
+| Élargir `URL_REGEX` à `m.youtube.com` dans le même commit ? | **Oui**, c'est la seconde moitié du même défaut |
+| Régénérer les baseline profiles ? | **Non** : exige un device rooté, et la dernière tentative (`055f358`) a été revert par `60dff64` pour perte de couverture réelle |
+| Supprimer `crowdin.yml` avec le workflow Crowdin ? | **Non** : le mapping `fr: fr` y est indispensable pour ne pas recréer `values-fr-rFR` |
+
+## Décisions encore ouvertes
+
+1. **Id de langue Crowdin** : le mapping `fr: fr` de `crowdin.yml` utilise l'id standard, **non vérifié** (pas d'accès à `api.crowdin.com`). À confirmer dans Settings > Languages du projet 878334 **avant la prochaine synchro**, sinon `values-fr-rFR` réapparaît.
+2. **Espéranto côté serveur Crowdin** : la suppression de `values-eo-rUY` ne tient que si l'espéranto est désactivé côté projet Crowdin. Sinon le dossier sera recréé — et il ne faut **surtout pas** le corriger par un mapping `eo: eo` (voir Pièges connus).
+3. **`fallbackToDestructiveMigration(dropAllTables = true)`** : conservé. Le retirer transforme une perte de données silencieuse en crash franc — arbitrage produit, pas technique.
+4. **Échecs silencieux des deep links** : les constats 1 et 2 transforment tous deux un échec bruyant en échec discret dans le même flux, sans log ajouté. À reprendre si des utilisateurs signalent des liens « qui ne font rien ».
+
 ## Reste à faire
 
-1. **Validation sur device (S24 Ultra)** : rien des vagues 4/5 ni des vagues UI/vidéo/perfs n'a été vérifié sur téléphone — installer l'APK fraîchement compilé (`app/build/outputs/apk/standalone/release/UmihiMusic.apk`) par-dessus, dérouler : vidéo/PiP, hors-ligne + purge, notifications de sorties, gestes + recherche vocale, égaliseur par sortie, crossfade, thème pochette, perfs de démarrage, **backup/restore, stats (périodes/heatmap/Wrapped), recherche likés**.
+1. **Validation sur device (S24 Ultra)** : rien des vagues 4/5 ni des vagues UI/vidéo/perfs n'a été vérifié sur téléphone — installer l'APK fraîchement compilé (`app/build/outputs/apk/standalone/release/Umihi.apk`, renommé par `c96021c`) par-dessus, dérouler : vidéo/PiP, hors-ligne + purge, notifications de sorties, gestes + recherche vocale, égaliseur par sortie, crossfade, thème pochette, perfs de démarrage, **backup/restore, stats (périodes/heatmap/Wrapped), recherche likés**. **À ajouter depuis la vague 7** : partager un lien `/embed/`, `/v/`, `/shorts/` et `m.youtube.com` depuis YouTube et vérifier que le titre se lance ; et surtout **restaurer une sauvegarde sur un second appareil** pour valider que la session se lit bien comme « déconnecté » — c'est le seul point de la vague 6 qu'aucune vérification hors device ne couvre.
 2. **Wear OS** : seul trou restant de la vague 4 (précédent réussi sur suivi-musculation : module `:wear` P1/P2).
 3. **Build de contrôle** `assembleStandaloneRelease` après tout nouveau lot + APK arm64 pour livraison.
 
@@ -94,7 +149,7 @@ $env:ANDROID_HOME = "C:\Users\<user>\.umihi-build\sdk"
 
 Sur un PC personnel sans restrictions : installer JDK 21 + Android Studio (ou SDK) normalement et utiliser `gradlew.bat assembleStandaloneRelease` suffit.
 
-- **Sortie APK** : `app/build/outputs/apk/standalone/release/UmihiMusic.apk`
+- **Sortie APK** : `app/build/outputs/apk/standalone/release/Umihi.apk` (⚠ renommé par `c96021c` ; l'ancien nom `UmihiMusic.apk` ne subsiste que comme nom de l'asset publié sur GitHub, cf. `APK_FILE_NAME` dans `build-release.yml`)
 - Licences SDK : si `sdkmanager --licenses` est bloqué, invoquer la classe `com.android.sdklib.tool.sdkmanager.SdkManagerCli` directement avec `java -cp "<cmdline-tools>\lib\*"`.
 
 ## Pièges connus / notes
@@ -103,4 +158,8 @@ Sur un PC personnel sans restrictions : installer JDK 21 + Android Studio (ou SD
 - Le build échoue vite sur la nullabilité Kotlin (`intent?.action` etc.) : compiler après chaque vague.
 - Samsung peut mémoriser un ancien ratio d'affichage : après install, vérifier Paramètres > Écran > Applications plein écran si des bandes persistent.
 - Play Protect avertit à l'installation (signature debug) : "Installer quand même".
+- ⚠ **`values-eo` n'est PAS un doublon de `values-eo-rUY` — le sens de la fusion est INVERSE du correctif français.** Pour le français (`460b0e5`), c'est le dossier régionalisé `values-fr-rFR` qui était riche. Pour l'espéranto c'est l'inverse : `values-eo` (130 clés) porte l'easter egg uwu/LOLCAT, `values-eo-rUY` (74 clés) n'était que de l'anglais non traduit. **Ne jamais ajouter `eo: eo` dans `languages_mapping` de `crowdin.yml`** — cela pointerait l'espéranto non traduit de Crowdin sur `values-eo` et écraserait l'easter egg à la prochaine synchro.
+- ⚠ **Tâches de test Gradle** : `:app` ayant des flavors, `:app:testDebugUnitTest` **n'existe pas**. Utiliser `:app:testStandaloneDebugUnitTest`.
+- ⚠ **Ne jamais éditer à la main** `app/src/standaloneRelease/generated/baselineProfiles/*.txt` (36 915 + 30 635 lignes). Les règles périmées ne coûtent rien : R8 les jette au build, ligne par ligne. Tentative de régénération déjà faite et annulée (`055f358` revert par `60dff64` pour perte de couverture réelle).
+- ⚠ **Lint est rouge de base** : 249 erreurs préexistantes (`MissingIntentFilterForMediaSearch` et autres), aucune baseline configurée. `:app:lintStandaloneDebug` **échoue donc toujours** et n'est pas utilisable comme garde-fou tel quel — comparer le nombre avant/après plutôt que d'attendre un vert.
 - L'APK debug-signé n'accepte pas les mises à jour signées autrement : toujours recompiler avec la même clé debug du poste, ou partager la keystore debug entre les deux PC (`%USERPROFILE%\.android\debug.keystore`) pour pouvoir installer par-dessus depuis l'un ou l'autre.
