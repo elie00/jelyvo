@@ -24,6 +24,8 @@ fun PlaylistCard(
     playlistInfo: PlaylistInfo,
     onClicked: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Artwork of the first tracks; on-device playlists have no cover of their own. */
+    coverUris: List<String> = emptyList(),
 ) {
     Card(
         onClick = onClicked,
@@ -38,13 +40,19 @@ fun PlaylistCard(
                 .padding(12.dp)
                 .fillMaxSize()
         ) {
-            if (!playlistInfo.isDownloadedPlaylist) {
-                SquareImage(
+            when {
+                playlistInfo.isDownloadedPlaylist -> OfflineThumbnail()
+
+                coverUris.isNotEmpty() -> PlaylistMosaicCover(
+                    uris = coverUris,
+                    contentDescription = stringResource(R.string.playlist_cover),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                else -> SquareImage(
                     uri = playlistInfo.coverPath ?: playlistInfo.coverHref,
                     contentDescription = stringResource(R.string.playlist_cover),
                 )
-            } else {
-                OfflineThumbnail()
             }
 
             Text(

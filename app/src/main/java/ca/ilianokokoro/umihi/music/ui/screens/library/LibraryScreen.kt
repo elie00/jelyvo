@@ -221,6 +221,7 @@ fun LibraryScreen(
                                 library = uiState.screenState.library,
                                 playlists = uiState.playlists,
                                 localPlaylists = uiState.localPlaylists,
+                                localPlaylistCovers = uiState.localPlaylistCovers,
                                 localSongs = uiState.localSongs,
                                 localSongsLoaded = uiState.localSongsLoaded,
                                 onLoadLocalSongs = libraryViewModel::loadLocalSongs,
@@ -288,6 +289,7 @@ fun LibraryScreen(
                             library = Library(),
                             playlists = emptyList(),
                             localPlaylists = uiState.localPlaylists,
+                            localPlaylistCovers = uiState.localPlaylistCovers,
                             localSongs = uiState.localSongs,
                             localSongsLoaded = uiState.localSongsLoaded,
                             onLoadLocalSongs = libraryViewModel::loadLocalSongs,
@@ -362,6 +364,7 @@ private fun LibraryContent(
     library: Library,
     playlists: List<PlaylistInfo>,
     localPlaylists: List<LocalPlaylist>,
+    localPlaylistCovers: Map<String, List<String>>,
     localSongs: List<Song>,
     localSongsLoaded: Boolean,
     onLoadLocalSongs: () -> Unit,
@@ -383,6 +386,7 @@ private fun LibraryContent(
             library = library,
             playlists = playlists,
             localPlaylists = localPlaylists,
+            localPlaylistCovers = localPlaylistCovers,
             localSongs = localSongs,
             localSongsLoaded = localSongsLoaded,
             onLoadLocalSongs = onLoadLocalSongs,
@@ -399,6 +403,7 @@ private fun LibraryContent(
         LibraryTab.Playlists -> PlaylistsTab(
             playlists = playlists,
             localPlaylists = localPlaylists,
+            localPlaylistCovers = localPlaylistCovers,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
             onCreatePlaylist = onCreatePlaylist,
@@ -443,6 +448,7 @@ private fun AllSectionsContent(
     library: Library,
     playlists: List<PlaylistInfo>,
     localPlaylists: List<LocalPlaylist>,
+    localPlaylistCovers: Map<String, List<String>>,
     localSongs: List<Song>,
     localSongsLoaded: Boolean,
     onLoadLocalSongs: () -> Unit,
@@ -494,6 +500,7 @@ private fun AllSectionsContent(
         playlistItems(
             playlists = playlists,
             localPlaylists = localPlaylists,
+            localPlaylistCovers = localPlaylistCovers,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
             onCreatePlaylist = onCreatePlaylist,
@@ -754,6 +761,7 @@ private fun LocalSongListItem(
 private fun PlaylistsTab(
     playlists: List<PlaylistInfo>,
     localPlaylists: List<LocalPlaylist>,
+    localPlaylistCovers: Map<String, List<String>>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
     onCreatePlaylist: (() -> Unit)?,
@@ -778,6 +786,7 @@ private fun PlaylistsTab(
         playlistItems(
             playlists = playlists,
             localPlaylists = localPlaylists,
+            localPlaylistCovers = localPlaylistCovers,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
             onCreatePlaylist = onCreatePlaylist,
@@ -793,6 +802,7 @@ private fun PlaylistsTab(
 private fun LazyGridScope.playlistItems(
     playlists: List<PlaylistInfo>,
     localPlaylists: List<LocalPlaylist>,
+    localPlaylistCovers: Map<String, List<String>>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
     onCreatePlaylist: (() -> Unit)?,
@@ -836,7 +846,8 @@ private fun LazyGridScope.playlistItems(
         ) { local ->
             PlaylistCard(
                 playlistInfo = PlaylistInfo(id = local.id, title = local.name),
-                onClicked = { onLocalPlaylistPressed(local.id) }
+                onClicked = { onLocalPlaylistPressed(local.id) },
+                coverUris = localPlaylistCovers[local.id].orEmpty(),
             )
         }
     }

@@ -13,6 +13,8 @@ data class LibraryState(
     val isRefreshing: Boolean = false,
     val playlists: List<PlaylistInfo> = emptyList(),
     val localPlaylists: List<LocalPlaylist> = emptyList(),
+    /** Mosaic cover URLs per local playlist id; decoded once per DB emission, not per row. */
+    val localPlaylistCovers: Map<String, List<String>> = emptyMap(),
     val localSongs: List<Song> = emptyList(),
     val localSongsLoaded: Boolean = false,
     /** One-shot message (string resource id) to surface an import result; null when consumed. */

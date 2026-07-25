@@ -7,6 +7,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
+import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.models.PlaylistExportFile
 import ca.ilianokokoro.umihi.music.models.PlaylistExportSong
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,9 @@ class LocalPlaylistRepository(application: Application) {
     fun songsOf(playlist: LocalPlaylist): List<LocalPlaylistSong> =
         runCatching { json.decodeFromString<List<LocalPlaylistSong>>(playlist.songsJson) }
             .getOrDefault(emptyList())
+
+    /** Artwork URLs for [playlist]'s mosaic cover; decodes [LocalPlaylist.songsJson] once. */
+    fun coversOf(playlist: LocalPlaylist): List<String> = songsOf(playlist).mosaicCoverUris()
 
     suspend fun create(name: String, songs: List<LocalPlaylistSong>): String {
         val id = Constants.Database.LOCAL_PLAYLIST_ID_PREFIX + Uuid.random().toString()

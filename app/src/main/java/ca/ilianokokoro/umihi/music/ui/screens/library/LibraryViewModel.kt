@@ -19,12 +19,15 @@ import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -75,9 +78,20 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     private fun observeLocalPlaylists() {
         viewModelScope.launch {
-            localPlaylistRepository.observeAll().collect { playlists ->
-                _uiState.update { it.copy(localPlaylists = playlists) }
-            }
+            localPlaylistRepository.observeAll()
+                // Building the covers decodes every playlist's songsJson, so keep it off the main
+                // thread; the grid rows then only hold the four URLs they draw.
+                .map { playlists ->
+                    playlists to playlists.associate {
+                        it.id to localPlaylistRepository.coversOf(it)
+                    }
+                }
+                .flowOn(Dispatchers.Default)
+                .collect { (playlists, covers) ->
+                    _uiState.update {
+                        it.copy(localPlaylists = playlists, localPlaylistCovers = covers)
+                    }
+                }
         }
     }
 
