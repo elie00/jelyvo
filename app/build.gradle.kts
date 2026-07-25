@@ -83,16 +83,18 @@ android {
     }
 
 
+    // A single flavor, on purpose. Upstream's "store" flavor existed only to strip the auto-updater
+    // for F-Droid; 026e614 removed the updater from main, leaving store identical to standalone bar
+    // a "-store" versionNameSuffix - and worse, invisible to app/src/standaloneRelease, so its APK
+    // shipped without the committed baseline profile. This fork publishes nowhere (sideload only,
+    // see CHANTIER.md), so the flavor is gone. The dimension stays: dropping it renames every
+    // variant (standaloneRelease -> release), which would invalidate the app/src/standaloneRelease
+    // source set and every gradle command in CHANTIER.md for no gain.
     flavorDimensions += "version"
 
     productFlavors {
         create("standalone") {
             isDefault = true
-            dimension = "version"
-        }
-
-        create("store") {
-            versionNameSuffix = "-store"
             dimension = "version"
         }
     }
@@ -178,14 +180,7 @@ androidComponents {
         )
 
         variant.outputs.forEach { output ->
-            val flavor = variant.flavorName
-            output.outputFileName.set(
-                when (flavor) {
-                    "standalone" -> "Umihi.apk"
-                    "store" -> "Umihi-store.apk"
-                    else -> "Umihi-$flavor.apk"
-                }
-            )
+            output.outputFileName.set("Umihi.apk")
         }
     }
 }

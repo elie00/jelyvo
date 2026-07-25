@@ -57,7 +57,6 @@ jobs:
           if [[ "${{ github.ref_name }}" == "prod" ]]; then
             ./gradlew \
               assembleStandaloneRelease \
-              assembleStoreRelease \
               -Pbeta=false \
               -PgitHash=${{ github.sha }}
           else
@@ -75,11 +74,6 @@ jobs:
           # asset keeps the longer APK_FILE_NAME. These have been out of sync since c96021c.
           cp app/build/outputs/apk/standalone/release/Umihi.apk \
             release-apks/${{env.APK_FILE_NAME}}.apk
-
-          if [[ "${{ github.ref_name }}" == "prod" ]]; then
-            cp app/build/outputs/apk/store/release/Umihi-store.apk \
-              release-apks/${{env.APK_FILE_NAME}}-store.apk
-          fi
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v7
