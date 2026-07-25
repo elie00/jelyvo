@@ -84,7 +84,8 @@ fun LocalPlaylistScreen(
     var items by remember(uiState.songs) { mutableStateOf(uiState.songs) }
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        items = items.toMutableList().apply { add(to.index, removeAt(from.index)) }
+        // from/to are flat LazyColumn indices, and the play/shuffle row sits above the songs.
+        items = moveByFlatIndex(items, from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
