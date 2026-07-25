@@ -28,7 +28,15 @@ internal fun <T> selectAudioStream(
 internal fun selectAudioStreamUrl(
     adaptiveFormats: JsonArray?,
     quality: AudioQuality,
-): String? {
+): String? = selectAudioFormat(adaptiveFormats, quality)
+    ?.get("url")
+    ?.jsonPrimitive
+    ?.contentOrNull
+
+internal fun selectAudioFormat(
+    adaptiveFormats: JsonArray?,
+    quality: AudioQuality,
+): JsonObject? {
     val audioFormats = adaptiveFormats.orEmpty()
         .mapNotNull { it.safeObject() }
         .filter { it["url"]?.jsonPrimitive?.contentOrNull?.isNotBlank() == true }
@@ -41,5 +49,5 @@ internal fun selectAudioStreamUrl(
 
     return selectAudioStream(audioFormats, quality) { format: JsonObject ->
         format["bitrate"]?.jsonPrimitive?.intOrNull ?: 0
-    }?.get("url")?.jsonPrimitive?.contentOrNull
+    }
 }

@@ -2231,6 +2231,7 @@ object YoutubeDataExtractor {
                 return ResolvedAudioStream(
                     url = bestVideoStream.content,
                     loudnessDb = null,
+                    mimeType = bestVideoStream.format?.mimeType,
                     isVideo = true,
                 )
             }
@@ -2245,6 +2246,7 @@ object YoutubeDataExtractor {
         return ResolvedAudioStream(
             url = bestAudioStream.content,
             loudnessDb = null,
+            mimeType = bestAudioStream.format?.mimeType,
         )
     }
 
@@ -2281,7 +2283,7 @@ object YoutubeDataExtractor {
         // Video mode: prefer a muxed (progressive audio+video) entry from `streamingData.formats`
         // — a single URL playable by ProgressiveMediaSource, unlike video-only adaptive formats.
         // When none is exposed, fall through to the audio-only branch below (safe fallback).
-        val muxedUrl = if (preferVideo) {
+        val muxedFormat = if (preferVideo) {
             root["streamingData"]
                 ?.safeObject()
                 ?.get("formats")
@@ -2300,14 +2302,11 @@ object YoutubeDataExtractor {
                 ?.maxByOrNull {
                     it["bitrate"]?.jsonPrimitive?.intOrNull ?: 0
                 }
-                ?.get("url")
-                ?.jsonPrimitive
-                ?.contentOrNull
         } else {
             null
         }
 
-        val directUrl = selectAudioStreamUrl(
+        val audioFormat = selectAudioFormat(
             adaptiveFormats = root["streamingData"]
                 ?.safeObject()
                 ?.get("adaptiveFormats")
@@ -2327,11 +2326,22 @@ object YoutubeDataExtractor {
             printe("ANDROID_VR Failed ($status). Reason : $reason ")
         }
 
-        if (muxedUrl != null) {
-            return ResolvedAudioStream(muxedUrl, loudnessDb, isVideo = true)
+        if (muxedFormat != null) {
+            return ResolvedAudioStream(
+                url = muxedFormat["url"]?.jsonPrimitive?.contentOrNull ?: return null,
+                loudnessDb = loudnessDb,
+                mimeType = muxedFormat["mimeType"]?.jsonPrimitive?.contentOrNull,
+                isVideo = true,
+            )
         }
 
-        return directUrl?.let { ResolvedAudioStream(it, loudnessDb) }
+        return audioFormat?.let {
+            ResolvedAudioStream(
+                url = it["url"]?.jsonPrimitive?.contentOrNull ?: return null,
+                loudnessDb = loudnessDb,
+                mimeType = it["mimeType"]?.jsonPrimitive?.contentOrNull,
+            )
+        }
     }
 
 }
@@ -2339,6 +2349,8 @@ object YoutubeDataExtractor {
 private data class ResolvedAudioStream(
     val url: String,
     val loudnessDb: Double?,
+    // Room currently persists the signed URL but not its format, so DB-cache hits leave this null.
+    val mimeType: String? = null,
     // True when [url] is a muxed (audio+video) stream, false for an audio-only stream. Lets
     // callers detect that a video request silently fell back to audio.
     val isVideo: Boolean = false,
