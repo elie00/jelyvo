@@ -411,38 +411,6 @@ object YoutubeDataExtractor {
         )
     }
 
-    fun extractSearchResults(jsonString: String): List<Song> {
-        val json = Json.parseToJsonElement(jsonString).jsonObject
-
-        val tabs = json["contents"]
-            ?.safeObject()?.get("tabbedSearchResultsRenderer")
-            ?.safeObject()?.get("tabs")
-            ?.safeArray() ?: return emptyList()
-
-
-        val selectedTab = tabs.firstOrNull {
-            it.safeObject()?.get("tabRenderer")
-                ?.safeObject()?.get("selected")
-                ?.jsonPrimitive?.booleanOrNull == true
-        }?.safeObject()?.get("tabRenderer")?.safeObject() ?: return emptyList()
-
-        val contents = selectedTab["content"]
-            ?.safeObject()?.get("sectionListRenderer")
-            ?.safeObject()?.get("contents")
-            ?.safeArray() ?: return emptyList()
-
-        val songRendererList =
-            contents
-                .firstNotNullOfOrNull {
-                    it.safeObject()?.get("musicShelfRenderer")
-                        ?.safeObject()?.get("contents")
-                        ?.safeArray()
-                }
-                ?: return emptyList()
-
-        return songRendererList.mapNotNull { extractSong(it) }
-    }
-
     fun extractSearchItems(jsonString: String, filter: SearchFilter): List<SearchItem> {
         val root = Json.parseToJsonElement(jsonString)
         return when (filter) {
@@ -1273,14 +1241,6 @@ object YoutubeDataExtractor {
 
         walk(root)
         return bestSquareUrl ?: bestAnyUrl
-    }
-
-    /** Extracts songs from a search continuation response (musicShelfContinuation). */
-    fun extractSearchContinuationSongs(jsonString: String): List<Song> {
-        val json = Json.parseToJsonElement(jsonString)
-        val items = mutableListOf<JsonObject>()
-        collectSongItems(json, items)
-        return items.mapNotNull { extractSong(it) }.distinctBy { it.youtubeId }
     }
 
     /**
