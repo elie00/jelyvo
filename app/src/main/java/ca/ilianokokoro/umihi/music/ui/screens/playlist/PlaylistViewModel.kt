@@ -23,6 +23,7 @@ import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.SongSort
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -149,20 +150,34 @@ class PlaylistViewModel(
         }
     }
 
+    fun onSortChange(sort: SongSort) {
+        _uiState.update { it.copy(sort = sort) }
+    }
+
     fun playPlaylist(startingSong: Song? = null) {
         val playlist = getPlaylist() ?: return
+        // Queue what the list shows, not the whole playlist: filtering or sorting and then hitting
+        // play must not bring the hidden rows back.
+        val songs = _uiState.value.visibleSongs
+        if (songs.isEmpty()) {
+            return
+        }
         viewModelScope.launch {
             PlayerManager.playPlaylist(
-                playlist,
-                startingSong?.let { playlist.songs.indexOf(it) } ?: 0
+                playlist.copy(songs = songs),
+                startingSong?.let { songs.indexOf(it) }?.coerceAtLeast(0) ?: 0
             )
         }
     }
 
     fun shufflePlaylist() {
         val playlist = getPlaylist() ?: return
+        val songs = _uiState.value.visibleSongs
+        if (songs.isEmpty()) {
+            return
+        }
         viewModelScope.launch {
-            PlayerManager.shufflePlaylist(playlist)
+            PlayerManager.shufflePlaylist(playlist.copy(songs = songs))
         }
     }
 

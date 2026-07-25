@@ -14,3 +14,19 @@ fun String.normalizedForSearch(): String =
 /** Accent- and case-insensitive containment check (e.g. "melodie" matches "Mélodie"). */
 fun String.containsNormalized(other: String): Boolean =
     normalizedForSearch().contains(other.normalizedForSearch())
+
+/**
+ * Whole seconds parsed from a display duration ("s", "m:ss" or "h:mm:ss"). Returns 0 when the
+ * string is empty or unparseable, so a row with no duration sorts first instead of vanishing.
+ */
+fun String.durationToSeconds(): Int {
+    if (isBlank()) return 0
+
+    val parts = split(":").map { it.trim().toIntOrNull() ?: return 0 }
+    return when (parts.size) {
+        1 -> parts[0]
+        2 -> parts[0] * 60 + parts[1]
+        3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+        else -> 0
+    }
+}

@@ -314,4 +314,11 @@
         <item quantity="one">%d écoute</item>
         <item quantity="other">%d écoutes</item>
     </plurals>
+    <string name="sort_by">Trier par</string>
+    <string name="sort_playlist_order">Ordre de la playlist</string>
+    <string name="sort_title">Titre</string>
+    <string name="sort_artist">Artiste</string>
+    <string name="sort_duration">Durée</string>
+    <string name="filter_songs">Filtrer les titres</string>
+    <string name="reorder_disabled_while_sorted">Le réordonnancement est suspendu tant qu’un filtre ou un tri est actif</string>
 </resources>

@@ -43,7 +43,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
-import ca.ilianokokoro.umihi.music.extensions.containsNormalized
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
@@ -51,6 +50,7 @@ import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.components.PlaylistHeader
@@ -151,6 +151,10 @@ fun PlaylistScreen(
                         BackButton(onBack = onBack)
                     },
                     actions = {
+                        SongSortButton(
+                            sort = uiState.sort,
+                            onSortChange = playlistViewModel::onSortChange,
+                        )
                         FilledIconButton(
                             onClick = { exportLauncher.launch("${playlistInfo.title}.json") },
                             shapes = IconButtonDefaults.shapes(),
@@ -202,6 +206,12 @@ fun PlaylistScreen(
                         }
                     }
                     val songs = playlistInfo.songs
+
+                    // Hoisted out of the LazyColumn body: that lambda is not @Composable, so
+                    // remember() cannot live inside it.
+                    val visibleSongs = remember(songs, uiState.searchQuery, uiState.sort) {
+                        uiState.visibleSongs
+                    }
 
                     if (uiState.screenState is ScreenState.Loading || songs.isEmpty()) {
 
@@ -262,16 +272,7 @@ fun PlaylistScreen(
                                     )
                                 }
 
-                                val filteredSongs = if (uiState.searchQuery.isBlank()) {
-                                    songs
-                                } else {
-                                    songs.filter { song ->
-                                        song.title.containsNormalized(uiState.searchQuery) ||
-                                                song.artist.containsNormalized(uiState.searchQuery)
-                                    }
-                                }
-
-                                if (uiState.searchQuery.isNotBlank() && filteredSongs.isEmpty()) {
+                                if (uiState.searchQuery.isNotBlank() && visibleSongs.isEmpty()) {
                                     item {
                                         Text(
                                             text = stringResource(R.string.no_results),
@@ -284,7 +285,7 @@ fun PlaylistScreen(
                                 }
 
                                 items(
-                                    items = filteredSongs,
+                                    items = visibleSongs,
                                     key = { song ->
                                         song.uid
                                     }

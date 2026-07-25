@@ -327,4 +327,11 @@
         <item quantity="one">%d play</item>
         <item quantity="other">%d plays</item>
     </plurals>
+    <string name="sort_by">Sort by</string>
+    <string name="sort_playlist_order">Playlist order</string>
+    <string name="sort_title">Title</string>
+    <string name="sort_artist">Artist</string>
+    <string name="sort_duration">Duration</string>
+    <string name="filter_songs">Filter songs</string>
+    <string name="reorder_disabled_while_sorted">Reordering is paused while a filter or a sort is active</string>
 </resources>
