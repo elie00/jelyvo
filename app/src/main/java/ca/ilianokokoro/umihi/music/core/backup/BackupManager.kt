@@ -65,6 +65,7 @@ data class BackupLocalPlaylist(
     val name: String,
     val songsJson: String,
     val createdAt: Long,
+    val description: String? = null,
 )
 
 @Serializable
@@ -164,6 +165,7 @@ object BackupManager {
                 name = it.name,
                 songsJson = it.songsJson,
                 createdAt = it.createdAt,
+                description = it.description,
             )
         }
 
@@ -239,6 +241,7 @@ object BackupManager {
                     name = it.name,
                     songsJson = it.songsJson,
                     createdAt = it.createdAt,
+                    description = it.description,
                 )
             )
         }
