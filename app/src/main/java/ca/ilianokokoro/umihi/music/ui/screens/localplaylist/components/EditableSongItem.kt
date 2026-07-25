@@ -15,6 +15,8 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,6 +38,7 @@ fun EditableSongItem(
     onRemove: () -> Unit,
     onDragStarted: () -> Unit,
     onDragStopped: () -> Unit,
+    dragEnabled: Boolean = true,
 ) {
     val innerHeight = 60.dp
 
@@ -70,13 +73,25 @@ fun EditableSongItem(
                 Icon(
                     imageVector = Icons.Rounded.DragHandle,
                     contentDescription = stringResource(R.string.reorder),
-                    modifier = with(scope) {
-                        Modifier
-                            .height(innerHeight)
-                            .draggableHandle(
-                                onDragStarted = { onDragStarted() },
-                                onDragStopped = onDragStopped,
-                            )
+                    // Greyed out and inert while a filter or a sort is on: the handle reports
+                    // positions in the shown list, which no longer maps onto the stored order
+                    // persistOrder writes back.
+                    tint = if (dragEnabled) {
+                        LocalContentColor.current
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    },
+                    modifier = if (dragEnabled) {
+                        with(scope) {
+                            Modifier
+                                .height(innerHeight)
+                                .draggableHandle(
+                                    onDragStarted = { onDragStarted() },
+                                    onDragStopped = onDragStopped,
+                                )
+                        }
+                    } else {
+                        Modifier.height(innerHeight)
                     },
                 )
             }

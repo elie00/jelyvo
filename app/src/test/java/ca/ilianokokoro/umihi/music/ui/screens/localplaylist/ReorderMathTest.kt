@@ -15,32 +15,32 @@ class ReorderMathTest {
 
     @Test
     fun `dragging the first song moves the first song`() {
-        // Flat 2 is the first song: index 0 is the header, index 1 the play/shuffle row.
-        assertEquals(listOf("B", "A", "C", "D"), moveByFlatIndex(songs, 2, 3))
+        // Flat 3 is the first song: 0 header, 1 filter/sort, 2 play/shuffle.
+        assertEquals(listOf("B", "A", "C", "D"), moveByFlatIndex(songs, 3, 4))
     }
 
     @Test
     fun `dragging the last song does not throw`() {
-        // Flat 5 addresses songs[3]; using the flat index raw would call removeAt(5) on 4 elements.
-        assertEquals(listOf("A", "B", "D", "C"), moveByFlatIndex(songs, 5, 4))
+        // Flat 6 addresses songs[3]; using the flat index raw would call removeAt(6) on 4 elements.
+        assertEquals(listOf("A", "B", "D", "C"), moveByFlatIndex(songs, 6, 5))
     }
 
     @Test
     fun `moving the last song to the top keeps every song`() {
-        val moved = moveByFlatIndex(songs, 5, 2)
+        val moved = moveByFlatIndex(songs, 6, 3)
         assertEquals(listOf("D", "A", "B", "C"), moved)
         assertEquals(songs.size, moved.size)
     }
 
     @Test
     fun `a drag onto the header rows is a no-op instead of a crash`() {
-        assertEquals(songs, moveByFlatIndex(songs, 3, 0))
+        assertEquals(songs, moveByFlatIndex(songs, 4, 0))
     }
 
     @Test
     fun `out-of-range and identity moves leave the list untouched`() {
-        assertEquals(songs, moveByFlatIndex(songs, 99, 2))
-        assertEquals(songs, moveByFlatIndex(songs, 3, 3))
-        assertEquals(emptyList<String>(), moveByFlatIndex(emptyList<String>(), 2, 3))
+        assertEquals(songs, moveByFlatIndex(songs, 99, 3))
+        assertEquals(songs, moveByFlatIndex(songs, 4, 4))
+        assertEquals(emptyList<String>(), moveByFlatIndex(emptyList<String>(), 3, 4))
     }
 }

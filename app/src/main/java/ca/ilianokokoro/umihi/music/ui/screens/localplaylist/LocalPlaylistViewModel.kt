@@ -14,6 +14,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.SongSort
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -55,19 +56,33 @@ class LocalPlaylistViewModel(
             songs = songs.map { it.toSong() },
         )
 
+    fun onSearchQueryChange(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    fun onSortChange(sort: SongSort) {
+        _uiState.update { it.copy(sort = sort) }
+    }
+
     fun play(startIndex: Int = 0) {
-        val songs = _uiState.value.songs
+        // [startIndex] is a position in the *shown* list, so the queue has to be that same list.
+        val songs = _uiState.value.visibleSongs
         if (songs.isEmpty()) return
         PlayerManager.playPlaylist(asPlaylist(songs), startIndex)
     }
 
     fun shuffle() {
-        val songs = _uiState.value.songs
+        val songs = _uiState.value.visibleSongs
         if (songs.isEmpty()) return
         PlayerManager.shufflePlaylist(asPlaylist(songs))
     }
 
-    /** Persists a new song order (called when a drag gesture finishes). */
+    /**
+     * Persists a new song order (called when a drag gesture finishes). [songs] must be the FULL
+     * stored list: the screen only enables the drag handle while [LocalPlaylistState.isManualOrder],
+     * so a filtered or sorted view can never reach this and write shown-list positions over the
+     * stored order.
+     */
     fun persistOrder(songs: List<LocalPlaylistSong>) {
         viewModelScope.launch {
             repository.updateSongs(playlistId, songs)

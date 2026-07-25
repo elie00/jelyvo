@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,10 +15,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -52,6 +55,7 @@ import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
+import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
@@ -90,12 +94,18 @@ fun LocalPlaylistScreen(
     var items by remember(uiState.songs) { mutableStateOf(uiState.songs) }
     val lazyListState = rememberLazyListState()
     val reorderableState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        // from/to are flat LazyColumn indices, and the play/shuffle row sits above the songs.
+        // from/to are flat LazyColumn indices, and three header rows sit above the songs.
         items = moveByFlatIndex(items, from.index, to.index)
         hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
     val coverUris = remember(items) { items.mosaicCoverUris() }
+
+    // What the list draws. In manual order that is `items`, the live drag copy; otherwise the
+    // filtered/sorted view of the stored list, which no drag can reach.
+    val visibleSongs = remember(items, uiState.searchQuery, uiState.sort) {
+        if (uiState.isManualOrder) items else uiState.visibleSongs
+    }
 
     FadingStatusBarWrapper {
         Scaffold(topBar = {
@@ -194,6 +204,59 @@ fun LocalPlaylistScreen(
                         )
                     }
 
+                    // Unconditional like the other header rows, so SONG_LIST_HEADER_ITEMS stays
+                    // exact: a header that came and went would silently shift every drag index.
+                    item(key = "filter-sort") {
+                        Column {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                OutlinedTextField(
+                                    value = uiState.searchQuery,
+                                    onValueChange = viewModel::onSearchQueryChange,
+                                    singleLine = true,
+                                    label = { Text(stringResource(R.string.filter_songs)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Search,
+                                            contentDescription = null,
+                                        )
+                                    },
+                                    trailingIcon = if (uiState.searchQuery.isNotBlank()) {
+                                        {
+                                            IconButton(
+                                                onClick = { viewModel.onSearchQueryChange("") }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Rounded.Close,
+                                                    contentDescription = stringResource(
+                                                        R.string.clear_filter
+                                                    ),
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        null
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                SongSortButton(
+                                    sort = uiState.sort,
+                                    onSortChange = viewModel::onSortChange,
+                                )
+                            }
+                            if (!uiState.isManualOrder) {
+                                Text(
+                                    text = stringResource(R.string.reorder_disabled_while_sorted),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+
                     item(key = "play-shuffle") {
                         PlayShuffleRow(
                             onPlay = {
@@ -208,8 +271,20 @@ fun LocalPlaylistScreen(
                         )
                     }
 
+                    if (uiState.searchQuery.isNotBlank() && visibleSongs.isEmpty()) {
+                        item(key = "no-results") {
+                            Text(
+                                text = stringResource(R.string.no_results),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                            )
+                        }
+                    }
+
                     itemsIndexed(
-                        items = items,
+                        items = visibleSongs,
                         key = { _, song -> song.uid },
                     ) { index, song ->
                         ReorderableItem(reorderableState, key = song.uid) { _ ->
@@ -221,6 +296,7 @@ fun LocalPlaylistScreen(
                                     viewModel.play(index)
                                 },
                                 onRemove = { viewModel.removeSong(song.uid) },
+                                dragEnabled = uiState.isManualOrder,
                                 onDragStarted = {
                                     hapticFeedback.performHapticFeedback(
                                         HapticFeedbackType.GestureThresholdActivate
