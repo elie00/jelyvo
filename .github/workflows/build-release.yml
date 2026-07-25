@@ -71,11 +71,13 @@ jobs:
         run: |
           mkdir -p release-apks
 
-          cp app/build/outputs/apk/standalone/release/${{env.APK_FILE_NAME}}.apk \
+          # Gradle names the file Umihi.apk (outputFileName in app/build.gradle.kts); the release
+          # asset keeps the longer APK_FILE_NAME. These have been out of sync since c96021c.
+          cp app/build/outputs/apk/standalone/release/Umihi.apk \
             release-apks/${{env.APK_FILE_NAME}}.apk
 
           if [[ "${{ github.ref_name }}" == "prod" ]]; then
-            cp app/build/outputs/apk/store/release/${{env.APK_FILE_NAME}}-store.apk \
+            cp app/build/outputs/apk/store/release/Umihi-store.apk \
               release-apks/${{env.APK_FILE_NAME}}-store.apk
           fi
 
