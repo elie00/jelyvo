@@ -230,6 +230,14 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.datasource)
     implementation(libs.androidx.media3.datasource.okhttp)
+    // Cast. Streamed tracks only: a receiver fetches over HTTP and can open neither the
+    // app-private download files nor a content:// MediaStore URI. media3-cast pulls
+    // play-services-cast-framework, absent on de-Googled devices - CastManager degrades to
+    // "no Cast" there instead of crashing.
+    implementation(libs.androidx.media3.cast)
+    // Declared although play-services-cast-framework already brings it: app code touches
+    // MediaRouter directly for route discovery.
+    implementation(libs.androidx.mediarouter)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

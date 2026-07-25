@@ -127,6 +127,13 @@
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
 
+        <!-- Cast: the SDK instantiates this class by name, reflectively, on the first
+             CastContext.getSharedInstance call. Declaring it costs nothing at startup — unlike a
+             startup provider, which is why the two below are removed. -->
+        <meta-data
+            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+            android:value="ca.ilianokokoro.umihi.music.core.cast.CastOptionsProvider" />
+
         <!-- Keep provider work off cold startup. WorkManager is configured lazily by Umihi and the
              crash handler is installed after the first complete app frame. Modern Android already
              supplies system emoji rendering, so EmojiCompat does not need eager initialization. -->

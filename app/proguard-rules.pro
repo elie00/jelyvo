@@ -9,3 +9,9 @@
 -dontwarn jdk.dynalink.**
 -dontwarn com.google.re2j.Matcher
 -dontwarn com.google.re2j.Pattern
+
+### Cast
+# CastOptionsProvider is named in an android:value STRING in the manifest, never in an
+# android:name attribute, so AGP's manifest-aware keep rules do not see it. Without this, Cast
+# works in assembleStandaloneDebug and dies only in the minified release build.
+-keep class ca.ilianokokoro.umihi.music.core.cast.CastOptionsProvider { <init>(); }
