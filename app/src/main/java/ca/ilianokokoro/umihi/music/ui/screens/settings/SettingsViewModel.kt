@@ -27,6 +27,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -49,9 +50,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun getSettings() {
         viewModelScope.launch {
             val settings = datastoreRepository.getSettings()
+            val notInterestedCount = datastoreRepository.notInterested.first().size
             _uiState.update {
                 _uiState.value.copy(
-                    screenState = ScreenState.Success(settings = settings)
+                    screenState = ScreenState.Success(settings = settings),
+                    notInterestedCount = notInterestedCount,
                 )
             }
         }
@@ -89,6 +92,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     showDownloadDeleteConfirm = value
                 )
             }
+        }
+    }
+
+    fun updateShowNotInterestedClearConfirm(value: Boolean) {
+        _uiState.update {
+            it.copy(showNotInterestedClearConfirm = value)
+        }
+    }
+
+    fun clearNotInterested() {
+        viewModelScope.launch {
+            datastoreRepository.clearNotInterested()
+            showToast(R.string.not_interested_cleared)
+            getSettings()
         }
     }
 

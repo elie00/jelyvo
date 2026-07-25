@@ -334,5 +334,15 @@
     <string name="sort_duration">Duration</string>
     <string name="filter_songs">Filter songs</string>
     <string name="reorder_disabled_while_sorted">Reordering is paused while a filter or a sort is active</string>
+    <string name="not_interested">Don\'t recommend this song</string>
     <string name="not_interested_toast">Won\'t be suggested again</string>
+    <string name="not_interested_title">Not interested</string>
+    <string name="not_interested_empty">Songs you reject stop appearing in autoplay and radio</string>
+    <plurals name="not_interested_count">
+        <item quantity="one">%1$d song kept out of autoplay and radio · tap to clear</item>
+        <item quantity="other">%1$d songs kept out of autoplay and radio · tap to clear</item>
+    </plurals>
+    <string name="not_interested_clear_confirm_title">Clear the list?</string>
+    <string name="not_interested_clear_confirm_text">Every rejected song can be suggested again.</string>
+    <string name="not_interested_cleared">List cleared</string>
 </resources>

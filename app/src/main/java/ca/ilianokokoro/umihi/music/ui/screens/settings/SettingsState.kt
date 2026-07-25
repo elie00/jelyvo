@@ -9,8 +9,9 @@ data class SettingsState(
     val showDownloadDeleteConfirm: Boolean = false,
     val showThemeColorDialog: Boolean = false,
     val showRestoreConfirm: Boolean = false,
-    val backupInProgress: Boolean = false
-
+    val backupInProgress: Boolean = false,
+    val notInterestedCount: Int = 0,
+    val showNotInterestedClearConfirm: Boolean = false,
 )
 
 @Immutable

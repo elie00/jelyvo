@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.DownloadForOffline
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Radio
@@ -51,6 +52,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
@@ -170,6 +172,16 @@ fun SongListItem(
                         expanded = false
                     }
                 )
+                if (!song.isLocal) {
+                    MaterialUDropdownItem(
+                        leadingIcon = Icons.Rounded.NotInterested,
+                        text = stringResource(R.string.not_interested),
+                        onClick = {
+                            NotInterestedStore.hide(song, context)
+                            expanded = false
+                        }
+                    )
+                }
                 if (isLoggedIn) {
                     MaterialUDropdownItem(
                         leadingIcon = Icons.Rounded.FavoriteBorder,

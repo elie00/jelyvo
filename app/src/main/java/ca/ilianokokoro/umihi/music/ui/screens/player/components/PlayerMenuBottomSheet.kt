@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MusicVideo
+import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Share
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.managers.AbLoop
+import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 
@@ -93,6 +95,14 @@ fun PlayerMenuBottomSheet(
             )
 
             if (!song.isLocal) {
+                PlayerMenuItem(
+                    icon = Icons.Rounded.NotInterested,
+                    text = stringResource(R.string.not_interested),
+                    onClick = {
+                        NotInterestedStore.hide(song, context)
+                        changeVisibility(false)
+                    },
+                )
                 PlayerMenuItem(
                     icon = Icons.Rounded.MusicVideo,
                     text = stringResource(R.string.play_video_version),

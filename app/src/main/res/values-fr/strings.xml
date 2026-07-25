@@ -321,5 +321,15 @@
     <string name="sort_duration">Durée</string>
     <string name="filter_songs">Filtrer les titres</string>
     <string name="reorder_disabled_while_sorted">Le réordonnancement est suspendu tant qu’un filtre ou un tri est actif</string>
+    <string name="not_interested">Ne plus me proposer ce titre</string>
     <string name="not_interested_toast">Ce titre ne sera plus suggéré</string>
+    <string name="not_interested_title">Titres à ne plus proposer</string>
+    <string name="not_interested_empty">Les titres refusés disparaîtront de la lecture automatique et des radios</string>
+    <plurals name="not_interested_count">
+        <item quantity="one">%1$d titre exclu des suggestions · toucher pour réinitialiser</item>
+        <item quantity="other">%1$d titres exclus des suggestions · toucher pour réinitialiser</item>
+    </plurals>
+    <string name="not_interested_clear_confirm_title">Réinitialiser la liste ?</string>
+    <string name="not_interested_clear_confirm_text">Tous les titres refusés pourront de nouveau être suggérés.</string>
+    <string name="not_interested_cleared">Liste réinitialisée</string>
 </resources>

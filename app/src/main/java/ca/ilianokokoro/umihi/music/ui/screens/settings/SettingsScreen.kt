@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.NotInterested
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
@@ -52,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -312,6 +314,25 @@ fun SettingsScreen(
                                 }
                             )
                             Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.not_interested_title),
+                                subtitle = if (uiState.notInterestedCount == 0) {
+                                    stringResource(R.string.not_interested_empty)
+                                } else {
+                                    pluralStringResource(
+                                        R.plurals.not_interested_count,
+                                        uiState.notInterestedCount,
+                                        uiState.notInterestedCount,
+                                    )
+                                },
+                                leadingIcon = Icons.Outlined.NotInterested,
+                                onClick = {
+                                    if (uiState.notInterestedCount > 0) {
+                                        settingsViewModel.updateShowNotInterestedClearConfirm(true)
+                                    }
+                                },
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(
                                 title = stringResource(R.string.enable_audio_offload),
                                 subtitle = stringResource(R.string.audio_offload_subtitle),
@@ -496,6 +517,22 @@ fun SettingsScreen(
                                 onDismiss = {
                                     settingsViewModel.updateShowRestoreConfirm(false)
                                 }
+                            )
+                        } else if (uiState.showNotInterestedClearConfirm) {
+                            ConfirmDialog(
+                                title = stringResource(
+                                    R.string.not_interested_clear_confirm_title
+                                ),
+                                text = stringResource(
+                                    R.string.not_interested_clear_confirm_text
+                                ),
+                                onConfirm = {
+                                    settingsViewModel.clearNotInterested()
+                                    settingsViewModel.updateShowNotInterestedClearConfirm(false)
+                                },
+                                onDismiss = {
+                                    settingsViewModel.updateShowNotInterestedClearConfirm(false)
+                                },
                             )
                         }
                     }
