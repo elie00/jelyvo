@@ -38,6 +38,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.material.icons.rounded.CastConnected
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
@@ -91,10 +93,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.cast.CastDevicePickerSheet
+import ca.ilianokokoro.umihi.music.ui.components.cast.rememberIsCastRouteAvailable
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerArtworkBackground
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
@@ -122,6 +127,9 @@ fun PlayerScreen(
 ) {
     val uiState = playerViewModel.uiState.collectAsStateWithLifecycle().value
     val playbackData = PlayerManager.audioInfo.collectAsStateWithLifecycle().value
+    val isCasting by CastManager.isCasting.collectAsStateWithLifecycle()
+    val isCastRouteAvailable = rememberIsCastRouteAvailable()
+    var showCastDevicePicker by remember { mutableStateOf(false) }
     val orientation = LocalConfiguration.current.orientation
     val currentSong = uiState.queue.getOrNull(uiState.currentIndex)
     val isVideoMode = currentSong?.forceVideo == true
@@ -205,6 +213,9 @@ fun PlayerScreen(
                 PlayerTopBar(
                     onBack = onBack,
                     onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
+                    showCastButton = isCastRouteAvailable || isCasting,
+                    isCasting = isCasting,
+                    onCastClick = { showCastDevicePicker = true },
                     hasVideoVariant = uiState.hasVideoVariant,
                     isVideoMode = isVideoMode,
                     isModeSwitchEnabled = !uiState.isSwitchingPlaybackMode,
@@ -386,6 +397,10 @@ fun PlayerScreen(
             onCancelTimer = playerViewModel::cancelSleepTimer,
         )
     }
+
+    if (showCastDevicePicker) {
+        CastDevicePickerSheet(onDismiss = { showCastDevicePicker = false })
+    }
     }
 }
 
@@ -550,6 +565,9 @@ fun Thumbnail(
 private fun PlayerTopBar(
     onBack: () -> Unit,
     onMoreClick: () -> Unit,
+    showCastButton: Boolean,
+    isCasting: Boolean,
+    onCastClick: () -> Unit,
     hasVideoVariant: Boolean,
     isVideoMode: Boolean,
     isModeSwitchEnabled: Boolean,
@@ -626,20 +644,50 @@ private fun PlayerTopBar(
             }
         }
 
-        IconButton(
-            onClick = onMoreClick,
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ),
+        Row(
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .clip(CircleShape),
+                .align(Alignment.CenterEnd),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = Icons.Rounded.MoreVert,
-                contentDescription = stringResource(R.string.more),
-            )
+            if (showCastButton) {
+                IconButton(
+                    onClick = onCastClick,
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                            .copy(alpha = 0.72f),
+                        contentColor = if (isCasting) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    ),
+                    modifier = Modifier.clip(CircleShape),
+                ) {
+                    Icon(
+                        imageVector = if (isCasting) {
+                            Icons.Rounded.CastConnected
+                        } else {
+                            Icons.Rounded.Cast
+                        },
+                        contentDescription = stringResource(R.string.cast),
+                    )
+                }
+            }
+            IconButton(
+                onClick = onMoreClick,
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        .copy(alpha = 0.72f),
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ),
+                modifier = Modifier.clip(CircleShape),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.more),
+                )
+            }
         }
     }
 }

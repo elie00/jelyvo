@@ -215,6 +215,10 @@
     <string name="data_saver_title">Data Saver</string>
     <string name="data_saver_description">Uses the lowest audio quality while on mobile data</string>
     <string name="cast_unavailable">Casting is unavailable on this device</string>
+    <string name="cast">Cast</string>
+    <string name="cast_choose_device">Choose a device</string>
+    <string name="cast_stop">Stop casting</string>
+    <string name="cast_no_devices">No Chromecast is available right now</string>
     <string name="cast_no_compatible_tracks">This queue contains no tracks Chromecast can play</string>
     <plurals name="cast_local_tracks_skipped">
         <item quantity="one">%d local track was skipped</item>

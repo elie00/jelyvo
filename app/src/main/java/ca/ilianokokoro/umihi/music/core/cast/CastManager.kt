@@ -7,6 +7,8 @@ import androidx.annotation.OptIn
 import androidx.media3.cast.CastPlayer
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.mediarouter.media.MediaRouteSelector
+import com.google.android.gms.cast.CastMediaControlIntent
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailabilityLight
 import com.google.android.gms.cast.framework.CastSession
@@ -26,6 +28,14 @@ import kotlinx.coroutines.flow.asStateFlow
  * without Google Play services keep a null context and otherwise run the exact same playback path.
  */
 object CastManager {
+    val ROUTE_SELECTOR: MediaRouteSelector = MediaRouteSelector.Builder()
+        .addControlCategory(
+            CastMediaControlIntent.categoryForCast(
+                CastMediaControlIntent.DEFAULT_MEDIA_RECEIVER_APPLICATION_ID
+            )
+        )
+        .build()
+
     private val _castContext = MutableStateFlow<CastContext?>(null)
     val castContext = _castContext.asStateFlow()
 

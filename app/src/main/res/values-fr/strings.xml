@@ -208,6 +208,10 @@
     <string name="data_saver_title">Économie de données</string>
     <string name="data_saver_description">Utilise la qualité audio la plus faible sur les réseaux mobiles</string>
     <string name="cast_unavailable">La diffusion est indisponible sur cet appareil</string>
+    <string name="cast">Diffuser</string>
+    <string name="cast_choose_device">Choisir un appareil</string>
+    <string name="cast_stop">Arrêter la diffusion</string>
+    <string name="cast_no_devices">Aucun Chromecast n’est disponible pour le moment</string>
     <string name="cast_no_compatible_tracks">Cette file ne contient aucun titre compatible avec Chromecast</string>
     <plurals name="cast_local_tracks_skipped">
         <item quantity="one">%d titre local a été ignoré</item>
