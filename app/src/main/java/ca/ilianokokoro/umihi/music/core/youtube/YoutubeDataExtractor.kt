@@ -2,7 +2,6 @@ package ca.ilianokokoro.umihi.music.core.youtube
 
 import android.content.Context
 import android.widget.Toast
-import androidx.core.net.toUri
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
@@ -59,18 +58,8 @@ object YoutubeDataExtractor {
         "musicHeaderRenderer",
     )
 
-    fun extractYouTubeVideoId(url: String): String? {
-        val uri = url.toUri()
-
-        return when {
-            uri.host?.contains("youtu.be") == true -> uri.lastPathSegment
-            uri.host?.contains("youtube.com") == true || uri.host?.contains("music.youtube.com") == true -> uri.getQueryParameter(
-                "v"
-            )
-
-            else -> null
-        }
-    }
+    /** Delegates to [parseYoutubeVideoId] so the link forms are covered by JVM unit tests. */
+    fun extractYouTubeVideoId(url: String): String? = parseYoutubeVideoId(url)
 
     fun getBestThumbnailUrl(thumbnailElement: JsonElement): String {
         val url =

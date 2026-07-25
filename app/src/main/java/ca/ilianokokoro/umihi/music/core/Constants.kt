@@ -237,8 +237,10 @@ object Constants {
     }
 
     object YoutubeApi {
+        // Hosts mirror MainActivity's VIEW intent-filter: shared text from the mobile web app
+        // carries m.youtube.com, which the www-only alternative silently dropped.
         const val URL_REGEX =
-            """https?://(www\.)?(youtube\.com|youtu\.be|music\.youtube\.com)/\S+"""
+            """https?://(www\.|m\.)?(youtube\.com|youtu\.be|music\.youtube\.com)/\S+"""
         const val RETRY_COUNT = 3
         const val PODCAST_PLAYLIST_ID = "VLSE"
         const val RETRY_DELAY = 1000
