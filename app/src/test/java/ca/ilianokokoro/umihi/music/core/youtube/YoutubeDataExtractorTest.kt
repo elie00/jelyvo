@@ -449,6 +449,53 @@ class YoutubeDataExtractorTest {
     }
 
     /**
+     * Artist-page song rows carry a play count instead of a view count, and it is what makes the
+     * "most streamed" ranking readable. It must be picked up on a plain (non-video) row.
+     */
+    @Test
+    fun `extractSong reads the play count of an artist page row`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Take On Me" } ] } } },
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "1.9B plays" } ] } } }
+                ],
+                "playlistItemData": { "videoId": "djV11Xbc914" }
+              }
+            }
+            """
+        )
+
+        val song = requireNotNull(YoutubeDataExtractor.extractSong(row))
+
+        assertEquals("1.9B plays", song.playCount)
+        // A play count is not a video view count, and must not turn the row into a video.
+        assertFalse(song.isVideo)
+        assertNull(song.viewCount)
+    }
+
+    @Test
+    fun `extractSong leaves the play count null when the row has none`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Album track" } ] } } },
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Some Artist" } ] } } }
+                ],
+                "playlistItemData": { "videoId": "abcdefghijk" }
+              }
+            }
+            """
+        )
+
+        assertNull(requireNotNull(YoutubeDataExtractor.extractSong(row)).playCount)
+    }
+
+    /**
      * lengthSeconds is a free-form string in the player response; a non-numeric value must degrade
      * to "0:00" instead of failing the whole parse.
      */

@@ -266,6 +266,9 @@
     <string name="no_followed_artists">No followed artists yet</string>
     <string name="on_device">On device</string>
     <string name="show_all">Show all</string>
+    <string name="popular">Popular</string>
+    <string name="all_songs">All songs</string>
+    <string name="show_less">Show less</string>
     <string name="clear_filter">Clear filter</string>
     <string name="no_local_songs">No music found on this device</string>
     <string name="local_audio_permission_rationale">Allow access to your audio files to play music stored on this device.</string>

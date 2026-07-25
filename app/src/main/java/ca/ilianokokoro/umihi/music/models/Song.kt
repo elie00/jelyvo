@@ -76,6 +76,12 @@ data class Song(
     @Ignore
     var viewCount: String? = null
 
+    // Human-readable play count (e.g. "45M plays") from an artist page's song shelf, which is how
+    // YouTube Music ranks an artist's most-streamed tracks. Unlike [viewCount] this is not tied to
+    // video rows. Transient.
+    @Ignore
+    var playCount: String? = null
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()

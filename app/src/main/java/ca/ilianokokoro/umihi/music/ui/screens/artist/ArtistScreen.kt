@@ -21,8 +21,13 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,6 +84,9 @@ fun ArtistScreen(
 
                 is ArtistState.Success -> {
                     val page = state.page
+                    var showAllSongs by rememberSaveable(page.artist.channelUrl) {
+                        mutableStateOf(false)
+                    }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
@@ -167,18 +175,49 @@ fun ArtistScreen(
                             }
                         }
 
+                        // The top shelf is the artist's most-streamed tracks, in the API's ranking
+                        // and carrying play counts. "Show all" swaps in the full discography, which
+                        // is ordered differently and has no counts — so it is a choice, not a
+                        // silent upgrade.
+                        val hasMore = page.songs.size > page.topSongs.size
+                        val shownSongs = if (showAllSongs || page.topSongs.isEmpty()) {
+                            page.songs
+                        } else {
+                            page.topSongs
+                        }
+
+                        if (shownSongs.isNotEmpty()) {
+                            item(key = "songs-title", contentType = "section-title") {
+                                Text(
+                                    text = stringResource(
+                                        if (showAllSongs || page.topSongs.isEmpty()) {
+                                            R.string.all_songs
+                                        } else {
+                                            R.string.popular
+                                        }
+                                    ),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(
+                                        start = 8.dp,
+                                        top = 8.dp,
+                                        bottom = 4.dp
+                                    )
+                                )
+                            }
+                        }
+
                         items(
-                            items = page.songs,
+                            items = shownSongs,
                             key = { it.youtubeId },
                             contentType = { "song" }) { song ->
                             SongListItem(
                                 song = song,
                                 onPress = {
-                                    // Queue the artist's listed songs, starting at the tapped one.
+                                    // Queue what is on screen, starting at the tapped one.
                                     onOpenPlayer()
                                     PlayerManager.playQueue(
-                                        page.songs.map { it.mediaItem },
-                                        page.songs.indexOf(song),
+                                        shownSongs.map { it.mediaItem },
+                                        shownSongs.indexOf(song),
                                         sourceName = page.artist.name
                                     )
                                 },
@@ -186,6 +225,25 @@ fun ArtistScreen(
                                 addToQueue = { PlayerManager.addToQueue(song, context) },
                                 startRadio = { PlayerManager.startRadio(song, context) },
                             )
+                        }
+
+                        if (hasMore && page.topSongs.isNotEmpty()) {
+                            item(key = "songs-toggle", contentType = "songs-toggle") {
+                                TextButton(
+                                    onClick = { showAllSongs = !showAllSongs },
+                                    modifier = Modifier.padding(start = 8.dp)
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            if (showAllSongs) {
+                                                R.string.show_less
+                                            } else {
+                                                R.string.show_all
+                                            }
+                                        )
+                                    )
+                                }
+                            }
                         }
 
                         if (page.songs.isEmpty()) {

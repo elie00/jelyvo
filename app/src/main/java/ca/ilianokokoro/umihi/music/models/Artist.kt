@@ -33,6 +33,13 @@ data class ArtistSection(
 @Immutable
 data class ArtistPage(
     val artist: Artist,
+    /** Every song reachable from the page, i.e. the Songs shelf followed through "Show all". */
     val songs: List<Song> = emptyList(),
+    /**
+     * The Songs shelf as YouTube Music first renders it: the artist's most-streamed tracks, in the
+     * order the API returns them, with their play counts. Kept separate from [songs] because
+     * following "Show all" replaces that ranking with the full, differently ordered discography.
+     */
+    val topSongs: List<Song> = emptyList(),
     val sections: List<ArtistSection> = emptyList(),
 )

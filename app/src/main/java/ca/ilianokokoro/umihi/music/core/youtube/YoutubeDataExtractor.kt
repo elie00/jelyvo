@@ -52,6 +52,9 @@ val visitorData: String?
     get() = visitorDataRef.get()
 
 object YoutubeDataExtractor {
+    private val VIEW_COUNT_KEYWORDS = listOf("view", "vue")
+    private val PLAY_COUNT_KEYWORDS = listOf("play", "écoute", "ecoute", "lecture")
+
     private val HEADER_RENDERER_KEYS = listOf(
         "musicImmersiveHeaderRenderer",
         "musicVisualHeaderRenderer",
@@ -1688,6 +1691,9 @@ object YoutubeDataExtractor {
             if (it.isVideo) {
                 it.viewCount = extractViewCount(songContent)
             }
+            // Artist-page song rows carry a play count instead; it is what makes "most streamed"
+            // visible, so it is read for every row, video or not.
+            it.playCount = extractPlayCount(songContent)
         }
 
     }
@@ -1729,10 +1735,26 @@ object YoutubeDataExtractor {
      * match is a heuristic: a run starting with a digit and containing a view keyword. Null when
      * the subtitle does not carry one.
      */
-    private fun extractViewCount(songContent: JsonObject): String? {
+    private fun extractViewCount(songContent: JsonObject): String? =
+        extractCountLabel(songContent, VIEW_COUNT_KEYWORDS)
+
+    /**
+     * Play count of an artist-page song row ("45M plays"), which is how YouTube Music orders an
+     * artist's most-streamed tracks. Separate from [extractViewCount] because the wording differs
+     * and a play count is not restricted to video rows.
+     */
+    private fun extractPlayCount(songContent: JsonObject): String? =
+        extractCountLabel(songContent, PLAY_COUNT_KEYWORDS)
+
+    /**
+     * Finds a subtitle run that reads like "<number> <unit>" — the API never tags these columns, so
+     * matching on a leading digit plus a localized keyword is the only handle available. Adding a
+     * language means adding its word here.
+     */
+    private fun extractCountLabel(songContent: JsonObject, keywords: List<String>): String? {
         val flexColumns = songContent["flexColumns"]?.safeArray() ?: return null
 
-        // Column 0 is the title — the view count lives in the subtitle columns.
+        // Column 0 is the title — counts live in the subtitle columns.
         for (column in flexColumns.drop(1)) {
             val runs = column.safeObject()?.get("musicResponsiveListItemFlexColumnRenderer")
                 ?.safeObject()
@@ -1750,9 +1772,7 @@ object YoutubeDataExtractor {
                     ?: continue
 
                 val lower = text.lowercase()
-                if (text.firstOrNull()?.isDigit() == true &&
-                    ("view" in lower || "vue" in lower)
-                ) {
+                if (text.firstOrNull()?.isDigit() == true && keywords.any { it in lower }) {
                     return text
                 }
             }

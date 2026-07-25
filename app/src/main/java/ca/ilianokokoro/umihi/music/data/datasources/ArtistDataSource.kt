@@ -21,9 +21,13 @@ class ArtistDataSource {
     ): ArtistPage = withContext(Dispatchers.IO) {
         val response = YoutubeApiClient.browse(artistId, settings)
 
-        var songs = YoutubeDataExtractor.extractArtistSongs(response)
+        // The shelf as YouTube Music ranks it: most-streamed first, with play counts.
+        val topSongs = YoutubeDataExtractor.extractArtistSongs(response)
+        var songs = topSongs
 
-        // Follow the Songs shelf's "Show all" endpoint to load the full song list, not just the top few.
+        // Follow the Songs shelf's "Show all" endpoint to load the full song list, not just the top
+        // few. This list is ordered differently and carries no play counts, which is why the top
+        // shelf is kept alongside it rather than overwritten.
         YoutubeDataExtractor.extractMoreEndpoint(response)?.let { (moreId, params) ->
             runCatching {
                 val moreSongs = YoutubeDataExtractor.extractArtistSongs(
@@ -44,6 +48,7 @@ class ArtistDataSource {
         ArtistPage(
             artist = Artist(name = name, thumbnailHref = thumbnail, channelUrl = artistId),
             songs = songs,
+            topSongs = topSongs,
             sections = sections,
         )
     }

@@ -218,8 +218,9 @@ fun SongListItem(
 }
 
 /**
- * Subtitle line of a track row: "Artist • 3:45" for songs, "Artist • 1.2M views • 3:45" for
- * video rows. Blank/absent parts are skipped so the separators never dangle.
+ * Subtitle line of a track row: "Artist • 3:45" for songs, "Artist • 1.2M views • 3:45" for video
+ * rows, "Artist • 45M plays • 3:45" on an artist page. Blank/absent parts are skipped so the
+ * separators never dangle.
  */
 @Composable
 internal fun songSubtitle(song: Song): String {
@@ -227,6 +228,7 @@ internal fun songSubtitle(song: Song): String {
     return listOfNotNull(
         song.artist.takeIf(String::isNotBlank),
         song.viewCount.takeIf { song.isVideo }?.takeIf(String::isNotBlank),
+        song.playCount?.takeIf(String::isNotBlank),
         song.duration.takeIf(String::isNotBlank),
     ).joinToString(" $separator ")
 }
