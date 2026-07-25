@@ -14,6 +14,13 @@ import org.junit.runner.RunWith
  * screen loads in release builds.
  *
  * Run with: ./gradlew :app:generateStandaloneBaselineProfile (requires a rooted device/emulator).
+ *
+ * The generated profiles under app/src/standaloneRelease are never hand-edited to follow a source
+ * deletion. AGP resolves every rule against the R8 output and drops the ones that no longer match,
+ * one line at a time - after 026e614 the rules for the removed updater classes still reach
+ * expandStandaloneReleaseArtProfileWildcards and reach minifyStandaloneReleaseWithR8 zero times,
+ * while MainActivity and DatastoreRepository keep every live entry. A stale rule therefore costs
+ * nothing in the APK; it is cleared by the next run of this generator, not by editing its output.
  */
 @RunWith(AndroidJUnit4::class)
 class BaselineProfileGenerator {
