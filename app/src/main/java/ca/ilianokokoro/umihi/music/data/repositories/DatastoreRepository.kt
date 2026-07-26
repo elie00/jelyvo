@@ -111,7 +111,7 @@ class DatastoreRepository(private val context: Context) {
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
         val themeColor = it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
-        } ?: ThemeColor.Dynamic
+        } ?: ThemeColor.Umihi
         val notifyNewReleases = it[NOTIFY_NEW_RELEASES] ?: false
         val autoDownload = it[AUTO_DOWNLOAD] ?: false
         val autoDownloadLiked = it[AUTO_DOWNLOAD_LIKED] ?: true
@@ -170,7 +170,7 @@ class DatastoreRepository(private val context: Context) {
     val themeColor: Flow<ThemeColor> = context.dataStore.data.map {
         it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
-        } ?: ThemeColor.Dynamic
+        } ?: ThemeColor.Umihi
     }
 
     /** Lightweight flows used on the latency-sensitive stream-resolution path. */
@@ -367,6 +367,7 @@ class DatastoreRepository(private val context: Context) {
     }
 
     enum class ThemeColor {
+        Umihi,
         Dynamic,
         OceanBlue,
         ForestGreen,

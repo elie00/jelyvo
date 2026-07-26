@@ -103,7 +103,7 @@ data class ColorFamily(
 @Composable
 fun UmihiMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    themeColor: ThemeColor = ThemeColor.Dynamic,
+    themeColor: ThemeColor = ThemeColor.Umihi,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -127,4 +127,3 @@ fun UmihiMusicTheme(
         content = content,
     )
 }
-

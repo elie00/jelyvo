@@ -9,10 +9,8 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeCo
 /**
  * Hand-built Material 3 color schemes generated from seed colors.
  *
- * Each [ThemeColor] (except [ThemeColor.Dynamic], which uses the platform Material You schemes)
- * maps to a seed hue. Tonal palettes are approximated in HSL space using the standard M3 tone
- * values for every color role, which keeps contrast ratios close to the reference schemes without
- * pulling in the material-color-utilities dependency.
+ * User-selectable accent themes map to a seed hue. [ThemeColor.Umihi] deliberately falls back to
+ * the hand-tuned brand scheme in [Theme], while [ThemeColor.Dynamic] uses Material You.
  */
 object SeedSchemes {
 
@@ -34,6 +32,9 @@ object SeedSchemes {
      * Representative color used for the swatch shown in the theme picker.
      */
     fun previewColor(themeColor: ThemeColor, darkTheme: Boolean): Color? {
+        if (themeColor == ThemeColor.Umihi) {
+            return if (darkTheme) Color(0xFFFFB4A8) else Color(0xFFA53F32)
+        }
         val spec = specs[themeColor] ?: return null
         val palette = TonalPalette(spec.hue, spec.chroma)
         return if (darkTheme) palette.tone(80) else palette.tone(40)

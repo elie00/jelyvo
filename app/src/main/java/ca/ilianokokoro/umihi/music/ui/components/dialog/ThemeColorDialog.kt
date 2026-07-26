@@ -36,6 +36,7 @@ import ca.ilianokokoro.umihi.music.ui.theme.SeedSchemes
 fun themeColorLabel(themeColor: ThemeColor): String {
     return stringResource(
         when (themeColor) {
+            ThemeColor.Umihi -> R.string.theme_color_umihi
             ThemeColor.Dynamic -> R.string.theme_color_dynamic
             ThemeColor.OceanBlue -> R.string.theme_color_ocean_blue
             ThemeColor.ForestGreen -> R.string.theme_color_forest_green

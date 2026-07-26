@@ -114,7 +114,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeColor by datastoreRepository.themeColor
                 .collectAsStateWithLifecycle(
-                    initialValue = DatastoreRepository.ThemeColor.Dynamic
+                    initialValue = DatastoreRepository.ThemeColor.Umihi
                 )
 
             UmihiMusicTheme(themeColor = themeColor) {

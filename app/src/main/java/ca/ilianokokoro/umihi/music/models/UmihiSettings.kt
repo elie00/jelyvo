@@ -19,7 +19,7 @@ data class UmihiSettings(
     val dataSaverOnMetered: Boolean = false,
     val autoplay: Boolean = true,
     val crossfadeSeconds: Int = 0,
-    val themeColor: ThemeColor = ThemeColor.Dynamic,
+    val themeColor: ThemeColor = ThemeColor.Umihi,
     val notifyNewReleases: Boolean = false,
     val autoDownload: Boolean = false,
     val autoDownloadLiked: Boolean = true,

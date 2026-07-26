@@ -5,6 +5,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import ca.ilianokokoro.umihi.music.R
 
 val nunitoFontFamily = FontFamily(
@@ -21,28 +22,34 @@ private val defaultTypography = Typography()
 val AppTypography = Typography(
     displayLarge = defaultTypography.displayLarge.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-1.5).sp,
     ),
     displayMedium = defaultTypography.displayMedium.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-1).sp,
     ),
     displaySmall = defaultTypography.displaySmall.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-0.75).sp,
     ),
 
     headlineLarge = defaultTypography.headlineLarge.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-0.75).sp,
     ),
     headlineMedium = defaultTypography.headlineMedium.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.ExtraBold,
+        letterSpacing = (-0.5).sp,
     ),
     headlineSmall = defaultTypography.headlineSmall.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
+        letterSpacing = (-0.25).sp,
     ),
 
     titleLarge = defaultTypography.titleLarge.copy(
@@ -51,36 +58,36 @@ val AppTypography = Typography(
     ),
     titleMedium = defaultTypography.titleMedium.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.SemiBold
     ),
     titleSmall = defaultTypography.titleSmall.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.SemiBold
     ),
 
     bodyLarge = defaultTypography.bodyLarge.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Medium
     ),
     bodyMedium = defaultTypography.bodyMedium.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Normal
     ),
     bodySmall = defaultTypography.bodySmall.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Normal
     ),
 
     labelLarge = defaultTypography.labelLarge.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.SemiBold
     ),
     labelMedium = defaultTypography.labelMedium.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.SemiBold
     ),
     labelSmall = defaultTypography.labelSmall.copy(
         fontFamily = nunitoFontFamily,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Medium
     )
 )

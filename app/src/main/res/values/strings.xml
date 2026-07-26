@@ -103,6 +103,7 @@
     <string name="appearance">Appearance</string>
     <string name="theme_color_title">Theme color</string>
     <string name="theme_color_subtitle">Current theme : %1$s</string>
+    <string name="theme_color_umihi">Umihi signature</string>
     <string name="theme_color_dynamic">Dynamic (Material You)</string>
     <string name="theme_color_ocean_blue">Ocean blue</string>
     <string name="theme_color_forest_green">Forest green</string>
