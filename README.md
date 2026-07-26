@@ -19,7 +19,7 @@ IzzyOnDroid, no Obtainium. You build it yourself and install the APK by hand.
 - It keeps upstream's application id (`ca.ilianokokoro.umihi.music`), so it **cannot be installed
   alongside** the original app.
 
-Verification is partial and stated honestly: **126 JVM unit tests across 21 classes** pass, both
+Verification is partial and stated honestly: **127 JVM unit tests across 21 classes** pass, both
 debug and minified release APKs build, and the release APK has been installed and smoke-tested on
 an arm64 Android emulator. There is still no instrumented test suite; Chromecast hand-off still
 needs a physical receiver test and the full matrix needs a pass on the target phone.

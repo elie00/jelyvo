@@ -1,7 +1,7 @@
 # Chantier Jelyvo — fork elie00
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-07-25, branche `main`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-07-26, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 
 ## Contexte général
 
@@ -103,7 +103,7 @@ Constats relevés pendant la vague 6 et instruits ligne par ligne. Ordre d'appli
 
 ## Vague 8 (2026-07-25, reprise Claude/Codex) — ✅ terminée et poussée
 
-Le travail interrompu a été repris en micro-commits. L’état courant compte **21 classes / 126 tests
+Le travail interrompu a été repris en micro-commits. L’état courant compte **21 classes / 127 tests
 JVM**, un build debug vert et un build release minifié vert.
 
 - Playlists locales : recherche/tri cohérents avec la lecture, drag désactivé tant que la vue est
@@ -161,6 +161,18 @@ Le rejet précédent est obsolète. Les obstacles identifiés ont été traités
 Limite connue : les URL signées peuvent rester sensibles à la topologie IP du réseau et aucun
 Chromecast physique n’était disponible pendant cette session. Valider une session longue, le
 passage IPv4/IPv6, la prélecture et le retour téléphone sur le réseau réel avant diffusion large.
+
+## Identité Jelyvo — ✅ appliquée
+
+- `1bf8d804` remplace la marque visible, les métadonnées Fastlane, la documentation et le nom de
+  sortie par `Jelyvo.apk`.
+- `254ba06f` installe le symbole aux deux rubans stéréo corail/prune dans le splash, l’accueil,
+  le lecteur, les icônes adaptatives/rondes/monochromes et les visuels Play Store.
+- L’application id `ca.ilianokokoro.umihi.music`, le schéma OAuth `umihi://` et les noms de
+  stockage internes restent volontairement inchangés : une installation Jelyvo met ainsi à jour
+  l’ancienne app sans perdre comptes, playlists, préférences ni téléchargements.
+- Validation : 127 tests JVM réussis, APK debug et release minifié construits, debug installé par
+  mise à jour sur l’émulateur puis contrôlé en français et en thème sombre.
 
 ## Décisions encore ouvertes
 
