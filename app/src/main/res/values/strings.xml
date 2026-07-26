@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name" translatable="false">Umihi</string>
     <string name="playlists">Playlists</string>
     <string name="settings">Settings</string>
@@ -82,7 +82,8 @@
     <string name="jpg_extension" translatable="false">%1$s.jpg</string>
     <string name="beta_update_available">Beta Update Available</string>
     <string name="home">Home</string>
-    <string name="home_tagline">Your music, without the noise</string>
+    <!-- French is curated in values-fr; other locales deliberately fall back to this brand line. -->
+    <string name="home_tagline" tools:ignore="MissingTranslation">Your music, without the noise</string>
     <string name="search">Search</string>
     <string name="voice_search_prompt">Speak now</string>
     <string name="voice_search_unavailable">Voice search is not available</string>
@@ -104,7 +105,7 @@
     <string name="appearance">Appearance</string>
     <string name="theme_color_title">Theme color</string>
     <string name="theme_color_subtitle">Current theme : %1$s</string>
-    <string name="theme_color_umihi">Umihi signature</string>
+    <string name="theme_color_umihi" tools:ignore="MissingTranslation">Umihi signature</string>
     <string name="theme_color_dynamic">Dynamic (Material You)</string>
     <string name="theme_color_ocean_blue">Ocean blue</string>
     <string name="theme_color_forest_green">Forest green</string>
