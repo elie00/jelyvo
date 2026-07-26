@@ -3,7 +3,7 @@
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splashBackground</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_umihi_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_jelyvo_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.UmihiMusic</item>
     </style>
 

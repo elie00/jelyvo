@@ -95,7 +95,7 @@ fun MiniPlayerWrapper(
         onDispose { player?.removeListener(listener) }
     }
 
-    // A lightweight ticker keeps Umihi's signature pulse accurate without involving the
+    // A lightweight ticker keeps Jelyvo's signature pulse accurate without involving the
     // full-player ViewModel. It stops whenever playback pauses or the dock is hidden.
     LaunchedEffect(player, currentSong?.youtubeId, songIsPlaying, showMiniPlayer) {
         while (true) {

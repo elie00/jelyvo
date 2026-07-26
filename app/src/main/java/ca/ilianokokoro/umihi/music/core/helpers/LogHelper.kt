@@ -5,14 +5,14 @@ import ca.ilianokokoro.umihi.music.BuildConfig
 import kotlin.time.measureTimedValue
 
 object LogHelper {
-    const val TAG = "UmihiPrint"
+    const val TAG = "JelyvoPrint"
 
     inline fun <T> benchmark(
         label: String,
         block: () -> T
     ): T {
         val result = measureTimedValue(block)
-        printd(tag = "UmihiBench", message = "$label: ${result.duration.inWholeMilliseconds} ms")
+        printd(tag = "JelyvoBench", message = "$label: ${result.duration.inWholeMilliseconds} ms")
         return result.value
     }
 

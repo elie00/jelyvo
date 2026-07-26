@@ -9,7 +9,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeCo
 /**
  * Hand-built Material 3 color schemes generated from seed colors.
  *
- * User-selectable accent themes map to a seed hue. [ThemeColor.Umihi] deliberately falls back to
+ * User-selectable accent themes map to a seed hue. Jelyvo's legacy [ThemeColor.Umihi] value falls back to
  * the hand-tuned brand scheme in [Theme], while [ThemeColor.Dynamic] uses Material You.
  */
 object SeedSchemes {

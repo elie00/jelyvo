@@ -101,6 +101,6 @@ class LyricsDataSource {
     companion object {
         private const val BASE_URL = "https://lrclib.net"
         private const val USER_AGENT =
-            "UmihiMusic (https://github.com/elie00/umihi-music)"
+            "Jelyvo (https://github.com/elie00/umihi-music)"
     }
 }

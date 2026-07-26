@@ -637,7 +637,7 @@ private fun PlayerTopBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_umihi_monochrome),
+                    painter = painterResource(R.drawable.ic_jelyvo_monochrome),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),

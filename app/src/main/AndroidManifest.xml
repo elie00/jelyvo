@@ -134,7 +134,7 @@
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="ca.ilianokokoro.umihi.music.core.cast.CastOptionsProvider" />
 
-        <!-- Keep provider work off cold startup. WorkManager is configured lazily by Umihi and the
+        <!-- Keep provider work off cold startup. WorkManager is configured lazily by the application and the
              crash handler is installed after the first complete app frame. Modern Android already
              supplies system emoji rendering, so EmojiCompat does not need eager initialization. -->
         <provider

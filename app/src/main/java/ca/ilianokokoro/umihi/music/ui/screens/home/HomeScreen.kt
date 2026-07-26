@@ -221,10 +221,10 @@ private fun HomeHeader(onSettingsButtonPress: () -> Unit) {
         Surface(
             modifier = Modifier.size(44.dp),
             shape = RoundedCornerShape(15.dp),
-            color = Color(0xFF171A22),
+            color = Color(0xFFFFF8ED),
         ) {
             Icon(
-                painter = painterResource(R.drawable.ic_umihi_foreground),
+                painter = painterResource(R.drawable.ic_jelyvo_foreground),
                 contentDescription = null,
                 tint = Color.Unspecified,
                 modifier = Modifier.padding(4.dp),
@@ -300,11 +300,11 @@ private fun LoggedOutHome(
             Surface(
                 modifier = Modifier.size(112.dp),
                 shape = RoundedCornerShape(34.dp),
-                color = Color(0xFF171A22),
+                color = Color(0xFFFFF8ED),
                 shadowElevation = 8.dp,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_umihi_foreground),
+                    painter = painterResource(R.drawable.ic_jelyvo_foreground),
                     contentDescription = null,
                     tint = Color.Unspecified,
                     modifier = Modifier.padding(6.dp),
