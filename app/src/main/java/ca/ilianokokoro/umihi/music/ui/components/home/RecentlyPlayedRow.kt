@@ -33,12 +33,12 @@ fun RecentlyPlayedRow(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.recently_played),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         )
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
         ) {
             items(items = songs, key = { it.youtubeId }) { song ->
                 RecentlyPlayedCard(song = song, onClick = { onSongClick(song) })
@@ -58,13 +58,14 @@ private fun RecentlyPlayedCard(
     }
     Column(
         modifier = Modifier
-            .width(120.dp)
+            .width(136.dp)
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         SquareImage(
             uri = song.thumbnailPath ?: song.thumbnailHref,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = 18.dp,
         )
         Text(
             text = song.title,

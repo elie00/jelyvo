@@ -40,13 +40,13 @@ fun HomeFeedSectionRow(
         if (section.title.isNotBlank()) {
             Text(
                 text = section.title,
-                style = MaterialTheme.typography.headlineSmallEmphasized,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
             itemsIndexed(
                 items = section.items,
@@ -87,13 +87,13 @@ fun HomeFeedSectionRow(
                 }
 
                 Column(
-                    modifier = Modifier.width(152.dp).clickable(onClick = onClick),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.width(160.dp).clickable(onClick = onClick),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     SquareImage(
                         uri = thumbnail,
                         modifier = Modifier.fillMaxWidth(),
-                        cornerRadius = if (item is HomeFeedItem.Artist) 76.dp else 12.dp,
+                        cornerRadius = if (item is HomeFeedItem.Artist) 80.dp else 18.dp,
                     )
                     Text(
                         text = title,

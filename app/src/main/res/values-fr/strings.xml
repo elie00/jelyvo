@@ -79,6 +79,7 @@
     <string name="current_update_channel_body">Canal de mise à jour actuel : %1$s</string>
     <string name="beta_update_available">Mise à jour bêta disponible</string>
     <string name="home">Accueil</string>
+    <string name="home_tagline">Votre musique, sans le bruit</string>
     <string name="search">Recherche</string>
     <string name="voice_search_prompt">Parlez maintenant</string>
     <string name="voice_search_unavailable">La recherche vocale n\'est pas disponible</string>

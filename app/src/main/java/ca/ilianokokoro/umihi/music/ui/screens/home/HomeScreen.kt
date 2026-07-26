@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.home
 
 import android.app.Application
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,8 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -19,7 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -101,10 +104,10 @@ fun HomeScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(
-                                        top = paddingValues.calculateTopPadding() + statusBarHeight + 8.dp,
+                                        top = paddingValues.calculateTopPadding() + statusBarHeight + 6.dp,
                                         bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-                                        end = 8.dp,
-                                        start = 8.dp
+                                        end = 12.dp,
+                                        start = 12.dp
                                     )
 
                                 ) {
@@ -112,17 +115,7 @@ fun HomeScreen(
                                         key = "settings-header",
                                         span = { GridItemSpan(maxLineSpan) },
                                     ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.End,
-                                        ) {
-                                            IconButton(onClick = onSettingsButtonPress) {
-                                                Icon(
-                                                    Icons.Outlined.Settings,
-                                                    contentDescription = stringResource(R.string.settings)
-                                                )
-                                            }
-                                        }
+                                        HomeHeader(onSettingsButtonPress)
                                     }
                                     if (uiState.resumeItems.isNotEmpty()) {
                                         item(
@@ -198,49 +191,10 @@ fun HomeScreen(
                         }
                     }
 
-                    ScreenState.LoggedOut -> Column(
-                        modifier = Modifier.padding(horizontal = 32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(14.dp),
-                    ) {
-                        Surface(
-                            modifier = Modifier.size(124.dp),
-                            shape = RoundedCornerShape(36.dp),
-                            color = Color(0xFF171A22),
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_umihi_foreground),
-                                contentDescription = null,
-                                tint = Color.Unspecified,
-                                modifier = Modifier.padding(8.dp),
-                            )
-                        }
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
-                        Text(
-                            stringResource(R.string.log_in_message),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                        FilledTonalButton(
-                            onClick = onSettingsButtonPress,
-                            shapes = ButtonDefaults.shapes()
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.Login,
-                                contentDescription = null,
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                            )
-                            Text(
-                                text = stringResource(R.string.log_in),
-                                modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
-                            )
-                        }
-                    }
+                    ScreenState.LoggedOut -> LoggedOutHome(
+                        statusBarHeight = statusBarHeight,
+                        onSettingsButtonPress = onSettingsButtonPress,
+                    )
 
                     ScreenState.Loading -> LoadingAnimation()
                     is ScreenState.Error -> ErrorMessage(
@@ -253,4 +207,139 @@ fun HomeScreen(
         }
     }
 
+}
+
+@Composable
+private fun HomeHeader(onSettingsButtonPress: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Surface(
+            modifier = Modifier.size(44.dp),
+            shape = RoundedCornerShape(15.dp),
+            color = Color(0xFF171A22),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_umihi_foreground),
+                contentDescription = null,
+                tint = Color.Unspecified,
+                modifier = Modifier.padding(4.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleLarge,
+            )
+            Text(
+                text = stringResource(R.string.home_tagline),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        FilledTonalIconButton(onClick = onSettingsButtonPress) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = stringResource(R.string.settings),
+            )
+        }
+    }
+}
+
+@Composable
+private fun LoggedOutHome(
+    statusBarHeight: androidx.compose.ui.unit.Dp,
+    onSettingsButtonPress: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = statusBarHeight),
+    ) {
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 92.dp, y = (-112).dp)
+                .size(280.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f),
+        ) {}
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset(x = (-96).dp, y = 100.dp)
+                .size(240.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.32f),
+        ) {}
+
+        FilledTonalIconButton(
+            onClick = onSettingsButtonPress,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Settings,
+                contentDescription = stringResource(R.string.settings),
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(horizontal = 32.dp)
+                .padding(bottom = 80.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Surface(
+                modifier = Modifier.size(112.dp),
+                shape = RoundedCornerShape(34.dp),
+                color = Color(0xFF171A22),
+                shadowElevation = 8.dp,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_umihi_foreground),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier.padding(6.dp),
+                )
+            }
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.displaySmall,
+            )
+            Text(
+                text = stringResource(R.string.home_tagline),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                text = stringResource(R.string.log_in_message),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Start,
+            )
+            Button(
+                onClick = onSettingsButtonPress,
+                shapes = ButtonDefaults.shapes(),
+                modifier = Modifier.padding(top = 6.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.Login,
+                    contentDescription = null,
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                )
+                Text(
+                    text = stringResource(R.string.log_in),
+                    modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
+                )
+            }
+        }
+    }
 }

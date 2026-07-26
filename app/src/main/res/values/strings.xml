@@ -82,6 +82,7 @@
     <string name="jpg_extension" translatable="false">%1$s.jpg</string>
     <string name="beta_update_available">Beta Update Available</string>
     <string name="home">Home</string>
+    <string name="home_tagline">Your music, without the noise</string>
     <string name="search">Search</string>
     <string name="voice_search_prompt">Speak now</string>
     <string name="voice_search_unavailable">Voice search is not available</string>

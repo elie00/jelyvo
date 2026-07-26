@@ -1,16 +1,19 @@
 package ca.ilianokokoro.umihi.music.ui.navigation
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.LibraryMusic
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import ca.ilianokokoro.umihi.music.R
 
@@ -20,39 +23,53 @@ fun BottomNavigationBar(
     currentTab: NavKey?,
     onTabSelected: (NavKey) -> Unit
 ) {
-    NavigationBar(modifier = modifier) {
+    val itemColors = NavigationBarItemDefaults.colors(
+        selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        selectedTextColor = MaterialTheme.colorScheme.onSurface,
+        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    NavigationBar(
+        modifier = modifier,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp,
+    ) {
         NavigationBarItem(
             selected = currentTab is HomeScreenKey,
             onClick = { onTabSelected(HomeScreenKey) },
             icon = {
                 Icon(
-                    Icons.Default.Home,
+                    Icons.Rounded.Home,
                     contentDescription = null
                 )
             },
-            label = { Text(stringResource(R.string.home)) }
+            label = { Text(stringResource(R.string.home)) },
+            colors = itemColors,
         )
         NavigationBarItem(
             selected = currentTab is SearchScreenKey,
             onClick = { onTabSelected(SearchScreenKey) },
             icon = {
                 Icon(
-                    Icons.Default.Search,
+                    Icons.Rounded.Search,
                     contentDescription = null
                 )
             },
-            label = { Text(stringResource(R.string.search)) }
+            label = { Text(stringResource(R.string.search)) },
+            colors = itemColors,
         )
         NavigationBarItem(
             selected = currentTab is LibraryScreenKey,
             onClick = { onTabSelected(LibraryScreenKey) },
             icon = {
                 Icon(
-                    Icons.Default.LibraryMusic,
+                    Icons.Rounded.LibraryMusic,
                     contentDescription = null
                 )
             },
-            label = { Text(stringResource(R.string.library)) }
+            label = { Text(stringResource(R.string.library)) },
+            colors = itemColors,
         )
     }
 }

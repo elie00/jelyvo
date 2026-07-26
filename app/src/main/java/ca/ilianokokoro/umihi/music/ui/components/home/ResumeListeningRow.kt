@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.LinearProgressIndicator
@@ -16,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,12 +37,12 @@ fun ResumeListeningRow(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.resume_listening),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         )
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
         ) {
             items(items = items, key = { it.song.youtubeId }) { item ->
                 ResumeCard(item = item, onClick = { onResume(item) })
@@ -60,17 +63,21 @@ private fun ResumeCard(
     }
     Column(
         modifier = Modifier
-            .width(120.dp)
+            .width(136.dp)
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         SquareImage(
             uri = song.thumbnailPath ?: song.thumbnailHref,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            cornerRadius = 18.dp,
         )
         LinearProgressIndicator(
             progress = { item.progress },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(RoundedCornerShape(2.dp)),
         )
         Text(
             text = song.title,

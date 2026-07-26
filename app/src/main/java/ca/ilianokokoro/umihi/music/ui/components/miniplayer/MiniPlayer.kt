@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -28,12 +30,13 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -70,22 +73,25 @@ fun MiniPlayer(
             containerColor = lerp(
                 MaterialTheme.colorScheme.surfaceContainerHighest,
                 MaterialTheme.colorScheme.primaryContainer,
-                0.30f
+                0.18f
             )
         ),
-        // Flat: the mini player sits welded on the navigation bar's surface, no shadow between.
-        elevation = CardDefaults.cardElevation(0.dp)
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        LinearWavyProgressIndicator(
+        LinearProgressIndicator(
             progress = { progressFraction },
-            modifier = Modifier.fillMaxWidth(),
-            amplitude = { if (isPlaying) 1f else 0f },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
         )
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 6.dp),
+                .padding(horizontal = 10.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AnimatedContent(
@@ -133,6 +139,7 @@ fun MiniPlayer(
                     SquareImage(
                         uri = it.thumbnailPath ?: it.thumbnailHref,
                         modifier = artworkModifier.size(50.dp),
+                        cornerRadius = 16.dp,
                     )
 
                     Column(

@@ -119,7 +119,7 @@ fun MiniPlayerWrapper(
         modifier = modifier
             .fillMaxWidth()
             .background(Color.Transparent)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp)
             .height(Constants.Ui.MiniPlayer.HEIGHT)
     ) {
         val song = currentSong ?: return@AnimatedVisibility
