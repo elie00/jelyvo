@@ -18,7 +18,7 @@
     <string name="error_screen_title">Der opstod en fejl</string>
     <string name="restart_application">Genstart Program</string>
     <string name="error_details">Fejl Detaljer</string>
-    <string name="user_error_request">Rapporter venligst dette nedbrud ved at oprette et problem på GitHub eller udstationering i Umihi Music Discord.\nSørg for at inkludere logs fra \'Fejldetaljer\' knappen.</string>
+    <string name="user_error_request">Rapporter venligst dette nedbrud ved at oprette et problem på GitHub eller udstationering i Jelyvo Discord.\nSørg for at inkludere logs fra \'Fejldetaljer\' knappen.</string>
     <string name="close">Luk</string>
     <string name="copy_logs">Kopier logs</string>
     <string name="copied">Kopieret</string>

@@ -18,7 +18,7 @@
     <string name="error_screen_title">Ein Fehler ist aufgetreten</string>
     <string name="restart_application">Anwendung neu starten</string>
     <string name="error_details">Fehlerdetails</string>
-    <string name="user_error_request">Bitte melde diesen Absturz, indem du ein Problem auf GitHub erstellst oder in der Umihi Music Discord schreibst.\nStellen Sie sicher, dass die Logs von der Schaltfläche \'Fehlerdetails\' eingefügt werden.</string>
+    <string name="user_error_request">Bitte melde diesen Absturz, indem du ein Problem auf GitHub erstellst oder in der Jelyvo Discord schreibst.\nStellen Sie sicher, dass die Logs von der Schaltfläche \'Fehlerdetails\' eingefügt werden.</string>
     <string name="close">Schließen</string>
     <string name="copy_logs">Logs kopieren</string>
     <string name="copied">Kopiert</string>

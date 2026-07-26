@@ -18,7 +18,7 @@
     <string name="error_screen_title">حدث خطأ</string>
     <string name="restart_application">إعادة تشغيل التطبيق</string>
     <string name="error_details">تفاصيل الخطأ</string>
-    <string name="user_error_request">يرجى الإبلاغ عن هذا التعطل عن طريق إنشاء مشكلة في GitHub أو النشر في ديسكورد الموسيقي Umihi.\nتأكد من تضمين السجلات من الزر \'تفاصيل الخطأ\'.</string>
+    <string name="user_error_request">يرجى الإبلاغ عن هذا التعطل عن طريق إنشاء مشكلة في GitHub أو النشر في ديسكورد الموسيقي Jelyvo.\nتأكد من تضمين السجلات من الزر \'تفاصيل الخطأ\'.</string>
     <string name="close">أغلق</string>
     <string name="copy_logs">نسخ السجلات</string>
     <string name="copied">منسوخ</string>

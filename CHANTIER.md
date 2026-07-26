@@ -1,4 +1,4 @@
-# Chantier Umihi Music — fork elie00
+# Chantier Jelyvo — fork elie00
 
 > Document de passation pour reprendre le travail sur un autre poste.
 > Dernière mise à jour : 2026-07-25, branche `main`, remote `origin = github.com/elie00/umihi-music`.
@@ -177,7 +177,7 @@ passage IPv4/IPv6, la prélecture et le retour téléphone sur le réseau réel 
    au moins 10 cold starts et 20 lancements de titres/vidéos préchauffés pour juger le p95 < 300 ms.
 2. **Wear OS** : seul trou restant de la vague 4 (précédent réussi sur suivi-musculation : module `:wear` P1/P2).
 3. **Build de contrôle** `assembleStandaloneRelease` après tout nouveau lot. Le build de cette vague
-   est vert ; APK : `app/build/outputs/apk/standalone/release/Umihi.apk`.
+   est vert ; APK : `app/build/outputs/apk/standalone/release/Jelyvo.apk`.
 
 ## Environnement de build (PC de bureau — À REFAIRE sur l'autre PC)
 
@@ -197,7 +197,7 @@ $env:ANDROID_HOME = "C:\Users\<user>\.umihi-build\sdk"
 
 Sur un PC personnel sans restrictions : installer JDK 21 + Android Studio (ou SDK) normalement et utiliser `gradlew.bat assembleStandaloneRelease` suffit.
 
-- **Sortie APK** : `app/build/outputs/apk/standalone/release/Umihi.apk` (⚠ renommé par `c96021c` ; l'ancien nom `UmihiMusic.apk` ne subsiste que comme nom de l'asset publié sur GitHub, cf. `APK_FILE_NAME` dans `build-release.yml`)
+- **Sortie APK** : `app/build/outputs/apk/standalone/release/Jelyvo.apk` (la marque visible a été renommée sans changer l'application id historique, afin de préserver les mises à jour et les données locales)
 - Licences SDK : si `sdkmanager --licenses` est bloqué, invoquer la classe `com.android.sdklib.tool.sdkmanager.SdkManagerCli` directement avec `java -cp "<cmdline-tools>\lib\*"`.
 
 ## Pièges connus / notes

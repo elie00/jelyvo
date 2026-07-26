@@ -180,7 +180,7 @@ androidComponents {
         )
 
         variant.outputs.forEach { output ->
-            output.outputFileName.set("Umihi.apk")
+            output.outputFileName.set("Jelyvo.apk")
         }
     }
 }

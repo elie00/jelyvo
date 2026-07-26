@@ -18,7 +18,7 @@
     <string name="error_screen_title">Er is een fout opgetreden</string>
     <string name="restart_application">Herstart applicatie</string>
     <string name="error_details">Fout details</string>
-    <string name="user_error_request">Gelieve deze crash te melden door een probleem op GitHub aan te maken of in de Umihi Music Discord te posten.\nzorg ervoor dat de logs van de \'Foutdetails\' knop worden opgenomen.</string>
+    <string name="user_error_request">Gelieve deze crash te melden door een probleem op GitHub aan te maken of in de Jelyvo Discord te posten.\nzorg ervoor dat de logs van de \'Foutdetails\' knop worden opgenomen.</string>
     <string name="close">Afsluiten</string>
     <string name="copy_logs">Logboeken kopiëren</string>
     <string name="copied">Gekoppeld</string>

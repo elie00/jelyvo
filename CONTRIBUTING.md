@@ -1,4 +1,4 @@
-# Contributing to Umihi Music
+# Contributing to Jelyvo
 
 First off — thanks for taking the time to contribute! We are very open to contributions if you can
 show the value they provide. So, feel free to suggest or implement whatever you wish and submit the
@@ -9,7 +9,7 @@ about the app, suggest features or get support.
 
 ## Code of Conduct
 
-All interactions within the Umihi Music repository are governed by
+All interactions within the Jelyvo repository are governed by
 our [Code of Conduct](CODE_OF_CONDUCT.md).
 Please ensure all discussions, issues, and pull requests remain respectful and constructive.
 

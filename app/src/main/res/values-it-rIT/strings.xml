@@ -18,7 +18,7 @@
     <string name="error_screen_title">Si è verificato un errore</string>
     <string name="restart_application">Riavvia Applicazione</string>
     <string name="error_details">Dettagli Errore</string>
-    <string name="user_error_request">Si prega di segnalare questo crash creando un problema su GitHub o pubblicando in Umihi Music Discord.\nAssicurati di includere i registri dal pulsante \'Dettagli di errore\'.</string>
+    <string name="user_error_request">Si prega di segnalare questo crash creando un problema su GitHub o pubblicando in Jelyvo Discord.\nAssicurati di includere i registri dal pulsante \'Dettagli di errore\'.</string>
     <string name="close">Chiudi</string>
     <string name="copy_logs">Copia log</string>
     <string name="copied">Copiato</string>

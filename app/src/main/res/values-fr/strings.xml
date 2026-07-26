@@ -4,7 +4,7 @@
     <string name="settings">Paramètres</string>
     <string name="back_description">Écran précédent</string>
     <string name="no_playlists">Aucune playlist trouvée</string>
-    <string name="log_in_message">Connectez votre compte YouTube pour retrouver votre bibliothèque, vos playlists et vos recommandations dans Umihi.</string>
+    <string name="log_in_message">Connectez votre compte YouTube pour retrouver votre bibliothèque, vos playlists et vos recommandations dans Jelyvo.</string>
     <string name="library_logged_out_banner">Connectez-vous à votre compte YouTube pour retrouver vos titres likés, albums enregistrés et artistes suivis.</string>
     <string name="playlist_cover">Couverture de la playlist</string>
     <string name="log_in">Connexion</string>
@@ -25,7 +25,7 @@
     <string name="error_screen_title">Une erreur s\'est produite</string>
     <string name="restart_application">Redémarrer l\'application</string>
     <string name="error_details">Détails de l\'erreur</string>
-    <string name="user_error_request">Veuillez signaler ce plantage en créant un ticket sur GitHub ou en publiant un message sur le Discord d\'Umihi Music. \nN\'oubliez pas d\'inclure les journaux accessibles via le bouton « Détails de l\'erreur ».</string>
+    <string name="user_error_request">Veuillez signaler ce plantage en créant un ticket sur GitHub ou en publiant un message sur le Discord de Jelyvo. \nN\'oubliez pas d\'inclure les journaux accessibles via le bouton « Détails de l\'erreur ».</string>
     <string name="close">Fermer</string>
     <string name="copy_logs">Copier les journaux</string>
     <string name="copied">Copié</string>
@@ -101,7 +101,7 @@
     <string name="appearance">Apparence</string>
     <string name="theme_color_title">Couleur du thème</string>
     <string name="theme_color_subtitle">Thème actuel : %1$s</string>
-    <string name="theme_color_umihi">Signature Umihi</string>
+    <string name="theme_color_umihi">Signature Jelyvo</string>
     <string name="theme_color_dynamic">Dynamique (Material You)</string>
     <string name="theme_color_ocean_blue">Bleu océan</string>
     <string name="theme_color_forest_green">Vert forêt</string>

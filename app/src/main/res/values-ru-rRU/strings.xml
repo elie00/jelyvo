@@ -18,7 +18,7 @@
     <string name="error_screen_title">Произошла ошибка</string>
     <string name="restart_application">Перезапустить приложение</string>
     <string name="error_details">Детали ошибки</string>
-    <string name="user_error_request">Пожалуйста, сообщите об этой ошибке, создав проблему на GitHub или разместив ее в Umihi Music Discord.\nУбедитесь, что вы включили журналы из кнопки \"Подробности об ошибке\".</string>
+    <string name="user_error_request">Пожалуйста, сообщите об этой ошибке, создав проблему на GitHub или разместив ее в Jelyvo Discord.\nУбедитесь, что вы включили журналы из кнопки \"Подробности об ошибке\".</string>
     <string name="close">Закрыть</string>
     <string name="copy_logs">Копировать журналы</string>
     <string name="copied">Скопировано</string>

@@ -1,6 +1,6 @@
-# Umihi Music — personal fork
+# Jelyvo — personal fork
 
-<img src="fastlane/metadata/android/en-US/images/icon.png" height="72" alt="Umihi Music app icon">
+<img src="fastlane/metadata/android/en-US/images/icon.png" height="72" alt="Jelyvo app icon">
 
 A **Material YouTube Music player** for Android, built with **Kotlin** and **Jetpack Compose**.
 
@@ -85,7 +85,7 @@ Requires **JDK 21** and the Android SDK (compileSdk 37, minSdk 24).
 
 ```bash
 ./gradlew assembleStandaloneRelease
-# → app/build/outputs/apk/standalone/release/Umihi.apk
+# → app/build/outputs/apk/standalone/release/Jelyvo.apk
 ```
 
 Useful properties:
@@ -103,7 +103,7 @@ keystore. Share that keystore between machines if you want to install over an ex
 ## Credits 🎨
 
 - Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
-- **App logo**: [Apelleru](https://www.twitch.tv/apelleru).
+- **Jelyvo identity and app logo**: created for this fork.
 - **Translations**: inherited from the upstream project's Crowdin, and still shipped here. This fork
   no longer syncs with it, so the list is frozen as of the fork point — thank you to
   [ilianoKokoro](https://crowdin.com/profile/ilianoKokoro),

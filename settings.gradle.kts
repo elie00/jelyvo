@@ -26,7 +26,7 @@ dependencyResolutionManagement {
 
 }
 
-rootProject.name = "Umihi Music"
+rootProject.name = "Jelyvo"
 include(":app")
 
 include(":baselineprofile")

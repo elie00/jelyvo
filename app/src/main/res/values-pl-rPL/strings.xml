@@ -18,7 +18,7 @@
     <string name="error_screen_title">Wystąpił błąd</string>
     <string name="restart_application">Uruchom ponownie aplikację</string>
     <string name="error_details">Szczegóły błędu</string>
-    <string name="user_error_request">Zgłoś tę awarię tworząc problem na GitHub lub publikując na Discordzie Muzyki Umihi.\nUpewnij się, że dołączysz logi z przycisku \'Błąd Szczegóły\'.</string>
+    <string name="user_error_request">Zgłoś tę awarię tworząc problem na GitHub lub publikując na Discordzie Muzyki Jelyvo.\nUpewnij się, że dołączysz logi z przycisku \'Błąd Szczegóły\'.</string>
     <string name="close">Zamknij</string>
     <string name="copy_logs">Kopiuj logi</string>
     <string name="copied">Skopiowano</string>

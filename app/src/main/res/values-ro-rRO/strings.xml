@@ -18,7 +18,7 @@
     <string name="error_screen_title">A aparut o eroare</string>
     <string name="restart_application">Reporniți aplicația</string>
     <string name="error_details">Detalii eroare</string>
-    <string name="user_error_request">Vă rugăm să raportați acest crash creând o problemă pe GitHub sau postând pe Discord-ul Umihi Music Discord.\nAsigurați-vă că includeți jurnalele din butonul \'Detaliile erorii\'.</string>
+    <string name="user_error_request">Vă rugăm să raportați acest crash creând o problemă pe GitHub sau postând pe Discord-ul Jelyvo Discord.\nAsigurați-vă că includeți jurnalele din butonul \'Detaliile erorii\'.</string>
     <string name="close">Inchide</string>
     <string name="copy_logs">Copiază jurnalele</string>
     <string name="copied">Copiat</string>

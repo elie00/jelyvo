@@ -18,7 +18,7 @@
     <string name="error_screen_title">エラーが発生</string>
     <string name="restart_application">アプリを再起動</string>
     <string name="error_details">エラーの詳細</string>
-    <string name="user_error_request">GitHub 上で問題を作成するか、Umihi Music Discordに投稿して、このクラッシュを報告してください。\n「エラーの詳細」ボタンのログを必ず記載してください。</string>
+    <string name="user_error_request">GitHub 上で問題を作成するか、Jelyvo Discordに投稿して、このクラッシュを報告してください。\n「エラーの詳細」ボタンのログを必ず記載してください。</string>
     <string name="close">閉じる</string>
     <string name="copy_logs">ログをコピー</string>
     <string name="copied">コピーしました</string>

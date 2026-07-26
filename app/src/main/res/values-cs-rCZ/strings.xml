@@ -18,7 +18,7 @@
     <string name="error_screen_title">Došlo k chybě</string>
     <string name="restart_application">Restartovat aplikaci</string>
     <string name="error_details">Podrobnosti o chybě</string>
-    <string name="user_error_request">Prosím nahlaste tuto chybu vytvořením problému na GitHubu nebo přidáním do Umihi hudební Discordu.\nUjistěte se, že přidáte protokoly z tlačítka \'Podrobnosti o chybě\'.</string>
+    <string name="user_error_request">Prosím nahlaste tuto chybu vytvořením problému na GitHubu nebo přidáním do Jelyvo hudební Discordu.\nUjistěte se, že přidáte protokoly z tlačítka \'Podrobnosti o chybě\'.</string>
     <string name="close">Zavřít</string>
     <string name="copy_logs">Kopírovat logy</string>
     <string name="copied">Zkopírováno</string>

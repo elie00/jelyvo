@@ -18,7 +18,7 @@
     <string name="error_screen_title">May naganap na error</string>
     <string name="restart_application">I-restart ang Application</string>
     <string name="error_details">Mga Detalye ng Error</string>
-    <string name="user_error_request">Paki-ulat ang pag-crash na ito sa pamamagitan ng paggawa ng isyu sa GitHub o pag-post sa Umihi (Peeing?? bakit?) Music Discord.\nTiyaking isama ang mga log mula sa button na \'Mga Detalye ng Error\'.</string>
+    <string name="user_error_request">Paki-ulat ang pag-crash na ito sa pamamagitan ng paggawa ng isyu sa GitHub o pag-post sa Jelyvo Discord.\nTiyaking isama ang mga log mula sa button na \'Mga Detalye ng Error\'.</string>
     <string name="close">Katapusan</string>
     <string name="copy_logs">Kopyahin ang mga log</string>
     <string name="copied">Kinopya</string>

@@ -18,7 +18,7 @@
     <string name="error_screen_title">Tapahtui virhe</string>
     <string name="restart_application">Käynnistä Sovellus Uudelleen</string>
     <string name="error_details">Virheen Tiedot</string>
-    <string name="user_error_request">Ilmoita tästä kaatumisesta luomalla ongelma GitHubissa tai lähettämällä viestejä Umihi Music Discordiin.\nVarmista että sisällytät lokit virheen yksityiskohdista -painikkeesta.</string>
+    <string name="user_error_request">Ilmoita tästä kaatumisesta luomalla ongelma GitHubissa tai lähettämällä viestejä Jelyvo Discordiin.\nVarmista että sisällytät lokit virheen yksityiskohdista -painikkeesta.</string>
     <string name="close">Sulje</string>
     <string name="copy_logs">Kopioi lokit</string>
     <string name="copied">Kopioitu</string>

@@ -18,7 +18,7 @@
     <string name="error_screen_title">Παρουσιάστηκε ένα σφάλμα</string>
     <string name="restart_application">Επανεκκίνηση Εφαρμογής</string>
     <string name="error_details">Λεπτομέρειες Σφάλματος</string>
-    <string name="user_error_request">Παρακαλώ αναφέρετε αυτή την κατάρρευση δημιουργώντας ένα πρόβλημα στο GitHub ή δημοσιεύοντας στο Umihi Music Discord.\nΒεβαιωθείτε ότι συμπεριλάβετε τα αρχεία καταγραφής από το κουμπί \'Λεπτομέρειες σφάλματος\'.</string>
+    <string name="user_error_request">Παρακαλώ αναφέρετε αυτή την κατάρρευση δημιουργώντας ένα πρόβλημα στο GitHub ή δημοσιεύοντας στο Jelyvo Discord.\nΒεβαιωθείτε ότι συμπεριλάβετε τα αρχεία καταγραφής από το κουμπί \'Λεπτομέρειες σφάλματος\'.</string>
     <string name="close">Κλείσιμο</string>
     <string name="copy_logs">Αντιγραφή αρχείων καταγραφής</string>
     <string name="copied">Αντιγράφηκε</string>

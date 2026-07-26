@@ -18,7 +18,7 @@
     <string name="error_screen_title">Виникла помилка</string>
     <string name="restart_application">Перезапустити програму</string>
     <string name="error_details">Відомості про помилку</string>
-    <string name="user_error_request">Будь ласка, повідомте про цю аварію, створивши проблему на GitHub або розмістивши в Umihi Music Discord.\nПереконайтеся, що в ньому включені логи з кнопки \"Детальніше\".</string>
+    <string name="user_error_request">Будь ласка, повідомте про цю аварію, створивши проблему на GitHub або розмістивши в Jelyvo Discord.\nПереконайтеся, що в ньому включені логи з кнопки \"Детальніше\".</string>
     <string name="close">Закрити</string>
     <string name="copy_logs">Копіювати логи</string>
     <string name="copied">Скопійовано</string>

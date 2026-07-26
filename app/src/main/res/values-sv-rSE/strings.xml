@@ -18,7 +18,7 @@
     <string name="error_screen_title">Ett fel uppstod</string>
     <string name="restart_application">Starta om applikationen</string>
     <string name="error_details">Detaljer om fel</string>
-    <string name="user_error_request">Rapportera denna krasch genom att skapa ett problem på GitHub eller posta i Umihi Music Discord.\nSe till att inkludera loggarna från knappen \"Feldetaljer\".</string>
+    <string name="user_error_request">Rapportera denna krasch genom att skapa ett problem på GitHub eller posta i Jelyvo Discord.\nSe till att inkludera loggarna från knappen \"Feldetaljer\".</string>
     <string name="close">Stäng</string>
     <string name="copy_logs">Kopiera loggar</string>
     <string name="copied">Kopierad</string>

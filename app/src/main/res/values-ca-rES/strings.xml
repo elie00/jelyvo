@@ -18,7 +18,7 @@
     <string name="error_screen_title">S\'ha produït un error</string>
     <string name="restart_application">Reiniciar aplicació</string>
     <string name="error_details">Detalls de l\'error</string>
-    <string name="user_error_request">Informeu d’aquest error creant una incidència a GitHub o publicant-la a Discord d’Umihi Music.\nAssegureu‑vos d’incloure els registres del botó \'Detalls de l’error\'.</string>
+    <string name="user_error_request">Informeu d’aquest error creant una incidència a GitHub o publicant-la al Discord de Jelyvo.\nAssegureu‑vos d’incloure els registres del botó \'Detalls de l’error\'.</string>
     <string name="close">Tancar</string>
     <string name="copy_logs">Copia els registres</string>
     <string name="copied">Copia</string>

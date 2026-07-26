@@ -18,7 +18,7 @@
     <string name="error_screen_title">发生错误</string>
     <string name="restart_application">重新启动应用程序</string>
     <string name="error_details">错误详细信息</string>
-    <string name="user_error_request">请在 GitHub 上创建一个问题或在 Umihi Music Discord中发布消息来报告崩溃情况。\n请确保在“错误细节”按钮中包含日志。</string>
+    <string name="user_error_request">请在 GitHub 上创建一个问题或在 Jelyvo Discord中发布消息来报告崩溃情况。\n请确保在“错误细节”按钮中包含日志。</string>
     <string name="close">关闭</string>
     <string name="copy_logs">复制日志</string>
     <string name="copied">已复制</string>
