@@ -40,8 +40,14 @@ fun PlaylistCard(
                 .padding(12.dp)
                 .fillMaxSize()
         ) {
+            val specialCover = specialPlaylistCover(playlistInfo.id)
             when {
-                playlistInfo.isDownloadedPlaylist -> OfflineThumbnail()
+                // Les playlists automatiques portent la pochette de marque plutot que le visuel
+                // generique servi par YouTube (ou aucun, pour les telechargements).
+                specialCover != null -> JelyvoPlaylistCover(
+                    cover = specialCover,
+                    contentDescription = stringResource(R.string.playlist_cover),
+                )
 
                 coverUris.isNotEmpty() -> PlaylistMosaicCover(
                     uris = coverUris,

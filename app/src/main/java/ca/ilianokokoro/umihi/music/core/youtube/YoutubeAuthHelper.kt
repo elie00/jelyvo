@@ -10,6 +10,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl
 import okhttp3.Request
 import java.security.MessageDigest
+import java.util.Locale
 import java.util.TimeZone
 import kotlin.text.Charsets.UTF_8
 
@@ -22,7 +23,18 @@ object YoutubeAuthHelper {
         client: JsonObject? = null,
         visitorData: String? = null,
     ): JsonObject {
-        val clientToUse = client ?: Constants.YoutubeApi.Client.WEB_REMIX
+        val baseClient = client ?: Constants.YoutubeApi.Client.WEB_REMIX
+        // La locale de l'appareil localise les libelles serveur (« Titres likés », « Nouveaux
+        // épisodes », sections de l'accueil…). Les extracteurs ne lisent que des cles
+        // structurelles, jamais ces libelles, donc le parsing ne depend pas de la langue.
+        val locale = Locale.getDefault()
+        val clientToUse = buildJsonObject {
+            baseClient.forEach { (key, value) -> put(key, value) }
+            put("hl", JsonPrimitive(locale.language.ifBlank { "en" }))
+            locale.country.takeIf { it.isNotBlank() }?.let {
+                put("gl", JsonPrimitive(it))
+            }
+        }
 
         return buildJsonObject {
             val user = buildJsonObject {
