@@ -60,6 +60,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import androidx.compose.ui.res.pluralStringResource
+import ca.ilianokokoro.umihi.music.models.LocalLibrarySectionKind
 import ca.ilianokokoro.umihi.music.models.MoodCategory
 import ca.ilianokokoro.umihi.music.models.MoodCategorySection
 import ca.ilianokokoro.umihi.music.models.Song
@@ -183,6 +185,7 @@ fun SearchScreen(
                                             SearchFilter.Videos -> R.string.search_videos
                                             SearchFilter.Albums -> R.string.search_albums
                                             SearchFilter.Artists -> R.string.search_artists
+                                            SearchFilter.Library -> R.string.search_library
                                         }
                                     )
                                 )
@@ -294,7 +297,8 @@ fun SearchScreen(
                     is ScreenState.Success -> {
                         val results = uiState.screenState.results
                         val topResult = uiState.screenState.topResult
-                        if (results.isNotEmpty() || topResult != null) {
+                        val librarySections = uiState.screenState.librarySections
+                        if (results.isNotEmpty() || topResult != null || librarySections.isNotEmpty()) {
                             val listState = rememberLazyListState()
                             DockScrollToTopEffect(listState)
 
@@ -328,6 +332,50 @@ fun SearchScreen(
                                     }
                                 }
 
+                                // Onglet « Ma bibliotheque » : sections locales groupees par
+                                // origine, chacune sous un petit en-tete.
+                                librarySections.forEach { section ->
+                                    item(key = "library_header_${section.kind}") {
+                                        SearchSectionHeader(
+                                            text = stringResource(section.kind.titleRes()),
+                                        )
+                                    }
+                                    items(
+                                        items = section.playlists,
+                                        key = { "library_playlist_${it.id}" },
+                                    ) { match ->
+                                        SearchBrowseResult(
+                                            title = match.name,
+                                            subtitle = pluralStringResource(
+                                                R.plurals.song_count,
+                                                match.songCount,
+                                                match.songCount,
+                                            ),
+                                            thumbnail = match.coverHref,
+                                            onClick = {
+                                                searchViewModel.playLocalPlaylist(match.id)
+                                            },
+                                        )
+                                    }
+                                    items(
+                                        items = section.songs,
+                                        key = { "library_${section.kind}_${it.youtubeId}" },
+                                        contentType = { "library_song" },
+                                    ) { song ->
+                                        SongListItem(
+                                            song = song,
+                                            onPress = { PlayerManager.playSong(song) },
+                                            playNext = { PlayerManager.addNext(song, context) },
+                                            addToQueue = {
+                                                PlayerManager.addToQueue(song, context)
+                                            },
+                                            startRadio = {
+                                                PlayerManager.startRadio(song, context)
+                                            },
+                                        )
+                                    }
+                                }
+
                                 if (topResult != null) {
                                     item(key = "top_result") {
                                         TopResultCard(
@@ -355,6 +403,34 @@ fun SearchScreen(
                                                 }
                                             },
                                             modifier = Modifier.padding(bottom = 8.dp),
+                                        )
+                                    }
+                                }
+
+                                // Section « Deja ecoute » : les correspondances de l'historique
+                                // de lecture, quelques lignes au-dessus des resultats distants.
+                                if (uiState.historyMatches.isNotEmpty()) {
+                                    item(key = "history_matches_header") {
+                                        SearchSectionHeader(
+                                            text = stringResource(R.string.search_history_heading),
+                                        )
+                                    }
+                                    items(
+                                        items = uiState.historyMatches,
+                                        // Prefixed keys: the same track may also be a remote result.
+                                        key = { "history_${it.youtubeId}" },
+                                        contentType = { "history_song" },
+                                    ) { song ->
+                                        SongListItem(
+                                            song = song,
+                                            onPress = { PlayerManager.playSong(song) },
+                                            playNext = { PlayerManager.addNext(song, context) },
+                                            addToQueue = {
+                                                PlayerManager.addToQueue(song, context)
+                                            },
+                                            startRadio = {
+                                                PlayerManager.startRadio(song, context)
+                                            },
                                         )
                                     }
                                 }
@@ -544,6 +620,26 @@ private fun MoodSectionChips(
             }
         }
     }
+}
+
+/** L'en-tete d'une section locale (« Ma bibliotheque », « Deja ecoute »). */
+@Composable
+private fun SearchSectionHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
+    )
+}
+
+/** Le libelle d'en-tete de chaque origine de l'onglet « Ma bibliotheque ». */
+private fun LocalLibrarySectionKind.titleRes(): Int = when (this) {
+    LocalLibrarySectionKind.LIKED -> R.string.liked_songs
+    LocalLibrarySectionKind.PLAYLISTS -> R.string.on_device_playlists
+    LocalLibrarySectionKind.LOCAL_AUDIO -> R.string.on_device
+    LocalLibrarySectionKind.DOWNLOADS -> R.string.downloaded
 }
 
 @Composable

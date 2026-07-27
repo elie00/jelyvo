@@ -43,6 +43,13 @@ enum class SearchFilter(val params: String) {
     Videos("EgWKAQIQAWoKEAkQChAFEAMQBA=="),
     Albums("EgWKAQIYAWoKEAkQChAFEAMQBA=="),
     Artists("EgWKAQIgAWoKEAkQChAFEAMQBA=="),
+
+    /**
+     * Fully local scope ("My library"): liked songs, local playlists, on-device audio and
+     * downloads. Never sent to the network — the ViewModel intercepts it before the repository,
+     * so its params stay empty.
+     */
+    Library(""),
 }
 
 @Immutable

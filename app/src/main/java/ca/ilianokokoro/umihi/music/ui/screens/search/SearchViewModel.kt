@@ -8,25 +8,38 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.data.database.AppDatabase
+import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.data.repositories.AlbumRepository
 import ca.ilianokokoro.umihi.music.data.repositories.ArtistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.MoodsRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
+import ca.ilianokokoro.umihi.music.extensions.containsNormalized
+import ca.ilianokokoro.umihi.music.models.Library
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSearchSource
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.SearchResult
+import ca.ilianokokoro.umihi.music.models.searchLocalLibrary
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SearchViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SearchState())
@@ -37,6 +50,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     private val artistRepository = ArtistRepository()
     private val moodsRepository = MoodsRepository()
     private val datastoreRepository = DatastoreRepository(application)
+    private val historyRepository = HistoryRepository(application)
+    private val localPlaylistRepository = LocalPlaylistRepository(application)
+    private val localAudioDataSource = LocalAudioDataSource(application)
+    private val localSongDataSource = AppDatabase.getInstance(application).songRepository()
     private var searchJob: Job? = null
     private var suggestionsJob: Job? = null
     private var loadMoreJob: Job? = null
@@ -103,6 +120,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                         screenState =
                             ScreenState.Success(results = listOf()),
                         showSuggestions = false,
+                        historyMatches = emptyList(),
                     )
                 }
                 return@launch
@@ -111,6 +129,14 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             _uiState.update { it.copy(showSuggestions = false, suggestions = emptyList()) }
             datastoreRepository.addRecentSearch(query)
             val filter = uiState.value.filter
+
+            // The "My library" tab is fully local: no network call, no result cache, no paging.
+            if (filter == SearchFilter.Library) {
+                searchLibraryLocally(query)
+                return@launch
+            }
+
+            refreshHistoryMatches(query)
 
             // Reuse an already-fetched page for this query+tab (tab switches come back here).
             resultCache[cacheKey(query, filter)]?.let { cached ->
@@ -156,6 +182,98 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
 
+    }
+
+    /**
+     * The "My library" tab search: gathers the local sources (cached liked songs, local playlists,
+     * on-device audio, downloads) and groups the matches per origin through [searchLocalLibrary].
+     * Strictly offline — the liked songs are read from the library ResponseCache entry (whatever
+     * its age) and simply absent when the library page was never loaded.
+     */
+    private suspend fun searchLibraryLocally(query: String) {
+        _uiState.update {
+            it.copy(
+                screenState = ScreenState.Loading,
+                continuation = null,
+                historyMatches = emptyList(),
+            )
+        }
+
+        val sections = withContext(Dispatchers.Default) {
+            val settings = datastoreRepository.getSettings()
+            val likedSongs = ResponseCache.get<Library>(
+                key = LibraryRepository.cacheKey(settings),
+                ttlMs = Long.MAX_VALUE,
+            )?.likedSongs ?: emptyList()
+
+            val localPlaylists = runCatching { localPlaylistRepository.observeAll().first() }
+                .getOrDefault(emptyList())
+                .map { playlist ->
+                    val songs = localPlaylistRepository.songsOf(playlist).map { it.toSong() }
+                    LocalPlaylistSearchSource(
+                        id = playlist.id,
+                        name = playlist.name,
+                        coverHref = songs.firstOrNull { it.thumbnailHref.isNotBlank() }
+                            ?.thumbnailHref.orEmpty(),
+                        songs = songs,
+                    )
+                }
+
+            // Missing audio permission (or an empty MediaStore) degrades to an absent section.
+            val localAudioSongs = runCatching { localAudioDataSource.getSongs() }
+                .getOrDefault(emptyList())
+
+            val downloadedSongs = runCatching { localSongDataSource.getDownloadedSongs() }
+                .getOrDefault(emptyList())
+
+            searchLocalLibrary(
+                query = query,
+                likedSongs = likedSongs,
+                localPlaylists = localPlaylists,
+                localAudioSongs = localAudioSongs,
+                downloadedSongs = downloadedSongs,
+            )
+        }
+
+        _uiState.update {
+            it.copy(
+                screenState = ScreenState.Success(librarySections = sections),
+                continuation = null,
+            )
+        }
+    }
+
+    /**
+     * Refreshes the "Listened before" section: scans the most recent play-history tracks and keeps
+     * the few whose title or artist matches [query] (accent- and case-insensitive). Best-effort —
+     * a failure just leaves the section empty.
+     */
+    private suspend fun refreshHistoryMatches(query: String) {
+        val matches = runCatching {
+            historyRepository.recentSongs(HISTORY_SCAN_LIMIT).first()
+        }.getOrDefault(emptyList())
+            .filter { song ->
+                song.title.containsNormalized(query) || song.artist.containsNormalized(query)
+            }
+            .take(MAX_HISTORY_MATCHES)
+        _uiState.update { it.copy(historyMatches = matches) }
+    }
+
+    /** Plays a local playlist tapped in the "My library" results (name match rows). */
+    fun playLocalPlaylist(id: String) {
+        viewModelScope.launch {
+            val playlist = localPlaylistRepository.observeById(id).firstOrNull() ?: return@launch
+            val songs = localPlaylistRepository.songsOf(playlist).map { it.toSong() }
+            if (songs.isEmpty()) {
+                return@launch
+            }
+            PlayerManager.playPlaylist(
+                Playlist(
+                    info = PlaylistInfo(id = playlist.id, title = playlist.name),
+                    songs = songs,
+                )
+            )
+        }
     }
 
     fun loadMore() {
@@ -206,7 +324,8 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             it.copy(search = newValue, showSuggestions = newValue.isNotBlank())
         }
         suggestionsJob?.cancel()
-        if (newValue.length < 2) {
+        // No remote suggestions on the "My library" tab: it must stay fully offline.
+        if (newValue.length < 2 || _uiState.value.filter == SearchFilter.Library) {
             _uiState.update { it.copy(suggestions = emptyList()) }
             return
         }
@@ -314,6 +433,12 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     companion object {
+        /** How many recent play-history tracks are scanned for the "Listened before" section. */
+        private const val HISTORY_SCAN_LIMIT = 200
+
+        /** Maximum rows in the "Listened before" section, to keep the remote results in view. */
+        private const val MAX_HISTORY_MATCHES = 5
+
         fun Factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 SearchViewModel(application)
