@@ -413,7 +413,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                 }
             )
 
-            // The dock: mini player welded on top of the bar, sliding as one unit.
+            // The dock: mini player floating distinctly above the bar with clean visual separation.
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -425,7 +425,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     showMiniPlayer = screenConfig.showMiniPlayer,
                     onMiniPlayerPressed = { showFullPlayer = true },
                     artworkModifier = artworkModifier,
-                    modifier = Modifier.background(dockSurfaceColor)
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
 
                 AnimatedVisibility(
