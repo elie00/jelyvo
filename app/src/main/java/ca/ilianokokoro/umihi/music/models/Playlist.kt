@@ -51,6 +51,9 @@ data class PlaylistInfo(
     val isDownloadedPlaylist: Boolean
         get() = id == Constants.Downloads.DOWNLOADED_PLAYLIST_ID
 
+    val isEditable: Boolean
+        get() = !isDownloadedPlaylist && id != Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID && id != "liked"
+
 
     fun toBrowsableMediaItem(): MediaItem {
         return MediaItem.Builder()

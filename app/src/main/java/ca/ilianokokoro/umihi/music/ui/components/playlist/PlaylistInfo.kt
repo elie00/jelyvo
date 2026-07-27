@@ -32,6 +32,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.stringResource
@@ -53,7 +61,8 @@ fun PlaylistInfo(
     onDeleteDownloadPressed: () -> Unit,
     onDeletePressed: () -> Unit,
     onCancelDownload: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onUpdateCoverPath: (String) -> Unit = {},
 ) {
     val songsCount = playlist.songs.count()
     var animatedCount by remember { mutableStateOf<Int?>(null) }
@@ -81,10 +90,42 @@ fun PlaylistInfo(
                 modifier = Modifier.size(150.dp),
             )
             !playlist.info.isDownloadedPlaylist -> {
-                SquareImage(
-                    uri = playlist.info.coverPath ?: playlist.info.coverHref,
-                    modifier = Modifier.size(150.dp)
-                )
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri: Uri? ->
+                    uri?.let { onUpdateCoverPath(it.toString()) }
+                }
+                Box(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .then(
+                            if (playlist.info.isEditable) {
+                                Modifier.clickable { launcher.launch("image/*") }
+                            } else Modifier
+                        ),
+                    contentAlignment = Alignment.BottomEnd
+                ) {
+                    SquareImage(
+                        uri = playlist.info.coverPath ?: playlist.info.coverHref,
+                        modifier = Modifier.size(150.dp)
+                    )
+                    if (playlist.info.isEditable) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.padding(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Edit,
+                                contentDescription = stringResource(R.string.edit),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier
+                                    .padding(6.dp)
+                                    .size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
             else -> {
                 Icon(

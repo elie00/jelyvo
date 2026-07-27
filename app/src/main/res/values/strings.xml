@@ -126,6 +126,7 @@
     <string name="theme_preset_neon_description">Night violet, electric magenta</string>
     <string name="theme_preset_oled">Pitch Black (OLED)</string>
     <string name="theme_preset_oled_description">Absolute #000000 black optimized for AMOLED screens</string>
+    <string name="edit">Edit</string>
     <string name="profile">Profile</string>
     <string name="profile_name_placeholder">Your name</string>
     <string name="profile_edit_hint">Local display name and avatar</string>
