@@ -433,9 +433,9 @@ private fun ArtworkOrLyrics(
             LyricsPanel(
                 lyricsState = uiState.lyrics,
                 currentPositionMs = uiState.playbackProgress.position.toLong(),
+                onSeekTo = { PlayerManager.currentController?.seekTo(it) },
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable(onClick = onToggle)
             )
         } else if (currentSong?.forceVideo == true && !isCasting) {
             VideoSurface(

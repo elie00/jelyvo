@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -45,6 +46,7 @@ fun LyricsPanel(
     lyricsState: ApiResult<Lyrics>,
     currentPositionMs: Long,
     modifier: Modifier = Modifier,
+    onSeekTo: (Long) -> Unit = {},
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -76,7 +78,8 @@ fun LyricsPanel(
                 } else {
                     SyncedLyricsList(
                         lyrics = lyrics,
-                        currentPositionMs = currentPositionMs
+                        currentPositionMs = currentPositionMs,
+                        onSeekTo = onSeekTo,
                     )
                 }
             }
@@ -88,6 +91,7 @@ fun LyricsPanel(
 private fun SyncedLyricsList(
     lyrics: Lyrics,
     currentPositionMs: Long,
+    onSeekTo: (Long) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -114,12 +118,13 @@ private fun SyncedLyricsList(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         itemsIndexed(lyrics.lines) { index, line ->
             LyricRow(
                 line = line,
-                isActive = index == activeIndex
+                isActive = index == activeIndex,
+                onSeekTo = onSeekTo,
             )
         }
     }
@@ -129,23 +134,32 @@ private fun SyncedLyricsList(
 private fun LyricRow(
     line: LyricLine,
     isActive: Boolean,
+    onSeekTo: (Long) -> Unit,
 ) {
     val color by animateColorAsState(
         targetValue = if (isActive) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
         },
         label = "lyricLineColor"
     )
 
     Text(
         text = line.text,
-        style = MaterialTheme.typography.titleMedium.copy(
-            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-        ),
+        style = if (isActive) {
+            MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
+        } else {
+            MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
+        },
         color = color,
         textAlign = TextAlign.Start,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (line.timeMs != null) {
+                    Modifier.clickable { onSeekTo(line.timeMs) }
+                } else Modifier
+            )
     )
 }
