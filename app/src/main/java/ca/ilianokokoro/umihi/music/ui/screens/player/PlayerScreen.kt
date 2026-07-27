@@ -102,6 +102,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.cast.CastDevicePickerSheet
 import ca.ilianokokoro.umihi.music.ui.components.cast.rememberIsCastRouteAvailable
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.AudioVisualizer
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerArtworkBackground
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
@@ -256,6 +257,10 @@ fun PlayerScreen(
                         onToggleLike = playerViewModel::toggleLike,
                         onArtistClick = { playerViewModel.openArtist(onOpenArtist) },
                         showMoreButton = false,
+                    )
+                    AudioVisualizer(
+                        isPlaying = uiState.isPlaying,
+                        modifier = Modifier.padding(vertical = 6.dp)
                     )
                     PlayerControls(
                         isPlaying = uiState.isPlaying,
