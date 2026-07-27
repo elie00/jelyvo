@@ -1,7 +1,7 @@
 # Chantier Jelyvo — fork elie00
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-07-26, branche `main`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-07-27, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 
 ## Contexte général
 
@@ -173,6 +173,48 @@ passage IPv4/IPv6, la prélecture et le retour téléphone sur le réseau réel 
   l’ancienne app sans perdre comptes, playlists, préférences ni téléchargements.
 - Validation : 127 tests JVM réussis, APK debug et release minifié construits, debug installé par
   mise à jour sur l’émulateur puis contrôlé en français et en thème sombre.
+
+## Vague 9 (2026-07-27) — ✅ fonctionnalités UI en rafale, puis signature + updater
+
+Une trentaine de micro-commits UI le 27/07 (album Spotify-like, file réordonnable, accueil For You,
+réglages étendus, presets de thème dont OLED, animations lecteur/mini-player, widget 2x2, profil
+local avec avatar monogramme, suppression de titres de l'historique par appui long, pochettes
+d'auto-playlists dérivées du thème actif). Puis le lot distribution :
+
+### Signature pérenne — ✅
+- L'APK installé sur le S24 Ultra est signé avec la clé debug du Mac (`~/.android/debug.keystore`),
+  empreinte SHA-256 `b47ac9b8…be081d`, certificat valide jusqu'en 2056.
+- Cette clé est copiée en `~/keystores/jelyvo-release.keystore` et devient la clé officielle via
+  `keystore.properties` (gitignoré, à la racine) : `signingConfigs.release` la ramasse déjà.
+  `signingReport` confirme la même empreinte pour `standaloneRelease`.
+- ⚠ **Sauvegarder `~/keystores/jelyvo-release.keystore` hors du poste** (sa perte interdit toute
+  mise à jour installable). C'est la clé debug standard (mot de passe `android`) : ne jamais la
+  committer.
+
+### Auto-updater Jelyvo — ✅ (ressuscité de `026e614`, simplifié)
+- Le dépôt `elie00/umihi-music` est **privé** → les releases publiques vivent dans le dépôt dédié
+  **public** `elie00/jelyvo-releases` (APK signés + notes uniquement). L'app lit
+  `api.github.com/repos/elie00/jelyvo-releases/releases/latest`.
+- Réintroduits : `GithubDatasource/Repository`, `GithubReleaseResponse` (sans canal beta),
+  `GithubRateLimitException`, `VersionManager` (check au lancement + manuel, download avec
+  progression, install via FileProvider, versions ignorées en Room — entité `Version` conservée
+  en vague 6 précisément pour ça), `UpdateDialog`, section Réglages « Mises à jour »
+  (check manuel + toggle auto, clé DataStore `auto-update` réutilisée), permission
+  `REQUEST_INSTALL_PACKAGES` + FileProvider + `file_paths.xml` au manifeste.
+- Comparaison de versions extraite en `core/helpers/VersionCompare.kt` pur JVM (segments non
+  numériques → 0, `-beta` < stable de mêmes chiffres), couverte par `VersionCompareTest` ;
+  parsing DTO couvert par `GithubReleaseResponseTest`.
+- **Publication** : `scripts/publish-release.sh` — bumper `appVersionName`, le script build
+  `-Pbeta=false`, refuse de publier si l'empreinte de signature diffère de la clé officielle,
+  puis `gh release create vX.Y.Z Jelyvo.apk` sur `jelyvo-releases`.
+- ⚠ **Amorçage** : les APK déjà installés (2.0.0) n'ont pas l'updater — la première build
+  updater-capable s'installe à la main ; les suivantes se proposeront toutes seules.
+
+### CI GitHub Actions — ❌ cassée côté compte, hors périmètre
+Tous les runs échouent en ~4 s : « account payments have failed or spending limit needs to be
+increased » (dépôt privé = minutes payantes). La release se fait en local via le script ci-dessus ;
+réparer la facturation (ou passer le repo en public) rendrait `build-release.yml` de nouveau
+pertinent — il faudrait alors aligner son étape « Collect APKs » sur `Jelyvo.apk` (encore `Umihi.apk`).
 
 ## Décisions encore ouvertes
 
