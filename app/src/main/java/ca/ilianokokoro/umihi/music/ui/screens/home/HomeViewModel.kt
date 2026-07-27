@@ -19,6 +19,7 @@ import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -43,6 +44,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         getHomeFeed()
         observeRecentlyPlayed()
         observeResumable()
+        observeShortcuts()
+        observeForYouMixes()
     }
 
     private fun observeRecentlyPlayed() {
@@ -58,6 +61,34 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             historyRepository.resumableSongs().collect { items ->
                 _uiState.update { it.copy(resumeItems = items) }
             }
+        }
+    }
+
+    /** Shortcut tiles: most played tracks of the last month, padded with the latest plays. */
+    private fun observeShortcuts() {
+        val since = System.currentTimeMillis() - SHORTCUTS_WINDOW_MS
+        viewModelScope.launch {
+            combine(
+                historyRepository.topTracks(since, limit = HOME_SHORTCUTS_MAX),
+                historyRepository.recentSongs(limit = HOME_SHORTCUTS_MAX),
+            ) { tops, recents -> buildHomeShortcuts(tops, recents) }
+                .collect { shortcuts ->
+                    _uiState.update { it.copy(shortcuts = shortcuts) }
+                }
+        }
+    }
+
+    /** "For you" mixes derived from the local play history; see [buildForYouMixes]. */
+    private fun observeForYouMixes() {
+        val now = System.currentTimeMillis()
+        viewModelScope.launch {
+            combine(
+                historyRepository.topTracks(now - REPLAY_WINDOW_MS, limit = HOME_MIX_MAX_SONGS),
+                historyRepository.topTracks(since = 0L, limit = ALL_TIME_SAMPLE),
+            ) { recentTops, allTimeTops -> buildForYouMixes(recentTops, allTimeTops, now) }
+                .collect { mixes ->
+                    _uiState.update { it.copy(forYouMixes = mixes) }
+                }
         }
     }
 
@@ -162,6 +193,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     companion object {
+        /** Shortcut tiles look at the last 30 days of plays. */
+        private const val SHORTCUTS_WINDOW_MS = 30L * 24 * 60 * 60 * 1000
+
+        /** The "Replay" mix covers the last 90 days. */
+        private const val REPLAY_WINDOW_MS = 90L * 24 * 60 * 60 * 1000
+
+        /** All-time sample size fed to the rediscoveries filter. */
+        private const val ALL_TIME_SAMPLE = 200
+
         fun Factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 HomeViewModel(application)

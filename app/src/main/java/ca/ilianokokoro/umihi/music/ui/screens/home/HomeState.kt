@@ -12,7 +12,9 @@ data class HomeState(
     val screenState: ScreenState = ScreenState.Loading,
     val isRefreshing: Boolean = false,
     val recentlyPlayed: List<Song> = emptyList(),
-    val resumeItems: List<ResumeItem> = emptyList()
+    val resumeItems: List<ResumeItem> = emptyList(),
+    val shortcuts: List<Song> = emptyList(),
+    val forYouMixes: List<HomeMix> = emptyList()
 )
 
 @Immutable

@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,10 +50,13 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.home.ForYouMixesRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
+import ca.ilianokokoro.umihi.music.ui.components.home.HomeShortcutGrid
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
 import ca.ilianokokoro.umihi.music.ui.components.home.ResumeListeningRow
+import java.time.LocalTime
 
 @Composable
 fun HomeScreen(
@@ -92,6 +96,9 @@ fun HomeScreen(
                         } else {
                             val gridState = rememberLazyGridState()
                             DockScrollToTopEffect(gridState)
+                            // Sampled once per composition of the tab; the greeting and section
+                            // order only need to be right when the screen is (re)opened.
+                            val currentHour = remember { LocalTime.now().hour }
 
                             PullToRefreshBox(
                                 isRefreshing = uiState.isRefreshing,
@@ -115,34 +122,76 @@ fun HomeScreen(
                                         key = "settings-header",
                                         span = { GridItemSpan(maxLineSpan) },
                                     ) {
-                                        HomeHeader(onSettingsButtonPress)
+                                        HomeHeader(
+                                            greeting = greetingForHour(currentHour),
+                                            onSettingsButtonPress = onSettingsButtonPress,
+                                        )
                                     }
-                                    if (uiState.resumeItems.isNotEmpty()) {
+                                    if (uiState.shortcuts.isNotEmpty()) {
+                                        // Spotify-style shortcut tiles, always above the carousels.
                                         item(
-                                            key = "resume-listening",
+                                            key = "shortcuts",
                                             span = { GridItemSpan(maxLineSpan) },
                                         ) {
-                                            ResumeListeningRow(
-                                                items = uiState.resumeItems,
-                                                onResume = {
-                                                    PlayerManager.resumeSong(
-                                                        it.song,
-                                                        it.positionMs,
-                                                        it.durationMs,
-                                                    )
-                                                }
+                                            HomeShortcutGrid(
+                                                songs = uiState.shortcuts,
+                                                onSongClick = { PlayerManager.playSong(it) },
                                             )
                                         }
                                     }
-                                    if (uiState.recentlyPlayed.isNotEmpty()) {
-                                        item(
-                                            key = "recently-played",
-                                            span = { GridItemSpan(maxLineSpan) },
-                                        ) {
-                                            RecentlyPlayedRow(
-                                                songs = uiState.recentlyPlayed,
-                                                onSongClick = { PlayerManager.playSong(it) }
-                                            )
+                                    homeCarouselOrder(currentHour).forEach { carousel ->
+                                        when (carousel) {
+                                            HomeCarousel.RESUME -> if (uiState.resumeItems.isNotEmpty()) {
+                                                item(
+                                                    key = "resume-listening",
+                                                    span = { GridItemSpan(maxLineSpan) },
+                                                ) {
+                                                    ResumeListeningRow(
+                                                        items = uiState.resumeItems,
+                                                        onResume = {
+                                                            PlayerManager.resumeSong(
+                                                                it.song,
+                                                                it.positionMs,
+                                                                it.durationMs,
+                                                            )
+                                                        }
+                                                    )
+                                                }
+                                            }
+
+                                            HomeCarousel.RECENT -> if (uiState.recentlyPlayed.isNotEmpty()) {
+                                                item(
+                                                    key = "recently-played",
+                                                    span = { GridItemSpan(maxLineSpan) },
+                                                ) {
+                                                    RecentlyPlayedRow(
+                                                        songs = uiState.recentlyPlayed,
+                                                        onSongClick = { PlayerManager.playSong(it) }
+                                                    )
+                                                }
+                                            }
+
+                                            HomeCarousel.FOR_YOU -> if (uiState.forYouMixes.isNotEmpty()) {
+                                                item(
+                                                    key = "for-you-mixes",
+                                                    span = { GridItemSpan(maxLineSpan) },
+                                                ) {
+                                                    // Resolved here so the click lambda stays plain.
+                                                    val mixTitles = mapOf(
+                                                        HomeMixKind.REPLAY to stringResource(R.string.home_mix_replay),
+                                                        HomeMixKind.REDISCOVER to stringResource(R.string.home_mix_rediscover),
+                                                    )
+                                                    ForYouMixesRow(
+                                                        mixes = uiState.forYouMixes,
+                                                        onMixClick = { mix ->
+                                                            PlayerManager.playQueue(
+                                                                mix.songs.map { it.mediaItem },
+                                                                sourceName = mixTitles[mix.kind],
+                                                            )
+                                                        }
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                     if (newReleases.isNotEmpty()) {
@@ -210,7 +259,10 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeHeader(onSettingsButtonPress: () -> Unit) {
+private fun HomeHeader(
+    greeting: HomeGreeting,
+    onSettingsButtonPress: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -231,8 +283,15 @@ private fun HomeHeader(onSettingsButtonPress: () -> Unit) {
             )
         }
         Column(modifier = Modifier.weight(1f)) {
+            // No display name available from the account, so the greeting stands alone.
             Text(
-                text = stringResource(R.string.app_name),
+                text = stringResource(
+                    when (greeting) {
+                        HomeGreeting.MORNING -> R.string.home_greeting_morning
+                        HomeGreeting.AFTERNOON -> R.string.home_greeting_afternoon
+                        HomeGreeting.EVENING -> R.string.home_greeting_evening
+                    }
+                ),
                 style = MaterialTheme.typography.titleLarge,
             )
             Text(
