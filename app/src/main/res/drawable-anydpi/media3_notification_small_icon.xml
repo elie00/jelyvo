@@ -1,21 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Surcharge de l'icone de statut media3 (DefaultMediaNotificationProvider). Ruban stereo Jelyvo :
+     les deux traces sont reprises verbatim de drawable/ic_jelyvo_monochrome.xml, viewport 108
+     conserve pour partager exactement la meme geometrie que l'icone de lanceur.
+
+     Blanc pur sur fond transparent : le systeme ne garde que le canal alpha d'une icone de statut,
+     toute autre couleur serait ecrasee.
+
+     Cadrage : la boite englobante des traces, demi-strokeWidth (6.5) compris, va de (20.5, 18.5) a
+     (90.5, 87.5), soit 70 x 69 centre sur (55.5, 53). Le group l'agrandit de 1.4 (-> 98 x 96.6, soit
+     21.8 x 21.5 dp sur les 24dp du canevas, la zone utile maximale de la barre de statut) puis la
+     recentre sur (54, 54). Le trait fait alors ~4dp : largement au-dessus du seuil de disparition. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="24"
-    android:viewportHeight="24">
-    <path
-        android:pathData="M5,6.5 L5,13 C5,17 7.5,19 12,19 C16.5,19 19,17 19,13 L19,6.5"
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2.2"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-    <path
-        android:pathData="M3.5,12 L7,12 L8.5,9 L10.5,15 L12.2,10.5 L14.3,13.5 L16,12 L20.5,12"
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="2"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="55.5"
+        android:pivotY="53"
+        android:scaleX="1.4"
+        android:scaleY="1.4"
+        android:translateX="-1.5"
+        android:translateY="1">
+        <path
+            android:pathData="M72,25 C79,25 84,30 84,37 L84,60 C84,73 76,81 63,81 L56,81"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="13"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M51,38 L45,38 C34,38 27,46 27,57 C27,70 36,79 49,79 C59,79 66,72 66,62 L66,38"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="13"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
 </vector>
