@@ -45,9 +45,11 @@ import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
+import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
@@ -71,6 +73,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
@@ -701,9 +704,10 @@ private fun PlayerTopBar(
 
 
 /**
- * "Song | Video" pill shown at the top of the player when the current item has a video variant.
- * The selected segment reflects what is actually playing; [enabled] debounces taps while a mode
- * switch is resolving streams.
+ * Song|Video pill shown at the top of the player when the current item has a video variant.
+ * Icon-only segments (note vs camera); the labels move to content descriptions. The selected
+ * segment reflects what is actually playing; [enabled] debounces taps while a mode switch is
+ * resolving streams.
  */
 @Composable
 private fun PlaybackModeToggle(
@@ -721,13 +725,15 @@ private fun PlaybackModeToggle(
         verticalAlignment = Alignment.CenterVertically
     ) {
         PlaybackModeSegment(
-            label = stringResource(R.string.player_mode_song),
+            icon = Icons.Rounded.MusicNote,
+            contentDescription = stringResource(R.string.player_mode_song),
             selected = !isVideoMode,
             enabled = enabled,
             onClick = { onSelectMode(false) }
         )
         PlaybackModeSegment(
-            label = stringResource(R.string.player_mode_video),
+            icon = Icons.Rounded.Videocam,
+            contentDescription = stringResource(R.string.player_mode_video),
             selected = isVideoMode,
             enabled = enabled,
             onClick = { onSelectMode(true) }
@@ -737,16 +743,16 @@ private fun PlaybackModeToggle(
 
 @Composable
 private fun PlaybackModeSegment(
-    label: String,
+    icon: ImageVector,
+    contentDescription: String,
     selected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.Bold,
-        color = if (selected) {
+    Icon(
+        imageVector = icon,
+        contentDescription = contentDescription,
+        tint = if (selected) {
             MaterialTheme.colorScheme.onPrimary
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
@@ -761,7 +767,8 @@ private fun PlaybackModeSegment(
                 }
             )
             .clickable(enabled = enabled && !selected, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 14.dp, vertical = 5.dp)
+            .size(20.dp)
     )
 }
 
