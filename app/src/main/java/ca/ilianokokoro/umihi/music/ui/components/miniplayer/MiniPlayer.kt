@@ -148,21 +148,13 @@ fun MiniPlayer(
                             .padding(horizontal = 8.dp),
                         verticalArrangement = Arrangement.Center,
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            if (isPlaying) {
-                                EqualizerWaveform(isPlaying = true)
-                            }
-                            Text(
-                                text = it.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.basicMarquee()
-                            )
-                        }
+                        Text(
+                            text = it.title,
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.basicMarquee()
+                        )
                         Text(
                             text = it.artist,
                             style = MaterialTheme.typography.bodyMedium,
