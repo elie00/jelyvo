@@ -8,10 +8,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.models.Cookies
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -30,9 +32,25 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             if (url?.contains(Constants.Auth.END_URL) == true && !_uiState.value.isLoggedIn) {
                 val cookies = CookieManager.getInstance().getCookie(url).orEmpty()
-                saveCookies(Cookies(cookies))
+                if (cookies.isBlank()) {
+                    return@launch
+                }
+
+                // Claim this completion before the first suspension: WebView may report the final
+                // URL more than once, and two completion events would pop two navigation entries.
                 _uiState.update { it.copy(isLoggedIn = true) }
-                _eventsChannel.emit(ScreenEvent.Out.LoginCompleted)
+
+                // Do not navigate back until the session is actually persisted. Otherwise the
+                // already-created HomeViewModel can read the previous logged-out state once more.
+                try {
+                    saveCookies(Cookies(cookies))
+                    _eventsChannel.emit(ScreenEvent.Out.LoginCompleted)
+                } catch (ex: CancellationException) {
+                    throw ex
+                } catch (ex: Exception) {
+                    _uiState.update { it.copy(isLoggedIn = false) }
+                    printe(message = "Failed to persist login cookies", exception = ex)
+                }
             }
         }
     }
@@ -47,11 +65,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun saveCookies(cookies: Cookies) {
-        printd("Got cookies: $cookies")
-        viewModelScope.launch {
-            datastoreRepository.saveCookies(cookies)
-        }
+    private suspend fun saveCookies(cookies: Cookies) {
+        // Never log the cookie value: it contains the user's YouTube session.
+        printd("Got login cookies")
+        datastoreRepository.saveCookies(cookies)
     }
 
     sealed interface ScreenEvent {
