@@ -4,7 +4,8 @@
     <string name="settings">Paramètres</string>
     <string name="back_description">Écran précédent</string>
     <string name="no_playlists">Aucune playlist trouvée</string>
-    <string name="log_in_message">Connectez votre compte YouTube pour retrouver votre bibliothèque, vos playlists et vos recommandations dans Jelyvo.</string>
+    <string name="log_in_message">Recherchez et écoutez vos morceaux préférés immédiatement, ou connectez votre compte YouTube pour retrouver vos playlists et recommandations.</string>
+    <string name="explore_without_account">Explorer sans compte</string>
     <string name="library_logged_out_banner">Connectez-vous à votre compte YouTube pour retrouver vos titres likés, albums enregistrés et artistes suivis.</string>
     <string name="playlist_cover">Couverture de la playlist</string>
     <string name="log_in">Connexion</string>
@@ -90,7 +91,7 @@
     <string name="current_update_channel_body">Canal de mise à jour actuel : %1$s</string>
     <string name="beta_update_available">Mise à jour bêta disponible</string>
     <string name="home">Accueil</string>
-    <string name="home_tagline">Votre musique, sans le bruit</string>
+    <string name="home_tagline">Toute votre musique, en toute liberté.</string>
     <string name="search">Recherche</string>
     <string name="voice_search_prompt">Parlez maintenant</string>
     <string name="voice_search_unavailable">La recherche vocale n\'est pas disponible</string>

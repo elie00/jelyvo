@@ -4,7 +4,8 @@
     <string name="settings">Settings</string>
     <string name="back_description">Previous screen</string>
     <string name="no_playlists">No playlists found</string>
-    <string name="log_in_message">Sign in to bring your YouTube library, playlists and recommendations into Jelyvo.</string>
+    <string name="log_in_message">Search and listen to your favorite tracks right away, or connect your YouTube account to find your playlists and recommendations.</string>
+    <string name="explore_without_account">Explore without account</string>
     <string name="library_logged_out_banner">Log in to your YouTube account to see your liked songs, saved albums and followed artists.</string>
     <string name="playlist_cover">Playlist cover</string>
     <string name="log_in">Log In</string>
@@ -94,7 +95,7 @@
     <string name="beta_update_available">Beta Update Available</string>
     <string name="home">Home</string>
     <!-- French is curated in values-fr; other locales deliberately fall back to this brand line. -->
-    <string name="home_tagline" tools:ignore="MissingTranslation">Your music, without the noise</string>
+    <string name="home_tagline" tools:ignore="MissingTranslation">All your music, in total freedom.</string>
     <string name="search">Search</string>
     <string name="voice_search_prompt">Speak now</string>
     <string name="voice_search_unavailable">Voice search is not available</string>
