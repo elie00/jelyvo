@@ -276,7 +276,7 @@
     <string name="smart_offline"><![CDATA[Hors ligne intelligent]]></string>
     <string name="auto_download_title">Téléchargement automatique hors ligne</string>
     <string name="auto_download_description">Garde automatiquement vos sources sélectionnées disponibles hors ligne</string>
-    <string name="auto_download_liked_title">Titres aimés</string>
+    <string name="auto_download_liked_title">J\'aime</string>
     <string name="auto_download_liked_description">Inclure vos titres aimés dans le téléchargement automatique hors ligne</string>
     <string name="auto_download_wifi_only_title">Wi-Fi uniquement</string>
     <string name="auto_download_wifi_only_description">Télécharger automatiquement uniquement en Wi-Fi</string>
@@ -328,7 +328,7 @@
     <string name="wrapped_top_track">Top titre</string>
     <string name="wrapped_most_active_day">Jour le plus actif</string>
     <string name="library">Bibliothèque</string>
-    <string name="liked_songs">Titres aimés</string>
+    <string name="liked_songs">J\'aime</string>
     <string name="saved_albums">Albums</string>
     <string name="followed_artists">Artistes</string>
     <string name="no_liked_songs">Aucun titre aimé pour le moment</string>
