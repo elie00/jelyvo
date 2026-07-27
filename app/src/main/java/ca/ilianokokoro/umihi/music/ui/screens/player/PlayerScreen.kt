@@ -401,6 +401,7 @@ fun PlayerScreen(
         SleepTimerBottomSheet(
             changeVisibility = playerViewModel::setSleepTimerSheetVisibility,
             activeRemainingSeconds = uiState.sleepTimerRemainingSeconds,
+            defaultMinutes = uiState.sleepTimerDefaultMinutes,
             onStartTimer = playerViewModel::startSleepTimer,
             onStartEndOfSong = playerViewModel::startSleepTimerEndOfSong,
             onCancelTimer = playerViewModel::cancelSleepTimer,

@@ -115,8 +115,16 @@ class PlayerViewModel(application: Application) :
         }
 
         viewModelScope.launch {
-            val settings = datastoreRepository.getSettings()
-            _uiState.update { it.copy(isLoggedIn = !settings.cookies.isEmpty()) }
+            // Collected (not read once) so a changed default sleep timer duration applies to the
+            // next sheet opening without recreating the player.
+            datastoreRepository.settings.collect { settings ->
+                _uiState.update {
+                    it.copy(
+                        isLoggedIn = !settings.cookies.isEmpty(),
+                        sleepTimerDefaultMinutes = settings.sleepTimerDefaultMinutes,
+                    )
+                }
+            }
         }
     }
 

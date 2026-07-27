@@ -39,6 +39,7 @@ fun SleepTimerBottomSheet(
     changeVisibility: (visible: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     activeRemainingSeconds: Long?,
+    defaultMinutes: Int = Constants.Ui.Player.SleepTimer.DEFAULT_VALUE,
     onStartTimer: (minutes: Int) -> Unit,
     onStartEndOfSong: () -> Unit,
     onCancelTimer: () -> Unit,
@@ -124,7 +125,16 @@ fun SleepTimerBottomSheet(
                 }
 
 
-                var sliderValue by remember { mutableIntStateOf(Constants.Ui.Player.SleepTimer.DEFAULT_VALUE) }
+                // Preselects the user's configured default duration, clamped to the slider bounds.
+                var sliderValue by remember(defaultMinutes) {
+                    mutableIntStateOf(
+                        defaultMinutes.coerceIn(
+                            Constants.Ui.Player.SleepTimer.STEP_VALUE,
+                            Constants.Ui.Player.SleepTimer.STEP_VALUE *
+                                    Constants.Ui.Player.SleepTimer.STEP_AMOUNT,
+                        )
+                    )
+                }
 
                 Text(
                     text = stringResource(R.string.minutes, sliderValue),

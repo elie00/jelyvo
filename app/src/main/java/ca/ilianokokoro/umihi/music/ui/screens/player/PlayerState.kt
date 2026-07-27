@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.AbLoop
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.Song
@@ -19,6 +20,8 @@ data class PlayerState(
     val isSavingQueue: Boolean = false,
     val isSleepTimerModalShown: Boolean = false,
     val sleepTimerRemainingSeconds: Long? = null,
+    // Duration (minutes) preselected when the sleep timer sheet opens; user setting.
+    val sleepTimerDefaultMinutes: Int = Constants.Ui.Player.SleepTimer.DEFAULT_MINUTES_FALLBACK,
     val isSpeedSelectorShown: Boolean = false,
     val isPlayerMenuShown: Boolean = false,
     val playbackSpeed: Float = 1.0f,

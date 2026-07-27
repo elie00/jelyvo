@@ -1,6 +1,5 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
-import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +11,7 @@ import androidx.compose.material.icons.rounded.MusicVideo
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
 import ca.ilianokokoro.umihi.music.core.managers.AbLoop
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
@@ -124,26 +125,27 @@ fun PlayerMenuBottomSheet(
                 )
             }
 
-            PlayerMenuItem(
-                icon = Icons.Rounded.Share,
-                text = stringResource(R.string.share),
-                onClick = {
-                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                        putExtra(
-                            Intent.EXTRA_TEXT,
-                            context.getString(
-                                R.string.share_song_text,
-                                song.title,
-                                song.artist,
-                                song.youtubeUrl
-                            )
-                        )
-                        type = "text/plain"
-                    }
-                    context.startActivity(Intent.createChooser(sendIntent, null))
-                    changeVisibility(false)
-                },
-            )
+            if (!song.isLocal) {
+                PlayerMenuItem(
+                    icon = Icons.Rounded.Share,
+                    text = stringResource(R.string.share),
+                    onClick = {
+                        ShareHelper.shareSong(context, song)
+                        changeVisibility(false)
+                    },
+                )
+                PlayerMenuItem(
+                    icon = Icons.Rounded.Schedule,
+                    text = stringResource(R.string.share_at_position),
+                    onClick = {
+                        // Position is read at tap time so the link matches what is heard.
+                        val positionSeconds =
+                            (PlayerManager.currentController?.currentPosition ?: 0L) / 1000L
+                        ShareHelper.shareSong(context, song, positionSeconds)
+                        changeVisibility(false)
+                    },
+                )
+            }
 
             PlayerMenuItem(
                 icon = Icons.Rounded.Repeat,

@@ -47,7 +47,8 @@ fun QueueSongListItem(
     onDelete: () -> Unit,
     scope: ReorderableCollectionItemScope,
     onDragStarted: () -> Unit,
-    onDragStopped: () -> Unit
+    onDragStopped: () -> Unit,
+    isDraggable: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val innerHeight = 60.dp
@@ -99,23 +100,27 @@ fun QueueSongListItem(
                     }
                 }
 
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = with(scope) {
-                        Modifier
-                            .minimumInteractiveComponentSize()
-                            .size(48.dp)
-                            .draggableHandle(
-                                onDragStarted = { onDragStarted() },
-                                onDragStopped = onDragStopped,
-                            )
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.DragHandle,
-                        contentDescription = stringResource(R.string.reorder),
-                        modifier = Modifier.size(24.dp),
-                    )
+                // Suggestions are not reorderable (autoplay owns their order), so their rows
+                // simply have no drag handle.
+                if (isDraggable) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = with(scope) {
+                            Modifier
+                                .minimumInteractiveComponentSize()
+                                .size(48.dp)
+                                .draggableHandle(
+                                    onDragStarted = { onDragStarted() },
+                                    onDragStopped = onDragStopped,
+                                )
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.DragHandle,
+                            contentDescription = stringResource(R.string.reorder),
+                            modifier = Modifier.size(24.dp),
+                        )
+                    }
                 }
             }
         },

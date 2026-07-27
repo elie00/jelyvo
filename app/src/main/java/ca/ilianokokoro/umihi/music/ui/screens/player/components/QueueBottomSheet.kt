@@ -48,6 +48,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.song.QueueSongListItem
+import ca.ilianokokoro.umihi.music.ui.screens.player.moveWithinUserQueue
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -72,12 +73,14 @@ fun QueueBottomSheet(
     val isRadio by PlayerManager.isRadioQueue.collectAsStateWithLifecycle()
 
     val lazyListState = rememberLazyListState()
+    // Reorder is limited to the user part of the queue: autoplay suggestions keep autoplay's
+    // order, so they are neither draggable (no handle) nor valid drop targets (clamped move).
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        mutableSongList = mutableSongList.toMutableList().apply {
-            add(to.index, removeAt(from.index))
+        val moved = moveWithinUserQueue(mutableSongList, from.index, to.index) { it.isSuggestion }
+        if (moved !== mutableSongList) {
+            mutableSongList = moved
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
         }
-
-        hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
     LaunchedEffect(Unit) {
@@ -209,6 +212,7 @@ fun QueueBottomSheet(
                                 QueueSongListItem(
                                 song = song,
                                 isCurrentSong = song.uid == songs.getOrNull(currentIndex)?.uid,
+                                isDraggable = !song.isSuggestion,
                                 onPress = {
                                     PlayerManager.seekToIndex(index)
                                 },
