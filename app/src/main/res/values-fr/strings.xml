@@ -366,6 +366,7 @@
     <string name="equalizer_preset_custom">Personnalisé</string>
     <string name="equalizer_bands">Bandes</string>
     <string name="equalizer_bass_boost">Amplification des basses</string>
+    <string name="equalizer_reset">Réinitialiser par défaut</string>
     <string name="equalizer_active_output">Profil pour la sortie active : %1$s</string>
     <string name="equalizer_output_bluetooth">Bluetooth</string>
     <string name="equalizer_output_wired">Écouteurs filaires</string>

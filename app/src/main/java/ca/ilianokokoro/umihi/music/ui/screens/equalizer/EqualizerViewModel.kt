@@ -83,6 +83,21 @@ class EqualizerViewModel(application: Application) : AndroidViewModel(applicatio
         refresh()
     }
 
+    /** Retour au son neutre : toutes les bandes a 0 dB, bass boost coupe, preset deselectionne. */
+    fun resetToDefault() {
+        val bandCount = EqualizerManager.getBandCount().toInt()
+        for (band in 0 until bandCount) {
+            EqualizerManager.setBandLevel(band, 0)
+        }
+        EqualizerManager.setBassBoost(0)
+        persistBandsAndPreset()
+        val output = AudioOutputManager.currentOutput.value
+        viewModelScope.launch {
+            EqualizerProfileStore.saveBassBoost(getApplication(), output, 0)
+        }
+        refresh()
+    }
+
     private fun persistBandsAndPreset() {
         val bands = EqualizerManager.getDesiredBandLevels()
         val preset = EqualizerManager.getSelectedPreset()
