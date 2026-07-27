@@ -7,18 +7,33 @@
     <path
         android:pathData="M18,8 L90,8 C96,8 100,12 100,18 L100,90 C100,96 96,100 90,100 L18,100 C12,100 8,96 8,90 L8,18 C8,12 12,8 18,8 Z"
         android:fillColor="#FFF8ED" />
-    <path
-        android:pathData="M72,25 C79,25 84,30 84,37 L84,60 C84,73 76,81 63,81 L56,81"
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="#74304F"
-        android:strokeWidth="13"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-    <path
-        android:pathData="M51,38 L45,38 C34,38 27,46 27,57 C27,70 36,79 49,79 C59,79 66,72 66,62 L66,38"
-        android:fillColor="@android:color/transparent"
-        android:strokeColor="#F47B67"
-        android:strokeWidth="13"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+    <!--
+         Seule la marque est reduite, le fond garde sa taille pleine. Ce vector est plein cadre (pas
+         un adaptive-icon) : la tuile visible est le fond, large de 92 unites, contre 72 pour la zone
+         visible de l'adaptive-icon. Pour rendre la meme proportion qu'en API >= 26 (marque a ~70% de
+         la tuile) le facteur est donc 0.92 ici, et non le 0.72 des drawables de lanceur.
+         Bbox resultante : 64.4 x 63.5 unites, centree sur (54,54).
+    -->
+    <group
+        android:pivotX="55.5"
+        android:pivotY="53"
+        android:scaleX="0.92"
+        android:scaleY="0.92"
+        android:translateX="-1.5"
+        android:translateY="1">
+        <path
+            android:pathData="M72,25 C79,25 84,30 84,37 L84,60 C84,73 76,81 63,81 L56,81"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#74304F"
+            android:strokeWidth="13"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+        <path
+            android:pathData="M51,38 L45,38 C34,38 27,46 27,57 C27,70 36,79 49,79 C59,79 66,72 66,62 L66,38"
+            android:fillColor="@android:color/transparent"
+            android:strokeColor="#F47B67"
+            android:strokeWidth="13"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
 </vector>
