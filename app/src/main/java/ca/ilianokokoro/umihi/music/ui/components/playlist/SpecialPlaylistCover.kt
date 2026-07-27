@@ -17,14 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import ca.ilianokokoro.umihi.music.core.Constants
 
 /**
  * Les playlists automatiques (telechargements, titres likes, episodes de podcasts) n'ont pas de
  * vraie pochette : YouTube sert un visuel generique et les telechargements n'en ont aucun. Chacune
- * recoit a la place une tuile aux couleurs de la marque — degrade creme/corail/aubergine du logo —
- * avec une icone qui dit son contenu.
+ * recoit a la place une tuile en degrade aux couleurs du theme actif, avec une icone qui dit son
+ * contenu. Les couleurs viennent de [MaterialTheme.colorScheme] pour suivre le preset choisi
+ * (Jelyvo, Minuit, Vinyle, Neon, Oled) a chaque changement.
  */
 enum class SpecialPlaylistCover {
     Downloads,
@@ -43,32 +43,34 @@ fun specialPlaylistCover(playlistId: String): SpecialPlaylistCover? = when (play
     else -> null
 }
 
-// Palette de la marque (voir branding/jelyvo-mark.svg et icon_background.xml).
-private val Cream = Color(0xFFFFF8ED)
-private val Coral = Color(0xFFF47B67)
-private val Aubergine = Color(0xFF74304F)
-
 @Composable
 fun JelyvoPlaylistCover(
     cover: SpecialPlaylistCover,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
 ) {
+    val scheme = MaterialTheme.colorScheme
     val (gradient, iconTint, icon) = when (cover) {
         SpecialPlaylistCover.Downloads -> Triple(
-            listOf(Cream, Coral.copy(alpha = 0.55f)), Aubergine, Icons.Rounded.Download
+            listOf(scheme.primaryContainer, scheme.primary.copy(alpha = 0.55f)),
+            scheme.onPrimaryContainer,
+            Icons.Rounded.Download,
         )
 
         SpecialPlaylistCover.Liked -> Triple(
-            listOf(Coral, Aubergine), Cream, Icons.Rounded.Favorite
+            listOf(scheme.primary, scheme.tertiary), scheme.onPrimary, Icons.Rounded.Favorite
         )
 
         SpecialPlaylistCover.NewEpisodes -> Triple(
-            listOf(Aubergine, Color(0xFF3D1A2C)), Coral, Icons.Rounded.Podcasts
+            listOf(scheme.tertiaryContainer, scheme.tertiary),
+            scheme.onTertiaryContainer,
+            Icons.Rounded.Podcasts,
         )
 
         SpecialPlaylistCover.EpisodesForLater -> Triple(
-            listOf(Cream, Aubergine.copy(alpha = 0.45f)), Aubergine, Icons.Rounded.WatchLater
+            listOf(scheme.secondaryContainer, scheme.secondary.copy(alpha = 0.45f)),
+            scheme.onSecondaryContainer,
+            Icons.Rounded.WatchLater,
         )
     }
 
