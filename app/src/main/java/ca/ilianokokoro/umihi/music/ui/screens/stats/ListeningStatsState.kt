@@ -41,6 +41,8 @@ data class ListeningStatsState(
     val topArtists: List<ArtistListeningStat> = emptyList(),
     val dailyCounts: Map<LocalDate, Int> = emptyMap(),
     val wrapped: WrappedStats? = null,
+    // True while the JSON export is being written; debounces the export action.
+    val exportInProgress: Boolean = false,
 )
 
 /** Year-in-review summary shown in the highlighted "Wrapped" card. */

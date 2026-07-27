@@ -48,7 +48,8 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
     }
 
     companion object {
-        private const val IMAGE_CACHE_DIR = "image_cache"
+        // Public: StorageInspector measures this directory for the storage screen.
+        const val IMAGE_CACHE_DIR = "image_cache"
         private const val DISK_CACHE_SIZE_BYTES = 250L * 1024 * 1024
         private const val MEMORY_CACHE_PERCENT = 0.25
     }

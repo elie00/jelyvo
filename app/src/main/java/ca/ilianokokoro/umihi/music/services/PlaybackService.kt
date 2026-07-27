@@ -99,7 +99,12 @@ class PlaybackService : MediaLibraryService() {
     private var queuePersistenceJob: Job? = null
     private var volumeFadeJob: Job? = null
     @Volatile private var normalizedVolume = 1f
+    @Volatile private var normalizeVolumeEnabled = true
     @Volatile private var crossfadeMs = 0L
+    @Volatile private var resumeOnAudioConnect = false
+    // Set only when ExoPlayer pauses because the output vanished (becoming-noisy), so a manual
+    // pause never triggers the resume-on-connect behaviour.
+    @Volatile private var pausedByBecomingNoisy = false
     @Volatile private var fadeInActive = false
     @Volatile private var queueRestoreComplete = false
     @Volatile private var isRestoringQueue = false
@@ -113,6 +118,7 @@ class PlaybackService : MediaLibraryService() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
             AudioOutputManager.refresh(applicationContext)
             applyEqualizerForCurrentOutput()
+            maybeResumeOnAudioConnect(addedDevices)
         }
 
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
@@ -291,6 +297,13 @@ class PlaybackService : MediaLibraryService() {
                     serviceScope.launch { persistPlaybackPosition() }
                 }
                 updatePlaybackWidget(activePlayer.currentMediaItem)
+            }
+
+            override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                // Only an unplug/disconnect pause arms the resume-on-connect guard; any other
+                // playWhenReady change (manual pause, resume, focus loss) disarms it.
+                pausedByBecomingNoisy = !playWhenReady &&
+                        reason == Player.PLAY_WHEN_READY_CHANGE_REASON_AUDIO_BECOMING_NOISY
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -670,13 +683,26 @@ class PlaybackService : MediaLibraryService() {
         serviceScope.launch {
             datastoreRepository.settings.collectLatest { settings ->
                 crossfadeMs = settings.crossfadeSeconds.coerceIn(0, 12) * 1000L
+                resumeOnAudioConnect = settings.resumeOnAudioConnect
+                val normalizeChanged = normalizeVolumeEnabled != settings.normalizeVolume
+                normalizeVolumeEnabled = settings.normalizeVolume
+                if (normalizeChanged) {
+                    // Re-apply the current track's volume right away so toggling the setting is
+                    // audible without waiting for the next track transition.
+                    withContext(Dispatchers.Main) {
+                        if (isCasting) return@withContext
+                        val videoId = player.currentMediaItem?.mediaId ?: return@withContext
+                        normalizedVolume = trackVolumeFor(videoId)
+                        if (!fadeInActive) player.volume = normalizedVolume
+                    }
+                }
             }
         }
 
         serviceScope.launch {
             PlaybackLoudnessStore.updates.collectLatest { update ->
                 withContext(Dispatchers.Main) {
-                    if (isCasting) return@withContext
+                    if (isCasting || !normalizeVolumeEnabled) return@withContext
                     if (player.currentMediaItem?.mediaId == update.videoId) {
                         normalizedVolume = update.volume
                         if (!fadeInActive) player.volume = normalizedVolume
@@ -706,9 +732,37 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /** ReplayGain-style attenuation for [videoId], or full volume when normalization is off. */
+    private fun trackVolumeFor(videoId: String): Float =
+        if (normalizeVolumeEnabled) PlaybackLoudnessStore.volumeFor(videoId) else 1f
+
+    /**
+     * Resumes playback when an audio output (headphones, Bluetooth) reconnects, but only when the
+     * pause came from the matching disconnect (becoming-noisy) and the user opted in. A manual
+     * pause never resumes.
+     */
+    private fun maybeResumeOnAudioConnect(addedDevices: Array<out AudioDeviceInfo>?) {
+        if (!resumeOnAudioConnect || !pausedByBecomingNoisy) return
+        val headphoneConnected = addedDevices.orEmpty().any { device ->
+            device.isSink && device.type in HEADPHONE_DEVICE_TYPES
+        }
+        if (!headphoneConnected) return
+        pausedByBecomingNoisy = false
+        serviceScope.launch {
+            withContext(Dispatchers.Main) {
+                if (isCasting) return@withContext
+                val current = activePlayer
+                if (!current.playWhenReady && current.mediaItemCount > 0) {
+                    if (current.playbackState == Player.STATE_IDLE) current.prepare()
+                    current.play()
+                }
+            }
+        }
+    }
+
     private fun applyTrackVolume(videoId: String, transitionReason: Int) {
         if (isCasting) return
-        normalizedVolume = PlaybackLoudnessStore.volumeFor(videoId)
+        normalizedVolume = trackVolumeFor(videoId)
         volumeFadeJob?.cancel()
         if (transitionReason != Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
             fadeInActive = false
@@ -1025,5 +1079,16 @@ class PlaybackService : MediaLibraryService() {
         private const val QUEUE_CHANGE_DEBOUNCE_MS = 350L
         private const val QUEUE_POSITION_SAVE_INTERVAL_MS = 5_000L
         private const val MAX_CONSECUTIVE_PLAYBACK_ERRORS = 5
+
+        /** Personal audio outputs whose connection may resume a becoming-noisy pause. */
+        private val HEADPHONE_DEVICE_TYPES = setOf(
+            AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+            AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            AudioDeviceInfo.TYPE_WIRED_HEADSET,
+            AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+            AudioDeviceInfo.TYPE_USB_HEADSET,
+            AudioDeviceInfo.TYPE_HEARING_AID,
+            AudioDeviceInfo.TYPE_BLE_HEADSET,
+        )
     }
 }

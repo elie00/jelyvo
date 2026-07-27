@@ -44,6 +44,9 @@ object Constants {
                 const val STEP_VALUE = 5
                 const val STEP_AMOUNT = 40
 
+                // Durations offered as the default preselected in the sleep timer sheet.
+                val DEFAULT_MINUTES_OPTIONS = listOf(15, 30, 45, 60)
+                const val DEFAULT_MINUTES_FALLBACK = 30
             }
         }
     }
@@ -75,6 +78,9 @@ object Constants {
         const val LAST_STREAM_QUALITY = "last-stream-quality"
         const val AUTOPLAY = "autoplay"
         const val CROSSFADE_SECONDS = "crossfade-seconds"
+        const val NORMALIZE_VOLUME = "normalize-volume"
+        const val RESUME_ON_AUDIO_CONNECT = "resume-on-audio-connect"
+        const val SLEEP_TIMER_DEFAULT_MINUTES = "sleep-timer-default-minutes"
         const val THEME_COLOR = "theme-color"
         const val NOTIFY_NEW_RELEASES = "notify-new-releases"
         const val NOTIFIED_RELEASE_IDS = "notified-release-ids"

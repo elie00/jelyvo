@@ -110,6 +110,10 @@ object ResponseCache {
         }
     }
 
+    /** Total size in bytes of the on-disk mirror; 0 before [init]. */
+    fun diskUsageBytes(): Long =
+        diskDir?.listFiles()?.sumOf { it.length() } ?: 0L
+
     /** Drops everything (memory + disk mirror), e.g. when the signed-in account changes. */
     @Synchronized
     fun clear() {

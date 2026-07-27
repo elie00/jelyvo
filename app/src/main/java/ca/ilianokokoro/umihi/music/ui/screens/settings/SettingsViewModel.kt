@@ -15,6 +15,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.media3.common.util.UnstableApi
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ExoCache
+import ca.ilianokokoro.umihi.music.core.ResponseCache
+import ca.ilianokokoro.umihi.music.core.StorageCategory
+import ca.ilianokokoro.umihi.music.core.StorageInspector
 import ca.ilianokokoro.umihi.music.core.backup.BackupManager
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
@@ -28,8 +31,11 @@ import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import coil3.SingletonImageLoader
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SettingsState())
@@ -88,6 +94,77 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun updateShowAudioQualityDialog(value: Boolean) {
         _uiState.update {
             it.copy(showAudioQualityDialog = value)
+        }
+    }
+
+    fun updateShowSleepTimerDefaultDialog(value: Boolean) {
+        _uiState.update {
+            it.copy(showSleepTimerDefaultDialog = value)
+        }
+    }
+
+    fun updateShowStorageDialog(value: Boolean) {
+        _uiState.update {
+            it.copy(showStorageDialog = value, pendingStoragePurge = null)
+        }
+        if (value) {
+            refreshStorageUsage()
+        }
+    }
+
+    fun requestStoragePurge(category: StorageCategory) {
+        _uiState.update {
+            it.copy(pendingStoragePurge = category)
+        }
+    }
+
+    fun dismissStoragePurge() {
+        _uiState.update {
+            it.copy(pendingStoragePurge = null)
+        }
+    }
+
+    /** Re-measures every category size; the dialog shows "calculating…" while `null`. */
+    private fun refreshStorageUsage() {
+        _uiState.update { it.copy(storageUsage = null) }
+        viewModelScope.launch {
+            val usage = StorageInspector.measure(_application)
+            _uiState.update { it.copy(storageUsage = usage) }
+        }
+    }
+
+    @OptIn(UnstableApi::class)
+    fun confirmStoragePurge() {
+        val category = _uiState.value.pendingStoragePurge ?: return
+        _uiState.update { it.copy(pendingStoragePurge = null, storageUsage = null) }
+        viewModelScope.launch {
+            when (category) {
+                StorageCategory.Images -> {
+                    val imageLoader = SingletonImageLoader.get(_application)
+                    imageLoader.memoryCache?.clear()
+                    withContext(Dispatchers.IO) {
+                        imageLoader.diskCache?.clear()
+                    }
+                }
+
+                StorageCategory.Downloads -> {
+                    // Same cleanup as the "delete all downloads" entry below.
+                    downloadRepository.cancelAllWorks()
+                    AppDatabase.clearDownloads(_application)
+                    ExoCache(_application).clear()
+                    UmihiHelper.getDownloadDirectory(context = _application)
+                        .deleteRecursively()
+                }
+
+                StorageCategory.ApiCache -> withContext(Dispatchers.IO) {
+                    ResponseCache.clear()
+                }
+
+                // Measured only: purging the database would wipe playlists and history.
+                StorageCategory.Database -> return@launch
+            }
+            showToast(R.string.storage_purged)
+            refreshStorageUsage()
         }
     }
 

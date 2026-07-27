@@ -27,7 +27,10 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.LAST_STREAM_QUALITY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NORMALIZE_VOLUME
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.RESUME_ON_AUDIO_CONNECT
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
@@ -69,6 +72,11 @@ class DatastoreRepository(private val context: Context) {
         val LAST_STREAM_QUALITY = stringPreferencesKey(Constants.Datastore.LAST_STREAM_QUALITY)
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
+        val NORMALIZE_VOLUME = booleanPreferencesKey(Constants.Datastore.NORMALIZE_VOLUME)
+        val RESUME_ON_AUDIO_CONNECT =
+            booleanPreferencesKey(Constants.Datastore.RESUME_ON_AUDIO_CONNECT)
+        val SLEEP_TIMER_DEFAULT_MINUTES =
+            intPreferencesKey(Constants.Datastore.SLEEP_TIMER_DEFAULT_MINUTES)
         val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
         val NOTIFY_NEW_RELEASES = booleanPreferencesKey(Constants.Datastore.NOTIFY_NEW_RELEASES)
         val NOTIFIED_RELEASE_IDS = stringSetPreferencesKey(Constants.Datastore.NOTIFIED_RELEASE_IDS)
@@ -109,6 +117,13 @@ class DatastoreRepository(private val context: Context) {
         val dataSaverOnMetered = it[DATA_SAVER_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
+        val normalizeVolume = it[NORMALIZE_VOLUME] ?: true
+        val resumeOnAudioConnect = it[RESUME_ON_AUDIO_CONNECT] ?: false
+        val sleepTimerDefaultMinutes = (it[SLEEP_TIMER_DEFAULT_MINUTES]
+            ?: Constants.Ui.Player.SleepTimer.DEFAULT_MINUTES_FALLBACK).coerceIn(
+            Constants.Ui.Player.SleepTimer.STEP_VALUE,
+            Constants.Ui.Player.SleepTimer.STEP_VALUE * Constants.Ui.Player.SleepTimer.STEP_AMOUNT
+        )
         val themeColor = it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Umihi
@@ -141,6 +156,9 @@ class DatastoreRepository(private val context: Context) {
             dataSaverOnMetered = dataSaverOnMetered,
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
+            normalizeVolume = normalizeVolume,
+            resumeOnAudioConnect = resumeOnAudioConnect,
+            sleepTimerDefaultMinutes = sleepTimerDefaultMinutes,
             themeColor = themeColor,
             notifyNewReleases = notifyNewReleases,
             autoDownload = autoDownload,

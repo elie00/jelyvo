@@ -1,11 +1,16 @@
 package ca.ilianokokoro.umihi.music.ui.screens.stats
 
 import android.app.Application
+import android.net.Uri
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
+import ca.ilianokokoro.umihi.music.core.stats.StatsExporter
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import java.time.LocalDate
 import java.time.ZoneId
@@ -14,6 +19,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -114,6 +120,49 @@ class ListeningStatsViewModel(application: Application) : AndroidViewModel(appli
                 _uiState.update { it.copy(wrapped = wrapped) }
             }
         }
+    }
+
+    /**
+     * Writes every period's totals and rankings to the JSON file picked through
+     * ACTION_CREATE_DOCUMENT. Runs the queries once ([kotlinx.coroutines.flow.first]) — the export
+     * is a snapshot, not a live subscription.
+     */
+    fun exportStats(uri: Uri) {
+        if (_uiState.value.exportInProgress) return
+        _uiState.update { it.copy(exportInProgress = true) }
+        viewModelScope.launch {
+            try {
+                val periods = StatsPeriod.entries.map { period ->
+                    val since = period.sinceMillis()
+                    StatsExporter.buildPeriod(
+                        period = period.name.lowercase(),
+                        sinceMillis = since,
+                        totalPlays = historyRepository.playCount(since).first(),
+                        topTracks = historyRepository.topTracks(since).first(),
+                        topArtists = historyRepository.topArtists(since).first(),
+                    )
+                }
+                StatsExporter.exportToUri(
+                    context = getApplication(),
+                    uri = uri,
+                    export = StatsExporter.buildExport(System.currentTimeMillis(), periods),
+                )
+                showToast(R.string.stats_export_success)
+            } catch (e: Exception) {
+                LogHelper.printe("Stats export failed", exception = e)
+                showToast(R.string.stats_export_error)
+            } finally {
+                _uiState.update { it.copy(exportInProgress = false) }
+            }
+        }
+    }
+
+    private fun showToast(messageRes: Int) {
+        Toast.makeText(
+            getApplication(),
+            getApplication<Application>().getString(messageRes),
+            Toast.LENGTH_LONG,
+        ).show()
     }
 
     /** Converts a display duration ("m:ss" or "h:mm:ss") into millis; 0 when unparseable. */

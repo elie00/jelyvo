@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FeaturedPlayList
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.outlined.DataSaverOn
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.Headphones
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.HighQuality
 import androidx.compose.material.icons.outlined.Leaderboard
@@ -41,6 +43,7 @@ import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.MaterialTheme
@@ -75,6 +78,7 @@ import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.AudioQualityDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.SleepTimerDefaultDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.audioQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
@@ -82,6 +86,8 @@ import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSetting
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SliderSettingItem
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.StorageDialog
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.storageCategoryLabel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -364,6 +370,44 @@ fun SettingsScreen(
                                 }
                             )
                             Spacer(modifier = Modifier.height(4.dp))
+                            BooleanSettingItem(
+                                title = stringResource(R.string.normalize_volume_title),
+                                subtitle = stringResource(R.string.normalize_volume_description),
+                                leadingIcon = Icons.AutoMirrored.Outlined.VolumeUp,
+                                value = screenState.settings.normalizeVolume,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.NORMALIZE_VOLUME,
+                                        it
+                                    )
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            BooleanSettingItem(
+                                title = stringResource(R.string.resume_on_audio_connect_title),
+                                subtitle = stringResource(R.string.resume_on_audio_connect_description),
+                                leadingIcon = Icons.Outlined.Headphones,
+                                value = screenState.settings.resumeOnAudioConnect,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.RESUME_ON_AUDIO_CONNECT,
+                                        it
+                                    )
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.sleep_timer_default_title),
+                                subtitle = stringResource(
+                                    R.string.minutes,
+                                    screenState.settings.sleepTimerDefaultMinutes
+                                ),
+                                leadingIcon = Icons.Outlined.Timer,
+                                onClick = {
+                                    settingsViewModel.updateShowSleepTimerDefaultDialog(true)
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             SettingsItem(
                                 title = stringResource(R.string.equalizer_title),
                                 subtitle = stringResource(R.string.equalizer_subtitle),
@@ -410,6 +454,15 @@ fun SettingsScreen(
                                         PreferenceKeys.DOWNLOAD_ON_METERED,
                                         it
                                     )
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.storage_title),
+                                subtitle = stringResource(R.string.storage_subtitle),
+                                leadingIcon = Icons.Outlined.Storage,
+                                onClick = {
+                                    settingsViewModel.updateShowStorageDialog(true)
                                 }
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -537,6 +590,37 @@ fun SettingsScreen(
                                 },
                                 onClose = {
                                     settingsViewModel.updateShowAudioQualityDialog(false)
+                                },
+                            )
+                        } else if (uiState.showSleepTimerDefaultDialog) {
+                            SleepTimerDefaultDialog(
+                                selectedMinutes = screenState.settings.sleepTimerDefaultMinutes,
+                                onChange = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES,
+                                        it,
+                                    )
+                                },
+                                onClose = {
+                                    settingsViewModel.updateShowSleepTimerDefaultDialog(false)
+                                },
+                            )
+                        } else if (uiState.pendingStoragePurge != null) {
+                            ConfirmDialog(
+                                title = stringResource(R.string.storage_purge_confirm_title),
+                                text = stringResource(
+                                    R.string.storage_purge_confirm_text,
+                                    storageCategoryLabel(uiState.pendingStoragePurge),
+                                ),
+                                onConfirm = settingsViewModel::confirmStoragePurge,
+                                onDismiss = settingsViewModel::dismissStoragePurge,
+                            )
+                        } else if (uiState.showStorageDialog) {
+                            StorageDialog(
+                                usage = uiState.storageUsage,
+                                onPurge = settingsViewModel::requestStoragePurge,
+                                onClose = {
+                                    settingsViewModel.updateShowStorageDialog(false)
                                 },
                             )
                         } else if (uiState.showDownloadDeleteConfirm) {

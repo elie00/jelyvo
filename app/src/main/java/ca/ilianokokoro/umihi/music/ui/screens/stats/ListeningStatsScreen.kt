@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.ui.screens.stats
 
 import android.app.Application
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -30,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.stats.StatsExporter
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ListeningHeatmap
@@ -47,6 +54,12 @@ fun ListeningStatsScreen(
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
     val hasStats = state.topTracks.isNotEmpty() || state.topArtists.isNotEmpty()
 
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { viewModel.exportStats(it) }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
@@ -62,6 +75,22 @@ fun ListeningStatsScreen(
                     }
                 },
                 navigationIcon = { BackButton(onBack = onBack) },
+                actions = {
+                    if (hasStats) {
+                        IconButton(
+                            onClick = {
+                                if (!state.exportInProgress) {
+                                    exportLauncher.launch(StatsExporter.SUGGESTED_FILE_NAME)
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.FileDownload,
+                                contentDescription = stringResource(R.string.stats_export_title),
+                            )
+                        }
+                    }
+                },
             )
         },
     ) { paddingValues ->
