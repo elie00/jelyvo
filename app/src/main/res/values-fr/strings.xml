@@ -415,4 +415,5 @@
     <string name="not_interested_clear_confirm_title">Réinitialiser la liste ?</string>
     <string name="not_interested_clear_confirm_text">Tous les titres refusés pourront de nouveau être suggérés.</string>
     <string name="not_interested_cleared">Liste réinitialisée</string>
+    <string name="search_request_failed">Impossible de charger la recherche. Vérifiez votre connexion puis réessayez.</string>
 </resources>

@@ -431,4 +431,5 @@
     <string name="not_interested_clear_confirm_title">Clear the list?</string>
     <string name="not_interested_clear_confirm_text">Every rejected song can be suggested again.</string>
     <string name="not_interested_cleared">List cleared</string>
+    <string name="search_request_failed">Search couldn\'t be loaded. Check your connection and try again.</string>
 </resources>

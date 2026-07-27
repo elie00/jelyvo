@@ -149,6 +149,7 @@ fun SearchScreen(
             if (uiState.screenState is ScreenState.Error) {
                 ErrorMessage(
                     ex = uiState.screenState.exception,
+                    errorMessage = stringResource(R.string.search_request_failed),
                     onRetry = searchViewModel::search
                 )
             } else {
@@ -665,4 +666,3 @@ private fun SearchBrowseResult(
         modifier = Modifier.clickable(onClick = onClick),
     )
 }
-

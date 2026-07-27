@@ -3,8 +3,12 @@
 package ca.ilianokokoro.umihi.music.ui.screens.auth
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.ContextThemeWrapper
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -87,6 +91,11 @@ fun AuthScreen(
             }
 
             webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(
+                    view: WebView,
+                    request: WebResourceRequest,
+                ): Boolean = handleAuthNavigation(context, view, request.url.toString())
+
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
 
@@ -129,4 +138,58 @@ fun AuthScreen(
     }
 }
 
+/**
+ * Google sometimes redirects Android WebViews to an `intent://` Play Store URL when the YouTube
+ * Music app is absent. Continue to the web destination so the login cookies can still be captured.
+ */
+internal fun authWebFallback(url: String): String? {
+    val isExternalScheme = url.startsWith("intent:", ignoreCase = true) ||
+        url.startsWith("market:", ignoreCase = true)
+    return Constants.Auth.END_URL.takeIf {
+        isExternalScheme && url.contains(YOUTUBE_MUSIC_PACKAGE, ignoreCase = true)
+    }
+}
 
+private fun handleAuthNavigation(context: Context, view: WebView, url: String): Boolean {
+    val scheme = Uri.parse(url).scheme?.lowercase()
+    if (scheme == "http" || scheme == "https") {
+        return false
+    }
+
+    authWebFallback(url)?.let { fallback ->
+        view.loadUrl(fallback)
+        return true
+    }
+
+    val externalIntent = runCatching {
+        if (scheme == "intent") {
+            Intent.parseUri(url, Intent.URI_INTENT_SCHEME).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+                component = null
+                selector = null
+            }
+        } else {
+            Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        }
+    }.getOrNull()
+
+    val browserFallback = externalIntent
+        ?.getStringExtra("browser_fallback_url")
+        ?.takeIf { fallback ->
+            val fallbackScheme = Uri.parse(fallback).scheme?.lowercase()
+            fallbackScheme == "http" || fallbackScheme == "https"
+        }
+
+    when {
+        externalIntent?.resolveActivity(context.packageManager) != null ->
+            runCatching { context.startActivity(externalIntent) }
+
+        browserFallback != null ->
+            view.loadUrl(browserFallback)
+    }
+
+    // Never let WebView render its raw ERR_UNKNOWN_URL_SCHEME page.
+    return true
+}
+
+private const val YOUTUBE_MUSIC_PACKAGE = "com.google.android.apps.youtube.music"

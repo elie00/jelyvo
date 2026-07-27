@@ -24,16 +24,13 @@ object YoutubeAuthHelper {
         visitorData: String? = null,
     ): JsonObject {
         val baseClient = client ?: Constants.YoutubeApi.Client.WEB_REMIX
-        // La locale de l'appareil localise les libelles serveur (« Titres likés », « Nouveaux
-        // épisodes », sections de l'accueil…). Les extracteurs ne lisent que des cles
-        // structurelles, jamais ces libelles, donc le parsing ne depend pas de la langue.
+        // The device language localizes server labels. Do not forward Locale.country as `gl`:
+        // YouTube rejects otherwise-valid requests with HTTP 400 for some legitimate Android
+        // regions (for example CG). Without `gl`, the service safely infers the network region.
         val locale = Locale.getDefault()
         val clientToUse = buildJsonObject {
             baseClient.forEach { (key, value) -> put(key, value) }
             put("hl", JsonPrimitive(locale.language.ifBlank { "en" }))
-            locale.country.takeIf { it.isNotBlank() }?.let {
-                put("gl", JsonPrimitive(it))
-            }
         }
 
         return buildJsonObject {
@@ -58,10 +55,6 @@ object YoutubeAuthHelper {
 
             if (idName != null) {
                 put(idName, JsonPrimitive(id))
-
-                if (idName == "query") {
-                    put("params", JsonPrimitive(Constants.YoutubeApi.Search.FILTER))
-                }
             }
         }
     }
