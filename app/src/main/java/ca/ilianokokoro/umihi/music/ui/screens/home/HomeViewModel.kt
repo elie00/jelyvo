@@ -57,6 +57,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun observeAccountSession() {
         viewModelScope.launch {
+            datastoreRepository.settings.collect { settings ->
+                _uiState.update { state ->
+                    state.copy(
+                        profileName = settings.profileName,
+                        profileAvatarPath = settings.profileAvatarPath
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
             datastoreRepository.settings
                 .distinctUntilChangedBy { settings ->
                     settings.cookies.raw to settings.dataSyncId

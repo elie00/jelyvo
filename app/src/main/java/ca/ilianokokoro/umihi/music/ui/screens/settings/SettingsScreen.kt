@@ -94,6 +94,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.AudioQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.SleepTimerDefaultDialog
@@ -778,7 +779,7 @@ private fun ProfileItem(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        ProfileAvatar(avatarPath = avatarPath, size = 48.dp)
+        ProfileAvatar(name = name, avatarPath = avatarPath, size = 48.dp)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = name.ifBlank { stringResource(R.string.profile_name_placeholder) },
@@ -790,28 +791,6 @@ private fun ProfileItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@Composable
-private fun ProfileAvatar(avatarPath: String, size: androidx.compose.ui.unit.Dp) {
-    if (avatarPath.isNotBlank()) {
-        AsyncImage(
-            model = avatarPath,
-            contentDescription = null,
-            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-            modifier = Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-        )
-    } else {
-        Icon(
-            imageVector = Icons.Outlined.AccountCircle,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(size)
-        )
     }
 }
 
@@ -857,7 +836,7 @@ private fun ProfileEditDialog(
                             )
                         }
                 ) {
-                    ProfileAvatar(avatarPath = avatarPath, size = 96.dp)
+                    ProfileAvatar(name = name, avatarPath = avatarPath, size = 96.dp)
                 }
                 Text(
                     text = stringResource(R.string.profile_avatar_hint),

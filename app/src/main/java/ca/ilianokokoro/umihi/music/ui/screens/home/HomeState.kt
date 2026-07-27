@@ -14,7 +14,9 @@ data class HomeState(
     val recentlyPlayed: List<Song> = emptyList(),
     val resumeItems: List<ResumeItem> = emptyList(),
     val shortcuts: List<Song> = emptyList(),
-    val forYouMixes: List<HomeMix> = emptyList()
+    val forYouMixes: List<HomeMix> = emptyList(),
+    val profileName: String = "",
+    val profileAvatarPath: String = "",
 )
 
 @Immutable

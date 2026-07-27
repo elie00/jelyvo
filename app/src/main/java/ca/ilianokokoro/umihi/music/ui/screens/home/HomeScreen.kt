@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,6 +53,7 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
 import ca.ilianokokoro.umihi.music.ui.components.home.ForYouMixesRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeShortcutGrid
@@ -127,6 +129,8 @@ fun HomeScreen(
                                     ) {
                                         HomeHeader(
                                             greeting = greetingForHour(currentHour),
+                                            profileName = uiState.profileName,
+                                            profileAvatarPath = uiState.profileAvatarPath,
                                             onSettingsButtonPress = onSettingsButtonPress,
                                         )
                                     }
@@ -265,6 +269,8 @@ fun HomeScreen(
 @Composable
 private fun HomeHeader(
     greeting: HomeGreeting,
+    profileName: String,
+    profileAvatarPath: String,
     onSettingsButtonPress: () -> Unit,
 ) {
     Row(
@@ -274,29 +280,27 @@ private fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Surface(
-            modifier = Modifier.size(44.dp),
-            shape = RoundedCornerShape(15.dp),
-            color = Color(0xFFFFF8ED),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_jelyvo_foreground),
-                contentDescription = null,
-                tint = Color.Unspecified,
-                modifier = Modifier.padding(4.dp),
-            )
-        }
+        ProfileAvatar(
+            name = profileName,
+            avatarPath = profileAvatarPath,
+            size = 44.dp,
+        )
         Column(modifier = Modifier.weight(1f)) {
-            // No display name available from the account, so the greeting stands alone.
+            val greetingBase = stringResource(
+                when (greeting) {
+                    HomeGreeting.MORNING -> R.string.home_greeting_morning
+                    HomeGreeting.AFTERNOON -> R.string.home_greeting_afternoon
+                    HomeGreeting.EVENING -> R.string.home_greeting_evening
+                }
+            )
+            val greetingText = if (profileName.isNotBlank()) {
+                "$greetingBase $profileName"
+            } else {
+                greetingBase
+            }
             Text(
-                text = stringResource(
-                    when (greeting) {
-                        HomeGreeting.MORNING -> R.string.home_greeting_morning
-                        HomeGreeting.AFTERNOON -> R.string.home_greeting_afternoon
-                        HomeGreeting.EVENING -> R.string.home_greeting_evening
-                    }
-                ),
-                style = MaterialTheme.typography.titleLarge,
+                text = greetingText,
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             )
             Text(
                 text = stringResource(R.string.home_tagline),
