@@ -425,7 +425,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     showMiniPlayer = screenConfig.showMiniPlayer,
                     onMiniPlayerPressed = { showFullPlayer = true },
                     artworkModifier = artworkModifier,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                 )
 
                 AnimatedVisibility(
