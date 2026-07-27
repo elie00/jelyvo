@@ -732,6 +732,7 @@ object PlayerManager {
         }
         sleepTimerEndOfSongListener = null
         _sleepTimerRemainingSeconds.value = null
+        currentController?.volume = 1f
     }
 
     private fun startSleepTimerRemaining(remainingSeconds: Long) {
@@ -750,6 +751,20 @@ object PlayerManager {
 
                 _sleepTimerRemainingSeconds.value = remaining
 
+                // Fade-out progressif du volume pendant les 30 dernières secondes
+                if (remaining in 1..30) {
+                    val factor = remaining / 30f
+                    withContext(Dispatchers.Main) {
+                        currentController?.volume = factor
+                    }
+                } else if (remaining > 30) {
+                    withContext(Dispatchers.Main) {
+                        if (currentController?.volume != 1f) {
+                            currentController?.volume = 1f
+                        }
+                    }
+                }
+
                 if (remaining <= 0) {
                     break
                 }
@@ -761,6 +776,7 @@ object PlayerManager {
 
             withContext(Dispatchers.Main) {
                 currentController?.pause()
+                currentController?.volume = 1f
             }
         }
     }
