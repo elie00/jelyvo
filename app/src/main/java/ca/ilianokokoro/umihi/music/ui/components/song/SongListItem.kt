@@ -54,6 +54,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.extensions.normalizedForSearch
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
@@ -62,6 +63,14 @@ import kotlinx.coroutines.launch
 /** Fraction of the row width the finger must cross before a swipe commits to its action. */
 private const val SWIPE_TRIGGER_FRACTION = 0.33f
 
+/** Same width as [SongThumbnail]'s default so numbered and thumbnailed rows stay aligned. */
+private val TRACK_NUMBER_SLOT_SIZE = 60.dp
+
+/**
+ * A track row. [trackNumber] and [hideArtist] switch the row to its "album page" look: the
+ * thumbnail becomes the track number (every row would otherwise repeat the same cover) and the
+ * artist drops out of the subtitle when it merely repeats the album artist.
+ */
 @Composable
 fun SongListItem(
     song: Song,
@@ -73,6 +82,8 @@ fun SongListItem(
     onViewArtist: (() -> Unit)? = null,
     onViewAlbum: (() -> Unit)? = null,
     download: (() -> Unit)? = null,
+    trackNumber: Int? = null,
+    hideArtist: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -135,7 +146,26 @@ fun SongListItem(
                 )
                 .combinedClickable(onClick = onPress, onLongClick = { expanded = true }),
         leadingContent = {
-            SongThumbnail(song = song)
+            if (trackNumber != null) {
+                // On an album page the number replaces the cover, which every row would repeat.
+                // The playing track yields the number to the indicator, as YT Music does.
+                Box(
+                    modifier = Modifier.size(TRACK_NUMBER_SLOT_SIZE),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isCurrentSong) {
+                        NowPlayingIndicator(isPlaying = isPlaying)
+                    } else {
+                        Text(
+                            text = trackNumber.toString(),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                SongThumbnail(song = song)
+            }
         },
         trailingContent = {
             IconButton(onClick = { expanded = true }) {
@@ -238,7 +268,7 @@ fun SongListItem(
                 }
 
                 Text(
-                    text = songSubtitle(song),
+                    text = songSubtitle(song, hideArtist = hideArtist),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.basicMarquee()
@@ -252,7 +282,8 @@ fun SongListItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (isCurrentSong) {
+                // Numbered rows already show the indicator in place of the number.
+                if (isCurrentSong && trackNumber == null) {
                     NowPlayingIndicator(isPlaying = isPlaying)
                 }
                 Text(
@@ -280,17 +311,29 @@ fun SongListItem(
 /**
  * Subtitle line of a track row: "Artist • 3:45" for songs, "Artist • 1.2M views • 3:45" for video
  * rows, "Artist • 45M plays • 3:45" on an artist page. Blank/absent parts are skipped so the
- * separators never dangle.
+ * separators never dangle. [hideArtist] drops the leading artist on an album page, where it would
+ * just repeat the album artist.
  */
 @Composable
-internal fun songSubtitle(song: Song): String {
+internal fun songSubtitle(song: Song, hideArtist: Boolean = false): String {
     val separator = stringResource(R.string.dot)
     return listOfNotNull(
-        song.artist.takeIf(String::isNotBlank),
+        song.artist.takeIf { !hideArtist }?.takeIf(String::isNotBlank),
         song.viewCount.takeIf { song.isVideo }?.takeIf(String::isNotBlank),
         song.playCount?.takeIf(String::isNotBlank),
         song.duration.takeIf(String::isNotBlank),
     ).joinToString(" $separator ")
+}
+
+/**
+ * Whether a track's artist merely repeats the one already shown in the album header, in which case
+ * the row hides it. Comparison is trimmed, case- and accent-insensitive; a featuring credit
+ * ("Artist & Guest") differs and stays visible. A blank album artist hides nothing.
+ */
+internal fun isTrackArtistRedundant(trackArtist: String, albumArtist: String): Boolean {
+    if (albumArtist.isBlank()) return false
+
+    return trackArtist.trim().normalizedForSearch() == albumArtist.trim().normalizedForSearch()
 }
 
 /** Which action a settled swipe on a song row runs. */

@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Radio
@@ -24,14 +25,19 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,6 +48,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.groupSongsByDisc
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
@@ -49,7 +56,15 @@ import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButton
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.components.song.isTrackArtistRedundant
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
+
+/**
+ * Distance de defilement au bout de laquelle la barre superieure est totalement opaque.
+ * Calee sur la hauteur de la pochette pour que le titre de la barre prenne le relais
+ * juste au moment ou celui de l'en-tete disparait.
+ */
+private val ALBUM_TOP_BAR_COLLAPSE_DISTANCE = 200.dp
 
 @Composable
 fun AlbumScreen(
@@ -68,21 +83,75 @@ fun AlbumScreen(
     val state = albumViewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
 
-    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { paddingValues ->
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val collapseDistancePx = remember(density) {
+        with(density) { ALBUM_TOP_BAR_COLLAPSE_DISTANCE.toPx() }
+    }
+    // Progression 0f..1f du repliement de l'en-tete. derivedStateOf evite de recomposer
+    // tout l'ecran a chaque pixel defile : seule la barre relit cette valeur.
+    val collapseProgress by remember(collapseDistancePx) {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) {
+                1f
+            } else {
+                (listState.firstVisibleItemScrollOffset / collapseDistancePx).coerceIn(0f, 1f)
+            }
+        }
+    }
+    // Le nom charge depuis la page remplace celui passe en argument des qu'il est disponible.
+    val topBarTitle = (state as? AlbumState.Success)
+        ?.page?.name?.ifBlank { albumName }
+        ?: albumName
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            // Barre collante : le bouton retour reste toujours atteignable, le fond et le
+            // titre n'apparaissent qu'au fur et a mesure du defilement.
+            val containerColor = MaterialTheme.colorScheme.surfaceContainer
+                .copy(alpha = collapseProgress)
+            TopAppBar(
+                title = {
+                    Text(
+                        text = topBarTitle,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleLargeEmphasized.copy(
+                            fontFamily = nunitoFontFamily
+                        ),
+                        modifier = Modifier.alpha(collapseProgress)
+                    )
+                },
+                navigationIcon = {
+                    BackButton(onBack = onBack)
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = containerColor,
+                    scrolledContainerColor = containerColor,
+                ),
+            )
+        }
+    ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+            modifier = Modifier.fillMaxSize()
         ) {
             when (state) {
                 is AlbumState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                    ) {
                         LoadingAnimation()
                     }
                 }
 
                 is AlbumState.Error -> {
-                    ErrorMessage(ex = state.exception, onRetry = albumViewModel::load)
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        ErrorMessage(ex = state.exception, onRetry = albumViewModel::load)
+                    }
                 }
 
                 is AlbumState.Success -> {
@@ -92,11 +161,23 @@ fun AlbumScreen(
                     // Album tracks share the cover; fill it in so playback/artwork isn't blank.
                     val playableSongs = page.songs.map { song ->
                         if (song.thumbnailHref.isBlank() && cover.isNotBlank()) {
-                            song.copy(thumbnailHref = cover)
+                            // copy() ne recopie pas les champs @Ignore : la position de la piste
+                            // doit etre reportee a la main, sinon le decoupage par disque est perdu.
+                            song.copy(thumbnailHref = cover).also {
+                                it.albumId = song.albumId
+                                it.albumName = song.albumName
+                                it.artistId = song.artistId
+                                it.trackNumber = song.trackNumber
+                                it.discNumber = song.discNumber
+                            }
                         } else {
                             song
                         }
                     }
+                    // Un album multi-CD est rendu disque par disque, la numerotation repartant a 1
+                    // sur chacun (comme Spotify). Un seul groupe = aucun en-tete, affichage a plat.
+                    val discs = remember(playableSongs) { groupSongsByDisc(playableSongs) }
+                    val showDiscHeaders = discs.size > 1
                     val playSongs: (List<Song>, Int) -> Unit = { list, startIndex ->
                         onOpenPlayer()
                         PlayerManager.playQueue(
@@ -133,8 +214,11 @@ fun AlbumScreen(
                         .filter { it.albums.isNotEmpty() }
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        state = listState,
+                        // Le contenu defile SOUS la barre superieure : sa hauteur est reportee
+                        // dans le contentPadding plutot que sur le conteneur.
                         contentPadding = PaddingValues(
-                            top = 8.dp,
+                            top = paddingValues.calculateTopPadding() + 8.dp,
                             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
                             start = 8.dp,
                             end = 8.dp
@@ -146,9 +230,6 @@ fun AlbumScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Row(modifier = Modifier.fillMaxSize()) {
-                                    BackButton(onBack = onBack)
-                                }
                                 SquareImage(
                                     uri = cover.ifBlank {
                                         page.songs.firstOrNull()?.thumbnailHref ?: ""
@@ -215,20 +296,51 @@ fun AlbumScreen(
                             }
                         }
 
-                        items(
-                            items = playableSongs,
-                            key = { it.youtubeId },
-                            contentType = { "song" }) { song ->
-                            SongListItem(
-                                song = song,
-                                onPress = {
-                                    // Queue the whole album, starting at the tapped track.
-                                    playSongs(playableSongs, playableSongs.indexOf(song))
-                                },
-                                playNext = { PlayerManager.addNext(song, context) },
-                                addToQueue = { PlayerManager.addToQueue(song, context) },
-                                startRadio = { PlayerManager.startRadio(song, context) },
-                            )
+                        // Decalage de chaque disque dans la file complete : les groupes suivent
+                        // l'ordre de playableSongs, la lecture reste donc celle de l'album entier.
+                        var discStart = 0
+                        discs.forEach { disc ->
+                            val firstIndex = discStart
+                            discStart += disc.songs.size
+
+                            if (showDiscHeaders) {
+                                item(
+                                    key = "album-disc-${disc.number}",
+                                    contentType = "disc-header"
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.disc_number, disc.number),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(
+                                            start = 8.dp,
+                                            top = 12.dp,
+                                            bottom = 4.dp
+                                        )
+                                    )
+                                }
+                            }
+
+                            itemsIndexed(
+                                items = disc.songs,
+                                key = { _, song -> song.youtubeId },
+                                contentType = { _, _ -> "song" }) { index, song ->
+                                SongListItem(
+                                    song = song,
+                                    onPress = {
+                                        // Queue the whole album, starting at the tapped track.
+                                        playSongs(playableSongs, firstIndex + index)
+                                    },
+                                    playNext = { PlayerManager.addNext(song, context) },
+                                    addToQueue = { PlayerManager.addToQueue(song, context) },
+                                    startRadio = { PlayerManager.startRadio(song, context) },
+                                    // Numerotation propre a chaque disque : la position dans le
+                                    // groupe fait foi, le numero fourni par YouTube servant surtout
+                                    // a decouper les disques.
+                                    trackNumber = index + 1,
+                                    hideArtist = isTrackArtistRedundant(song.artist, page.artist),
+                                )
+                            }
                         }
 
                         if (page.songs.isEmpty()) {

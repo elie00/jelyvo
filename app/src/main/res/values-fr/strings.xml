@@ -201,6 +201,7 @@
     <string name="notify_new_releases_title">Notifications de nouvelles sorties</string>
     <string name="notify_new_releases_description">Soyez averti lorsque les artistes que vous suivez publient de nouveaux albums ou singles</string>
     <string name="short_minutes">%1$d min</string>
+    <string name="disc_number">Disque %1$d</string>
     <string name="download_on_metered_title">Télécharger via les données mobiles</string>
     <string name="audio_quality_title">Qualité audio</string>
     <string name="audio_quality_subtitle">Streaming et téléchargements : %1$s</string>
