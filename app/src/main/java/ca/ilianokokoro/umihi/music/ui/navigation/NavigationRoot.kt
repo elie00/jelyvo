@@ -238,6 +238,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onOpenArtist = { id, name ->
                                     backStack.add(ArtistScreenKey(id, name))
                                 },
+                                onExplorePress = { backStack.add(SearchScreenKey) },
                                 application = app
                             )
                         }

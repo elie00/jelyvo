@@ -20,9 +20,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,6 +66,7 @@ fun HomeScreen(
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
     onOpenArtist: (id: String, name: String) -> Unit,
+    onExplorePress: () -> Unit = {},
     application: Application,
     homeViewModel: HomeViewModel = viewModel(
         factory =
@@ -243,6 +246,7 @@ fun HomeScreen(
                     ScreenState.LoggedOut -> LoggedOutHome(
                         statusBarHeight = statusBarHeight,
                         onSettingsButtonPress = onSettingsButtonPress,
+                        onExplorePress = onExplorePress,
                     )
 
                     ScreenState.Loading -> LoadingAnimation()
@@ -313,6 +317,7 @@ private fun HomeHeader(
 private fun LoggedOutHome(
     statusBarHeight: androidx.compose.ui.unit.Dp,
     onSettingsButtonPress: () -> Unit,
+    onExplorePress: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -384,20 +389,43 @@ private fun LoggedOutHome(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Start,
             )
-            Button(
-                onClick = onSettingsButtonPress,
-                shapes = ButtonDefaults.shapes(),
-                modifier = Modifier.padding(top = 6.dp),
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 6.dp),
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.Login,
-                    contentDescription = null,
-                    modifier = Modifier.size(ButtonDefaults.IconSize),
-                )
-                Text(
-                    text = stringResource(R.string.log_in),
-                    modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
-                )
+                Button(
+                    onClick = onSettingsButtonPress,
+                    shapes = ButtonDefaults.shapes(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.Login,
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Text(
+                        text = stringResource(R.string.log_in),
+                        modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
+                    )
+                }
+
+                FilledTonalButton(
+                    onClick = onExplorePress,
+                    shapes = ButtonDefaults.shapes(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.IconSize),
+                    )
+                    Text(
+                        text = stringResource(R.string.explore_without_account),
+                        modifier = Modifier.padding(start = ButtonDefaults.IconSpacing),
+                    )
+                }
             }
         }
     }
