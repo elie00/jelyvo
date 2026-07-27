@@ -166,6 +166,7 @@
     <string name="create">Create</string>
     <string name="create_playlist">Create playlist</string>
     <string name="recently_played">Recently played</string>
+    <string name="remove_from_history">Remove from history</string>
     <string name="resume_listening">Resume listening</string>
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>

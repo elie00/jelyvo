@@ -126,6 +126,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Deletes every play of the track; the recent/resume/shortcut flows refresh on their own. */
+    fun removeFromHistory(youtubeId: String) {
+        viewModelScope.launch {
+            historyRepository.deleteTrack(youtubeId)
+        }
+    }
+
     fun getHomeFeed() {
         viewModelScope.launch {
             _uiState.update { currentState ->

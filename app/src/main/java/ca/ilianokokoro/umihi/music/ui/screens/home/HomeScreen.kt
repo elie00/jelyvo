@@ -161,6 +161,9 @@ fun HomeScreen(
                                                                 it.positionMs,
                                                                 it.durationMs,
                                                             )
+                                                        },
+                                                        onRemoveFromHistory = {
+                                                            homeViewModel.removeFromHistory(it.song.youtubeId)
                                                         }
                                                     )
                                                 }
@@ -173,7 +176,10 @@ fun HomeScreen(
                                                 ) {
                                                     RecentlyPlayedRow(
                                                         songs = uiState.recentlyPlayed,
-                                                        onSongClick = { PlayerManager.playSong(it) }
+                                                        onSongClick = { PlayerManager.playSong(it) },
+                                                        onRemoveFromHistory = {
+                                                            homeViewModel.removeFromHistory(it.youtubeId)
+                                                        }
                                                     )
                                                 }
                                             }

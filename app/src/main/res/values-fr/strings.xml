@@ -161,6 +161,7 @@
     <string name="create">Créer</string>
     <string name="create_playlist">Créer une playlist</string>
     <string name="recently_played">Écoutés récemment</string>
+    <string name="remove_from_history">Supprimer de l\'historique</string>
     <string name="resume_listening">Reprendre l\'écoute</string>
     <string name="home_greeting_morning">Bonjour</string>
     <string name="home_greeting_afternoon">Bon après-midi</string>

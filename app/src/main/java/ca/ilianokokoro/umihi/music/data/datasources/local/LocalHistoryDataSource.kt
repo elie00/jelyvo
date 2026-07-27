@@ -135,6 +135,10 @@ interface LocalHistoryDataSource {
     )
     fun getTrackPlayDurations(since: Long): Flow<List<TrackPlayDuration>>
 
+    /** Removes every play of the given track, so it leaves the recent and resume rows at once. */
+    @Query("DELETE FROM play_history WHERE youtubeId = :youtubeId")
+    suspend fun deleteTrack(youtubeId: String)
+
     @Query("DELETE FROM play_history")
     suspend fun clear()
 }

@@ -47,6 +47,11 @@ class HistoryRepository(context: Context) {
         localHistoryDataSource.upsert(PlayHistoryEntry.fromSong(song, playedAt))
     }
 
+    suspend fun deleteTrack(youtubeId: String) {
+        if (youtubeId.isBlank()) return
+        localHistoryDataSource.deleteTrack(youtubeId)
+    }
+
     suspend fun clear() = localHistoryDataSource.clear()
 
     companion object {
