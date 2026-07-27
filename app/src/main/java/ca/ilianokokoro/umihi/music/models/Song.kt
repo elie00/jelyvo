@@ -11,6 +11,7 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.helpers.ArtworkUrl
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import kotlinx.serialization.Serializable
 import kotlin.uuid.Uuid
@@ -136,7 +137,9 @@ data class Song(
                         .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
                         .setIsBrowsable(false)
                         .setIsPlayable(true)
-                        .setArtworkUri((thumbnailPath ?: thumbnailHref).toUri())
+                        // La miniature d'une ligne de liste ne fait que 60-120 px ; reecrite en
+                        // haute resolution pour le lecteur, la notification et l'ecran verrouille.
+                        .setArtworkUri((thumbnailPath ?: ArtworkUrl.upgrade(thumbnailHref)).toUri())
                         .setExtras(extras)
                         .build()
 
@@ -152,7 +155,7 @@ data class Song(
 
 
     suspend fun getThumbnailBitmap(): Bitmap? {
-        val bytes = UmihiHelper.fetchArtworkBytes(thumbnailHref)
+        val bytes = UmihiHelper.fetchArtworkBytes(ArtworkUrl.upgrade(thumbnailHref))
         return bytes?.let {
             BitmapFactory.decodeByteArray(it, 0, it.size)
         }
