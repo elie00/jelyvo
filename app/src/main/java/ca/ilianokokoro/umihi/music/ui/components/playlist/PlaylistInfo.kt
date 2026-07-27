@@ -73,21 +73,38 @@ fun PlaylistInfo(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (!playlist.info.isDownloadedPlaylist) {
-            SquareImage(uri = playlist.info.coverPath ?: playlist.info.coverHref)
-        } else {
-            Icon(
-                imageVector = Icons.Rounded.Download,
-                contentDescription = stringResource(R.string.download),
-                modifier = Modifier.size(150.dp)
+        val specialCover = specialPlaylistCover(playlist.info.id)
+        when {
+            specialCover != null -> JelyvoPlaylistCover(
+                cover = specialCover,
+                contentDescription = stringResource(R.string.playlist_cover),
+                modifier = Modifier.size(150.dp),
             )
+            !playlist.info.isDownloadedPlaylist -> {
+                SquareImage(
+                    uri = playlist.info.coverPath ?: playlist.info.coverHref,
+                    modifier = Modifier.size(150.dp)
+                )
+            }
+            else -> {
+                Icon(
+                    imageVector = Icons.Rounded.Download,
+                    contentDescription = stringResource(R.string.download),
+                    modifier = Modifier.size(150.dp)
+                )
+            }
         }
         Column(verticalArrangement = Arrangement.SpaceEvenly) {
             Column {
+                val displayTitle = if (specialCover == SpecialPlaylistCover.Liked) {
+                    stringResource(R.string.liked_songs)
+                } else {
+                    playlist.info.title
+                }
                 Text(
                     modifier = modifier
                         .fillMaxWidth(),
-                    text = playlist.info.title,
+                    text = displayTitle,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)

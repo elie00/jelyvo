@@ -55,6 +55,8 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.components.PlaylistHeader
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
+import ca.ilianokokoro.umihi.music.ui.components.playlist.SpecialPlaylistCover
+import ca.ilianokokoro.umihi.music.ui.components.playlist.specialPlaylistCover
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 
@@ -138,8 +140,13 @@ fun PlaylistScreen(
             } else {
                 TopAppBar(
                     title = {
+                        val displayTitle = if (specialPlaylistCover(playlistInfo.id) == SpecialPlaylistCover.Liked) {
+                            stringResource(R.string.liked_songs)
+                        } else {
+                            playlistInfo.title
+                        }
                         Text(
-                            playlistInfo.title,
+                            displayTitle,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.titleLargeEmphasized.copy(

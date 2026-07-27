@@ -61,8 +61,14 @@ fun PlaylistCard(
                 )
             }
 
+            val displayTitle = if (specialCover == SpecialPlaylistCover.Liked) {
+                stringResource(R.string.liked_songs)
+            } else {
+                playlistInfo.title
+            }
+
             Text(
-                text = playlistInfo.title,
+                text = displayTitle,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
