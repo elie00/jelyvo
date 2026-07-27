@@ -3,9 +3,9 @@ import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import java.io.FileInputStream
 import java.util.Properties
 
-val appVersionName = "2.0.0"
+val appVersionName = "2.1.0"
 
-val appVersionCode = 20000
+val appVersionCode = 20100
 
 
 val beta: Boolean = (project.findProperty("beta") as String?)?.toBoolean() ?: true
