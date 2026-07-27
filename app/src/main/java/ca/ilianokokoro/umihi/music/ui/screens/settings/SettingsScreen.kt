@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.CloudDownload
@@ -52,6 +53,7 @@ import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Waves
+import androidx.compose.material.icons.outlined.Update
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -602,6 +604,30 @@ fun SettingsScreen(
                                     }
                                 )
                             }
+                        }
+
+                        SettingsSection(
+                            title = stringResource(R.string.updates)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.check_for_updates),
+                                subtitle = stringResource(R.string.check_update_setting_description),
+                                leadingIcon = Icons.Outlined.Update,
+                                onClick = settingsViewModel::checkForUpdates
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            BooleanSettingItem(
+                                title = stringResource(R.string.auto_update_title),
+                                subtitle = stringResource(R.string.auto_update_subtitle),
+                                leadingIcon = Icons.Outlined.Autorenew,
+                                value = screenState.settings.updateChecking,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.AUTO_UPDATE,
+                                        it
+                                    )
+                                }
+                            )
                         }
 
                         // Le bloc version vit en bas de page, comme la plupart des apps : c'est une

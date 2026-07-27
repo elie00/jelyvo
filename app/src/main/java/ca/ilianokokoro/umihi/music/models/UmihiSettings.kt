@@ -8,6 +8,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePr
 
 @Immutable
 data class UmihiSettings(
+    val updateChecking: Boolean = true,
     val cookies: Cookies,
     val dataSyncId: String?,
     val showPodcastPlaylist: Boolean = true,
