@@ -29,6 +29,7 @@ object ThemePresets {
         ThemePreset.Minuit -> minuitScheme(darkTheme)
         ThemePreset.Vinyle -> vinyleScheme(darkTheme)
         ThemePreset.Neon -> neonScheme(darkTheme)
+        ThemePreset.Oled -> oledScheme(darkTheme)
     }
 
     /** Typographie du preset ; Jelyvo garde [AppTypography] (Nunito). */
@@ -37,6 +38,7 @@ object ThemePresets {
         ThemePreset.Minuit -> withFontFamily(FontFamily.SansSerif)
         ThemePreset.Vinyle -> withDisplayFontFamily(FontFamily.Serif)
         ThemePreset.Neon -> AppTypography
+        ThemePreset.Oled -> AppTypography
     }
 
     /** Langage de formes du preset, ou null pour les formes expressives par defaut. */
@@ -65,6 +67,8 @@ object ThemePresets {
             large = CutCornerShape(14.dp),
             extraLarge = CutCornerShape(20.dp),
         )
+
+        ThemePreset.Oled -> null
     }
 
     /** Trio (fond, primaire, tertiaire) pour la vignette du selecteur. */
@@ -155,6 +159,25 @@ object ThemePresets {
             surfaceContainer = Color(0xFF181026),
             surfaceContainerHigh = Color(0xFF1F152F),
             surfaceContainerHighest = Color(0xFF261B38),
+        )
+    }
+
+    // -------------------------------------------------------------------- Oled
+
+    private fun oledScheme(darkTheme: Boolean): ColorScheme {
+        val base = SeedSchemes.colorScheme(hue = 15f, chroma = 0.7f, darkTheme = darkTheme)
+        if (!darkTheme) return base
+
+        return base.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceDim = Color.Black,
+            surfaceBright = Color(0xFF161616),
+            surfaceContainerLowest = Color.Black,
+            surfaceContainerLow = Color(0xFF060606),
+            surfaceContainer = Color(0xFF0C0C0C),
+            surfaceContainerHigh = Color(0xFF121212),
+            surfaceContainerHighest = Color(0xFF1A1A1A),
         )
     }
 

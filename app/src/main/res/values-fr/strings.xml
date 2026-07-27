@@ -120,6 +120,8 @@
     <string name="theme_preset_vinyle_description">Sépia chaud, titrages serif</string>
     <string name="theme_preset_neon">Néon</string>
     <string name="theme_preset_neon_description">Violet nuit, magenta électrique</string>
+    <string name="theme_preset_oled">Noir Pur (OLED)</string>
+    <string name="theme_preset_oled_description">Noir absolu #000000 optimisé pour les écrans AMOLED</string>
     <string name="profile">Profil</string>
     <string name="profile_name_placeholder">Ton nom</string>
     <string name="profile_edit_hint">Nom d\'affichage et avatar locaux</string>

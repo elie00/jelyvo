@@ -421,7 +421,8 @@ class DatastoreRepository(private val context: Context) {
         Jelyvo,
         Minuit,
         Vinyle,
-        Neon
+        Neon,
+        Oled,
     }
 
     enum class AudioQuality {

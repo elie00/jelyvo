@@ -40,6 +40,7 @@ fun themePresetLabel(preset: ThemePreset): String {
             ThemePreset.Minuit -> R.string.theme_preset_minuit
             ThemePreset.Vinyle -> R.string.theme_preset_vinyle
             ThemePreset.Neon -> R.string.theme_preset_neon
+            ThemePreset.Oled -> R.string.theme_preset_oled
         }
     )
 }
@@ -52,6 +53,7 @@ private fun themePresetDescription(preset: ThemePreset): String {
             ThemePreset.Minuit -> R.string.theme_preset_minuit_description
             ThemePreset.Vinyle -> R.string.theme_preset_vinyle_description
             ThemePreset.Neon -> R.string.theme_preset_neon_description
+            ThemePreset.Oled -> R.string.theme_preset_oled_description
         }
     )
 }
