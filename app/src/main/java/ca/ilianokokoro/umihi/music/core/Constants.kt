@@ -5,8 +5,21 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 
 object Constants {
+    const val BETA_SUFFIX = "-beta"
+
     object Url {
         const val DISCORD_INVITE = "https://discord.gg/mSPeHS5cF6"
+
+        // Le code vit dans un depot prive : les releases publiques (APK signes + notes) sont
+        // hebergees dans le depot dedie jelyvo-releases, seul endroit lisible sans token.
+        object Github {
+            object Release {
+                const val API =
+                    "https://api.github.com/repos/elie00/jelyvo-releases/releases/latest"
+                const val DOWNLOAD =
+                    "https://github.com/elie00/jelyvo-releases/releases/latest/download/Jelyvo.apk"
+            }
+        }
     }
 
     object Downloads {
@@ -15,6 +28,8 @@ object Constants {
         const val THUMBNAILS_FOLDER = "thumbnails_downloads"
         const val AUDIO_FILES_FOLDER = "audio_files_downloads"
         const val DOWNLOADED_PLAYLIST_ID = "_downloaded_"
+
+        const val UPDATE_APK = "update.apk"
 
         // Offline auto-download (see OfflineSyncWorker).
         const val AUTO_DOWNLOAD_QUOTA_GB_DEFAULT = 4
@@ -71,6 +86,7 @@ object Constants {
         const val USE_SPECIAL_LANGUAGE = "use-special-language"
         const val USE_AUDIO_OFFLOAD = "use-audio-offload"
         const val KEEP_SCREEN_ON = "keep-screen-on"
+        const val AUTO_UPDATE = "auto-update"
         const val SEND_PLAYBACK_DATA = "send-playback-data"
         const val DOWNLOAD_ON_METERED = "download-on-metered"
         const val AUDIO_QUALITY = "audio-quality"
