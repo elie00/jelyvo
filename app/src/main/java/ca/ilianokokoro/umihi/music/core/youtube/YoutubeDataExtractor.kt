@@ -28,6 +28,7 @@ import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.SpellCorrection
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import ca.ilianokokoro.umihi.music.models.inferDiscNumbers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -1034,22 +1035,70 @@ object YoutubeDataExtractor {
 
     /**
      * Extracts the track list of an album browse response. Albums use a slightly different shape
-     * than playlists, so this first reuses the playlist path and, if that yields nothing, falls
-     * back to a recursive scan collecting every song renderer on the page.
+     * than playlists: les pistes peuvent arriver en PLUSIEURS shelves (un par disque sur un album
+     * multi-CD), la ou le chemin playlist ne lit que le premier. On lit donc tous les shelves ici,
+     * puis on retombe sur un scan recursif de la page si aucun n'a ete trouve.
+     *
+     * Le numero de disque vient soit du decoupage en shelves, soit — a defaut — d'une remise a zero
+     * de la numerotation des pistes (voir [inferDiscNumbers]).
      */
     suspend fun extractAlbumSongs(jsonString: String, settings: UmihiSettings): List<Song> {
-        val viaPlaylist = extractSongList(jsonString, settings)
-        if (viaPlaylist.isNotEmpty()) {
-            return viaPlaylist
+        val json = Json.parseToJsonElement(jsonString)
+
+        val shelves = albumTrackShelves(json)
+        if (shelves.isNotEmpty()) {
+            val songs = mutableListOf<Song>()
+            shelves.forEachIndexed { shelfIndex, contents ->
+                val shelfSongs = parseSongsFromContents(contents, settings)
+                // Un seul shelf ne prouve rien : c'est la forme normale d'un album simple.
+                if (shelves.size > 1) {
+                    shelfSongs.forEach { it.discNumber = shelfIndex + 1 }
+                }
+                songs.addAll(shelfSongs)
+            }
+            if (songs.isNotEmpty()) {
+                return inferDiscNumbers(songs)
+            }
         }
 
-        val json = Json.parseToJsonElement(jsonString)
         val items = mutableListOf<JsonObject>()
         collectSongItems(json, items)
 
-        return items
-            .mapNotNull { extractSong(it) }
-            .distinctBy { it.youtubeId }
+        return inferDiscNumbers(
+            items
+                .mapNotNull { extractSong(it) }
+                .distinctBy { it.youtubeId }
+        )
+    }
+
+    /**
+     * Les tableaux de pistes d'une page album, un par shelf rencontre et dans l'ordre de la page.
+     * Couvre les deux mises en page (deux colonnes et colonne unique). Vide quand la reponse n'est
+     * pas une page album.
+     */
+    private fun albumTrackShelves(json: JsonElement): List<JsonArray> {
+        val sections = json.safeObject()?.get("contents")
+            ?.safeObject()?.get("twoColumnBrowseResultsRenderer")
+            ?.safeObject()?.get("secondaryContents")
+            ?.safeObject()?.get("sectionListRenderer")
+            ?.safeObject()?.get("contents")
+            ?.safeArray()
+            ?: json.safeObject()?.get("contents")
+                ?.safeObject()?.get("singleColumnBrowseResultsRenderer")
+                ?.safeObject()?.get("tabs")
+                ?.safeArray()?.firstOrNull()
+                ?.safeObject()?.get("tabRenderer")
+                ?.safeObject()?.get("content")
+                ?.safeObject()?.get("sectionListRenderer")
+                ?.safeObject()?.get("contents")
+                ?.safeArray()
+            ?: return emptyList()
+
+        return sections.mapNotNull { section ->
+            section.safeObject()?.get("musicPlaylistShelfRenderer")
+                ?.safeObject()?.get("contents")
+                ?.safeArray()
+        }
     }
 
     private fun collectSongItems(element: JsonElement, out: MutableList<JsonObject>) {
@@ -1768,9 +1817,19 @@ object YoutubeDataExtractor {
             // Artist-page song rows carry a play count instead; it is what makes "most streamed"
             // visible, so it is read for every row, video or not.
             it.playCount = extractPlayCount(songContent)
+            // Numero de piste des lignes d'album ; absent ailleurs.
+            it.trackNumber = extractTrackNumber(songContent)
         }
 
     }
+
+    /**
+     * Numero de piste affiche a gauche d'une ligne d'album (noeud `index` du renderer, frere de
+     * flexColumns). Null hors contexte album : les lignes de recherche, de playlist ou de page
+     * artiste ne portent pas ce noeud.
+     */
+    private fun extractTrackNumber(songContent: JsonObject): Int? =
+        songContent["index"].runsText().trim().toIntOrNull()
 
     /**
      * The `musicVideoType` of a musicResponsiveListItemRenderer row, read from the title run's

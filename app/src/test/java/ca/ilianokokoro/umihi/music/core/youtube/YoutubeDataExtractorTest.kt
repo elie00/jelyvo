@@ -1,9 +1,12 @@
 package ca.ilianokokoro.umihi.music.core.youtube
 
 import ca.ilianokokoro.umihi.music.models.AlbumHeaderInfo
+import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.SpellCorrection
+import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
@@ -22,6 +25,9 @@ import org.junit.Test
  * instance, so parsed songs are asserted field by field instead of with a whole-object assertEquals.
  */
 class YoutubeDataExtractorTest {
+
+    /** Logged-out settings: the album fixtures below never trigger a continuation request. */
+    private val testSettings = UmihiSettings(cookies = Cookies(), dataSyncId = null)
 
     @Test
     fun `getBestThumbnailUrl takes the last and largest thumbnail`() {
@@ -567,6 +573,149 @@ class YoutubeDataExtractorTest {
         )
 
         assertNull(requireNotNull(YoutubeDataExtractor.extractSong(row)).playCount)
+    }
+
+    /**
+     * Album rows print their track number in an `index` node next to flexColumns. It is the only
+     * signal that lets a multi-CD album be split, so it must survive the parse; other row types
+     * (search, playlist, artist) have no such node and must stay null.
+     */
+    @Test
+    fun `extractSong reads the track number of an album row`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "index": { "runs": [ { "text": "3" } ] },
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Album track" } ] } } },
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Some Artist" } ] } } }
+                ],
+                "playlistItemData": { "videoId": "abcdefghijk" }
+              }
+            }
+            """
+        )
+
+        assertEquals(3, requireNotNull(YoutubeDataExtractor.extractSong(row)).trackNumber)
+    }
+
+    @Test
+    fun `extractSong leaves the track number null on a row without an index`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Album track" } ] } } }
+                ],
+                "playlistItemData": { "videoId": "abcdefghijk" }
+              }
+            }
+            """
+        )
+
+        assertNull(requireNotNull(YoutubeDataExtractor.extractSong(row)).trackNumber)
+    }
+
+    /**
+     * A multi-CD album can send one track shelf per disc. The playlist path only ever reads the
+     * first shelf, which silently dropped every track of disc 2; the album path must read them all
+     * and tag each song with its disc.
+     */
+    @Test
+    fun `extractAlbumSongs reads every track shelf and numbers the discs`() = runBlocking {
+        fun row(videoId: String, index: Int) = """
+            {
+              "musicResponsiveListItemRenderer": {
+                "index": { "runs": [ { "text": "$index" } ] },
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Track $index" } ] } } }
+                ],
+                "playlistItemData": { "videoId": "$videoId" }
+              }
+            }
+            """
+
+        val firstShelf = """
+            { "musicPlaylistShelfRenderer": { "contents": [
+                ${row("aaaaaaaaaaa", 1)}, ${row("bbbbbbbbbbb", 2)}
+            ] } }
+            """
+        val secondShelf = """
+            { "musicPlaylistShelfRenderer": { "contents": [ ${row("ccccccccccc", 1)} ] } }
+            """
+
+        val response = """
+            {
+              "contents": {
+                "twoColumnBrowseResultsRenderer": {
+                  "secondaryContents": {
+                    "sectionListRenderer": {
+                      "contents": [ $firstShelf, $secondShelf ]
+                    }
+                  }
+                }
+              }
+            }
+            """
+
+        val songs = YoutubeDataExtractor.extractAlbumSongs(response, testSettings)
+
+        assertEquals(
+            listOf("aaaaaaaaaaa", "bbbbbbbbbbb", "ccccccccccc"),
+            songs.map { it.youtubeId },
+        )
+        assertEquals(listOf(1, 1, 2), songs.map { it.discNumber })
+        assertEquals(listOf(1, 2, 1), songs.map { it.trackNumber })
+    }
+
+    /** A single-shelf album must stay flat: no disc number, hence no "Disc 1" header on screen. */
+    @Test
+    fun `extractAlbumSongs leaves a single disc album without disc numbers`() = runBlocking {
+        val response = """
+            {
+              "contents": {
+                "twoColumnBrowseResultsRenderer": {
+                  "secondaryContents": {
+                    "sectionListRenderer": {
+                      "contents": [
+                        {
+                          "musicPlaylistShelfRenderer": {
+                            "contents": [
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "index": { "runs": [ { "text": "1" } ] },
+                                  "flexColumns": [
+                                    { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Track 1" } ] } } }
+                                  ],
+                                  "playlistItemData": { "videoId": "aaaaaaaaaaa" }
+                                }
+                              },
+                              {
+                                "musicResponsiveListItemRenderer": {
+                                  "index": { "runs": [ { "text": "2" } ] },
+                                  "flexColumns": [
+                                    { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Track 2" } ] } } }
+                                  ],
+                                  "playlistItemData": { "videoId": "bbbbbbbbbbb" }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+            """
+
+        val songs = YoutubeDataExtractor.extractAlbumSongs(response, testSettings)
+
+        assertEquals(2, songs.size)
+        songs.forEach { assertNull(it.discNumber) }
     }
 
     /**

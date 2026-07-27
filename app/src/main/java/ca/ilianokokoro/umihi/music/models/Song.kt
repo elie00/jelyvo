@@ -82,6 +82,17 @@ data class Song(
     @Ignore
     var playCount: String? = null
 
+    // Track number as printed by YouTube in the left column of an album row ("index" node). Null
+    // outside an album page — search and playlist rows do not carry it. Transient.
+    @Ignore
+    var trackNumber: Int? = null
+
+    // Disc number of a multi-CD album. YouTube exposes no such field: it is derived from the track
+    // shelves (one per disc) or, failing that, inferred from a track-number reset — see
+    // AlbumTrackGrouping. Null when the album is single-disc or the data doesn't allow it.
+    @Ignore
+    var discNumber: Int? = null
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()
