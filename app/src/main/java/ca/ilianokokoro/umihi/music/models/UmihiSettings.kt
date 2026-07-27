@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 
 @Immutable
 data class UmihiSettings(
@@ -23,6 +24,11 @@ data class UmihiSettings(
     val resumeOnAudioConnect: Boolean = false,
     val sleepTimerDefaultMinutes: Int = Constants.Ui.Player.SleepTimer.DEFAULT_MINUTES_FALLBACK,
     val themeColor: ThemeColor = ThemeColor.Umihi,
+    val themePreset: ThemePreset = ThemePreset.Jelyvo,
+    // Profil local d'affichage (l'identite Google n'est pas modifiable) : nom choisi et chemin
+    // du fichier avatar copie dans le stockage interne. Vides tant que rien n'est personnalise.
+    val profileName: String = "",
+    val profileAvatarPath: String = "",
     val notifyNewReleases: Boolean = false,
     val autoDownload: Boolean = false,
     val autoDownloadLiked: Boolean = true,

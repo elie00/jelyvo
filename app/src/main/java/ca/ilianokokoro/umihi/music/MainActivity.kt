@@ -116,8 +116,12 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(
                     initialValue = DatastoreRepository.ThemeColor.Umihi
                 )
+            val themePreset by datastoreRepository.themePreset
+                .collectAsStateWithLifecycle(
+                    initialValue = DatastoreRepository.ThemePreset.Jelyvo
+                )
 
-            UmihiMusicTheme(themeColor = themeColor) {
+            UmihiMusicTheme(themeColor = themeColor, themePreset = themePreset) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     NavigationRoot(
                         modifier = Modifier.fillMaxSize()

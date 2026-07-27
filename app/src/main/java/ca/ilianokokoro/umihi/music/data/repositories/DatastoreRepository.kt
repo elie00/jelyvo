@@ -78,6 +78,9 @@ class DatastoreRepository(private val context: Context) {
         val SLEEP_TIMER_DEFAULT_MINUTES =
             intPreferencesKey(Constants.Datastore.SLEEP_TIMER_DEFAULT_MINUTES)
         val THEME_COLOR = stringPreferencesKey(Constants.Datastore.THEME_COLOR)
+        val THEME_PRESET = stringPreferencesKey(Constants.Datastore.THEME_PRESET)
+        val PROFILE_NAME = stringPreferencesKey(Constants.Datastore.PROFILE_NAME)
+        val PROFILE_AVATAR = stringPreferencesKey(Constants.Datastore.PROFILE_AVATAR)
         val NOTIFY_NEW_RELEASES = booleanPreferencesKey(Constants.Datastore.NOTIFY_NEW_RELEASES)
         val NOTIFIED_RELEASE_IDS = stringSetPreferencesKey(Constants.Datastore.NOTIFIED_RELEASE_IDS)
         val AUTO_DOWNLOAD = booleanPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD)
@@ -127,6 +130,11 @@ class DatastoreRepository(private val context: Context) {
         val themeColor = it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Umihi
+        val themePreset = it[PreferenceKeys.THEME_PRESET]?.let { value ->
+            runCatching { ThemePreset.valueOf(value) }.getOrNull()
+        } ?: ThemePreset.Jelyvo
+        val profileName = it[PreferenceKeys.PROFILE_NAME].orEmpty()
+        val profileAvatarPath = it[PreferenceKeys.PROFILE_AVATAR].orEmpty()
         val notifyNewReleases = it[NOTIFY_NEW_RELEASES] ?: false
         val autoDownload = it[AUTO_DOWNLOAD] ?: false
         val autoDownloadLiked = it[AUTO_DOWNLOAD_LIKED] ?: true
@@ -160,6 +168,9 @@ class DatastoreRepository(private val context: Context) {
             resumeOnAudioConnect = resumeOnAudioConnect,
             sleepTimerDefaultMinutes = sleepTimerDefaultMinutes,
             themeColor = themeColor,
+            themePreset = themePreset,
+            profileName = profileName,
+            profileAvatarPath = profileAvatarPath,
             notifyNewReleases = notifyNewReleases,
             autoDownload = autoDownload,
             autoDownloadLiked = autoDownloadLiked,
@@ -189,6 +200,13 @@ class DatastoreRepository(private val context: Context) {
         it[THEME_COLOR]?.let { value ->
             runCatching { ThemeColor.valueOf(value) }.getOrNull()
         } ?: ThemeColor.Umihi
+    }
+
+    /** Same startup-path treatment as [themeColor]: the preset gates the whole theme. */
+    val themePreset: Flow<ThemePreset> = context.dataStore.data.map {
+        it[PreferenceKeys.THEME_PRESET]?.let { value ->
+            runCatching { ThemePreset.valueOf(value) }.getOrNull()
+        } ?: ThemePreset.Jelyvo
     }
 
     /** Lightweight flows used on the latency-sensitive stream-resolution path. */
@@ -393,6 +411,17 @@ class DatastoreRepository(private val context: Context) {
         SunsetOrange,
         RoseRed,
         Mono
+    }
+
+    /**
+     * Full theme identities (colors + typography + shapes), against [ThemeColor] which only swaps
+     * the accent. [Jelyvo] keeps the brand look and the accent picker; the others override it all.
+     */
+    enum class ThemePreset {
+        Jelyvo,
+        Minuit,
+        Vinyle,
+        Neon
     }
 
     enum class AudioQuality {

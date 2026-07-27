@@ -7,14 +7,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,7 +27,9 @@ import androidx.compose.material.icons.automirrored.outlined.FeaturedPlayList
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Brush
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.DataSaverOn
@@ -46,21 +53,32 @@ import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material.icons.outlined.Wifi
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -80,8 +98,11 @@ import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.AudioQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.SleepTimerDefaultDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemePresetDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.audioQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
+import ca.ilianokokoro.umihi.music.ui.components.dialog.themePresetLabel
+import coil3.compose.AsyncImage
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
@@ -191,13 +212,14 @@ fun SettingsScreen(
 
 
                         SettingsSection(
-                            title = stringResource(R.string.app_info)
+                            title = stringResource(R.string.profile)
                         ) {
-                            SettingsItem(
-                                title = stringResource(R.string.current_version),
-                                subtitle = VersionManager.getVersionName(),
-                                leadingIcon = Icons.Outlined.Info,
-                                onClick = { }
+                            ProfileItem(
+                                name = screenState.settings.profileName,
+                                avatarPath = screenState.settings.profileAvatarPath,
+                                onClick = {
+                                    settingsViewModel.updateShowProfileDialog(true)
+                                }
                             )
                         }
 
@@ -243,16 +265,31 @@ fun SettingsScreen(
                             title = stringResource(R.string.appearance)
                         ) {
                             SettingsItem(
-                                title = stringResource(R.string.theme_color_title),
-                                subtitle = stringResource(
-                                    R.string.theme_color_subtitle,
-                                    themeColorLabel(screenState.settings.themeColor)
-                                ),
-                                leadingIcon = Icons.Outlined.Palette,
+                                title = stringResource(R.string.theme_preset_title),
+                                subtitle = themePresetLabel(screenState.settings.themePreset),
+                                leadingIcon = Icons.Outlined.Brush,
                                 onClick = {
-                                    settingsViewModel.updateShowThemeColorDialog(true)
+                                    settingsViewModel.updateShowThemePresetDialog(true)
                                 }
                             )
+                            // L'accent n'a de sens que sous le theme Jelyvo : les autres presets
+                            // imposent leurs propres couleurs.
+                            if (screenState.settings.themePreset ==
+                                DatastoreRepository.ThemePreset.Jelyvo
+                            ) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                SettingsItem(
+                                    title = stringResource(R.string.theme_color_title),
+                                    subtitle = stringResource(
+                                        R.string.theme_color_subtitle,
+                                        themeColorLabel(screenState.settings.themeColor)
+                                    ),
+                                    leadingIcon = Icons.Outlined.Palette,
+                                    onClick = {
+                                        settingsViewModel.updateShowThemeColorDialog(true)
+                                    }
+                                )
+                            }
                         }
 
                         SettingsSection(
@@ -566,7 +603,61 @@ fun SettingsScreen(
                             }
                         }
 
-                        if (uiState.showThemeColorDialog) {
+                        // Le bloc version vit en bas de page, comme la plupart des apps : c'est une
+                        // information de reference, pas un reglage.
+                        SettingsSection(
+                            title = stringResource(R.string.app_info)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.current_version),
+                                subtitle = VersionManager.getVersionName(),
+                                leadingIcon = Icons.Outlined.Info,
+                                onClick = { }
+                            )
+                        }
+
+                        // Signature du fork.
+                        Text(
+                            text = stringResource(R.string.settings_signature),
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                letterSpacing = 6.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                        )
+
+                        if (uiState.showThemePresetDialog) {
+                            ThemePresetDialog(
+                                selectedOption = screenState.settings.themePreset,
+                                onChange = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.THEME_PRESET,
+                                        it.toString()
+                                    )
+                                },
+                                onClose = {
+                                    settingsViewModel.updateShowThemePresetDialog(false)
+                                }
+                            )
+                        } else if (uiState.showProfileDialog) {
+                            ProfileEditDialog(
+                                initialName = screenState.settings.profileName,
+                                avatarPath = screenState.settings.profileAvatarPath,
+                                onPickAvatar = settingsViewModel::updateProfileAvatar,
+                                onSaveName = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.PROFILE_NAME,
+                                        it.trim()
+                                    )
+                                },
+                                onClose = {
+                                    settingsViewModel.updateShowProfileDialog(false)
+                                }
+                            )
+                        } else if (uiState.showThemeColorDialog) {
                             ThemeColorDialog(
                                 selectedOption = screenState.settings.themeColor,
                                 onChange = {
@@ -666,4 +757,140 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+/**
+ * Ligne de la section Profil : avatar rond (ou silhouette par defaut) + nom choisi. L'identite
+ * Google n'est pas modifiable ; ce profil est purement local et n'affecte que l'affichage.
+ */
+@Composable
+private fun ProfileItem(
+    name: String,
+    avatarPath: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        ProfileAvatar(avatarPath = avatarPath, size = 48.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name.ifBlank { stringResource(R.string.profile_name_placeholder) },
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(R.string.profile_edit_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileAvatar(avatarPath: String, size: androidx.compose.ui.unit.Dp) {
+    if (avatarPath.isNotBlank()) {
+        AsyncImage(
+            model = avatarPath,
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+            modifier = Modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+        )
+    } else {
+        Icon(
+            imageVector = Icons.Outlined.AccountCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(size)
+        )
+    }
+}
+
+/**
+ * Edition du profil local : nom libre + choix d'avatar via le photo picker systeme (aucune
+ * permission requise). L'image est copiee en interne par le ViewModel, l'URI du picker n'etant
+ * valable que le temps de la session.
+ */
+@Composable
+private fun ProfileEditDialog(
+    initialName: String,
+    avatarPath: String,
+    onPickAvatar: (android.net.Uri) -> Unit,
+    onSaveName: (String) -> Unit,
+    onClose: () -> Unit,
+) {
+    var name by remember { mutableStateOf(initialName) }
+    val pickAvatar = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let(onPickAvatar)
+    }
+
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = {
+            Text(text = stringResource(R.string.profile_edit_title))
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            pickAvatar.launch(
+                                androidx.activity.result.PickVisualMediaRequest(
+                                    ActivityResultContracts.PickVisualMedia.ImageOnly
+                                )
+                            )
+                        }
+                ) {
+                    ProfileAvatar(avatarPath = avatarPath, size = 96.dp)
+                }
+                Text(
+                    text = stringResource(R.string.profile_avatar_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.profile_name_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSaveName(name)
+                    onClose()
+                },
+                shapes = ButtonDefaults.shapes()
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onClose,
+                shapes = ButtonDefaults.shapes()
+            ) {
+                Text(stringResource(R.string.close))
+            }
+        }
+    )
 }

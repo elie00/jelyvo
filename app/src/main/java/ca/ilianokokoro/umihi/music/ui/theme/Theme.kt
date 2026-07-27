@@ -16,6 +16,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 
 private val lightScheme = lightColorScheme(
     primary = primaryLight,
@@ -104,9 +105,15 @@ data class ColorFamily(
 fun UmihiMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     themeColor: ThemeColor = ThemeColor.Umihi,
+    themePreset: ThemePreset = ThemePreset.Jelyvo,
     content: @Composable () -> Unit
 ) {
+    // Un preset complet (Minuit, Vinyle, Neon) impose couleurs, typo et formes ; Jelyvo garde le
+    // comportement historique, selecteur d'accent compris.
+    val presetScheme = ThemePresets.colorScheme(themePreset, darkTheme)
     val colorScheme = when {
+        presetScheme != null -> presetScheme
+
         themeColor == ThemeColor.Dynamic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) {
@@ -120,10 +127,21 @@ fun UmihiMusicTheme(
             ?: if (darkTheme) darkScheme else lightScheme
     }
 
-    MaterialExpressiveTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        motionScheme = MotionScheme.expressive(),
-        content = content,
-    )
+    val presetShapes = ThemePresets.shapes(themePreset)
+    if (presetShapes != null) {
+        MaterialExpressiveTheme(
+            colorScheme = colorScheme,
+            typography = ThemePresets.typography(themePreset),
+            shapes = presetShapes,
+            motionScheme = MotionScheme.expressive(),
+            content = content,
+        )
+    } else {
+        MaterialExpressiveTheme(
+            colorScheme = colorScheme,
+            typography = ThemePresets.typography(themePreset),
+            motionScheme = MotionScheme.expressive(),
+            content = content,
+        )
+    }
 }

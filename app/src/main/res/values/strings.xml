@@ -114,6 +114,23 @@
     <string name="cancel_download">Cancel Download</string>
     <string name="general">General</string>
     <string name="appearance">Appearance</string>
+    <string name="theme_preset_title">Theme</string>
+    <string name="theme_preset_jelyvo">Jelyvo</string>
+    <string name="theme_preset_jelyvo_description">The brand look, with its accent picker</string>
+    <string name="theme_preset_minuit">Midnight</string>
+    <string name="theme_preset_minuit_description">Pure OLED black, glacier blue</string>
+    <string name="theme_preset_vinyle">Vinyl</string>
+    <string name="theme_preset_vinyle_description">Warm sepia, serif headlines</string>
+    <string name="theme_preset_neon">Neon</string>
+    <string name="theme_preset_neon_description">Night violet, electric magenta</string>
+    <string name="profile">Profile</string>
+    <string name="profile_name_placeholder">Your name</string>
+    <string name="profile_edit_hint">Local display name and avatar</string>
+    <string name="profile_edit_title">Edit profile</string>
+    <string name="profile_name_label">Name</string>
+    <string name="profile_avatar_hint">Tap the avatar to change it</string>
+    <string name="save">Save</string>
+    <string name="settings_signature" translatable="false">EYBO</string>
     <string name="theme_color_title">Theme color</string>
     <string name="theme_color_subtitle">Current theme : %1$s</string>
     <string name="theme_color_umihi" tools:ignore="MissingTranslation">Jelyvo signature</string>

@@ -36,6 +36,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SettingsState())
@@ -87,6 +88,45 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _uiState.value.copy(
                     showThemeColorDialog = value
                 )
+            }
+        }
+    }
+
+    fun updateShowThemePresetDialog(value: Boolean) {
+        _uiState.update {
+            it.copy(showThemePresetDialog = value)
+        }
+    }
+
+    fun updateShowProfileDialog(value: Boolean) {
+        _uiState.update {
+            it.copy(showProfileDialog = value)
+        }
+    }
+
+    /**
+     * Copie l'image choisie dans le stockage interne (les URI du photo picker ne sont pas
+     * persistants) sous un nom horodate — un nouveau fichier a chaque changement, pour que le
+     * cache d'images ne resserve jamais l'ancien avatar — puis enregistre le chemin.
+     */
+    fun updateProfileAvatar(uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val dir = File(_application.filesDir, "profile").apply { mkdirs() }
+                val target = File(dir, "avatar-${System.currentTimeMillis()}.jpg")
+                _application.contentResolver.openInputStream(uri)?.use { input ->
+                    target.outputStream().use { output -> input.copyTo(output) }
+                } ?: return@launch
+                val previous = datastoreRepository.getSettings().profileAvatarPath
+                datastoreRepository.save(
+                    DatastoreRepository.PreferenceKeys.PROFILE_AVATAR,
+                    target.absolutePath
+                )
+                if (previous.isNotBlank()) {
+                    File(previous).delete()
+                }
+            } catch (e: Exception) {
+                LogHelper.printe("Failed to save profile avatar", exception = e)
             }
         }
     }
