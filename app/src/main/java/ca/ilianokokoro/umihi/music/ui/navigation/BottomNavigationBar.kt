@@ -41,10 +41,10 @@ fun BottomNavigationBar(
             icon = {
                 Icon(
                     Icons.Rounded.Home,
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.home)
                 )
             },
-            label = { Text(stringResource(R.string.home)) },
+            alwaysShowLabel = false,
             colors = itemColors,
         )
         NavigationBarItem(
@@ -53,10 +53,10 @@ fun BottomNavigationBar(
             icon = {
                 Icon(
                     Icons.Rounded.Search,
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.search)
                 )
             },
-            label = { Text(stringResource(R.string.search)) },
+            alwaysShowLabel = false,
             colors = itemColors,
         )
         NavigationBarItem(
@@ -65,10 +65,10 @@ fun BottomNavigationBar(
             icon = {
                 Icon(
                     Icons.Rounded.LibraryMusic,
-                    contentDescription = null
+                    contentDescription = stringResource(R.string.library)
                 )
             },
-            label = { Text(stringResource(R.string.library)) },
+            alwaysShowLabel = false,
             colors = itemColors,
         )
     }
