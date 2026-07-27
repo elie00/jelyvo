@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import ca.ilianokokoro.umihi.music.models.Song
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LocalSongDataSource {
@@ -24,6 +25,20 @@ interface LocalSongDataSource {
 """
     )
     suspend fun getDownloadedSongs(): List<Song>
+
+    /**
+     * Ids of every fully downloaded track, as a reactive stream. Screens turn it into an
+     * in-memory Set so marking a row as "available offline" costs a lookup, not a disk read.
+     */
+    @Query(
+        """
+    SELECT youtubeId
+    FROM songs
+    WHERE audioFilePath IS NOT NULL
+      AND thumbnailPath IS NOT NULL
+"""
+    )
+    fun observeDownloadedIds(): Flow<List<String>>
 
     /**
      * Downloaded songs that are NOT linked to any playlist. These are the auto-downloaded (offline

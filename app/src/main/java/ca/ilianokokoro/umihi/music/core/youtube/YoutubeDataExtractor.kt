@@ -455,6 +455,9 @@ object YoutubeDataExtractor {
                 rows.mapNotNull { it.toMixedSearchItem() } +
                         tiles.mapNotNull { it.twoRowToSearchItem() }
             }
+
+            // The "My library" tab is resolved locally and never reaches the network extractor.
+            SearchFilter.Library -> emptyList()
         }.distinctBy(SearchItem::id)
     }
 
@@ -736,7 +739,8 @@ object YoutubeDataExtractor {
             SearchFilter.Artists -> browseId.takeIf { it.startsWith("UC") }?.let {
                 SearchItem.Artist(id = it, name = title, thumbnail = thumbnail)
             }
-            SearchFilter.Songs, SearchFilter.Videos, SearchFilter.All -> null
+            SearchFilter.Songs, SearchFilter.Videos, SearchFilter.All,
+            SearchFilter.Library -> null
         }
     }
 
@@ -1220,6 +1224,69 @@ object YoutubeDataExtractor {
             secondSubtitle = header["secondSubtitle"].runsText(),
             description = description,
         )
+    }
+
+    /**
+     * The album's audio playlist id ("OLAK5uy…"): the target the library save endpoint expects
+     * (like/like on a playlist, not the MPRE browse id). First match wins — the header's play
+     * button carries it before any unrelated carousel does. Null when the response has none.
+     */
+    fun extractAlbumPlaylistId(jsonString: String): String? {
+        return findAlbumPlaylistId(Json.parseToJsonElement(jsonString))
+    }
+
+    /** Prefix of every album audio playlist id, as opposed to user playlists ("PL"/"VL"). */
+    private const val ALBUM_PLAYLIST_ID_PREFIX = "OLAK5uy"
+
+    private fun findAlbumPlaylistId(element: JsonElement): String? {
+        when (element) {
+            is JsonObject -> {
+                element["playlistId"]?.jsonPrimitive?.contentOrNull
+                    ?.takeIf { it.startsWith(ALBUM_PLAYLIST_ID_PREFIX) }
+                    ?.let { return it }
+                element.values.forEach { child -> findAlbumPlaylistId(child)?.let { return it } }
+            }
+
+            is JsonArray -> element.forEach { findAlbumPlaylistId(it)?.let { return it } }
+            else -> {}
+        }
+        return null
+    }
+
+    /**
+     * Whether the album is already saved to the account's library, read from the header's
+     * library toggle button (LIBRARY_ADD ↔ LIBRARY_SAVED icons). Null when no such button is
+     * present (logged out, or a header shape without it) — callers fall back to an optimistic
+     * state after the first action.
+     */
+    fun extractAlbumLibraryStatus(jsonString: String): Boolean? {
+        return findLibraryToggleState(Json.parseToJsonElement(jsonString))
+    }
+
+    private fun findLibraryToggleState(element: JsonElement): Boolean? {
+        when (element) {
+            is JsonObject -> {
+                val toggle = element["toggleButtonRenderer"]?.safeObject()
+                if (toggle != null) {
+                    val defaultIcon = toggle["defaultIcon"]?.safeObject()
+                        ?.get("iconType")?.jsonPrimitive?.contentOrNull
+                    val isToggled = toggle["isToggled"]?.jsonPrimitive?.booleanOrNull ?: false
+                    when (defaultIcon) {
+                        // Resting icon is "add": the album is saved only when toggled.
+                        "LIBRARY_ADD" -> return isToggled
+                        // Resting icon is "saved": toggling means it was just removed.
+                        "LIBRARY_SAVED" -> return !isToggled
+                    }
+                }
+                element.values.forEach { child ->
+                    findLibraryToggleState(child)?.let { return it }
+                }
+            }
+
+            is JsonArray -> element.forEach { findLibraryToggleState(it)?.let { return it } }
+            else -> {}
+        }
+        return null
     }
 
     /**

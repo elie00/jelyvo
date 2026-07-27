@@ -70,6 +70,17 @@
     <string name="clear_login_message">Clears all the saved accounts and login information</string>
     <string name="login_info_cleared">Login Info Cleared</string>
     <string name="downloads_cleared">Downloads Cleared</string>
+    <string name="storage_title">Storage</string>
+    <string name="storage_subtitle">See how much space the app uses and free it up by category</string>
+    <string name="storage_category_images">Image cache</string>
+    <string name="storage_category_downloads">Downloaded audio</string>
+    <string name="storage_category_database">Database</string>
+    <string name="storage_category_api_cache">API cache</string>
+    <string name="storage_computing">Calculating…</string>
+    <string name="storage_purge_action">Clear %1$s</string>
+    <string name="storage_purge_confirm_title">Clear this category?</string>
+    <string name="storage_purge_confirm_text">This will permanently remove the data in “%1$s”.</string>
+    <string name="storage_purged">Storage cleared</string>
     <string name="invalid_navkey">Invalid NavKey : %1$s</string>
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
@@ -135,6 +146,12 @@
     <string name="create_playlist">Create playlist</string>
     <string name="recently_played">Recently played</string>
     <string name="resume_listening">Resume listening</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_for_you">For you</string>
+    <string name="home_mix_replay">Replay</string>
+    <string name="home_mix_rediscover">Rediscoveries</string>
     <string name="lyrics_unavailable">Lyrics unavailable</string>
     <string name="equalizer_title">Equalizer</string>
     <string name="equalizer_subtitle">Adjust bands, presets and bass boost</string>
@@ -145,6 +162,10 @@
     <string name="crossfade_title">Crossfade</string>
     <string name="crossfade_disabled">Off — gapless playback</string>
     <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
+    <string name="normalize_volume_title">Normalize volume</string>
+    <string name="normalize_volume_description">Play every track at a similar loudness level</string>
+    <string name="resume_on_audio_connect_title">Resume on audio connection</string>
+    <string name="resume_on_audio_connect_description">Resume playback paused by an unplug when headphones or a Bluetooth device reconnect</string>
     <string name="start_radio">Start radio</string>
     <string name="play_video_version">Play video version</string>
     <string name="player_mode_song">Song</string>
@@ -155,6 +176,7 @@
     <string name="seek_forward_10">Forward 10 seconds</string>
     <string name="seek_backward_10">Rewind 10 seconds</string>
     <string name="share">Share</string>
+    <string name="share_at_position">Share from current position</string>
     <string name="share_song_text" translatable="false">%1$s • %2$s\n%3$s</string>
     <string name="starting_radio">Starting radio…</string>
     <string name="view_artist">View artist</string>
@@ -177,6 +199,7 @@
     <string name="cancel_timer">Cancel Timer</string>
     <string name="sleep_timer_end_of_song_btn">End of Song</string>
     <string name="sleep_timer_start">Start Timer</string>
+    <string name="sleep_timer_default_title">Default sleep timer duration</string>
     <string name="playback_speed">Playback Speed</string>
     <string name="playback_speed_label" translatable="false">%1$.1fx</string>
     <string name="ab_loop">A-B Loop</string>
@@ -210,6 +233,15 @@
     <string name="notify_new_releases_description">Get notified when artists you follow publish new albums or singles</string>
     <string name="short_minutes">%1$d min</string>
     <string name="disc_number">Disc %1$d</string>
+    <string name="save_album_to_library">Save album to library</string>
+    <string name="remove_album_from_library">Remove album from library</string>
+    <string name="album_saved_toast">Album saved to your library</string>
+    <string name="album_removed_toast">Album removed from your library</string>
+    <string name="album_save_failed_toast">Couldn\'t update your library</string>
+    <string name="album_add_to_playlist">Add to playlist</string>
+    <string name="album_added_to_playlist_toast">Added to “%1$s”</string>
+    <string name="album_new_playlist">New playlist</string>
+    <string name="album_share_text" translatable="false">%1$s\n%2$s</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="audio_quality_title">Audio quality</string>
     <string name="audio_quality_subtitle">Streaming and downloads: %1$s</string>
@@ -260,6 +292,8 @@
     <string name="recent_searches">Recent searches</string>
     <string name="recent_searches_clear_all">Clear all</string>
     <string name="recent_search_remove">Remove recent search</string>
+    <string name="search_library">My library</string>
+    <string name="search_history_heading">Listened before</string>
     <string name="moods_and_genres">Moods &amp; genres</string>
     <string name="listening_stats">Listening stats</string>
     <string name="downloads">Downloads</string>
@@ -276,6 +310,9 @@
     <string name="stats_period_year">Year</string>
     <string name="stats_period_all">All time</string>
     <string name="listening_activity">Listening activity</string>
+    <string name="stats_export_title">Export stats (JSON)</string>
+    <string name="stats_export_success">Stats exported</string>
+    <string name="stats_export_error">Stats export failed</string>
     <string name="wrapped_title">Your %1$d in music</string>
     <string name="wrapped_total_plays">Total plays</string>
     <string name="wrapped_listening_time">Listening time</string>

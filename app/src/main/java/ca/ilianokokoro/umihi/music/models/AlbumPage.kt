@@ -19,6 +19,14 @@ data class AlbumPage(
     val description: String = "",
     /** Album carousels below the tracks (e.g. "Other versions"). */
     val sections: List<ArtistSection> = emptyList(),
+    /** The album's audio playlist id ("OLAK5uy…"), target of the library save endpoint. */
+    val playlistId: String? = null,
+    /**
+     * Whether the album is already in the account's library, when the browse response exposes
+     * its library toggle button. Null = unknown; the UI then starts unsaved and switches
+     * optimistically after an action.
+     */
+    val isSavedToLibrary: Boolean? = null,
 )
 
 /** Metadata parsed from the header of an album browse response. Missing fields are empty. */

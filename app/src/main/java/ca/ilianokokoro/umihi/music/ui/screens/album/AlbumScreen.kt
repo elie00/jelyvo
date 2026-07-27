@@ -1,12 +1,14 @@
 package ca.ilianokokoro.umihi.music.ui.screens.album
 
 import android.app.Application
+import android.content.Intent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,8 +22,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.FavoriteBorder
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -57,6 +66,8 @@ import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.isTrackArtistRedundant
+import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
+import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 /**
@@ -82,6 +93,12 @@ fun AlbumScreen(
 ) {
     val state = albumViewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
+    val isLoggedIn by albumViewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val isAlbumSaved by albumViewModel.isAlbumSaved.collectAsStateWithLifecycle()
+    val downloadedIds by albumViewModel.downloadedIds.collectAsStateWithLifecycle()
+    val localPlaylists by albumViewModel.localPlaylists.collectAsStateWithLifecycle()
+    var showAlbumMenu by remember { mutableStateOf(false) }
+    var showPlaylistPicker by remember { mutableStateOf(false) }
 
     val listState = rememberLazyListState()
     val density = LocalDensity.current
@@ -267,31 +284,73 @@ fun AlbumScreen(
                                     )
                                 }
                                 if (playableSongs.isNotEmpty()) {
-                                    PlaySplitButton(
-                                        onPlay = { playSongs(playableSongs, 0) },
-                                        menuActions = listOf(
-                                            PlaySplitButtonAction(
-                                                label = stringResource(R.string.shuffle),
-                                                icon = Icons.Rounded.Shuffle,
-                                                onClick = { playSongs(playableSongs.shuffled(), 0) },
-                                            ),
-                                            PlaySplitButtonAction(
-                                                label = stringResource(R.string.start_radio),
-                                                icon = Icons.Rounded.Radio,
-                                                onClick = {
-                                                    onOpenPlayer()
-                                                    PlayerManager.startRadio(playableSongs.first(), context)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        // Coeur "album dans la bibliotheque" : visible connecte
+                                        // seulement, et uniquement si la reponse expose l'id de
+                                        // playlist audio que l'endpoint like attend.
+                                        if (isLoggedIn && page.playlistId != null) {
+                                            FilledIconToggleButton(
+                                                checked = isAlbumSaved,
+                                                onCheckedChange = {
+                                                    albumViewModel.toggleAlbumSaved()
                                                 },
+                                                shapes = IconButtonDefaults.toggleableShapes(),
+                                                colors = IconButtonDefaults.filledIconToggleButtonColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                                ),
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isAlbumSaved) {
+                                                        Icons.Rounded.Favorite
+                                                    } else {
+                                                        Icons.Rounded.FavoriteBorder
+                                                    },
+                                                    contentDescription = stringResource(
+                                                        if (isAlbumSaved) {
+                                                            R.string.remove_album_from_library
+                                                        } else {
+                                                            R.string.save_album_to_library
+                                                        }
+                                                    ),
+                                                )
+                                            }
+                                        }
+                                        PlaySplitButton(
+                                            onPlay = { playSongs(playableSongs, 0) },
+                                            menuActions = listOf(
+                                                PlaySplitButtonAction(
+                                                    label = stringResource(R.string.shuffle),
+                                                    icon = Icons.Rounded.Shuffle,
+                                                    onClick = { playSongs(playableSongs.shuffled(), 0) },
+                                                ),
+                                                PlaySplitButtonAction(
+                                                    label = stringResource(R.string.start_radio),
+                                                    icon = Icons.Rounded.Radio,
+                                                    onClick = {
+                                                        onOpenPlayer()
+                                                        PlayerManager.startRadio(playableSongs.first(), context)
+                                                    },
+                                                ),
+                                                PlaySplitButtonAction(
+                                                    label = stringResource(R.string.download),
+                                                    icon = Icons.Rounded.Download,
+                                                    onClick = {
+                                                        albumViewModel.downloadAlbum(playableSongs, cover)
+                                                    },
+                                                ),
                                             ),
-                                            PlaySplitButtonAction(
-                                                label = stringResource(R.string.download),
-                                                icon = Icons.Rounded.Download,
-                                                onClick = {
-                                                    albumViewModel.downloadAlbum(playableSongs, cover)
-                                                },
-                                            ),
-                                        ),
-                                    )
+                                        )
+                                        IconButton(onClick = { showAlbumMenu = true }) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.MoreVert,
+                                                contentDescription = stringResource(R.string.more),
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -339,6 +398,9 @@ fun AlbumScreen(
                                     // a decouper les disques.
                                     trackNumber = index + 1,
                                     hideArtist = isTrackArtistRedundant(song.artist, page.artist),
+                                    // Album rows come from the network: the offline marker is
+                                    // resolved against the shared in-memory Set of downloaded ids.
+                                    isDownloaded = song.youtubeId in downloadedIds,
                                 )
                             }
                         }
@@ -409,6 +471,56 @@ fun AlbumScreen(
                                 }
                             }
                         }
+                    }
+
+                    if (showAlbumMenu) {
+                        val shareTitle = page.name.ifBlank { albumName }
+                        AlbumMenuBottomSheet(
+                            albumName = shareTitle,
+                            albumArtist = page.artist,
+                            onShare = {
+                                // "Title • Artist\nlink" ; l'artiste saute si le header n'en a pas.
+                                val header = listOf(shareTitle, page.artist)
+                                    .filter { it.isNotBlank() }
+                                    .joinToString(" • ")
+                                val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                    putExtra(
+                                        Intent.EXTRA_TEXT,
+                                        context.getString(
+                                            R.string.album_share_text,
+                                            header,
+                                            "${Constants.YoutubeApi.ORIGIN}/browse/$albumId"
+                                        )
+                                    )
+                                    type = "text/plain"
+                                }
+                                context.startActivity(Intent.createChooser(sendIntent, null))
+                                showAlbumMenu = false
+                            },
+                            onAddToPlaylist = {
+                                showAlbumMenu = false
+                                showPlaylistPicker = true
+                            },
+                            onDismiss = { showAlbumMenu = false },
+                        )
+                    }
+
+                    if (showPlaylistPicker) {
+                        LocalPlaylistPickerDialog(
+                            playlists = localPlaylists,
+                            onPick = { playlist ->
+                                albumViewModel.addAlbumToLocalPlaylist(playlist, playableSongs)
+                                showPlaylistPicker = false
+                            },
+                            onCreateNew = {
+                                albumViewModel.createLocalPlaylistFromAlbum(
+                                    name = page.name.ifBlank { albumName },
+                                    songs = playableSongs,
+                                )
+                                showPlaylistPicker = false
+                            },
+                            onDismiss = { showPlaylistPicker = false },
+                        )
                     }
                 }
             }

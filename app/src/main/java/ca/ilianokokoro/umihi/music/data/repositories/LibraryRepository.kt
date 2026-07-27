@@ -25,7 +25,7 @@ class LibraryRepository {
         settings: UmihiSettings,
         useCache: Boolean = true,
     ): Flow<ApiResult<Library>> =
-        cachedApiFlow(key = "library:${settings.dataSyncId.orEmpty()}", useCache = useCache) {
+        cachedApiFlow(key = cacheKey(settings), useCache = useCache) {
             fetchLibrary(settings)
         }
 
@@ -115,5 +115,11 @@ class LibraryRepository {
     companion object {
         private const val MAX_NEW_RELEASE_ARTISTS = 6
         private const val MAX_NEW_RELEASES = 20
+
+        /**
+         * ResponseCache key of the library page. Exposed so the local library search can read the
+         * cached liked songs without triggering a fetch of its own.
+         */
+        fun cacheKey(settings: UmihiSettings) = "library:${settings.dataSyncId.orEmpty()}"
     }
 }

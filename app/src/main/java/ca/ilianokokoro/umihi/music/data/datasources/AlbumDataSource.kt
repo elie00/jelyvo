@@ -25,6 +25,8 @@ class AlbumDataSource {
             secondSubtitle = header?.secondSubtitle.orEmpty(),
             description = header?.description.orEmpty(),
             sections = YoutubeDataExtractor.extractAlbumSections(response),
+            playlistId = YoutubeDataExtractor.extractAlbumPlaylistId(response),
+            isSavedToLibrary = YoutubeDataExtractor.extractAlbumLibraryStatus(response),
         )
     }
 }

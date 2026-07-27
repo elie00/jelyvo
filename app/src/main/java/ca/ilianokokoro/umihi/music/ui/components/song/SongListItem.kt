@@ -15,7 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.DownloadForOffline
+import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.MoreVert
@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Radio
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
+import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
@@ -84,6 +86,10 @@ fun SongListItem(
     download: (() -> Unit)? = null,
     trackNumber: Int? = null,
     hideArtist: Boolean = false,
+    // Overrides [Song.downloaded] when non-null: rows built from a network response (album,
+    // remote playlist) carry no local file paths, so the screen resolves the offline state
+    // itself (one in-memory Set lookup) and passes it down here.
+    isDownloaded: Boolean? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -252,6 +258,17 @@ fun SongListItem(
                         }
                     )
                 }
+                // Local MediaStore files have no YouTube link to share.
+                if (!song.isLocal) {
+                    MaterialUDropdownItem(
+                        leadingIcon = Icons.Rounded.Share,
+                        text = stringResource(R.string.share),
+                        onClick = {
+                            ShareHelper.shareSong(context, song)
+                            expanded = false
+                        }
+                    )
+                }
             }
         },
         supportingContent = {
@@ -259,10 +276,12 @@ fun SongListItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                if (song.downloaded) {
+                if (isDownloaded ?: song.downloaded) {
+                    // Discreet "available offline" marker, next to the subtitle/duration.
                     Icon(
-                        modifier = Modifier.size(16.dp),
-                        imageVector = Icons.Rounded.DownloadForOffline,
+                        modifier = Modifier.size(15.dp),
+                        imageVector = Icons.Rounded.DownloadDone,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         contentDescription = null
                     )
                 }

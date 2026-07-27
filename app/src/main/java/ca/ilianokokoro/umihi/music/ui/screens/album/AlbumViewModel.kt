@@ -1,21 +1,32 @@
 package ca.ilianokokoro.umihi.music.ui.screens.album
 
 import android.app.Application
+import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.AlbumRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
+import ca.ilianokokoro.umihi.music.models.LocalPlaylist
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -27,9 +38,33 @@ class AlbumViewModel(
     private val albumRepository = AlbumRepository()
     private val datastoreRepository = DatastoreRepository(application)
     private val downloadRepository = DownloadRepository(application)
+    private val localPlaylistRepository = LocalPlaylistRepository(application)
 
     private val _uiState = MutableStateFlow<AlbumState>(AlbumState.Loading)
     val uiState = _uiState.asStateFlow()
+
+    /** Gates the header's logged-in-only actions, same signal as SongListItem rows. */
+    val isLoggedIn = datastoreRepository.settings
+        .map { !it.cookies.isEmpty() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /**
+     * Etat "album dans la bibliotheque" du header. Seede par la reponse browse quand elle expose
+     * le bouton bibliotheque, sinon false ; la bascule est optimiste et annulee en cas d'echec.
+     */
+    private val _isAlbumSaved = MutableStateFlow(false)
+    val isAlbumSaved = _isAlbumSaved.asStateFlow()
+
+    /** Local playlists offered by the "add to playlist" picker of the header menu. */
+    val localPlaylists = localPlaylistRepository.observeAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    // Ids des pistes deja telechargees : un seul Set en memoire partage par toutes les lignes,
+    // aucune requete disque par ligne.
+    val downloadedIds = AppDatabase.getInstance(application).songRepository()
+        .observeDownloadedIds()
+        .map { it.toSet() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     init {
         load()
@@ -42,7 +77,11 @@ class AlbumViewModel(
                 _uiState.update {
                     when (result) {
                         is ApiResult.Loading -> AlbumState.Loading
-                        is ApiResult.Success -> AlbumState.Success(result.data)
+                        is ApiResult.Success -> {
+                            _isAlbumSaved.value = result.data.isSavedToLibrary ?: false
+                            AlbumState.Success(result.data)
+                        }
+
                         is ApiResult.Error -> {
                             printe(message = "Failed to load album", exception = result.exception)
                             AlbumState.Error(result.exception)
@@ -51,6 +90,62 @@ class AlbumViewModel(
                 }
             }
         }
+    }
+
+    /**
+     * Saves/removes the album from the YT Music library through its audio playlist id.
+     * The heart flips immediately (optimistic) and reverts with a toast when the call fails.
+     */
+    fun toggleAlbumSaved() {
+        val page = (uiState.value as? AlbumState.Success)?.page ?: return
+        val playlistId = page.playlistId ?: return
+        val target = !_isAlbumSaved.value
+        _isAlbumSaved.value = target
+
+        viewModelScope.launch {
+            try {
+                val settings = datastoreRepository.getSettings()
+                YoutubeApiClient.setAlbumSaved(playlistId, saved = target, settings)
+                showToast(
+                    if (target) R.string.album_saved_toast else R.string.album_removed_toast
+                )
+            } catch (e: Exception) {
+                printe(message = "Failed to update album library state", exception = e)
+                _isAlbumSaved.value = !target
+                showToast(R.string.album_save_failed_toast)
+            }
+        }
+    }
+
+    /** Appends the whole album to an existing local playlist, skipping tracks already in it. */
+    fun addAlbumToLocalPlaylist(playlist: LocalPlaylist, songs: List<Song>) {
+        if (songs.isEmpty()) return
+        viewModelScope.launch {
+            val merged = mergeSongsIntoLocalPlaylist(
+                existing = localPlaylistRepository.songsOf(playlist),
+                added = songs.map(LocalPlaylistSong::fromSong),
+            )
+            localPlaylistRepository.updateSongs(playlist.id, merged)
+            showToast(R.string.album_added_to_playlist_toast, playlist.name)
+        }
+    }
+
+    /** Creates a new local playlist holding the whole album, named after it. */
+    fun createLocalPlaylistFromAlbum(name: String, songs: List<Song>) {
+        if (songs.isEmpty()) return
+        viewModelScope.launch {
+            localPlaylistRepository.create(name, songs.map(LocalPlaylistSong::fromSong))
+            showToast(R.string.album_added_to_playlist_toast, name)
+        }
+    }
+
+    private fun showToast(@StringRes messageRes: Int, vararg formatArgs: Any) {
+        val app = getApplication<Application>()
+        Toast.makeText(
+            app,
+            app.getString(messageRes, *formatArgs),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     fun downloadAlbum(songs: List<Song>, cover: String) {

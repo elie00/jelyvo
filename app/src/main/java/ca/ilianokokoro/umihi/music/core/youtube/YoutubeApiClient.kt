@@ -204,6 +204,48 @@ object YoutubeApiClient {
     }
 
     /**
+     * Saves/removes an album from the account's library. Same like/removelike endpoints as
+     * [setLike], but the target is the album's audio playlist ("OLAK5uy…") instead of a video —
+     * which is how YT Music itself toggles the header's "Save to library" button.
+     */
+    suspend fun setAlbumSaved(
+        playlistId: String,
+        saved: Boolean,
+        settings: UmihiSettings
+    ): String {
+        val baseBody = YoutubeAuthHelper.buildContextBody(
+            idName = null,
+            id = null,
+            settings = settings
+        )
+
+        val body = buildJsonObject {
+            baseBody.forEach { (key, value) ->
+                put(key, value)
+            }
+
+            put(
+                "target",
+                buildJsonObject {
+                    put("playlistId", playlistId)
+                }
+            )
+        }
+
+        val url = if (saved) {
+            Constants.YoutubeApi.Like.LIKE_URL
+        } else {
+            Constants.YoutubeApi.Like.REMOVE_LIKE_URL
+        }
+
+        return requestWithBody(
+            url = url,
+            body = body,
+            settings = settings
+        )
+    }
+
+    /**
      * [paramsOverride] replaces the filter's scope params when non-null, e.g. to rerun a spell
      * correction link's exact searchEndpoint params.
      */
