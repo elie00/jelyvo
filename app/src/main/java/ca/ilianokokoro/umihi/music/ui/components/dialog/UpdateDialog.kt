@@ -50,6 +50,7 @@ fun UpdateDialog(scope: CoroutineScope) {
                     data.value = event.githubReleaseResponse
                     showDialog = true
                 }
+                null -> Unit
             }
         }
     }
@@ -57,7 +58,10 @@ fun UpdateDialog(scope: CoroutineScope) {
     if (showDialog) {
         val releaseInfo = data.value ?: return
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = {
+                VersionManager.clearPendingUpdate()
+                showDialog = false
+            },
             title = {
                 Text(text = stringResource(R.string.update_available))
             },
@@ -137,6 +141,7 @@ fun UpdateDialog(scope: CoroutineScope) {
                                         context = context,
                                         apkFile = apkFile
                                     )
+                                    VersionManager.clearPendingUpdate()
                                     showDialog = false
                                 } catch (_: Exception) {
                                     Toast.makeText(
@@ -161,6 +166,7 @@ fun UpdateDialog(scope: CoroutineScope) {
                             VersionManager.ignoreUpdate(
                                 version = Version(name = releaseInfo.versionName)
                             )
+                            VersionManager.clearPendingUpdate()
                             showDialog = false
                         }
                     }, shapes = ButtonDefaults.shapes()) { Text(stringResource(R.string.ignore)) }

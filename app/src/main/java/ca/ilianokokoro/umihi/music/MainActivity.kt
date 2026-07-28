@@ -17,6 +17,7 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Rational
 import android.view.View
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
     }
     private var postFirstFrameInitialized = false
     private var pipReceiverRegistered = false
+    private var lastAutomaticUpdateCheckAtMs: Long? = null
 
     /** Handles the PiP window's play/pause remote action. */
     private val pipActionReceiver by lazy(LazyThreadSafetyMode.NONE) {
@@ -103,7 +105,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContentView(StartupShellView(this))
-        initializeAfterFirstFrame(savedInstanceState == null)
+        initializeAfterFirstFrame()
 
         handleShareIntent(intent)
         handleViewIntent(intent)
@@ -156,19 +158,19 @@ class MainActivity : ComponentActivity() {
      * none are required to paint the launch screen. Running them after the first traversal prevents
      * the playback service from consuming the main thread inside time-to-first-frame.
      */
-    private fun initializeAfterFirstFrame(checkForUpdate: Boolean) {
+    private fun initializeAfterFirstFrame() {
         window.decorView.doOnPreDraw {
             // A normal post can replace the native view before RenderThread has latched its buffer.
             // One additional vsync guarantees the skeleton is the measured first app frame.
             window.decorView.postDelayed(startup@{
                 if (isFinishing || isDestroyed) return@startup
                 setAppContent()
-                initializeRuntimeAfterAppFrame(checkForUpdate)
+                initializeRuntimeAfterAppFrame()
             }, FIRST_FRAME_LATCH_DELAY_MS)
         }
     }
 
-    private fun initializeRuntimeAfterAppFrame(checkForUpdate: Boolean) {
+    private fun initializeRuntimeAfterAppFrame() {
         window.decorView.doOnPreDraw {
             window.decorView.post {
                 if (isFinishing || isDestroyed) return@post
@@ -188,19 +190,35 @@ class MainActivity : ComponentActivity() {
                     initCaoc()
                     initPictureInPicture()
                     requestNotificationPermission()
-                    if (checkForUpdate) {
-                        lifecycleScope.launch {
-                            VersionManager.checkForUpdates(this@MainActivity)
-                        }
-                    }
+                    checkForUpdatesIfDue()
                 }
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (postFirstFrameInitialized) {
+            checkForUpdatesIfDue()
+        }
+    }
+
+    private fun checkForUpdatesIfDue() {
+        val now = SystemClock.elapsedRealtime()
+        val lastCheck = lastAutomaticUpdateCheckAtMs
+        if (lastCheck != null && now - lastCheck < AUTOMATIC_UPDATE_CHECK_INTERVAL_MS) {
+            return
+        }
+        lastAutomaticUpdateCheckAtMs = now
+        lifecycleScope.launch {
+            VersionManager.checkForUpdates(this@MainActivity)
         }
     }
 
     companion object {
         private const val FIRST_FRAME_LATCH_DELAY_MS = 32L
         private const val REQUEST_CODE_NOTIFICATION_PERMISSION = 1001
+        private const val AUTOMATIC_UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000L
     }
 
     override fun onDestroy() {

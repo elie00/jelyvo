@@ -73,17 +73,7 @@ object AudioOutputManager {
                 candidates.filter { it.id in routedDeviceIds }
             }
         ) ?: selectActiveRoute(candidates)
-        val routes = candidates
-            .distinctBy { it.id }
-            .map { candidate ->
-                AudioRoute(
-                    id = candidate.id,
-                    name = candidate.name,
-                    kind = candidate.kind,
-                    isActive = candidate.id == active?.id,
-                )
-            }
-            .sortedByDescending { routePriority(it.kind) }
+        val routes = buildRoutes(candidates, active?.id)
         _routes.value = routes
         _activeRoute.value = routes.firstOrNull(AudioRoute::isActive)
         _currentOutput.value = when (active?.kind) {
@@ -120,6 +110,31 @@ object AudioOutputManager {
 
     internal fun selectActiveRoute(routes: List<RouteCandidate>): RouteCandidate? =
         routes.maxByOrNull { routePriority(it.kind) }
+
+    /**
+     * Android may expose the same physical Bluetooth output through several transport profiles
+     * (for example A2DP and BLE). Collapse those entries by visible name and kind, preferring the
+     * routed profile so the single remaining row keeps its connected state.
+     */
+    internal fun buildRoutes(
+        candidates: List<RouteCandidate>,
+        activeId: Int?,
+    ): List<AudioRoute> = candidates
+        .groupBy { candidate ->
+            candidate.kind to candidate.name.trim().lowercase()
+        }
+        .values
+        .map { duplicates ->
+            val activeCandidate = duplicates.firstOrNull { it.id == activeId }
+            val representative = activeCandidate ?: duplicates.first()
+            AudioRoute(
+                id = representative.id,
+                name = representative.name.trim(),
+                kind = representative.kind,
+                isActive = activeCandidate != null,
+            )
+        }
+        .sortedByDescending { routePriority(it.kind) }
 
     private fun routePriority(kind: RouteKind): Int = when (kind) {
         RouteKind.BLUETOOTH -> 5

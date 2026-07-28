@@ -24,8 +24,8 @@ import ca.ilianokokoro.umihi.music.data.repositories.GithubRepository
 import ca.ilianokokoro.umihi.music.models.Version
 import ca.ilianokokoro.umihi.music.models.dto.GithubReleaseResponse
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -39,8 +39,11 @@ import java.io.IOException
  */
 object VersionManager {
 
-    private val _eventsFlow = MutableSharedFlow<ScreenEvent>()
-    val eventsFlow = _eventsFlow.asSharedFlow()
+    // StateFlow retains an update found during cold start until Compose is ready to display it.
+    // A replay-less SharedFlow used here previously lost fast responses before UpdateDialog began
+    // collecting, which is why the same check worked manually from Settings but not at launch.
+    private val _eventsFlow = MutableStateFlow<ScreenEvent?>(null)
+    val eventsFlow = _eventsFlow.asStateFlow()
 
     private var versionName: String? = null
 
@@ -259,10 +262,8 @@ object VersionManager {
         release: GithubReleaseResponse
     ) {
         if (outdated) {
-            _eventsFlow.emit(
-                ScreenEvent.UpdateAvailable(
-                    githubReleaseResponse = release
-                )
+            _eventsFlow.value = ScreenEvent.UpdateAvailable(
+                githubReleaseResponse = release
             )
         } else if (manualCheck) {
             withContext(Dispatchers.Main) {
@@ -277,6 +278,10 @@ object VersionManager {
 
     suspend fun ignoreUpdate(version: Version) {
         versionRepository.ignoreVersion(version)
+    }
+
+    fun clearPendingUpdate() {
+        _eventsFlow.value = null
     }
 
     /**

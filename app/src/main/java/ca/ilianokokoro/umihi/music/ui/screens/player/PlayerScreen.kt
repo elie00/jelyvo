@@ -85,7 +85,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -656,9 +655,8 @@ fun Thumbnail(
 }
 
 /**
- * Stable player chrome: back and overflow stay in the same place while the center slot switches
- * between the quiet "now playing" label and Song/Video mode. This prevents the artwork from
- * jumping when video availability resolves asynchronously.
+ * Stable player chrome: back and overflow stay in the same place while the optional Song/Video
+ * mode switch occupies the center. The player deliberately has no redundant "now playing" label.
  */
 @Composable
 private fun PlayerTopBar(
@@ -722,24 +720,6 @@ private fun PlayerTopBar(
                 enabled = isModeSwitchEnabled,
                 onSelectMode = onSelectMode,
             )
-        } else {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_jelyvo_monochrome),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = stringResource(R.string.playing_now),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
 
         Row(
