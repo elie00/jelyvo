@@ -75,6 +75,7 @@ fun PlayerMenuBottomSheet(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val defaultPlaylistName = stringResource(R.string.playlist_default_name)
     val application = context.applicationContext as Application
     val playlistRepository = remember(application) { LocalPlaylistRepository(application) }
     val scope = rememberCoroutineScope()
@@ -238,11 +239,8 @@ fun PlayerMenuBottomSheet(
                     val added = playlistRepository.addSong(playlist.id, song)
                     Toast.makeText(
                         context,
-                        if (added) {
-                            context.getString(R.string.album_added_to_playlist_toast, playlist.name)
-                        } else {
-                            context.getString(R.string.song_already_in_playlist)
-                        },
+                        if (added) R.string.song_added_to_playlist
+                        else R.string.song_already_in_playlist,
                         Toast.LENGTH_SHORT,
                     ).show()
                     changeVisibility(false)
@@ -251,14 +249,14 @@ fun PlayerMenuBottomSheet(
             onCreateNew = {
                 showPlaylistPicker = false
                 scope.launch {
-                    val name = context.getString(R.string.playlist_default_name)
+                    val name = defaultPlaylistName
                     playlistRepository.create(
                         name,
                         listOf(LocalPlaylistSong.fromSong(song)),
                     )
                     Toast.makeText(
                         context,
-                        context.getString(R.string.album_added_to_playlist_toast, name),
+                        R.string.song_added_to_playlist,
                         Toast.LENGTH_SHORT,
                     ).show()
                     changeVisibility(false)

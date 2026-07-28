@@ -105,6 +105,7 @@ fun SongListItem(
     var showPlaylistPicker by remember { mutableStateOf(false) }
     var localPlaylists by remember { mutableStateOf<List<LocalPlaylist>>(emptyList()) }
     val context = LocalContext.current
+    val defaultPlaylistName = stringResource(R.string.playlist_default_name)
     val application = context.applicationContext as Application
     val localPlaylistRepository = remember(application) {
         LocalPlaylistRepository(application)
@@ -387,11 +388,8 @@ fun SongListItem(
                     val added = localPlaylistRepository.addSong(playlist.id, song)
                     Toast.makeText(
                         context,
-                        if (added) {
-                            context.getString(R.string.album_added_to_playlist_toast, playlist.name)
-                        } else {
-                            context.getString(R.string.song_already_in_playlist)
-                        },
+                        if (added) R.string.song_added_to_playlist
+                        else R.string.song_already_in_playlist,
                         Toast.LENGTH_SHORT,
                     ).show()
                 }
@@ -399,14 +397,14 @@ fun SongListItem(
             onCreateNew = {
                 showPlaylistPicker = false
                 swipeScope.launch {
-                    val name = context.getString(R.string.playlist_default_name)
+                    val name = defaultPlaylistName
                     localPlaylistRepository.create(
                         name,
                         listOf(LocalPlaylistSong.fromSong(song)),
                     )
                     Toast.makeText(
                         context,
-                        context.getString(R.string.album_added_to_playlist_toast, name),
+                        R.string.song_added_to_playlist,
                         Toast.LENGTH_SHORT,
                     ).show()
                 }

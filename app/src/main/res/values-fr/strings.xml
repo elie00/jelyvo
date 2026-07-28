@@ -280,6 +280,7 @@
     <string name="album_new_playlist">Nouvelle playlist</string>
     <string name="playlist_default_name">Ma playlist</string>
     <string name="song_already_in_playlist">Ce titre est déjà dans cette playlist</string>
+    <string name="song_added_to_playlist">Titre ajouté à la playlist</string>
     <string name="download_on_metered_title">Télécharger via les données mobiles</string>
     <string name="audio_quality_title">Qualité audio</string>
     <string name="audio_quality_subtitle">Streaming et téléchargements : %1$s</string>
