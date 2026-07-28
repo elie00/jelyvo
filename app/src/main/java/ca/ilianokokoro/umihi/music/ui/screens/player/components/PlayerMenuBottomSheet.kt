@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
+import android.app.Application
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,12 +9,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.MusicVideo
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Repeat
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -24,6 +30,11 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -38,6 +49,11 @@ import ca.ilianokokoro.umihi.music.core.managers.AbLoop
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.LocalPlaylist
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
+import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
+import kotlinx.coroutines.launch
 
 /**
  * Overflow menu for the full-screen player. Only exposes actions that are not
@@ -49,6 +65,9 @@ fun PlayerMenuBottomSheet(
     changeVisibility: (visible: Boolean) -> Unit,
     song: Song,
     onOpenAlbum: () -> Unit,
+    onOpenArtist: () -> Unit,
+    onShowDetails: () -> Unit,
+    onShowGestureHelp: () -> Unit,
     onOpenEqualizer: () -> Unit,
     onPlayVideoVersion: () -> Unit,
     abLoop: AbLoop?,
@@ -56,6 +75,11 @@ fun PlayerMenuBottomSheet(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val application = context.applicationContext as Application
+    val playlistRepository = remember(application) { LocalPlaylistRepository(application) }
+    val scope = rememberCoroutineScope()
+    var showPlaylistPicker by remember { mutableStateOf(false) }
+    var localPlaylists by remember { mutableStateOf<List<LocalPlaylist>>(emptyList()) }
 
     ModalBottomSheet(
         onDismissRequest = { changeVisibility(false) },
@@ -94,8 +118,26 @@ fun PlayerMenuBottomSheet(
                     changeVisibility(false)
                 },
             )
+            PlayerMenuItem(
+                icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                text = stringResource(R.string.album_add_to_playlist),
+                onClick = {
+                    scope.launch {
+                        localPlaylists = playlistRepository.getAll()
+                        showPlaylistPicker = true
+                    }
+                },
+            )
 
             if (!song.isLocal) {
+                PlayerMenuItem(
+                    icon = Icons.Rounded.Person,
+                    text = stringResource(R.string.view_artist),
+                    onClick = {
+                        changeVisibility(false)
+                        onOpenArtist()
+                    },
+                )
                 PlayerMenuItem(
                     icon = Icons.Rounded.NotInterested,
                     text = stringResource(R.string.not_interested),
@@ -113,6 +155,24 @@ fun PlayerMenuBottomSheet(
                     },
                 )
             }
+
+            PlayerMenuItem(
+                icon = Icons.Rounded.Info,
+                text = stringResource(R.string.about_this_song),
+                onClick = {
+                    changeVisibility(false)
+                    onShowDetails()
+                },
+            )
+
+            PlayerMenuItem(
+                icon = Icons.Rounded.HelpOutline,
+                text = stringResource(R.string.player_gestures),
+                onClick = {
+                    changeVisibility(false)
+                    onShowGestureHelp()
+                },
+            )
 
             if (!song.isLocal) {
                 PlayerMenuItem(
@@ -167,6 +227,45 @@ fun PlayerMenuBottomSheet(
                 },
             )
         }
+    }
+
+    if (showPlaylistPicker) {
+        LocalPlaylistPickerDialog(
+            playlists = localPlaylists,
+            onPick = { playlist ->
+                showPlaylistPicker = false
+                scope.launch {
+                    val added = playlistRepository.addSong(playlist.id, song)
+                    Toast.makeText(
+                        context,
+                        if (added) {
+                            context.getString(R.string.album_added_to_playlist_toast, playlist.name)
+                        } else {
+                            context.getString(R.string.song_already_in_playlist)
+                        },
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    changeVisibility(false)
+                }
+            },
+            onCreateNew = {
+                showPlaylistPicker = false
+                scope.launch {
+                    val name = context.getString(R.string.playlist_default_name)
+                    playlistRepository.create(
+                        name,
+                        listOf(LocalPlaylistSong.fromSong(song)),
+                    )
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.album_added_to_playlist_toast, name),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    changeVisibility(false)
+                }
+            },
+            onDismiss = { showPlaylistPicker = false },
+        )
     }
 }
 

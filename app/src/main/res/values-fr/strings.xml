@@ -190,6 +190,15 @@
     <string name="crossfade_seconds">Fondu enchaîné entre les titres sur %1$d s</string>
     <string name="smart_transitions_title">Transitions intelligentes</string>
     <string name="smart_transitions_description">Préserve les albums sans blanc et adapte les fondus aux playlists et radios</string>
+    <string name="about_this_song">À propos de ce titre</string>
+    <string name="source">Source</string>
+    <string name="credits_availability_note">Les auteurs, compositeurs et producteurs détaillés apparaissent lorsque le fournisseur musical les rend disponibles.</string>
+    <string name="player_gestures">Gestes du lecteur</string>
+    <string name="gesture_help_title">Raccourcis du lecteur</string>
+    <string name="gesture_swipe_tracks">Fais glisser la pochette pour changer de titre</string>
+    <string name="gesture_double_tap">Appuie deux fois à gauche ou à droite pour reculer ou avancer de 10 secondes</string>
+    <string name="gesture_tap_lyrics">Appuie sur Paroles pour ouvrir le karaoké synchronisé</string>
+    <string name="got_it">J’ai compris</string>
     <string name="normalize_volume_title">Normaliser le volume</string>
     <string name="normalize_volume_description">Lit tous les titres à un niveau sonore similaire</string>
     <string name="resume_on_audio_connect_title">Reprendre à la connexion audio</string>
@@ -205,6 +214,7 @@
     <string name="seek_backward_10">Reculer de 10 secondes</string>
     <string name="share">Partager</string>
     <string name="share_at_position">Partager à partir de la position actuelle</string>
+    <string name="share_lyrics">Partager cette ligne</string>
     <string name="starting_radio">Lancement de la radio…</string>
     <string name="view_artist">Voir l\'artiste</string>
     <string name="view_album">Voir l\'album</string>

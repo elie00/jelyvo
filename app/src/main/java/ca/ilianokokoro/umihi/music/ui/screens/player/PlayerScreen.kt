@@ -44,6 +44,10 @@ import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Swipe
+import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Pause
@@ -51,6 +55,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -61,6 +66,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -98,6 +104,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
+import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
@@ -110,6 +117,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerMenuBottom
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBottomSheet
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import kotlinx.coroutines.delay
@@ -129,12 +137,20 @@ fun PlayerScreen(
             PlayerViewModel.Factory(application = application)
     )
 ) {
+    val context = LocalContext.current
     val uiState = playerViewModel.uiState.collectAsStateWithLifecycle().value
     val playbackData = PlayerManager.audioInfo.collectAsStateWithLifecycle().value
     val isCasting by PlayerManager.isCasting.collectAsStateWithLifecycle()
     val castDeviceName by PlayerManager.castDeviceName.collectAsStateWithLifecycle()
     val isCastRouteAvailable = rememberIsCastRouteAvailable()
     var showCastDevicePicker by remember { mutableStateOf(false) }
+    var showSongDetails by remember { mutableStateOf(false) }
+    val gesturePreferences = remember(context) {
+        context.getSharedPreferences("player-onboarding", Context.MODE_PRIVATE)
+    }
+    var showGestureHelp by remember {
+        mutableStateOf(!gesturePreferences.getBoolean("gestures-seen", false))
+    }
     val orientation = LocalConfiguration.current.orientation
     val currentSong = uiState.queue.getOrNull(uiState.currentIndex)
     val isVideoMode = currentSong?.forceVideo == true
@@ -232,6 +248,7 @@ fun PlayerScreen(
                     uiState = uiState,
                     onToggle = playerViewModel::toggleLyricsVisibility,
                     onRetryLyrics = playerViewModel::retryLyrics,
+                    onOpenQueue = { playerViewModel.setQueueVisibility(true) },
                     onSkipNext = PlayerManager::skipToNext,
                     onSkipPrevious = PlayerManager::skipToPrevious,
                     onSeekForward = { playerViewModel.seekBy(10_000L) },
@@ -311,6 +328,7 @@ fun PlayerScreen(
                         uiState = uiState,
                         onToggle = playerViewModel::toggleLyricsVisibility,
                         onRetryLyrics = playerViewModel::retryLyrics,
+                        onOpenQueue = { playerViewModel.setQueueVisibility(true) },
                         onSkipNext = PlayerManager::skipToNext,
                         onSkipPrevious = PlayerManager::skipToPrevious,
                         onSeekForward = { playerViewModel.seekBy(10_000L) },
@@ -400,6 +418,9 @@ fun PlayerScreen(
             changeVisibility = playerViewModel::setPlayerMenuVisibility,
             song = currentSong,
             onOpenAlbum = { playerViewModel.openAlbum(onOpenAlbum) },
+            onOpenArtist = { playerViewModel.openArtist(onOpenArtist) },
+            onShowDetails = { showSongDetails = true },
+            onShowGestureHelp = { showGestureHelp = true },
             onOpenEqualizer = onOpenEqualizer,
             onPlayVideoVersion = playerViewModel::playCurrentAsVideo,
             abLoop = uiState.abLoop,
@@ -421,6 +442,72 @@ fun PlayerScreen(
     if (showCastDevicePicker) {
         CastDevicePickerSheet(onDismiss = { showCastDevicePicker = false })
     }
+
+    if (showSongDetails && currentSong != null) {
+        SongDetailsBottomSheet(
+            song = currentSong,
+            audioInfo = playbackData,
+            onOpenArtist = {
+                showSongDetails = false
+                playerViewModel.openArtist(onOpenArtist)
+            },
+            onOpenAlbum = {
+                showSongDetails = false
+                playerViewModel.openAlbum(onOpenAlbum)
+            },
+            onDismiss = { showSongDetails = false },
+        )
+    }
+
+    if (showGestureHelp) {
+        GestureHelpDialog(
+            onDismiss = {
+                gesturePreferences.edit().putBoolean("gestures-seen", true).apply()
+                showGestureHelp = false
+            }
+        )
+    }
+    }
+}
+
+@Composable
+private fun GestureHelpDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.gesture_help_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                GestureHint(Icons.Rounded.Swipe, stringResource(R.string.gesture_swipe_tracks))
+                GestureHint(Icons.Rounded.TouchApp, stringResource(R.string.gesture_double_tap))
+                GestureHint(Icons.Rounded.Lyrics, stringResource(R.string.gesture_tap_lyrics))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.got_it))
+            }
+        },
+    )
+}
+
+@Composable
+private fun GestureHint(icon: ImageVector, text: String) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.padding(10.dp),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
+        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -430,6 +517,7 @@ private fun ArtworkOrLyrics(
     uiState: PlayerState,
     onToggle: () -> Unit,
     onRetryLyrics: () -> Unit,
+    onOpenQueue: () -> Unit,
     onSkipNext: () -> Unit = {},
     onSkipPrevious: () -> Unit = {},
     onSeekForward: () -> Unit = {},
@@ -439,6 +527,7 @@ private fun ArtworkOrLyrics(
     artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     Box(modifier = modifier) {
         if (uiState.areLyricsShown) {
             LyricsPanel(
@@ -446,6 +535,9 @@ private fun ArtworkOrLyrics(
                 currentPositionMs = uiState.playbackProgress.position.toLong(),
                 onSeekTo = { PlayerManager.currentController?.seekTo(it) },
                 onRetry = onRetryLyrics,
+                onShareLine = { line ->
+                    currentSong?.let { ShareHelper.shareLyrics(context, it, line) }
+                },
                 modifier = Modifier
                     .fillMaxSize()
             )
@@ -472,41 +564,69 @@ private fun ArtworkOrLyrics(
             )
         }
 
-        // Never remove the way back: even unavailable lyrics keep the control visible, and a
-        // lyrics panel opened from Video mode must still be able to return to the video surface.
-        if (currentSong?.forceVideo != true || uiState.areLyricsShown) {
-            Surface(
-                onClick = onToggle,
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f),
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(horizontal = 28.dp, vertical = 22.dp),
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Lyrics,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = stringResource(
-                            if (uiState.areLyricsShown) {
-                                R.string.show_artwork
-                            } else {
-                                R.string.lyrics
-                            }
-                        ),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlayerSurfaceTab(
+                icon = Icons.Rounded.Image,
+                label = stringResource(
+                    if (currentSong?.forceVideo == true) {
+                        R.string.player_mode_video
+                    } else {
+                        R.string.show_artwork
+                    }
+                ),
+                selected = !uiState.areLyricsShown,
+                onClick = { if (uiState.areLyricsShown) onToggle() },
+            )
+            PlayerSurfaceTab(
+                icon = Icons.Rounded.Lyrics,
+                label = stringResource(R.string.lyrics),
+                selected = uiState.areLyricsShown,
+                onClick = { if (!uiState.areLyricsShown) onToggle() },
+            )
+            PlayerSurfaceTab(
+                icon = Icons.Rounded.QueueMusic,
+                label = stringResource(R.string.queue),
+                selected = false,
+                onClick = onOpenQueue,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerSurfaceTab(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f)
+        },
+        contentColor = if (selected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

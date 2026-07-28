@@ -5,14 +5,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Share
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.models.Lyrics
@@ -54,6 +60,7 @@ fun LyricsPanel(
     modifier: Modifier = Modifier,
     onSeekTo: (Long) -> Unit = {},
     onRetry: () -> Unit = {},
+    onShareLine: (String) -> Unit = {},
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -75,6 +82,7 @@ fun LyricsPanel(
                         lyrics = lyrics,
                         currentPositionMs = currentPositionMs,
                         onSeekTo = onSeekTo,
+                        onShareLine = onShareLine,
                     )
                 }
             }
@@ -106,6 +114,7 @@ private fun SyncedLyricsList(
     lyrics: Lyrics,
     currentPositionMs: Long,
     onSeekTo: (Long) -> Unit,
+    onShareLine: (String) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -159,6 +168,7 @@ private fun SyncedLyricsList(
                 isActive = index == activeIndex,
                 activeProgress = if (index == activeIndex) activeProgress else 0f,
                 onSeekTo = onSeekTo,
+                onShare = { onShareLine(line.text) },
             )
         }
     }
@@ -170,6 +180,7 @@ private fun LyricRow(
     isActive: Boolean,
     activeProgress: Float,
     onSeekTo: (Long) -> Unit,
+    onShare: () -> Unit,
 ) {
     val color by animateColorAsState(
         targetValue = if (isActive) {
@@ -190,23 +201,37 @@ private fun LyricRow(
         )
     }
 
-    Text(
-        text = displayedText,
-        style = if (isActive) {
-            MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
-        } else {
-            MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
-        },
-        color = color,
-        textAlign = TextAlign.Start,
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (line.timeMs != null) {
-                    Modifier.clickable { onSeekTo(line.timeMs) }
-                } else Modifier
-            )
-    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = displayedText,
+            style = if (isActive) {
+                MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
+            } else {
+                MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
+            },
+            color = color,
+            textAlign = TextAlign.Start,
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (line.timeMs != null) {
+                        Modifier.clickable { onSeekTo(line.timeMs) }
+                    } else Modifier
+                )
+        )
+        if (isActive && line.text.isNotBlank()) {
+            IconButton(onClick = onShare, modifier = Modifier.size(40.dp)) {
+                Icon(
+                    imageVector = Icons.Rounded.Share,
+                    contentDescription = stringResource(R.string.share_lyrics),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
 }
 
 /**

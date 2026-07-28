@@ -195,6 +195,16 @@
     <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
     <string name="smart_transitions_title">Smart transitions</string>
     <string name="smart_transitions_description">Preserves gapless albums and adapts fades for playlists and radio</string>
+    <string name="about_this_song">About this song</string>
+    <string name="source">Source</string>
+    <string name="youtube_music" translatable="false">YouTube Music</string>
+    <string name="credits_availability_note">Detailed writer and producer credits appear when the music provider makes them available.</string>
+    <string name="player_gestures">Player gestures</string>
+    <string name="gesture_help_title">Quick player controls</string>
+    <string name="gesture_swipe_tracks">Swipe the artwork to change title</string>
+    <string name="gesture_double_tap">Double-tap left or right to go back or forward 10 seconds</string>
+    <string name="gesture_tap_lyrics">Tap Lyrics to open synchronized karaoke</string>
+    <string name="got_it">Got it</string>
     <string name="normalize_volume_title">Normalize volume</string>
     <string name="normalize_volume_description">Play every track at a similar loudness level</string>
     <string name="resume_on_audio_connect_title">Resume on audio connection</string>
@@ -211,6 +221,8 @@
     <string name="share">Share</string>
     <string name="share_at_position">Share from current position</string>
     <string name="share_song_text" translatable="false">%1$s • %2$s\n%3$s</string>
+    <string name="share_lyrics_text" translatable="false">“%1$s”\n%2$s • %3$s\n%4$s</string>
+    <string name="share_lyrics">Share this line</string>
     <string name="starting_radio">Starting radio…</string>
     <string name="view_artist">View artist</string>
     <string name="view_album">View album</string>

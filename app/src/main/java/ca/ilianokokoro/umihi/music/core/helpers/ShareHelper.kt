@@ -34,6 +34,25 @@ object ShareHelper {
         context.startActivity(Intent.createChooser(sendIntent, null))
     }
 
+    fun shareLyrics(context: Context, song: Song, passage: String) {
+        val text = passage.trim()
+        if (text.isEmpty()) return
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            putExtra(
+                Intent.EXTRA_TEXT,
+                context.getString(
+                    R.string.share_lyrics_text,
+                    text,
+                    song.title,
+                    song.artist,
+                    "${Constants.YoutubeApi.ORIGIN}/watch?v=${song.youtubeId}",
+                )
+            )
+            type = "text/plain"
+        }
+        context.startActivity(Intent.createChooser(sendIntent, null))
+    }
+
     /**
      * Appends the position marker to a watch URL. The prefix already carries "?v=", so the
      * timestamp joins with "&". Non-positive positions share the plain URL — "&t=0s" would only
