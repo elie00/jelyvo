@@ -61,6 +61,7 @@
     <string name="queue_section_suggestions">Autoplay suggestions</string>
     <string name="up_to_date_message">The app is up to date !</string>
     <string name="update_check_failed">Failed to check for updates</string>
+    <string name="update_download_failed">The update couldn’t be downloaded. Check your connection and try again.</string>
     <string name="github_rate_limit_retry">GitHub API rate limited. Retry in %1$s.</string>
     <string name="minutes">%1$d minutes</string>
     <string name="seconds">%1$d seconds</string>

@@ -143,40 +143,46 @@ object VersionManager {
         updateDir.mkdirs()
 
         val apkFile = File(updateDir, Constants.Downloads.UPDATE_APK)
+        val partialFile = File(updateDir, "${Constants.Downloads.UPDATE_APK}.part")
+        partialFile.delete()
 
         val request = Request.Builder().url(release.downloadUrl).build()
-        UmihiHttpClient.downloadClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("APK download failed: HTTP ${response.code}")
-            }
-            val body = response.body ?: throw IOException("APK download failed: empty body")
-            val totalBytes = body.contentLength()
+        try {
+            UmihiHttpClient.downloadClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException("APK download failed: HTTP ${response.code}")
+                }
+                val body = response.body ?: throw IOException("APK download failed: empty body")
+                val totalBytes = body.contentLength()
 
-            body.byteStream().use { input ->
-                apkFile.outputStream().use { output ->
-                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    var downloadedBytes = 0L
+                body.byteStream().use { input ->
+                    partialFile.outputStream().use { output ->
+                        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                        var downloadedBytes = 0L
 
-                    while (true) {
-                        val read = input.read(buffer)
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read == -1) break
+                            output.write(buffer, 0, read)
+                            downloadedBytes += read
 
-                        if (read == -1) {
-                            break
-                        }
-
-                        output.write(buffer, 0, read)
-                        downloadedBytes += read
-
-                        if (totalBytes > 0) {
-                            val progress = downloadedBytes.toFloat() / totalBytes.toFloat()
-
-                            withContext(Dispatchers.Main) {
-                                onProgress(progress)
+                            if (totalBytes > 0) {
+                                val progress = downloadedBytes.toFloat() / totalBytes.toFloat()
+                                withContext(Dispatchers.Main) {
+                                    onProgress(progress)
+                                }
                             }
                         }
                     }
                 }
             }
+            apkFile.delete()
+            if (!partialFile.renameTo(apkFile)) {
+                throw IOException("APK download failed: unable to finalize file")
+            }
+        } catch (exception: Exception) {
+            partialFile.delete()
+            throw exception
         }
 
         apkFile

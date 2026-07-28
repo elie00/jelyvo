@@ -60,6 +60,7 @@
     <string name="queue_section_suggestions">Suggestions automatiques</string>
     <string name="up_to_date_message">L\'application est à jour !</string>
     <string name="update_check_failed">Échec de la vérification des mises à jour</string>
+    <string name="update_download_failed">Impossible de télécharger la mise à jour. Vérifie ta connexion puis réessaie.</string>
     <string name="github_rate_limit_retry">Limite de requêtes de l\'API GitHub atteinte. Veuillez réessayer dans %1$s.</string>
     <string name="minutes">%1$d minutes</string>
     <string name="seconds">%1$d secondes</string>

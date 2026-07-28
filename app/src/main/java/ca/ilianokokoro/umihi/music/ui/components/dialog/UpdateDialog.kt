@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.dialog
 
 import androidx.activity.ComponentActivity
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -110,33 +111,43 @@ fun UpdateDialog(scope: CoroutineScope) {
                     TextButton(
                         onClick = {
                             scope.launch {
-                                val granted = VersionManager.requestInstallPermissions(
-                                    activity = context as ComponentActivity
-                                )
-
-                                if (!granted) {
-                                    isDownloading = false
+                                val activity = context as? ComponentActivity
+                                if (activity == null) {
+                                    Toast.makeText(
+                                        context,
+                                        R.string.update_download_failed,
+                                        Toast.LENGTH_LONG,
+                                    ).show()
                                     return@launch
                                 }
+                                try {
+                                    val granted = VersionManager.requestInstallPermissions(activity)
+                                    if (!granted) return@launch
 
-                                isDownloading = true
-                                downloadProgress = 0f
-
-                                val apkFile = VersionManager.downloadApk(
-                                    context = context,
-                                    release = releaseInfo,
-                                    onProgress = { progress ->
-                                        downloadProgress = progress
-                                    }
-                                )
-
-                                VersionManager.installApk(
-                                    context = context,
-                                    apkFile = apkFile
-                                )
-
-                                isDownloading = false
-                                showDialog = false
+                                    isDownloading = true
+                                    downloadProgress = 0f
+                                    val apkFile = VersionManager.downloadApk(
+                                        context = context,
+                                        release = releaseInfo,
+                                        onProgress = { progress ->
+                                            downloadProgress = progress
+                                        }
+                                    )
+                                    VersionManager.installApk(
+                                        context = context,
+                                        apkFile = apkFile
+                                    )
+                                    showDialog = false
+                                } catch (_: Exception) {
+                                    Toast.makeText(
+                                        context,
+                                        R.string.update_download_failed,
+                                        Toast.LENGTH_LONG,
+                                    ).show()
+                                } finally {
+                                    isDownloading = false
+                                    downloadProgress = 0f
+                                }
                             }
                         },
                         shapes = ButtonDefaults.shapes()

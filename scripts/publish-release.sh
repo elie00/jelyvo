@@ -19,6 +19,16 @@ EXPECTED_CERT_SHA256="b47ac9b86845664530b6e1a77465f210fa7b4913e77b1d44fde6a4f28f
 version=$(grep -E 'val\s+appVersionName\s*=' app/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
 [[ -n "$version" ]] || { echo "appVersionName introuvable dans app/build.gradle.kts" >&2; exit 1; }
 tag="v$version"
+git_hash=$(git rev-parse --short HEAD)
+
+[[ "$(git branch --show-current)" == "main" ]] || {
+    echo "La release stable doit être construite depuis main." >&2
+    exit 1
+}
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "Le dépôt contient des changements suivis non commités." >&2
+    exit 1
+fi
 
 if gh release view "$tag" --repo "$RELEASES_REPO" >/dev/null 2>&1; then
     echo "La release $tag existe déjà sur $RELEASES_REPO — bumper appVersionName d'abord." >&2
@@ -28,7 +38,7 @@ fi
 [[ -f keystore.properties ]] || { echo "keystore.properties manquant : le build serait signé avec la clé debug du poste." >&2; exit 1; }
 
 echo "== Build $tag (release signée, -Pbeta=false) =="
-./gradlew assembleStandaloneRelease -Pbeta=false --console=plain
+./gradlew assembleStandaloneRelease -Pbeta=false -PgitHash="$git_hash" --console=plain
 
 [[ -f "$APK" ]] || { echo "APK introuvable : $APK" >&2; exit 1; }
 
