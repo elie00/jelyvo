@@ -90,7 +90,7 @@ fun PlayerControls(
     playbackSpeed: Float,
     sleepTimerRemainingSeconds: Long?,
     isCasting: Boolean = false,
-    castDeviceName: String? = null,
+    outputDeviceName: String? = null,
     audioInfo: PlaybackAudioInfo = PlaybackAudioInfo(),
 ) {
     val hapticFeedback = LocalHapticFeedback.current
@@ -183,10 +183,10 @@ fun PlayerControls(
 
             PlaybackAudioInfoPill(
                 info = audioInfo,
-                labelOverride = if (isCasting) {
+                labelOverride = if (!outputDeviceName.isNullOrBlank()) {
                     stringResource(
                         R.string.cast_connected_to,
-                        castDeviceName ?: stringResource(R.string.cast_device),
+                        outputDeviceName,
                     )
                 } else {
                     null

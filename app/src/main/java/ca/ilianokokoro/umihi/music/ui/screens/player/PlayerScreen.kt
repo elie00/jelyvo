@@ -40,12 +40,11 @@ import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.CastConnected
+import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
-import androidx.compose.material.icons.rounded.Image
-import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.MoreVert
@@ -104,12 +103,13 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
-import ca.ilianokokoro.umihi.music.ui.components.cast.CastDevicePickerSheet
-import ca.ilianokokoro.umihi.music.ui.components.cast.rememberIsCastRouteAvailable
+import ca.ilianokokoro.umihi.music.ui.components.cast.AvailableDevicesSheet
+import ca.ilianokokoro.umihi.music.ui.components.cast.rememberCarConnectionType
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerArtworkBackground
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
@@ -121,6 +121,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBotto
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import kotlinx.coroutines.delay
+import androidx.car.app.connection.CarConnection
 
 @Composable
 fun PlayerScreen(
@@ -142,8 +143,26 @@ fun PlayerScreen(
     val playbackData = PlayerManager.audioInfo.collectAsStateWithLifecycle().value
     val isCasting by PlayerManager.isCasting.collectAsStateWithLifecycle()
     val castDeviceName by PlayerManager.castDeviceName.collectAsStateWithLifecycle()
-    val isCastRouteAvailable = rememberIsCastRouteAvailable()
-    var showCastDevicePicker by remember { mutableStateOf(false) }
+    val activeAudioRoute by AudioOutputManager.activeRoute.collectAsStateWithLifecycle()
+    val carConnectionType = rememberCarConnectionType()
+    val isCarConnected = carConnectionType != CarConnection.CONNECTION_TYPE_NOT_CONNECTED
+    val outputDeviceName = when {
+        isCasting -> castDeviceName
+        isCarConnected -> stringResource(
+            if (carConnectionType == CarConnection.CONNECTION_TYPE_NATIVE) {
+                R.string.android_automotive
+            } else {
+                R.string.android_auto
+            }
+        )
+        activeAudioRoute?.kind != null &&
+            activeAudioRoute?.kind != AudioOutputManager.RouteKind.PHONE ->
+            activeAudioRoute?.name
+        else -> null
+    }
+    val isExternalDevice = isCasting || isCarConnected ||
+        activeAudioRoute?.kind?.let { it != AudioOutputManager.RouteKind.PHONE } == true
+    var showDevicePicker by remember { mutableStateOf(false) }
     var showSongDetails by remember { mutableStateOf(false) }
     val gesturePreferences = remember(context) {
         context.getSharedPreferences("player-onboarding", Context.MODE_PRIVATE)
@@ -155,6 +174,10 @@ fun PlayerScreen(
     val currentSong = uiState.queue.getOrNull(uiState.currentIndex)
     val isVideoMode = currentSong?.forceVideo == true
     val isFullscreenVideo = isVideoMode && !isCasting && uiState.isVideoFullscreen
+
+    LaunchedEffect(Unit) {
+        AudioOutputManager.refresh(context.applicationContext)
+    }
 
     // Rotating to landscape while in Video mode goes fullscreen; rotating back to portrait (or
     // leaving Video mode) exits. The fullscreen button on the surface can enter it from portrait.
@@ -234,9 +257,8 @@ fun PlayerScreen(
                 PlayerTopBar(
                     onBack = onBack,
                     onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
-                    showCastButton = isCastRouteAvailable || isCasting,
-                    isCasting = isCasting,
-                    onCastClick = { showCastDevicePicker = true },
+                    isExternalDevice = isExternalDevice,
+                    onDevicesClick = { showDevicePicker = true },
                     hasVideoVariant = uiState.hasVideoVariant && !isCasting,
                     isVideoMode = isVideoMode,
                     isModeSwitchEnabled = !uiState.isSwitchingPlaybackMode,
@@ -248,7 +270,6 @@ fun PlayerScreen(
                     uiState = uiState,
                     onToggle = playerViewModel::toggleLyricsVisibility,
                     onRetryLyrics = playerViewModel::retryLyrics,
-                    onOpenQueue = { playerViewModel.setQueueVisibility(true) },
                     onSkipNext = PlayerManager::skipToNext,
                     onSkipPrevious = PlayerManager::skipToPrevious,
                     onSeekForward = { playerViewModel.seekBy(10_000L) },
@@ -296,7 +317,7 @@ fun PlayerScreen(
                         playbackSpeed = uiState.playbackSpeed,
                         sleepTimerRemainingSeconds = uiState.sleepTimerRemainingSeconds,
                         isCasting = isCasting,
-                        castDeviceName = castDeviceName,
+                        outputDeviceName = outputDeviceName,
                         audioInfo = playbackData,
                     )
                 }
@@ -328,7 +349,6 @@ fun PlayerScreen(
                         uiState = uiState,
                         onToggle = playerViewModel::toggleLyricsVisibility,
                         onRetryLyrics = playerViewModel::retryLyrics,
-                        onOpenQueue = { playerViewModel.setQueueVisibility(true) },
                         onSkipNext = PlayerManager::skipToNext,
                         onSkipPrevious = PlayerManager::skipToPrevious,
                         onSeekForward = { playerViewModel.seekBy(10_000L) },
@@ -378,7 +398,7 @@ fun PlayerScreen(
                         playbackSpeed = uiState.playbackSpeed,
                         sleepTimerRemainingSeconds = uiState.sleepTimerRemainingSeconds,
                         isCasting = isCasting,
-                        castDeviceName = castDeviceName,
+                        outputDeviceName = outputDeviceName,
                         audioInfo = playbackData,
                     )
                 }
@@ -420,7 +440,6 @@ fun PlayerScreen(
             onOpenAlbum = { playerViewModel.openAlbum(onOpenAlbum) },
             onOpenArtist = { playerViewModel.openArtist(onOpenArtist) },
             onShowDetails = { showSongDetails = true },
-            onShowGestureHelp = { showGestureHelp = true },
             onOpenEqualizer = onOpenEqualizer,
             onPlayVideoVersion = playerViewModel::playCurrentAsVideo,
             abLoop = uiState.abLoop,
@@ -439,8 +458,11 @@ fun PlayerScreen(
         )
     }
 
-    if (showCastDevicePicker) {
-        CastDevicePickerSheet(onDismiss = { showCastDevicePicker = false })
+    if (showDevicePicker) {
+        AvailableDevicesSheet(
+            carConnectionType = carConnectionType,
+            onDismiss = { showDevicePicker = false },
+        )
     }
 
     if (showSongDetails && currentSong != null) {
@@ -517,7 +539,6 @@ private fun ArtworkOrLyrics(
     uiState: PlayerState,
     onToggle: () -> Unit,
     onRetryLyrics: () -> Unit,
-    onOpenQueue: () -> Unit,
     onSkipNext: () -> Unit = {},
     onSkipPrevious: () -> Unit = {},
     onSeekForward: () -> Unit = {},
@@ -564,70 +585,6 @@ private fun ArtworkOrLyrics(
             )
         }
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            PlayerSurfaceTab(
-                icon = Icons.Rounded.Image,
-                label = stringResource(
-                    if (currentSong?.forceVideo == true) {
-                        R.string.player_mode_video
-                    } else {
-                        R.string.show_artwork
-                    }
-                ),
-                selected = !uiState.areLyricsShown,
-                onClick = { if (uiState.areLyricsShown) onToggle() },
-            )
-            PlayerSurfaceTab(
-                icon = Icons.Rounded.Lyrics,
-                label = stringResource(R.string.lyrics),
-                selected = uiState.areLyricsShown,
-                onClick = { if (!uiState.areLyricsShown) onToggle() },
-            )
-            PlayerSurfaceTab(
-                icon = Icons.Rounded.QueueMusic,
-                label = stringResource(R.string.queue),
-                selected = false,
-                onClick = onOpenQueue,
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlayerSurfaceTab(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.94f)
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.90f)
-        },
-        contentColor = if (selected) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium)
-        }
     }
 }
 
@@ -707,9 +664,8 @@ fun Thumbnail(
 private fun PlayerTopBar(
     onBack: () -> Unit,
     onMoreClick: () -> Unit,
-    showCastButton: Boolean,
-    isCasting: Boolean,
-    onCastClick: () -> Unit,
+    isExternalDevice: Boolean,
+    onDevicesClick: () -> Unit,
     hasVideoVariant: Boolean,
     isVideoMode: Boolean,
     isModeSwitchEnabled: Boolean,
@@ -792,29 +748,23 @@ private fun PlayerTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (showCastButton) {
-                IconButton(
-                    onClick = onCastClick,
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                            .copy(alpha = 0.72f),
-                        contentColor = if (isCasting) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                    ),
-                    modifier = Modifier.clip(CircleShape),
-                ) {
-                    Icon(
-                        imageVector = if (isCasting) {
-                            Icons.Rounded.CastConnected
-                        } else {
-                            Icons.Rounded.Cast
-                        },
-                        contentDescription = stringResource(R.string.cast),
-                    )
-                }
+            IconButton(
+                onClick = onDevicesClick,
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        .copy(alpha = 0.72f),
+                    contentColor = if (isExternalDevice) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                ),
+                modifier = Modifier.clip(CircleShape),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Devices,
+                    contentDescription = stringResource(R.string.available_devices),
+                )
             }
             IconButton(
                 onClick = onMoreClick,

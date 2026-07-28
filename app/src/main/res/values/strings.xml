@@ -307,6 +307,21 @@
     <string name="cast_stop">Stop casting</string>
     <string name="cast_no_devices">No Chromecast is available right now</string>
     <string name="cast_device">Cast device</string>
+    <string name="available_devices">Available devices</string>
+    <string name="current_output">Current output</string>
+    <string name="this_phone">This phone</string>
+    <string name="device_connected">Connected</string>
+    <string name="device_available">Available</string>
+    <string name="cast_devices">Cast devices</string>
+    <string name="android_auto" translatable="false">Android Auto</string>
+    <string name="android_automotive" translatable="false">Android Automotive</string>
+    <string name="bluetooth_device">Bluetooth device</string>
+    <string name="wired_audio_device">Wired headphones</string>
+    <string name="usb_audio_device">USB audio device</string>
+    <string name="external_display">External display</string>
+    <string name="manage_audio_outputs">Manage audio outputs</string>
+    <string name="manage_audio_outputs_description">Open the Android output selector</string>
+    <string name="no_voice_search_result">No result found for “%1$s”</string>
     <string name="cast_connected_to">Playing on %1$s</string>
     <string name="cast_error_resolve_failed">Couldn’t send “%1$s” to Chromecast</string>
     <string name="cast_error_offline">Connect to the internet to keep casting</string>

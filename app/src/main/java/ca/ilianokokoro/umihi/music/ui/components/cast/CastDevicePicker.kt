@@ -1,33 +1,61 @@
 package ca.ilianokokoro.umihi.music.ui.components.cast
 
+import android.content.Context
+import android.content.Intent
+import android.media.MediaRouter2
+import android.os.Build
+import android.provider.Settings
+import androidx.car.app.connection.CarConnection
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.BluetoothAudio
 import androidx.compose.material.icons.rounded.Cast
 import androidx.compose.material.icons.rounded.CastConnected
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.Headphones
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.StopCircle
+import androidx.compose.material.icons.rounded.Tv
+import androidx.compose.material.icons.rounded.Usb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.mediarouter.media.MediaRouter
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 
 private fun MediaRouter.castRoutes(): List<MediaRouter.RouteInfo> =
     routes.filter {
@@ -35,6 +63,24 @@ private fun MediaRouter.castRoutes(): List<MediaRouter.RouteInfo> =
             it.isEnabled &&
             it.matchesSelector(CastManager.ROUTE_SELECTOR)
     }
+
+@Composable
+fun rememberCarConnectionType(): Int {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val connection = remember(context) { CarConnection(context.applicationContext) }
+    var connectionType by remember {
+        mutableStateOf(CarConnection.CONNECTION_TYPE_NOT_CONNECTED)
+    }
+    DisposableEffect(connection, lifecycleOwner) {
+        val observer = Observer<Int> { value ->
+            connectionType = value ?: CarConnection.CONNECTION_TYPE_NOT_CONNECTED
+        }
+        connection.type.observe(lifecycleOwner, observer)
+        onDispose { connection.type.removeObserver(observer) }
+    }
+    return connectionType
+}
 
 @Composable
 fun rememberIsCastRouteAvailable(): Boolean {
@@ -77,11 +123,21 @@ fun rememberIsCastRouteAvailable(): Boolean {
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-fun CastDevicePickerSheet(onDismiss: () -> Unit) {
+fun AvailableDevicesSheet(
+    carConnectionType: Int,
+    onDismiss: () -> Unit,
+) {
     val context = LocalContext.current
     val router = remember(context) { MediaRouter.getInstance(context) }
     val isCasting by CastManager.isCasting.collectAsStateWithLifecycle()
+    val castDeviceName by CastManager.deviceName.collectAsStateWithLifecycle()
+    val audioRoutes by AudioOutputManager.routes.collectAsStateWithLifecycle()
+    val activeAudioRoute by AudioOutputManager.activeRoute.collectAsStateWithLifecycle()
     var routes by remember { mutableStateOf(router.castRoutes()) }
+
+    LaunchedEffect(Unit) {
+        AudioOutputManager.refresh(context.applicationContext)
+    }
 
     DisposableEffect(router) {
         fun refresh() {
@@ -111,58 +167,227 @@ fun CastDevicePickerSheet(onDismiss: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp),
         ) {
             Text(
-                text = stringResource(R.string.cast_choose_device),
-                style = MaterialTheme.typography.titleLarge,
+                text = stringResource(R.string.available_devices),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
             )
-            if (isCasting) {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.cast_stop)) },
-                    leadingContent = {
-                        Icon(Icons.Rounded.StopCircle, contentDescription = null)
-                    },
-                    modifier = Modifier.clickable {
+
+            DeviceSectionLabel(stringResource(R.string.current_output))
+
+            DeviceRow(
+                icon = Icons.Rounded.PhoneAndroid,
+                name = stringResource(R.string.this_phone),
+                subtitle = if (!isCasting &&
+                    activeAudioRoute?.kind == AudioOutputManager.RouteKind.PHONE &&
+                    carConnectionType == CarConnection.CONNECTION_TYPE_NOT_CONNECTED
+                ) {
+                    stringResource(R.string.device_connected)
+                } else {
+                    stringResource(R.string.device_available)
+                },
+                selected = !isCasting &&
+                    activeAudioRoute?.kind == AudioOutputManager.RouteKind.PHONE &&
+                    carConnectionType == CarConnection.CONNECTION_TYPE_NOT_CONNECTED,
+                onClick = {
+                    if (isCasting) {
                         CastManager.endCurrentSession()
                         onDismiss()
-                    },
+                    } else {
+                        openSystemOutputSwitcher(context)
+                        onDismiss()
+                    }
+                },
+            )
+
+            if (carConnectionType != CarConnection.CONNECTION_TYPE_NOT_CONNECTED) {
+                DeviceRow(
+                    icon = Icons.Rounded.DirectionsCar,
+                    name = stringResource(
+                        if (carConnectionType == CarConnection.CONNECTION_TYPE_NATIVE) {
+                            R.string.android_automotive
+                        } else {
+                            R.string.android_auto
+                        }
+                    ),
+                    subtitle = stringResource(R.string.device_connected),
+                    selected = !isCasting,
+                    onClick = null,
                 )
             }
-            routes.forEach { route ->
-                val description = route.description
-                ListItem(
-                    headlineContent = { Text(route.name) },
-                    supportingContent = if (!description.isNullOrBlank()) {
-                        { Text(description) }
-                    } else {
-                        null
-                    },
-                    leadingContent = {
-                        Icon(
-                            imageVector = if (route.isSelected) {
-                                Icons.Rounded.CastConnected
+
+            audioRoutes
+                .filter { it.kind != AudioOutputManager.RouteKind.PHONE }
+                .forEach { route ->
+                    DeviceRow(
+                        icon = route.kind.icon(),
+                        name = route.name.ifBlank { stringResource(route.kind.fallbackName()) },
+                        subtitle = stringResource(
+                            if (route.isActive && !isCasting) {
+                                R.string.device_connected
                             } else {
-                                Icons.Rounded.Cast
-                            },
-                            contentDescription = null,
-                        )
-                    },
-                    modifier = Modifier.clickable {
+                                R.string.device_available
+                            }
+                        ),
+                        selected = route.isActive && !isCasting,
+                        onClick = {
+                            openSystemOutputSwitcher(context)
+                            onDismiss()
+                        },
+                    )
+                }
+
+            if (routes.isNotEmpty() || isCasting) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                DeviceSectionLabel(stringResource(R.string.cast_devices))
+            }
+
+            routes.forEach { route ->
+                val selected = route.isSelected ||
+                    isCasting && route.name.toString() == castDeviceName
+                DeviceRow(
+                    icon = if (selected) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
+                    name = route.name,
+                    subtitle = route.description?.takeIf(CharSequence::isNotBlank)?.toString()
+                        ?: stringResource(
+                            if (selected) R.string.device_connected
+                            else R.string.device_available
+                        ),
+                    selected = selected,
+                    onClick = {
                         router.selectRoute(route)
                         onDismiss()
                     },
                 )
             }
-            if (routes.isEmpty() && !isCasting) {
-                Text(
-                    text = stringResource(R.string.cast_no_devices),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+
+            if (isCasting) {
+                DeviceRow(
+                    icon = Icons.Rounded.StopCircle,
+                    name = stringResource(R.string.cast_stop),
+                    subtitle = castDeviceName.orEmpty(),
+                    selected = false,
+                    onClick = {
+                        CastManager.endCurrentSession()
+                        onDismiss()
+                    },
                 )
             }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            DeviceRow(
+                icon = Icons.Rounded.Settings,
+                name = stringResource(R.string.manage_audio_outputs),
+                subtitle = stringResource(R.string.manage_audio_outputs_description),
+                selected = false,
+                onClick = {
+                    openSystemOutputSwitcher(context)
+                    onDismiss()
+                },
+            )
         }
+    }
+}
+
+@Composable
+private fun DeviceSectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
+    )
+}
+
+@Composable
+private fun DeviceRow(
+    icon: ImageVector,
+    name: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: (() -> Unit)?,
+) {
+    ListItem(
+        headlineContent = {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(name, modifier = Modifier.weight(1f))
+                if (selected) {
+                    Icon(
+                        Icons.Rounded.CheckCircle,
+                        contentDescription = stringResource(R.string.device_connected),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+            }
+        },
+        supportingContent = {
+            Text(
+                subtitle,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        },
+        leadingContent = {
+            Surface(
+                shape = MaterialTheme.shapes.medium,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    modifier = Modifier.padding(10.dp),
+                )
+            }
+        },
+        modifier = Modifier.then(
+            if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+        ),
+    )
+}
+
+private fun AudioOutputManager.RouteKind.icon(): ImageVector = when (this) {
+    AudioOutputManager.RouteKind.PHONE -> Icons.Rounded.PhoneAndroid
+    AudioOutputManager.RouteKind.BLUETOOTH -> Icons.Rounded.BluetoothAudio
+    AudioOutputManager.RouteKind.WIRED -> Icons.Rounded.Headphones
+    AudioOutputManager.RouteKind.USB -> Icons.Rounded.Usb
+    AudioOutputManager.RouteKind.HDMI -> Icons.Rounded.Tv
+}
+
+private fun AudioOutputManager.RouteKind.fallbackName(): Int = when (this) {
+    AudioOutputManager.RouteKind.PHONE -> R.string.this_phone
+    AudioOutputManager.RouteKind.BLUETOOTH -> R.string.bluetooth_device
+    AudioOutputManager.RouteKind.WIRED -> R.string.wired_audio_device
+    AudioOutputManager.RouteKind.USB -> R.string.usb_audio_device
+    AudioOutputManager.RouteKind.HDMI -> R.string.external_display
+}
+
+private fun openSystemOutputSwitcher(context: Context) {
+    if (Build.VERSION.SDK_INT >= 34) {
+        val shown = runCatching {
+            MediaRouter2.getInstance(context).showSystemOutputSwitcher()
+        }.getOrDefault(false)
+        if (shown) return
+    }
+    runCatching {
+        context.startActivity(
+            Intent(Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+            )
+        )
     }
 }

@@ -238,6 +238,7 @@ dependencies {
     // Declared although play-services-cast-framework already brings it: app code touches
     // MediaRouter directly for route discovery.
     implementation(libs.androidx.mediarouter)
+    implementation(libs.androidx.car.app)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

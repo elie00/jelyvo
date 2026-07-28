@@ -84,7 +84,13 @@ class LibraryRepository {
                                 HomeFeedItem.Album(
                                     browseId = album.browseId,
                                     title = album.title,
-                                    subtitle = album.subtitle.ifBlank { artist.name },
+                                    // Artist-page cards usually expose only "Single • 2026".
+                                    // Prefix the followed artist so the home recommendation keeps
+                                    // its most useful context even when several releases sit side by side.
+                                    subtitle = newReleaseSubtitle(
+                                        artistName = artist.name,
+                                        releaseSubtitle = album.subtitle,
+                                    ),
                                     thumbnail = album.thumbnail,
                                 ) to album.year
                             }
@@ -122,4 +128,21 @@ class LibraryRepository {
          */
         fun cacheKey(settings: UmihiSettings) = "library:${settings.dataSyncId.orEmpty()}"
     }
+}
+
+internal fun newReleaseSubtitle(
+    artistName: String,
+    releaseSubtitle: String,
+): String {
+    val parts = releaseSubtitle
+        .split("•")
+        .map(String::trim)
+        .filter(String::isNotBlank)
+    val artist = artistName.trim()
+    return buildList {
+        if (artist.isNotBlank() && parts.none { it.equals(artist, ignoreCase = true) }) {
+            add(artist)
+        }
+        addAll(parts)
+    }.joinToString(" • ")
 }

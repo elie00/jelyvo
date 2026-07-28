@@ -21,6 +21,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import ca.ilianokokoro.umihi.music.models.SearchFilter
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.concurrent.ConcurrentHashMap
 
 @UnstableApi
 class UmihiMediaLibraryCallback(
@@ -43,6 +45,7 @@ class UmihiMediaLibraryCallback(
     private val localPlaylists = database.playlistRepository()
     private val localSongs = database.songRepository()
     private val historyRepository = HistoryRepository(service.applicationContext)
+    private val searchResults = ConcurrentHashMap<String, List<MediaItem>>()
 
     override fun onConnect(
         session: MediaSession,
@@ -195,6 +198,61 @@ class UmihiMediaLibraryCallback(
         return future
     }
 
+    override fun onSearch(
+        session: MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        query: String,
+        params: LibraryParams?,
+    ): ListenableFuture<LibraryResult<Void>> {
+        val future = SettableFuture.create<LibraryResult<Void>>()
+
+        serviceScope.launch {
+            try {
+                val results = searchMediaItems(query).take(MAX_SEARCH_RESULTS)
+                if (searchResults.size >= MAX_CACHED_SEARCHES) {
+                    searchResults.clear()
+                }
+                searchResults[query.normalizedSearchKey()] = results
+                session.notifySearchResultChanged(browser, query, results.size, params)
+                future.set(LibraryResult.ofVoid(params))
+            } catch (_: Exception) {
+                future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
+            }
+        }
+
+        return future
+    }
+
+    override fun onGetSearchResult(
+        session: MediaLibrarySession,
+        browser: MediaSession.ControllerInfo,
+        query: String,
+        page: Int,
+        pageSize: Int,
+        params: LibraryParams?,
+    ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+        val future = SettableFuture.create<LibraryResult<ImmutableList<MediaItem>>>()
+
+        serviceScope.launch {
+            try {
+                val results = searchResults[query.normalizedSearchKey()]
+                    ?: searchMediaItems(query).take(MAX_SEARCH_RESULTS).also {
+                        searchResults[query.normalizedSearchKey()] = it
+                    }
+                future.set(
+                    LibraryResult.ofItemList(
+                        paginateMediaItems(results, page, pageSize),
+                        params,
+                    )
+                )
+            } catch (_: Exception) {
+                future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
+            }
+        }
+
+        return future
+    }
+
     override fun onSetMediaItems(
         mediaSession: MediaSession,
         controller: MediaSession.ControllerInfo,
@@ -234,6 +292,10 @@ class UmihiMediaLibraryCallback(
     private suspend fun resolveMediaItemForPlayback(
         mediaItem: MediaItem
     ): List<MediaItem> {
+        mediaItem.requestMetadata.searchQuery
+            ?.takeIf(String::isNotBlank)
+            ?.let { return searchMediaItems(it).take(VOICE_PLAY_QUEUE_SIZE) }
+
         val mediaId = mediaItem.mediaId
 
         if (mediaId.startsWith(Constants.ExoPlayer.Library.PLAY_PLAYLIST_PREFIX)) {
@@ -270,6 +332,22 @@ class UmihiMediaLibraryCallback(
         return listOf(
             resolveSongMediaItem(mediaItem)
         )
+    }
+
+    private suspend fun searchMediaItems(query: String): List<MediaItem> {
+        if (query.isBlank()) {
+            return collectionSongs(Constants.ExoPlayer.Library.RECENT_ROOT)
+                .take(VOICE_PLAY_QUEUE_SIZE)
+                .map { it.mediaItem }
+        }
+
+        val result = songRepository.search(query, SearchFilter.Songs)
+            .first { it !is ApiResult.Loading }
+        return (result as? ApiResult.Success)
+            ?.data
+            ?.songs
+            .orEmpty()
+            .map { it.mediaItem }
     }
 
     private suspend fun resolvePlaylistSongs(
@@ -442,6 +520,10 @@ class UmihiMediaLibraryCallback(
     }
 
     private companion object {
+        const val MAX_CACHED_SEARCHES = 20
+        const val MAX_SEARCH_RESULTS = 50
+        const val VOICE_PLAY_QUEUE_SIZE = 20
+
         val collectionRootIds = setOf(
             Constants.ExoPlayer.Library.RECENT_ROOT,
             Constants.ExoPlayer.Library.DOWNLOADS_ROOT,
@@ -449,3 +531,21 @@ class UmihiMediaLibraryCallback(
         )
     }
 }
+
+internal fun paginateMediaItems(
+    items: List<MediaItem>,
+    page: Int,
+    pageSize: Int,
+): List<MediaItem> {
+    if (page < 0 || pageSize <= 0 || items.isEmpty()) return emptyList()
+
+    val fromIndex = (page.toLong() * pageSize.toLong())
+        .coerceAtMost(items.size.toLong())
+        .toInt()
+    val toIndex = (fromIndex.toLong() + pageSize.toLong())
+        .coerceAtMost(items.size.toLong())
+        .toInt()
+    return items.subList(fromIndex, toIndex)
+}
+
+private fun String.normalizedSearchKey(): String = trim().lowercase()

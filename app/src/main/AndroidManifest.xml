@@ -61,6 +61,12 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
 
+            <!-- Google Assistant / Android Auto voice command: "Play ... on Umihi". -->
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
             <!-- Open In app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />

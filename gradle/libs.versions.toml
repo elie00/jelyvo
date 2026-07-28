@@ -35,6 +35,7 @@ uiautomator = "2.4.0"
 androidxJunit = "1.3.0"
 # Resolved transitively by play-services-cast-framework; declared so the catalog is not a guess.
 mediarouter = "1.8.1"
+carApp = "1.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -64,6 +65,7 @@ androidx-media3-datasource = { module = "androidx.media3:media3-datasource", ver
 androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasource-okhttp", version.ref = "media3Exoplayer" }
 androidx-media3-cast = { module = "androidx.media3:media3-cast", version.ref = "media3Exoplayer" }
 androidx-mediarouter = { module = "androidx.mediarouter:mediarouter", version.ref = "mediarouter" }
+androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }

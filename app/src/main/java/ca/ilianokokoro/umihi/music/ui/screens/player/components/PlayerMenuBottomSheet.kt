@@ -3,19 +3,20 @@ package ca.ilianokokoro.umihi.music.ui.screens.player.components
 import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.MusicVideo
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Repeat
-import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,7 +69,6 @@ fun PlayerMenuBottomSheet(
     onOpenAlbum: () -> Unit,
     onOpenArtist: () -> Unit,
     onShowDetails: () -> Unit,
-    onShowGestureHelp: () -> Unit,
     onOpenEqualizer: () -> Unit,
     onPlayVideoVersion: () -> Unit,
     abLoop: AbLoop?,
@@ -75,6 +76,7 @@ fun PlayerMenuBottomSheet(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val maxMenuHeight = LocalConfiguration.current.screenHeightDp.dp * 0.58f
     val defaultPlaylistName = stringResource(R.string.playlist_default_name)
     val application = context.applicationContext as Application
     val playlistRepository = remember(application) { LocalPlaylistRepository(application) }
@@ -92,6 +94,8 @@ fun PlayerMenuBottomSheet(
         Column(
             modifier = modifier
                 .fillMaxWidth()
+                .heightIn(max = maxMenuHeight)
+                .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp),
         ) {
             Text(
@@ -148,6 +152,14 @@ fun PlayerMenuBottomSheet(
                     },
                 )
                 PlayerMenuItem(
+                    icon = Icons.Rounded.Album,
+                    text = stringResource(R.string.view_album),
+                    onClick = {
+                        changeVisibility(false)
+                        onOpenAlbum()
+                    },
+                )
+                PlayerMenuItem(
                     icon = Icons.Rounded.MusicVideo,
                     text = stringResource(R.string.play_video_version),
                     onClick = {
@@ -166,43 +178,12 @@ fun PlayerMenuBottomSheet(
                 },
             )
 
-            PlayerMenuItem(
-                icon = Icons.Rounded.HelpOutline,
-                text = stringResource(R.string.player_gestures),
-                onClick = {
-                    changeVisibility(false)
-                    onShowGestureHelp()
-                },
-            )
-
-            if (!song.isLocal) {
-                PlayerMenuItem(
-                    icon = Icons.Rounded.Album,
-                    text = stringResource(R.string.view_album),
-                    onClick = {
-                        changeVisibility(false)
-                        onOpenAlbum()
-                    },
-                )
-            }
-
             if (!song.isLocal) {
                 PlayerMenuItem(
                     icon = Icons.Rounded.Share,
                     text = stringResource(R.string.share),
                     onClick = {
                         ShareHelper.shareSong(context, song)
-                        changeVisibility(false)
-                    },
-                )
-                PlayerMenuItem(
-                    icon = Icons.Rounded.Schedule,
-                    text = stringResource(R.string.share_at_position),
-                    onClick = {
-                        // Position is read at tap time so the link matches what is heard.
-                        val positionSeconds =
-                            (PlayerManager.currentController?.currentPosition ?: 0L) / 1000L
-                        ShareHelper.shareSong(context, song, positionSeconds)
                         changeVisibility(false)
                     },
                 )

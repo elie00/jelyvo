@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
+import android.app.SearchManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,6 +17,7 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Rational
 import android.view.View
 import android.widget.Toast
@@ -45,6 +47,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.data.repositories.StartupPreferences
+import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.ui.components.PipVideoOverlay
 import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
@@ -52,6 +55,7 @@ import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -103,6 +107,7 @@ class MainActivity : ComponentActivity() {
 
         handleShareIntent(intent)
         handleViewIntent(intent)
+        handleVoiceSearchIntent(intent)
 
         //    debugPrintDataStores()
     }
@@ -309,6 +314,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         handleShareIntent(intent)
         handleViewIntent(intent)
+        handleVoiceSearchIntent(intent)
     }
 
     override fun attachBaseContext(newBase: Context) {
@@ -356,6 +362,46 @@ class MainActivity : ComponentActivity() {
 
         val videoId = YoutubeDataExtractor.extractYouTubeVideoId(data.toString()) ?: return
         playVideoFromId(videoId)
+    }
+
+    /**
+     * Handles Assistant and Android Auto voice launches such as "play FTR on Umihi".
+     * PlayerManager retains the requested song while its media controller is still connecting,
+     * so a voice command received during cold start is not lost.
+     */
+    private fun handleVoiceSearchIntent(intent: Intent?) {
+        if (intent?.action != MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
+            return
+        }
+
+        val query = listOf(
+            intent.getStringExtra(SearchManager.QUERY),
+            intent.getStringExtra(MediaStore.EXTRA_MEDIA_TITLE),
+            intent.getStringExtra(MediaStore.EXTRA_MEDIA_ARTIST),
+            intent.getStringExtra(MediaStore.EXTRA_MEDIA_ALBUM),
+            intent.getStringExtra(MediaStore.EXTRA_MEDIA_PLAYLIST),
+            intent.getStringExtra(Intent.EXTRA_TEXT),
+        ).firstOrNull { !it.isNullOrBlank() }?.trim().orEmpty()
+
+        if (query.isBlank()) {
+            PlayerManager.currentController?.play()
+            return
+        }
+
+        lifecycleScope.launch {
+            val result = songRepository.search(query, SearchFilter.Songs)
+                .first { it !is ApiResult.Loading }
+            val song = (result as? ApiResult.Success)?.data?.songs?.firstOrNull()
+            if (song != null) {
+                PlayerManager.playSong(song)
+            } else {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.no_voice_search_result, query),
+                    Toast.LENGTH_LONG,
+                ).show()
+            }
+        }
     }
 
 
