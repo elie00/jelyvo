@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material3.ButtonDefaults
@@ -12,13 +13,21 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
 @Composable
 fun ErrorMessage(
@@ -27,7 +36,8 @@ fun ErrorMessage(
     errorMessage: String? = null,
     onRetry: () -> Unit,
 ) {
-    val message = errorMessage ?: ex.localizedMessage.orEmpty()
+    var showDetails by remember(ex) { mutableStateOf(false) }
+    val message = errorMessage ?: friendlyErrorMessage(ex)
 
     Column(
         modifier = modifier
@@ -62,5 +72,49 @@ fun ErrorMessage(
         ) {
             Text(stringResource(R.string.retry))
         }
+
+        TextButton(onClick = { showDetails = !showDetails }) {
+            Text(
+                stringResource(
+                    if (showDetails) R.string.hide_technical_details
+                    else R.string.show_technical_details
+                )
+            )
+        }
+
+        if (showDetails) {
+            SelectionContainer {
+                Text(
+                    text = ex.localizedMessage
+                        ?.take(600)
+                        ?.ifBlank { ex::class.java.simpleName }
+                        ?: ex::class.java.simpleName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun friendlyErrorMessage(exception: Exception): String {
+    val technicalMessage = exception.localizedMessage.orEmpty()
+    return when {
+        exception is SocketTimeoutException ||
+            "timeout" in technicalMessage.lowercase() ->
+            stringResource(R.string.error_timeout)
+        exception is UnknownHostException ||
+            exception is IOException && "HTTP" !in technicalMessage.uppercase() ->
+            stringResource(R.string.error_no_connection)
+        Regex("""HTTP\s*(401|403)""").containsMatchIn(technicalMessage) ->
+            stringResource(R.string.error_session_expired)
+        Regex("""HTTP\s*429""").containsMatchIn(technicalMessage) ->
+            stringResource(R.string.error_too_many_requests)
+        Regex("""HTTP\s*(400|404)""").containsMatchIn(technicalMessage) ||
+            "invalid_argument" in technicalMessage.lowercase() ->
+            stringResource(R.string.error_content_unavailable)
+        else -> stringResource(R.string.error_generic)
     }
 }

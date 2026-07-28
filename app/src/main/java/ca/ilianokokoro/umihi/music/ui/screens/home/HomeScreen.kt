@@ -52,7 +52,8 @@ import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
-import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
 import ca.ilianokokoro.umihi.music.ui.components.home.ForYouMixesRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
@@ -259,7 +260,7 @@ fun HomeScreen(
                         onExplorePress = onExplorePress,
                     )
 
-                    ScreenState.Loading -> LoadingAnimation()
+                    ScreenState.Loading -> MusicSkeleton(MusicSkeletonLayout.Home)
                     is ScreenState.Error -> ErrorMessage(
                         ex = uiState.screenState.exception,
                         onRetry = homeViewModel::getHomeFeed

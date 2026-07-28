@@ -72,6 +72,8 @@ import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import androidx.compose.foundation.layout.size
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
@@ -292,7 +294,7 @@ fun SearchScreen(
                     }
                 } else when (uiState.screenState) {
                     ScreenState.Loading -> {
-                        LoadingAnimation()
+                        MusicSkeleton(MusicSkeletonLayout.Search)
                     }
 
                     is ScreenState.Success -> {

@@ -42,7 +42,8 @@ import ca.ilianokokoro.umihi.music.data.repositories.ImportProgress
 import ca.ilianokokoro.umihi.music.models.spotify.SpotifyPlaylist
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
-import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 
 /**
  * Spotify import screen.
@@ -81,7 +82,7 @@ fun SpotifyImportScreen(
             when (val state = uiState.screenState) {
                 ScreenState.Disconnected -> ConnectContent(onStartAuth = onStartAuth)
 
-                ScreenState.LoadingPlaylists -> LoadingAnimation()
+                ScreenState.LoadingPlaylists -> MusicSkeleton(MusicSkeletonLayout.Library)
 
                 is ScreenState.PlaylistsLoaded -> PlaylistsContent(
                     playlists = state.playlists,

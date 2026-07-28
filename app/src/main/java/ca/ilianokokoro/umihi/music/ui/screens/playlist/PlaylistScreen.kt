@@ -50,6 +50,8 @@ import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
@@ -237,7 +239,7 @@ fun PlaylistScreen(
                         )
 
                         if (uiState.screenState is ScreenState.Loading) {
-                            LoadingAnimation()
+                            MusicSkeleton(MusicSkeletonLayout.SongList)
                         } else {
                             Column(
                                 verticalArrangement = Arrangement.Center,

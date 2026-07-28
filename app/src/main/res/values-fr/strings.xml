@@ -20,6 +20,14 @@
         <item quantity="other">%1$d titres</item>
     </plurals>
     <string name="error">Erreur</string>
+    <string name="error_generic">Impossible de charger ce contenu. Réessaie dans un instant.</string>
+    <string name="error_no_connection">Pas de connexion Internet. Vérifie le réseau puis réessaie.</string>
+    <string name="error_timeout">La demande a pris trop de temps. Réessaie avec une connexion plus stable.</string>
+    <string name="error_session_expired">Ta session a expiré. Reconnecte-toi puis réessaie.</string>
+    <string name="error_too_many_requests">Le service musical est momentanément occupé. Réessaie dans un instant.</string>
+    <string name="error_content_unavailable">Ce contenu n’est pas disponible pour ton compte ou ta région.</string>
+    <string name="show_technical_details">Détails techniques</string>
+    <string name="hide_technical_details">Masquer les détails</string>
     <string name="previous">Précédent</string>
     <string name="next">Suivant</string>
     <string name="queue">File d\'attente</string>

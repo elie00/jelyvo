@@ -20,6 +20,14 @@
         <item quantity="other">%1$d songs</item>
     </plurals>
     <string name="error">Error</string>
+    <string name="error_generic">We couldn’t load this content. Try again in a moment.</string>
+    <string name="error_no_connection">No internet connection. Check your network and try again.</string>
+    <string name="error_timeout">The request took too long. Try again on a more stable connection.</string>
+    <string name="error_session_expired">Your session has expired. Sign in again, then retry.</string>
+    <string name="error_too_many_requests">The music service is temporarily busy. Wait a moment, then retry.</string>
+    <string name="error_content_unavailable">This content isn’t available for your account or region.</string>
+    <string name="show_technical_details">Technical details</string>
+    <string name="hide_technical_details">Hide details</string>
     <string name="previous">Previous</string>
     <string name="next">Next</string>
     <string name="queue">Queue</string>

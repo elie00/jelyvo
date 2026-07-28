@@ -60,7 +60,8 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.groupSongsByDisc
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
-import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButton
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
@@ -161,7 +162,7 @@ fun AlbumScreen(
                             .padding(paddingValues),
                         contentAlignment = Alignment.Center
                     ) {
-                        LoadingAnimation()
+                        MusicSkeleton(MusicSkeletonLayout.SongList)
                     }
                 }
 
