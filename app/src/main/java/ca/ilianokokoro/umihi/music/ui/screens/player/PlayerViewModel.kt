@@ -123,9 +123,19 @@ class PlayerViewModel(application: Application) :
                     it.copy(
                         isLoggedIn = !settings.cookies.isEmpty(),
                         sleepTimerDefaultMinutes = settings.sleepTimerDefaultMinutes,
+                        smartTransitions = settings.smartTransitions,
                     )
                 }
             }
+        }
+    }
+
+    fun setSmartTransitions(enabled: Boolean) {
+        viewModelScope.launch {
+            datastoreRepository.save(
+                DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS,
+                enabled,
+            )
         }
     }
 

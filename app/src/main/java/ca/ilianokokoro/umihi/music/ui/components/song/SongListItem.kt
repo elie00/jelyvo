@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.song
 
+import android.app.Application
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircleOutline
+import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
@@ -58,8 +61,12 @@ import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.normalizedForSearch
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.LocalPlaylist
+import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
+import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlinx.coroutines.launch
 
 /** Fraction of the row width the finger must cross before a swipe commits to its action. */
@@ -95,7 +102,13 @@ fun SongListItem(
     initialLikeStatus: Boolean? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showPlaylistPicker by remember { mutableStateOf(false) }
+    var localPlaylists by remember { mutableStateOf<List<LocalPlaylist>>(emptyList()) }
     val context = LocalContext.current
+    val application = context.applicationContext as Application
+    val localPlaylistRepository = remember(application) {
+        LocalPlaylistRepository(application)
+    }
     LaunchedEffect(song.youtubeId) {
         PlayerManager.prewarmStream(context, song)
     }
@@ -215,6 +228,17 @@ fun SongListItem(
                     onClick = {
                         addToQueue()
                         expanded = false
+                    }
+                )
+                MaterialUDropdownItem(
+                    leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                    text = stringResource(R.string.album_add_to_playlist),
+                    onClick = {
+                        expanded = false
+                        swipeScope.launch {
+                            localPlaylists = localPlaylistRepository.getAll()
+                            showPlaylistPicker = true
+                        }
                     }
                 )
                 MaterialUDropdownItem(
@@ -351,6 +375,43 @@ fun SongListItem(
                 }
             }
         },
+        )
+    }
+
+    if (showPlaylistPicker) {
+        LocalPlaylistPickerDialog(
+            playlists = localPlaylists,
+            onPick = { playlist ->
+                showPlaylistPicker = false
+                swipeScope.launch {
+                    val added = localPlaylistRepository.addSong(playlist.id, song)
+                    Toast.makeText(
+                        context,
+                        if (added) {
+                            context.getString(R.string.album_added_to_playlist_toast, playlist.name)
+                        } else {
+                            context.getString(R.string.song_already_in_playlist)
+                        },
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            onCreateNew = {
+                showPlaylistPicker = false
+                swipeScope.launch {
+                    val name = context.getString(R.string.playlist_default_name)
+                    localPlaylistRepository.create(
+                        name,
+                        listOf(LocalPlaylistSong.fromSong(song)),
+                    )
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.album_added_to_playlist_toast, name),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            },
+            onDismiss = { showPlaylistPicker = false },
         )
     }
 }

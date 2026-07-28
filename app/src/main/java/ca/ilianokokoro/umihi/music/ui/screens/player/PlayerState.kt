@@ -18,6 +18,7 @@ data class PlayerState(
     val isSeekBarHeld: Boolean = false,
     val isQueueModalShown: Boolean = false,
     val isSavingQueue: Boolean = false,
+    val smartTransitions: Boolean = true,
     val isSleepTimerModalShown: Boolean = false,
     val sleepTimerRemainingSeconds: Long? = null,
     // Duration (minutes) preselected when the sleep timer sheet opens; user setting.

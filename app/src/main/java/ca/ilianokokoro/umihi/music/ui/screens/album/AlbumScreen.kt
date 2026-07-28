@@ -56,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.groupSongsByDisc
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
@@ -195,7 +196,9 @@ fun AlbumScreen(
                         PlayerManager.playQueue(
                             list.map { it.mediaItem },
                             startIndex,
-                            sourceName = page.name.ifBlank { albumName }
+                            sourceName = page.name.ifBlank { albumName },
+                            sourceId = albumId,
+                            sourceType = QueueSourceType.Album,
                         )
                     }
                     // "12 songs • 41 min" computed locally when the header didn't provide it.

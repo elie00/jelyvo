@@ -97,6 +97,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
@@ -118,6 +119,7 @@ fun PlayerScreen(
     onBack: () -> Unit,
     onOpenArtist: (Song) -> Unit = {},
     onOpenAlbum: (Song) -> Unit = {},
+    onOpenQueueSource: (QueueProvenance) -> Unit = {},
     onOpenEqualizer: () -> Unit = {},
     modifier: Modifier = Modifier,
     artworkModifier: Modifier = Modifier,
@@ -383,6 +385,12 @@ fun PlayerScreen(
             songs = uiState.queue,
             currentIndex = uiState.currentIndex,
             isSavingQueue = uiState.isSavingQueue,
+            smartTransitions = uiState.smartTransitions,
+            onSmartTransitionsChange = playerViewModel::setSmartTransitions,
+            onOpenSource = {
+                playerViewModel.setQueueVisibility(false)
+                onOpenQueueSource(it)
+            },
             onSaveQueue = playerViewModel::saveQueueAsPlaylist,
         )
     }

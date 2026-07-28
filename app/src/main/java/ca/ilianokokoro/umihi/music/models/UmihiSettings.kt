@@ -21,6 +21,7 @@ data class UmihiSettings(
     val dataSaverOnMetered: Boolean = false,
     val autoplay: Boolean = true,
     val crossfadeSeconds: Int = 0,
+    val smartTransitions: Boolean = true,
     val normalizeVolume: Boolean = true,
     val resumeOnAudioConnect: Boolean = false,
     val sleepTimerDefaultMinutes: Int = Constants.Ui.Player.SleepTimer.DEFAULT_MINUTES_FALLBACK,

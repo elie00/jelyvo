@@ -7,6 +7,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.models.PlaylistExportFile
 import ca.ilianokokoro.umihi.music.models.PlaylistExportSong
@@ -34,6 +35,8 @@ class LocalPlaylistRepository(application: Application) {
     fun observeAll(): Flow<List<LocalPlaylist>> = dao.observeAll()
 
     fun observeById(id: String): Flow<LocalPlaylist?> = dao.observeById(id)
+
+    suspend fun getAll(): List<LocalPlaylist> = dao.getAll()
 
     fun songsOf(playlist: LocalPlaylist): List<LocalPlaylistSong> =
         runCatching { json.decodeFromString<List<LocalPlaylistSong>>(playlist.songsJson) }
@@ -71,6 +74,22 @@ class LocalPlaylistRepository(application: Application) {
     suspend fun updateSongs(id: String, songs: List<LocalPlaylistSong>) {
         val existing = dao.getById(id) ?: return
         dao.upsert(existing.copy(songsJson = json.encodeToString(songs)))
+    }
+
+    /**
+     * Adds one track without duplicating a YouTube id already present in the playlist.
+     * Returns false when the playlist no longer exists or already contains the track.
+     */
+    suspend fun addSong(id: String, song: Song): Boolean {
+        val existing = dao.getById(id) ?: return false
+        val songs = songsOf(existing)
+        if (songs.any { it.id == song.youtubeId }) return false
+        dao.upsert(
+            existing.copy(
+                songsJson = json.encodeToString(songs + LocalPlaylistSong.fromSong(song))
+            )
+        )
+        return true
     }
 
     /** Serializes [name]/[songs] to the versioned JSON format at the user-chosen [uri]. */

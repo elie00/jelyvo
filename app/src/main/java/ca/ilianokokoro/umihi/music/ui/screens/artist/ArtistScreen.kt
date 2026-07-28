@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
@@ -152,14 +153,18 @@ fun ArtistScreen(
                                             onOpenPlayer()
                                             PlayerManager.playQueue(
                                                 page.songs.map { it.mediaItem },
-                                                sourceName = page.artist.name
+                                                sourceName = page.artist.name,
+                                                sourceId = artistId,
+                                                sourceType = QueueSourceType.Artist,
                                             )
                                         },
                                         onShuffle = {
                                             onOpenPlayer()
                                             PlayerManager.playQueue(
                                                 page.songs.shuffled().map { it.mediaItem },
-                                                sourceName = page.artist.name
+                                                sourceName = page.artist.name,
+                                                sourceId = artistId,
+                                                sourceType = QueueSourceType.Artist,
                                             )
                                         },
                                     )

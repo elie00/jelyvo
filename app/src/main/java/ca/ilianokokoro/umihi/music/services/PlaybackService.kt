@@ -47,6 +47,7 @@ import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
@@ -101,6 +102,7 @@ class PlaybackService : MediaLibraryService() {
     @Volatile private var normalizedVolume = 1f
     @Volatile private var normalizeVolumeEnabled = true
     @Volatile private var crossfadeMs = 0L
+    @Volatile private var smartTransitionsEnabled = true
     @Volatile private var resumeOnAudioConnect = false
     // Set only when ExoPlayer pauses because the output vanished (becoming-noisy), so a manual
     // pause never triggers the resume-on-connect behaviour.
@@ -676,13 +678,24 @@ class PlaybackService : MediaLibraryService() {
      * duration it wins; otherwise the short default fade keeps loudness-normalized gapless
      * transitions click-free. Re-read at each transition so changes apply without a restart.
      */
-    private fun fadeDurationMs(): Long =
-        if (crossfadeMs > 0L) crossfadeMs else AUDIO_FADE_DURATION_MS
+    private fun fadeDurationMs(): Long {
+        if (!smartTransitionsEnabled) {
+            return if (crossfadeMs > 0L) crossfadeMs else AUDIO_FADE_DURATION_MS
+        }
+        return when (PlayerManager.queueProvenance.value?.type) {
+            QueueSourceType.Album -> AUDIO_FADE_DURATION_MS
+            QueueSourceType.Radio -> 6_000L
+            QueueSourceType.Playlist -> 4_000L
+            QueueSourceType.Artist -> 3_000L
+            null -> if (crossfadeMs > 0L) crossfadeMs else AUDIO_FADE_DURATION_MS
+        }
+    }
 
     private fun startAudioVolumeManagement() {
         serviceScope.launch {
             datastoreRepository.settings.collectLatest { settings ->
                 crossfadeMs = settings.crossfadeSeconds.coerceIn(0, 12) * 1000L
+                smartTransitionsEnabled = settings.smartTransitions
                 resumeOnAudioConnect = settings.resumeOnAudioConnect
                 val normalizeChanged = normalizeVolumeEnabled != settings.normalizeVolume
                 normalizeVolumeEnabled = settings.normalizeVolume

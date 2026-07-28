@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -23,6 +24,7 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
@@ -46,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.song.QueueSongListItem
 import ca.ilianokokoro.umihi.music.ui.screens.player.moveWithinUserQueue
@@ -61,6 +64,9 @@ fun QueueBottomSheet(
     songs: List<Song>,
     currentIndex: Int,
     isSavingQueue: Boolean = false,
+    smartTransitions: Boolean = true,
+    onSmartTransitionsChange: (Boolean) -> Unit = {},
+    onOpenSource: (QueueProvenance) -> Unit = {},
     onSaveQueue: (name: String, songs: List<Song>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -71,6 +77,7 @@ fun QueueBottomSheet(
     var isSaveDialogShown by remember { mutableStateOf(false) }
     val sourceName by PlayerManager.queueSourceName.collectAsStateWithLifecycle()
     val isRadio by PlayerManager.isRadioQueue.collectAsStateWithLifecycle()
+    val source by PlayerManager.queueProvenance.collectAsStateWithLifecycle()
 
     val lazyListState = rememberLazyListState()
     // Reorder is limited to the user part of the queue: autoplay suggestions keep autoplay's
@@ -128,7 +135,15 @@ fun QueueBottomSheet(
                     Text(
                         text = provenance,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (source?.id != null) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.clickable(
+                            enabled = source?.id != null,
+                            onClick = { source?.let(onOpenSource) },
+                        ),
                     )
                 }
                 Surface(
@@ -163,6 +178,30 @@ fun QueueBottomSheet(
                         )
                     }
                 }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.smart_transitions_title),
+                        style = MaterialTheme.typography.titleSmall,
+                    )
+                    Text(
+                        stringResource(R.string.smart_transitions_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = smartTransitions,
+                    onCheckedChange = onSmartTransitionsChange,
+                )
             }
 
             LazyColumn(

@@ -193,6 +193,8 @@
     <string name="crossfade_title">Crossfade</string>
     <string name="crossfade_disabled">Off — gapless playback</string>
     <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
+    <string name="smart_transitions_title">Smart transitions</string>
+    <string name="smart_transitions_description">Preserves gapless albums and adapts fades for playlists and radio</string>
     <string name="normalize_volume_title">Normalize volume</string>
     <string name="normalize_volume_description">Play every track at a similar loudness level</string>
     <string name="resume_on_audio_connect_title">Resume on audio connection</string>
@@ -274,6 +276,8 @@
     <string name="album_add_to_playlist">Add to playlist</string>
     <string name="album_added_to_playlist_toast">Added to “%1$s”</string>
     <string name="album_new_playlist">New playlist</string>
+    <string name="playlist_default_name">My playlist</string>
+    <string name="song_already_in_playlist">This title is already in this playlist</string>
     <string name="album_share_text" translatable="false">%1$s\n%2$s</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="audio_quality_title">Audio quality</string>

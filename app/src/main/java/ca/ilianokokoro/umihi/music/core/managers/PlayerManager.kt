@@ -52,6 +52,14 @@ data class AbLoop(
     val pointBMs: Long? = null,
 )
 
+enum class QueueSourceType { Album, Playlist, Artist, Radio }
+
+data class QueueProvenance(
+    val name: String,
+    val type: QueueSourceType,
+    val id: String? = null,
+)
+
 object PlayerManager {
     @Volatile
     private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -151,14 +159,28 @@ object PlayerManager {
      */
     private val _queueSourceName = MutableStateFlow<String?>(null)
     val queueSourceName: StateFlow<String?> = _queueSourceName.asStateFlow()
+    private val _queueProvenance = MutableStateFlow<QueueProvenance?>(null)
+    val queueProvenance: StateFlow<QueueProvenance?> = _queueProvenance.asStateFlow()
 
     /** True when the current queue is a radio built around a seed song. */
     private val _isRadioQueue = MutableStateFlow(false)
     val isRadioQueue: StateFlow<Boolean> = _isRadioQueue.asStateFlow()
 
-    private fun setQueueProvenance(sourceName: String?, isRadio: Boolean) {
+    private fun setQueueProvenance(
+        sourceName: String?,
+        isRadio: Boolean,
+        sourceId: String? = null,
+        sourceType: QueueSourceType? = null,
+    ) {
         _queueSourceName.value = sourceName
         _isRadioQueue.value = isRadio
+        _queueProvenance.value = sourceName?.let {
+            QueueProvenance(
+                name = it,
+                type = sourceType ?: if (isRadio) QueueSourceType.Radio else QueueSourceType.Playlist,
+                id = sourceId,
+            )
+        }
     }
 
     /**
@@ -325,7 +347,12 @@ object PlayerManager {
         }
 
         isCollectionQueue = true
-        setQueueProvenance(sourceName = sourceName, isRadio = false)
+        setQueueProvenance(
+            sourceName = sourceName,
+            isRadio = false,
+            sourceId = playlist.info.id,
+            sourceType = QueueSourceType.Playlist,
+        )
         controller.setMediaItems(
             mediaItems,
             index.coerceIn(0, mediaItems.lastIndex),
@@ -349,7 +376,9 @@ object PlayerManager {
         mediaItems: List<MediaItem>,
         startIndex: Int = 0,
         startPositionMs: Long = 0L,
-        sourceName: String? = null
+        sourceName: String? = null,
+        sourceId: String? = null,
+        sourceType: QueueSourceType = QueueSourceType.Playlist,
     ) {
         if (mediaItems.isEmpty()) {
             return
@@ -357,7 +386,12 @@ object PlayerManager {
 
         currentController?.run {
             isCollectionQueue = true
-            setQueueProvenance(sourceName = sourceName, isRadio = false)
+            setQueueProvenance(
+                sourceName = sourceName,
+                isRadio = false,
+                sourceId = sourceId,
+                sourceType = sourceType,
+            )
             setMediaItems(
                 mediaItems,
                 startIndex.coerceIn(0, mediaItems.lastIndex),

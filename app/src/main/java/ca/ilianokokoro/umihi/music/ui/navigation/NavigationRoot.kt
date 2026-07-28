@@ -72,6 +72,8 @@ import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
 import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.stats.ListeningStatsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.spotifyimport.SpotifyImportScreen
+import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
+import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import androidx.core.net.toUri
 
 
@@ -122,6 +124,27 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                         backStack.add(
                             AlbumScreenKey(id, song.albumName ?: "", song.thumbnailHref)
                         )
+                    }
+                },
+                onOpenQueueSource = { source ->
+                    source.id?.let { id ->
+                        showFullPlayer = false
+                        when (source.type) {
+                            QueueSourceType.Album ->
+                                backStack.add(AlbumScreenKey(id, source.name))
+                            QueueSourceType.Artist ->
+                                backStack.add(ArtistScreenKey(id, source.name))
+                            QueueSourceType.Playlist -> {
+                                if (id.startsWith(Constants.Database.LOCAL_PLAYLIST_ID_PREFIX)) {
+                                    backStack.add(LocalPlaylistScreenKey(id))
+                                } else {
+                                    backStack.add(
+                                        PlaylistScreenKey(PlaylistInfo(id = id, title = source.name))
+                                    )
+                                }
+                            }
+                            QueueSourceType.Radio -> Unit
+                        }
                     }
                 },
                 onOpenEqualizer = {

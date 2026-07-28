@@ -411,6 +411,19 @@ fun SettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(
+                                title = stringResource(R.string.smart_transitions_title),
+                                subtitle = stringResource(R.string.smart_transitions_description),
+                                leadingIcon = Icons.Outlined.Waves,
+                                value = screenState.settings.smartTransitions,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.SMART_TRANSITIONS,
+                                        it
+                                    )
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            BooleanSettingItem(
                                 title = stringResource(R.string.normalize_volume_title),
                                 subtitle = stringResource(R.string.normalize_volume_description),
                                 leadingIcon = Icons.AutoMirrored.Outlined.VolumeUp,

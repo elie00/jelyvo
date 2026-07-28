@@ -20,6 +20,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_QUOTA_GB
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
@@ -75,6 +76,7 @@ class DatastoreRepository(private val context: Context) {
         val LAST_STREAM_QUALITY = stringPreferencesKey(Constants.Datastore.LAST_STREAM_QUALITY)
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
+        val SMART_TRANSITIONS = booleanPreferencesKey(Constants.Datastore.SMART_TRANSITIONS)
         val NORMALIZE_VOLUME = booleanPreferencesKey(Constants.Datastore.NORMALIZE_VOLUME)
         val RESUME_ON_AUDIO_CONNECT =
             booleanPreferencesKey(Constants.Datastore.RESUME_ON_AUDIO_CONNECT)
@@ -124,6 +126,7 @@ class DatastoreRepository(private val context: Context) {
         val dataSaverOnMetered = it[DATA_SAVER_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
+        val smartTransitions = it[SMART_TRANSITIONS] ?: true
         val normalizeVolume = it[NORMALIZE_VOLUME] ?: true
         val resumeOnAudioConnect = it[RESUME_ON_AUDIO_CONNECT] ?: false
         val sleepTimerDefaultMinutes = (it[SLEEP_TIMER_DEFAULT_MINUTES]
@@ -169,6 +172,7 @@ class DatastoreRepository(private val context: Context) {
             dataSaverOnMetered = dataSaverOnMetered,
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
+            smartTransitions = smartTransitions,
             normalizeVolume = normalizeVolume,
             resumeOnAudioConnect = resumeOnAudioConnect,
             sleepTimerDefaultMinutes = sleepTimerDefaultMinutes,
