@@ -29,6 +29,7 @@ data class PlayerState(
     val isLiked: Boolean = false,
     val isLiking: Boolean = false,
     val isResolvingArtist: Boolean = false,
+    val isResolvingAlbum: Boolean = false,
     val lyrics: ApiResult<Lyrics> = ApiResult.Loading,
     val areLyricsShown: Boolean = false,
     val abLoop: AbLoop? = null,

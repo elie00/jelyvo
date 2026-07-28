@@ -48,7 +48,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 fun PlayerMenuBottomSheet(
     changeVisibility: (visible: Boolean) -> Unit,
     song: Song,
-    onOpenAlbum: (Song) -> Unit,
+    onOpenAlbum: () -> Unit,
     onOpenEqualizer: () -> Unit,
     onPlayVideoVersion: () -> Unit,
     abLoop: AbLoop?,
@@ -114,13 +114,13 @@ fun PlayerMenuBottomSheet(
                 )
             }
 
-            if (song.albumId != null) {
+            if (!song.isLocal) {
                 PlayerMenuItem(
                     icon = Icons.Rounded.Album,
                     text = stringResource(R.string.view_album),
                     onClick = {
                         changeVisibility(false)
-                        onOpenAlbum(song)
+                        onOpenAlbum()
                     },
                 )
             }

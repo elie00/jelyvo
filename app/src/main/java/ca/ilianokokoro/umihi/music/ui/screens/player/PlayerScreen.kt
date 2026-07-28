@@ -229,6 +229,7 @@ fun PlayerScreen(
                     currentSong = currentSong,
                     uiState = uiState,
                     onToggle = playerViewModel::toggleLyricsVisibility,
+                    onRetryLyrics = playerViewModel::retryLyrics,
                     onSkipNext = PlayerManager::skipToNext,
                     onSkipPrevious = PlayerManager::skipToPrevious,
                     onSeekForward = { playerViewModel.seekBy(10_000L) },
@@ -307,6 +308,7 @@ fun PlayerScreen(
                         currentSong = currentSong,
                         uiState = uiState,
                         onToggle = playerViewModel::toggleLyricsVisibility,
+                        onRetryLyrics = playerViewModel::retryLyrics,
                         onSkipNext = PlayerManager::skipToNext,
                         onSkipPrevious = PlayerManager::skipToPrevious,
                         onSeekForward = { playerViewModel.seekBy(10_000L) },
@@ -389,7 +391,7 @@ fun PlayerScreen(
         PlayerMenuBottomSheet(
             changeVisibility = playerViewModel::setPlayerMenuVisibility,
             song = currentSong,
-            onOpenAlbum = onOpenAlbum,
+            onOpenAlbum = { playerViewModel.openAlbum(onOpenAlbum) },
             onOpenEqualizer = onOpenEqualizer,
             onPlayVideoVersion = playerViewModel::playCurrentAsVideo,
             abLoop = uiState.abLoop,
@@ -419,6 +421,7 @@ private fun ArtworkOrLyrics(
     currentSong: Song?,
     uiState: PlayerState,
     onToggle: () -> Unit,
+    onRetryLyrics: () -> Unit,
     onSkipNext: () -> Unit = {},
     onSkipPrevious: () -> Unit = {},
     onSeekForward: () -> Unit = {},
@@ -434,6 +437,7 @@ private fun ArtworkOrLyrics(
                 lyricsState = uiState.lyrics,
                 currentPositionMs = uiState.playbackProgress.position.toLong(),
                 onSeekTo = { PlayerManager.currentController?.seekTo(it) },
+                onRetry = onRetryLyrics,
                 modifier = Modifier
                     .fillMaxSize()
             )
@@ -460,10 +464,9 @@ private fun ArtworkOrLyrics(
             )
         }
 
-        if (
-            currentSong?.forceVideo != true &&
-            uiState.lyrics !is ApiResult.Error
-        ) {
+        // Never remove the way back: even unavailable lyrics keep the control visible, and a
+        // lyrics panel opened from Video mode must still be able to return to the video surface.
+        if (currentSong?.forceVideo != true || uiState.areLyricsShown) {
             Surface(
                 onClick = onToggle,
                 shape = RoundedCornerShape(18.dp),

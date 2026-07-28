@@ -175,6 +175,7 @@
     <string name="home_mix_replay">Replay</string>
     <string name="home_mix_rediscover">Rediscoveries</string>
     <string name="lyrics_unavailable">Lyrics unavailable</string>
+    <string name="album_unavailable">Album unavailable for this track</string>
     <string name="equalizer_title">Equalizer</string>
     <string name="equalizer_subtitle">Adjust bands, presets and bass boost</string>
     <string name="import_from_spotify_title">Import from Spotify</string>
@@ -234,6 +235,8 @@
     <string name="add_to_liked">Add to liked songs</string>
     <string name="added_to_liked_toast">Added to liked songs</string>
     <string name="add_to_liked_failed_toast">Couldn\'t add to liked songs</string>
+    <string name="removed_from_liked_toast">Removed from liked songs</string>
+    <string name="remove_from_liked_failed_toast">Couldn\'t remove from liked songs</string>
     <string name="song_downloaded">Song downloaded</string>
     <string name="download_failed">Download failed</string>
     <string name="failed_to_download_song">Failed to download %1$s - %2$s</string>

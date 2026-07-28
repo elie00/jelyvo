@@ -90,6 +90,9 @@ fun SongListItem(
     // remote playlist) carry no local file paths, so the screen resolves the offline state
     // itself (one in-memory Set lookup) and passes it down here.
     isDownloaded: Boolean? = null,
+    // Contextual fallback for surfaces that are authoritative even when a YouTube row omits its
+    // like button, notably the automatic "Liked songs" playlist.
+    initialLikeStatus: Boolean? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -115,6 +118,12 @@ fun SongListItem(
     )
     val isLoggedIn by remember(context) { LikeManager.isLoggedIn(context) }
         .collectAsStateWithLifecycle(initialValue = false)
+    val likeChanges by LikeManager.changes.collectAsStateWithLifecycle()
+    val isSongLiked = resolveSongLikeStatus(
+        sessionStatus = likeChanges[song.youtubeId]?.isLiked,
+        contextualStatus = initialLikeStatus,
+        embeddedStatus = song.isLiked,
+    )
 
     val haptics = LocalHapticFeedback.current
     val swipeScope = rememberCoroutineScope()
@@ -129,12 +138,20 @@ fun SongListItem(
         modifier = modifier,
         enableDismissFromStartToEnd = isLoggedIn,
         backgroundContent = {
-            SwipeActionBackground(direction = swipeState.dismissDirection)
+            SwipeActionBackground(
+                direction = swipeState.dismissDirection,
+                isLiked = isSongLiked,
+            )
         },
         onDismiss = { direction ->
             haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
             when (songSwipeAction(direction, isLoggedIn)) {
-                SongSwipeAction.AddToLiked -> LikeManager.addToLiked(song, context)
+                SongSwipeAction.ToggleLiked -> LikeManager.setLiked(
+                    song = song,
+                    liked = !isSongLiked,
+                    context = context,
+                    currentStatus = isSongLiked,
+                )
                 SongSwipeAction.AddToQueue -> addToQueue()
                 null -> Unit
             }
@@ -220,10 +237,21 @@ fun SongListItem(
                 }
                 if (isLoggedIn) {
                     MaterialUDropdownItem(
-                        leadingIcon = Icons.Rounded.FavoriteBorder,
-                        text = stringResource(R.string.add_to_liked),
+                        leadingIcon = if (isSongLiked) {
+                            Icons.Rounded.Favorite
+                        } else {
+                            Icons.Rounded.FavoriteBorder
+                        },
+                        text = stringResource(
+                            if (isSongLiked) R.string.unlike else R.string.add_to_liked
+                        ),
                         onClick = {
-                            LikeManager.addToLiked(song, context)
+                            LikeManager.setLiked(
+                                song = song,
+                                liked = !isSongLiked,
+                                context = context,
+                                currentStatus = isSongLiked,
+                            )
                             expanded = false
                         }
                     )
@@ -356,7 +384,7 @@ internal fun isTrackArtistRedundant(trackArtist: String, albumArtist: String): B
 }
 
 /** Which action a settled swipe on a song row runs. */
-internal enum class SongSwipeAction { AddToLiked, AddToQueue }
+internal enum class SongSwipeAction { ToggleLiked, AddToQueue }
 
 /**
  * Maps a settled swipe to its action using logical directions, so the gesture remains correct in
@@ -366,13 +394,23 @@ internal fun songSwipeAction(
     direction: SwipeToDismissBoxValue,
     isLoggedIn: Boolean,
 ): SongSwipeAction? = when (direction) {
-    SwipeToDismissBoxValue.StartToEnd -> SongSwipeAction.AddToLiked.takeIf { isLoggedIn }
+    SwipeToDismissBoxValue.StartToEnd -> SongSwipeAction.ToggleLiked.takeIf { isLoggedIn }
     SwipeToDismissBoxValue.EndToStart -> SongSwipeAction.AddToQueue
     SwipeToDismissBoxValue.Settled -> null
 }
 
+/** Pure mirror of LikeManager's precedence, kept here for lightweight UI-state unit tests. */
+internal fun resolveSongLikeStatus(
+    sessionStatus: Boolean?,
+    contextualStatus: Boolean?,
+    embeddedStatus: Boolean?,
+): Boolean = sessionStatus ?: contextualStatus ?: embeddedStatus ?: false
+
 @Composable
-private fun SwipeActionBackground(direction: SwipeToDismissBoxValue) {
+private fun SwipeActionBackground(
+    direction: SwipeToDismissBoxValue,
+    isLiked: Boolean,
+) {
     if (direction == SwipeToDismissBoxValue.Settled) return
 
     val isLike = direction == SwipeToDismissBoxValue.StartToEnd
@@ -391,7 +429,7 @@ private fun SwipeActionBackground(direction: SwipeToDismissBoxValue) {
     ) {
         Icon(
             imageVector = if (isLike) {
-                Icons.Rounded.Favorite
+                if (isLiked) Icons.Rounded.FavoriteBorder else Icons.Rounded.Favorite
             } else {
                 Icons.AutoMirrored.Rounded.PlaylistPlay
             },

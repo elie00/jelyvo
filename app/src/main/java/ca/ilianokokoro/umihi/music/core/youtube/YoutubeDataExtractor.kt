@@ -1614,15 +1614,7 @@ object YoutubeDataExtractor {
      * when YouTube exposes no artist page link.
      */
     fun extractArtistBrowseId(jsonString: String, videoId: String): String? {
-        val renderers = mutableListOf<JsonObject>()
-        collectObjects(
-            Json.parseToJsonElement(jsonString),
-            "playlistPanelVideoRenderer",
-            renderers
-        )
-        val renderer = renderers.firstOrNull {
-            it["videoId"]?.jsonPrimitive?.contentOrNull == videoId
-        } ?: renderers.firstOrNull() ?: return null
+        val renderer = findPlaylistPanelRenderer(jsonString, videoId) ?: return null
 
         // Byline runs: [artist, " • ", album, …] — the artist run links to a "UC…" browse page.
         for (bylineKey in listOf("longBylineText", "shortBylineText")) {
@@ -1639,6 +1631,46 @@ object YoutubeDataExtractor {
                 }
         }
         return null
+    }
+
+    /**
+     * Resolves the album browse id and label for a watch-next queue item. This is the fallback used
+     * by the player when a restored/radio item did not carry album metadata in its MediaItem.
+     */
+    fun extractAlbumBrowseInfo(jsonString: String, videoId: String): Pair<String, String>? {
+        val renderer = findPlaylistPanelRenderer(jsonString, videoId) ?: return null
+
+        for (bylineKey in listOf("longBylineText", "shortBylineText")) {
+            renderer[bylineKey]?.safeObject()
+                ?.get("runs")?.safeArray()
+                ?.forEach { run ->
+                    val runObject = run.safeObject()
+                    val browseId = runObject
+                        ?.get("navigationEndpoint")?.safeObject()
+                        ?.get("browseEndpoint")?.safeObject()
+                        ?.get("browseId")?.jsonPrimitive?.contentOrNull
+                    if (browseId != null && browseId.startsWith("MPRE")) {
+                        val name = runObject["text"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                        return browseId to name
+                    }
+                }
+        }
+        return null
+    }
+
+    private fun findPlaylistPanelRenderer(
+        jsonString: String,
+        videoId: String,
+    ): JsonObject? {
+        val renderers = mutableListOf<JsonObject>()
+        collectObjects(
+            Json.parseToJsonElement(jsonString),
+            "playlistPanelVideoRenderer",
+            renderers
+        )
+        return renderers.firstOrNull {
+            it["videoId"]?.jsonPrimitive?.contentOrNull == videoId
+        } ?: renderers.firstOrNull()
     }
 
     private fun collectObjects(element: JsonElement, key: String, into: MutableList<JsonObject>) {
@@ -1848,7 +1880,7 @@ object YoutubeDataExtractor {
                     ?.contentOrNull == "MUSIC_EXPLICIT_BADGE"
             } ?: false
 
-        val isLiked = songContent["menu"]
+        val likeStatus = songContent["menu"]
             ?.safeObject()?.get("menuRenderer")
             ?.safeObject()?.get("topLevelButtons")
             ?.safeArray()
@@ -1857,7 +1889,10 @@ object YoutubeDataExtractor {
             }
             ?.safeObject()?.get("likeButtonRenderer")
             ?.safeObject()?.get("likeStatus")
-            ?.jsonPrimitive?.contentOrNull == "LIKE"
+            ?.jsonPrimitive?.contentOrNull
+        // A missing like button means "unknown", not "not liked". Keeping null lets contextual
+        // surfaces such as the automatic liked-songs playlist provide the authoritative fallback.
+        val isLiked = likeStatus?.let { it == "LIKE" }
 
         val album = extractBrowseId(songContent, "MPRE")
         val artistRef = extractBrowseId(songContent, "UC")

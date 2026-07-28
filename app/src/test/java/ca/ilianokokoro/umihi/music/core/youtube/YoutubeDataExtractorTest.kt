@@ -141,6 +141,69 @@ class YoutubeDataExtractorTest {
     }
 
     @Test
+    fun `extractSong keeps like status unknown when the row has no like button`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "flexColumns": [
+                  {
+                    "musicResponsiveListItemFlexColumnRenderer": {
+                      "text": { "runs": [ { "text": "Track" } ] }
+                    }
+                  }
+                ],
+                "playlistItemData": { "videoId": "dQw4w9WgXcQ" }
+              }
+            }
+            """
+        )
+
+        val song = requireNotNull(YoutubeDataExtractor.extractSong(row))
+
+        assertNull(song.isLiked)
+    }
+
+    @Test
+    fun `watch next resolves artist and album navigation for the current track`() {
+        val response = """
+            {
+              "contents": {
+                "playlistPanelVideoRenderer": {
+                  "videoId": "dQw4w9WgXcQ",
+                  "longBylineText": {
+                    "runs": [
+                      {
+                        "text": "Rick Astley",
+                        "navigationEndpoint": {
+                          "browseEndpoint": { "browseId": "UCuAXFkgsw1L7xaCfnd5JJOw" }
+                        }
+                      },
+                      { "text": " • " },
+                      {
+                        "text": "Whenever You Need Somebody",
+                        "navigationEndpoint": {
+                          "browseEndpoint": { "browseId": "MPREb_abc123" }
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+        """
+
+        assertEquals(
+            "UCuAXFkgsw1L7xaCfnd5JJOw",
+            YoutubeDataExtractor.extractArtistBrowseId(response, "dQw4w9WgXcQ"),
+        )
+        assertEquals(
+            "MPREb_abc123" to "Whenever You Need Somebody",
+            YoutubeDataExtractor.extractAlbumBrowseInfo(response, "dQw4w9WgXcQ"),
+        )
+    }
+
+    @Test
     fun `extractSong returns null without a video id`() {
         val row = Json.parseToJsonElement(
             """

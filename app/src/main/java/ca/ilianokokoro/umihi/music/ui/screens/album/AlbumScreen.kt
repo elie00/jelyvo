@@ -175,21 +175,15 @@ fun AlbumScreen(
                     val page = state.page
                     // Prefer the high-res cover from the browse response, fall back to the passed one.
                     val cover = page.cover.ifBlank { albumCover }
-                    // Album tracks share the cover; fill it in so playback/artwork isn't blank.
+                    // Album rows rely on their surrounding page for album identity and often for
+                    // artwork. Carry both into MediaItem extras so the player can navigate back.
+                    val resolvedAlbumName = page.name.ifBlank { albumName }
                     val playableSongs = page.songs.map { song ->
-                        if (song.thumbnailHref.isBlank() && cover.isNotBlank()) {
-                            // copy() ne recopie pas les champs @Ignore : la position de la piste
-                            // doit etre reportee a la main, sinon le decoupage par disque est perdu.
-                            song.copy(thumbnailHref = cover).also {
-                                it.albumId = song.albumId
-                                it.albumName = song.albumName
-                                it.artistId = song.artistId
-                                it.trackNumber = song.trackNumber
-                                it.discNumber = song.discNumber
-                            }
-                        } else {
-                            song
-                        }
+                        song.withAlbumContext(
+                            albumId = albumId,
+                            albumName = resolvedAlbumName,
+                            artworkHref = cover,
+                        )
                     }
                     // Un album multi-CD est rendu disque par disque, la numerotation repartant a 1
                     // sur chacun (comme Spotify). Un seul groupe = aucun en-tete, affichage a plat.

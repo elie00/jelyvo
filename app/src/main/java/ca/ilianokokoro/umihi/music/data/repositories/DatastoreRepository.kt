@@ -38,6 +38,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
 import ca.ilianokokoro.umihi.music.core.ResponseCache
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.CoroutineScope
@@ -372,6 +373,7 @@ class DatastoreRepository(private val context: Context) {
         }
         // Cached responses belong to the previous account state (login/logout).
         ResponseCache.clear()
+        LikeManager.reset()
     }
 
     suspend fun logOut() {

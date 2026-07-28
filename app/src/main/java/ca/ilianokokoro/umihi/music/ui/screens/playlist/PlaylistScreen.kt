@@ -317,6 +317,8 @@ fun PlaylistScreen(
                                         }
                                     }, download = {
                                         playlistViewModel.downloadSong(song)
+                                    }, initialLikeStatus = true.takeIf {
+                                        playlistInfo.info.isLikedSongsPlaylist
                                     })
                                 }
                             }
@@ -328,4 +330,3 @@ fun PlaylistScreen(
 
     }
 }
-

@@ -74,6 +74,12 @@ object ResponseCache {
         entries[key] = Entry(value, System.currentTimeMillis())
     }
 
+    /** Invalidates one memory entry after a mutation without flushing unrelated cached screens. */
+    @Synchronized
+    fun remove(key: String) {
+        entries.remove(key)
+    }
+
     /**
      * Reads the on-disk mirror for [key], deserialized with [serializer]. Returns null when the
      * mirror is unset, missing, unreadable or older than [DISK_MAX_AGE_MS] (in which case the stale

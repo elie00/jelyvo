@@ -170,6 +170,7 @@
     <string name="home_mix_replay">Rejouer</string>
     <string name="home_mix_rediscover">Redécouvertes</string>
     <string name="lyrics_unavailable">Paroles indisponibles</string>
+    <string name="album_unavailable">Album indisponible pour ce titre</string>
     <string name="equalizer_title">Égaliseur</string>
     <string name="equalizer_subtitle">Ajustez les bandes, les préréglages et l\'amplification des basses</string>
     <string name="import_from_spotify_title">Importer depuis Spotify</string>
@@ -225,6 +226,8 @@
     <string name="add_to_liked">Ajouter aux titres aimés</string>
     <string name="added_to_liked_toast">Ajouté aux titres aimés</string>
     <string name="add_to_liked_failed_toast">Impossible d\'ajouter aux titres aimés</string>
+    <string name="removed_from_liked_toast">Retiré des titres aimés</string>
+    <string name="remove_from_liked_failed_toast">Impossible de retirer des titres aimés</string>
     <string name="song_downloaded">Titre téléchargé</string>
     <string name="download_failed">Échec du téléchargement</string>
     <string name="failed_to_download_song">Impossible de télécharger %1$s - %2$s</string>

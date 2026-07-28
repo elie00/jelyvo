@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,12 +14,16 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
@@ -28,6 +33,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.LyricLine
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import kotlin.math.ceil
 
 /**
  * Displays the lyrics for the current song.
@@ -47,6 +53,7 @@ fun LyricsPanel(
     currentPositionMs: Long,
     modifier: Modifier = Modifier,
     onSeekTo: (Long) -> Unit = {},
+    onRetry: () -> Unit = {},
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -56,25 +63,13 @@ fun LyricsPanel(
             is ApiResult.Loading -> LoadingAnimation()
 
             is ApiResult.Error -> {
-                Text(
-                    text = stringResource(R.string.lyrics_unavailable),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(24.dp)
-                )
+                LyricsUnavailable(onRetry = onRetry)
             }
 
             is ApiResult.Success -> {
                 val lyrics = lyricsState.data
                 if (lyrics.isEmpty) {
-                    Text(
-                        text = stringResource(R.string.lyrics_unavailable),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(24.dp)
-                    )
+                    LyricsUnavailable(onRetry = onRetry)
                 } else {
                     SyncedLyricsList(
                         lyrics = lyrics,
@@ -83,6 +78,25 @@ fun LyricsPanel(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LyricsUnavailable(onRetry: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(24.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.lyrics_unavailable),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        TextButton(onClick = onRetry) {
+            Text(stringResource(R.string.retry))
         }
     }
 }
@@ -106,6 +120,25 @@ private fun SyncedLyricsList(
             }
         }
     }
+    val activeProgress = remember(lyrics, activeIndex, currentPositionMs) {
+        if (activeIndex < 0) {
+            0f
+        } else {
+            val start = lyrics.lines[activeIndex].timeMs ?: currentPositionMs
+            val end = lyrics.lines
+                .asSequence()
+                .drop(activeIndex + 1)
+                .mapNotNull(LyricLine::timeMs)
+                .firstOrNull()
+                ?: (start + DEFAULT_LINE_DURATION_MS)
+            if (end <= start) {
+                1f
+            } else {
+                ((currentPositionMs - start).toFloat() / (end - start).toFloat())
+                    .coerceIn(0f, 1f)
+            }
+        }
+    }
 
     // Auto-scroll to keep the active line visible.
     LaunchedEffect(activeIndex) {
@@ -124,6 +157,7 @@ private fun SyncedLyricsList(
             LyricRow(
                 line = line,
                 isActive = index == activeIndex,
+                activeProgress = if (index == activeIndex) activeProgress else 0f,
                 onSeekTo = onSeekTo,
             )
         }
@@ -134,19 +168,30 @@ private fun SyncedLyricsList(
 private fun LyricRow(
     line: LyricLine,
     isActive: Boolean,
+    activeProgress: Float,
     onSeekTo: (Long) -> Unit,
 ) {
     val color by animateColorAsState(
         targetValue = if (isActive) {
-            MaterialTheme.colorScheme.primary
+            // The current line stays readable while only the words already sung receive primary.
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.52f)
         },
         label = "lyricLineColor"
     )
+    val highlightedColor = MaterialTheme.colorScheme.primary
+    val displayedText = remember(line.text, isActive, activeProgress, highlightedColor) {
+        karaokeText(
+            text = line.text,
+            progress = activeProgress,
+            highlightedColor = highlightedColor,
+            enabled = isActive,
+        )
+    }
 
     Text(
-        text = line.text,
+        text = displayedText,
         style = if (isActive) {
             MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold)
         } else {
@@ -163,3 +208,42 @@ private fun LyricRow(
             )
     )
 }
+
+/**
+ * LRCLIB timestamps each line rather than every syllable. Interpolating between two line starts
+ * gives a stable word-by-word progression while preserving the exact timing and seek behaviour.
+ */
+internal fun karaokeText(
+    text: String,
+    progress: Float,
+    highlightedColor: androidx.compose.ui.graphics.Color,
+    enabled: Boolean,
+): AnnotatedString {
+    if (!enabled || text.isBlank()) {
+        return AnnotatedString(text)
+    }
+
+    val words = Regex("""\S+""").findAll(text).toList()
+    if (words.isEmpty()) {
+        return AnnotatedString(text)
+    }
+    val highlightedCount = ceil(progress.coerceIn(0f, 1f) * words.size)
+        .toInt()
+        .coerceIn(1, words.size)
+
+    return buildAnnotatedString {
+        append(text)
+        words.take(highlightedCount).forEach { word ->
+            addStyle(
+                style = SpanStyle(
+                    color = highlightedColor,
+                    fontWeight = FontWeight.ExtraBold,
+                ),
+                start = word.range.first,
+                end = word.range.last + 1,
+            )
+        }
+    }
+}
+
+private const val DEFAULT_LINE_DURATION_MS = 5_000L

@@ -1014,6 +1014,7 @@ private fun LikedSongListItem(
                 onOpenAlbum(id, song.albumName ?: "", song.thumbnailHref)
             }
         },
+        initialLikeStatus = true,
     )
 }
 

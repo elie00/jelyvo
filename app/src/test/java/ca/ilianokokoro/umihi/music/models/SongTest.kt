@@ -83,4 +83,54 @@ class SongTest {
         assertTrue(forcedVideo.isVideo)
         assertTrue(forcedVideo.forceVideo)
     }
+
+    @Test
+    fun `updating like status preserves transient navigation and playback metadata`() {
+        val original = Song(youtubeId = "abc", isLiked = false).also {
+            it.albumId = "album"
+            it.albumName = "Album"
+            it.artistId = "artist"
+            it.isVideo = true
+            it.forceVideo = true
+            it.viewCount = "1M views"
+            it.trackNumber = 3
+            it.discNumber = 2
+        }
+
+        val liked = original.withLikeStatus(true)
+
+        assertEquals(true, liked.isLiked)
+        assertEquals("album", liked.albumId)
+        assertEquals("Album", liked.albumName)
+        assertEquals("artist", liked.artistId)
+        assertTrue(liked.isVideo)
+        assertTrue(liked.forceVideo)
+        assertEquals("1M views", liked.viewCount)
+        assertEquals(3, liked.trackNumber)
+        assertEquals(2, liked.discNumber)
+    }
+
+    @Test
+    fun `album context fills artwork and preserves transient metadata`() {
+        val song = Song(
+            youtubeId = "abc",
+            title = "Track",
+            thumbnailHref = "",
+        ).also {
+            it.artistId = "artist"
+            it.trackNumber = 4
+        }
+
+        val queued = song.withAlbumContext(
+            albumId = "MPRE_album",
+            albumName = "The Album",
+            artworkHref = "https://img/cover.jpg",
+        )
+
+        assertEquals("MPRE_album", queued.albumId)
+        assertEquals("The Album", queued.albumName)
+        assertEquals("https://img/cover.jpg", queued.thumbnailHref)
+        assertEquals("artist", queued.artistId)
+        assertEquals(4, queued.trackNumber)
+    }
 }

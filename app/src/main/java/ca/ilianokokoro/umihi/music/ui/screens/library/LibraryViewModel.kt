@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
@@ -47,6 +48,30 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         load()
         observeLocalPlaylists()
         observeLikedSongsSearchQuery()
+        observeLikeChanges()
+    }
+
+    /**
+     * Keeps the visible automatic playlist in sync with actions made from any row or the player.
+     * Unlike removes the row immediately; a new like is inserted without requiring navigation.
+     */
+    private fun observeLikeChanges() {
+        viewModelScope.launch {
+            LikeManager.changes.collect {
+                _uiState.update(::mergeCurrentLikedSongs)
+            }
+        }
+    }
+
+    private fun mergeCurrentLikedSongs(state: LibraryState): LibraryState {
+        val screenState = state.screenState as? ScreenState.Success ?: return state
+        return state.copy(
+            screenState = screenState.copy(
+                library = screenState.library.copy(
+                    likedSongs = LikeManager.mergeLikedSongs(screenState.library.likedSongs)
+                )
+            )
+        )
     }
 
     /** Debounces the liked-songs search field before it is applied as a filter. */
@@ -235,7 +260,13 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                         }
 
                         is ApiResult.Success -> currentState.copy(
-                            screenState = ScreenState.Success(result.data)
+                            screenState = ScreenState.Success(
+                                result.data.copy(
+                                    likedSongs = LikeManager.mergeLikedSongs(
+                                        result.data.likedSongs
+                                    )
+                                )
+                            )
                         )
 
                         is ApiResult.Error -> {

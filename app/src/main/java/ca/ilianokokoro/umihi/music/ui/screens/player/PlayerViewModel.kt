@@ -19,6 +19,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
@@ -146,26 +147,25 @@ class PlayerViewModel(application: Application) :
 
             _uiState.update { it.copy(isLiked = newLiked, isLiking = true) }
 
-            try {
-                YoutubeApiClient.setLike(
-                    currentSong.youtubeId,
-                    liked = newLiked,
-                    settings
-                )
+            val succeeded = LikeManager.setLikedAndWait(
+                song = currentSong,
+                liked = newLiked,
+                context = getApplication(),
+                currentStatus = isCurrentlyLiked,
+            )
 
+            if (succeeded) {
                 _uiState.update { state ->
                     val updatedQueue = state.queue.toMutableList().apply {
                         val index = state.currentIndex
                         if (index in indices) {
-                            set(index, this[index].copy(isLiked = newLiked))
+                            set(index, this[index].withLikeStatus(newLiked))
                         }
                     }
                     state.copy(isLiked = newLiked, isLiking = false, queue = updatedQueue)
                 }
-            } catch (e: Exception) {
-                // Revert on failure
+            } else {
                 _uiState.update { it.copy(isLiked = isCurrentlyLiked, isLiking = false) }
-                printe(message = "Failed to toggle like: ${e.message}", exception = e)
             }
         }
     }
@@ -248,6 +248,70 @@ class PlayerViewModel(application: Application) :
                 )
             } finally {
                 _uiState.update { it.copy(isResolvingArtist = false) }
+            }
+        }
+    }
+
+    /**
+     * Opens the current track's album. Album-page queues carry this context up front; restored
+     * queues and radio items resolve it lazily through watch-next so the menu action remains useful
+     * instead of disappearing when metadata is incomplete.
+     */
+    fun openAlbum(onOpenAlbum: (Song) -> Unit) {
+        val currentSong = _uiState.value.queue.getOrNull(_uiState.value.currentIndex) ?: return
+
+        if (currentSong.albumId != null) {
+            onOpenAlbum(currentSong)
+            return
+        }
+        if (currentSong.isLocal || _uiState.value.isResolvingAlbum) {
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isResolvingAlbum = true) }
+            try {
+                val album = YoutubeDataExtractor.extractAlbumBrowseInfo(
+                    YoutubeApiClient.next(currentSong.youtubeId),
+                    currentSong.youtubeId,
+                )
+                if (album == null) {
+                    Toast.makeText(
+                        getApplication(),
+                        R.string.album_unavailable,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    return@launch
+                }
+
+                val resolvedSong = currentSong.withAlbumContext(
+                    albumId = album.first,
+                    albumName = album.second,
+                )
+                _uiState.update { state ->
+                    val updatedQueue = state.queue.toMutableList().apply {
+                        val index = state.currentIndex
+                        if (index in indices) {
+                            set(index, resolvedSong)
+                        }
+                    }
+                    state.copy(queue = updatedQueue)
+                }
+                onOpenAlbum(resolvedSong)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                printe(
+                    message = "Failed to resolve album for ${currentSong.youtubeId}: ${e.message}",
+                    exception = e,
+                )
+                Toast.makeText(
+                    getApplication(),
+                    R.string.album_unavailable,
+                    Toast.LENGTH_SHORT,
+                ).show()
+            } finally {
+                _uiState.update { it.copy(isResolvingAlbum = false) }
             }
         }
     }
@@ -598,7 +662,7 @@ class PlayerViewModel(application: Application) :
         return freshQueue.map { freshSong ->
             previousById[freshSong.youtubeId]?.let { existing ->
                 if (existing.isLiked != freshSong.isLiked) {
-                    freshSong.copy(isLiked = existing.isLiked)
+                    freshSong.withLikeStatus(existing.isLiked)
                 } else {
                     freshSong
                 }
@@ -644,6 +708,11 @@ class PlayerViewModel(application: Application) :
 
     fun toggleLyricsVisibility() {
         _uiState.update { it.copy(areLyricsShown = !it.areLyricsShown) }
+    }
+
+    fun retryLyrics() {
+        val currentSong = _uiState.value.queue.getOrNull(_uiState.value.currentIndex) ?: return
+        loadLyrics(currentSong)
     }
 
     private fun updateQueue() {

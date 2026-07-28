@@ -13,6 +13,7 @@ import androidx.work.WorkInfo
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
@@ -65,9 +66,35 @@ class PlaylistViewModel(
 
     init {
         observeSongDownloads()
+        observeLikeChanges()
         viewModelScope.launch {
             getPlaylistInfoAsync()
             observerDownloadJob()
+        }
+    }
+
+    /**
+     * The automatic liked-songs playlist is mutable through every track menu and the player.
+     * Reflect those mutations in the current list instead of making the user leave and reopen it.
+     */
+    private fun observeLikeChanges() {
+        if (!playlistInfo.isLikedSongsPlaylist) {
+            return
+        }
+        viewModelScope.launch {
+            LikeManager.changes.collect {
+                _uiState.update { currentState ->
+                    val success = currentState.screenState as? ScreenState.Success
+                        ?: return@update currentState
+                    currentState.copy(
+                        screenState = success.copy(
+                            playlist = success.playlist.copy(
+                                songs = LikeManager.mergeLikedSongs(success.playlist.songs)
+                            )
+                        )
+                    )
+                }
+            }
         }
     }
 
@@ -296,7 +323,17 @@ class PlaylistViewModel(
 
                                 ApiResult.Loading -> ScreenState.Loading(playlistInfo)
                                 is ApiResult.Success -> {
-                                    ScreenState.Success(playlist = apiResult.data)
+                                    ScreenState.Success(
+                                        playlist = if (playlistInfo.isLikedSongsPlaylist) {
+                                            apiResult.data.copy(
+                                                songs = LikeManager.mergeLikedSongs(
+                                                    apiResult.data.songs
+                                                )
+                                            )
+                                        } else {
+                                            apiResult.data
+                                        }
+                                    )
                                 }
                             }
                         )

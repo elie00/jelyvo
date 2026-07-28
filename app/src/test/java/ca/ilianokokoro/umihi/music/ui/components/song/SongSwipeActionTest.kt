@@ -20,9 +20,9 @@ class SongSwipeActionTest {
     }
 
     @Test
-    fun `swiping toward the leading edge likes the song only when logged in`() {
+    fun `swiping toward the leading edge toggles liked state only when logged in`() {
         assertEquals(
-            SongSwipeAction.AddToLiked,
+            SongSwipeAction.ToggleLiked,
             songSwipeAction(SwipeToDismissBoxValue.StartToEnd, isLoggedIn = true)
         )
         assertNull(songSwipeAction(SwipeToDismissBoxValue.StartToEnd, isLoggedIn = false))
@@ -32,5 +32,29 @@ class SongSwipeActionTest {
     fun `a settled row runs nothing`() {
         assertNull(songSwipeAction(SwipeToDismissBoxValue.Settled, isLoggedIn = true))
         assertNull(songSwipeAction(SwipeToDismissBoxValue.Settled, isLoggedIn = false))
+    }
+
+    @Test
+    fun `session status overrides playlist context and embedded metadata`() {
+        assertEquals(
+            false,
+            resolveSongLikeStatus(
+                sessionStatus = false,
+                contextualStatus = true,
+                embeddedStatus = true,
+            )
+        )
+    }
+
+    @Test
+    fun `liked playlist context fills missing metadata`() {
+        assertEquals(
+            true,
+            resolveSongLikeStatus(
+                sessionStatus = null,
+                contextualStatus = true,
+                embeddedStatus = null,
+            )
+        )
     }
 }

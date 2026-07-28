@@ -94,6 +94,46 @@ data class Song(
     @Ignore
     var discNumber: Int? = null
 
+    /**
+     * Returns this song with an updated like status while preserving the transient metadata that
+     * a data-class [copy] would otherwise reset. This keeps artist/album navigation and local or
+     * video playback intact when a like action updates a queue or playlist row optimistically.
+     */
+    fun withLikeStatus(liked: Boolean?): Song =
+        copy(isLiked = liked).also(::copyTransientMetadataTo)
+
+    /**
+     * Attaches the album page that supplied this track before it enters the playback queue.
+     * Album rows frequently omit their own MPRE browse link because the surrounding page already
+     * provides it; carrying that context in MediaItem extras keeps "View album" available later.
+     */
+    fun withAlbumContext(
+        albumId: String,
+        albumName: String,
+        artworkHref: String = thumbnailHref,
+    ): Song = copy(
+        thumbnailHref = thumbnailHref.ifBlank { artworkHref },
+    ).also { updated ->
+        copyTransientMetadataTo(updated)
+        updated.albumId = albumId
+        updated.albumName = albumName
+    }
+
+    private fun copyTransientMetadataTo(updated: Song) {
+        updated.albumId = albumId
+        updated.albumName = albumName
+        updated.artistId = artistId
+        updated.isLocal = isLocal
+        updated.localUri = localUri
+        updated.isSuggestion = isSuggestion
+        updated.forceVideo = forceVideo
+        updated.isVideo = isVideo
+        updated.viewCount = viewCount
+        updated.playCount = playCount
+        updated.trackNumber = trackNumber
+        updated.discNumber = discNumber
+    }
+
     val mediaItem: MediaItem
         get() {
             val extras = Bundle()
@@ -192,4 +232,3 @@ data class Song(
     }
 
 }
-
