@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
 
 /**
  * A page of search results plus the continuation token used to load the next page (null when there
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Immutable
  * out of [items] so the UI can render it as a dedicated card; null on scoped tabs, continuation
  * pages and responses without a card.
  */
+@Serializable
 data class SearchResult(
     val items: List<SearchItem>,
     val continuation: String?,
@@ -25,6 +27,7 @@ data class SearchResult(
  * verbatim through [originalParams]; when false the results are for the query as typed and
  * [correctedQuery] is only suggested ("Did you mean…").
  */
+@Serializable
 @Immutable
 data class SpellCorrection(
     val correctedQuery: String,
@@ -52,14 +55,17 @@ enum class SearchFilter(val params: String) {
     Library(""),
 }
 
+@Serializable
 @Immutable
 sealed interface SearchItem {
     val id: String
 
+    @Serializable
     data class Track(val song: Song) : SearchItem {
         override val id: String get() = song.youtubeId
     }
 
+    @Serializable
     data class Album(
         override val id: String,
         val title: String,
@@ -67,6 +73,7 @@ sealed interface SearchItem {
         val thumbnail: String,
     ) : SearchItem
 
+    @Serializable
     data class Artist(
         override val id: String,
         val name: String,

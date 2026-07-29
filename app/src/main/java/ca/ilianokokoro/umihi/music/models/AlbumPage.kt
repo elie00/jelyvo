@@ -1,7 +1,9 @@
 package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Immutable
 data class AlbumPage(
     val name: String,
@@ -30,6 +32,7 @@ data class AlbumPage(
 )
 
 /** Metadata parsed from the header of an album browse response. Missing fields are empty. */
+@Serializable
 @Immutable
 data class AlbumHeaderInfo(
     val title: String = "",

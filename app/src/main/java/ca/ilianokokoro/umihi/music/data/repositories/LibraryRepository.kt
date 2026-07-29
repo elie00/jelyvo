@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.cachedApiFlow
+import ca.ilianokokoro.umihi.music.core.localizedCacheKey
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.datasources.LibraryDataSource
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
@@ -12,6 +13,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.builtins.ListSerializer
 
 class LibraryRepository {
     private val libraryDataSource = LibraryDataSource()
@@ -25,7 +27,11 @@ class LibraryRepository {
         settings: UmihiSettings,
         useCache: Boolean = true,
     ): Flow<ApiResult<Library>> =
-        cachedApiFlow(key = cacheKey(settings), useCache = useCache) {
+        cachedApiFlow(
+            key = cacheKey(settings),
+            useCache = useCache,
+            diskSerializer = Library.serializer(),
+        ) {
             fetchLibrary(settings)
         }
 
@@ -67,7 +73,11 @@ class LibraryRepository {
         settings: UmihiSettings,
         useCache: Boolean = true,
     ): Flow<ApiResult<List<HomeFeedItem.Album>>> =
-        cachedApiFlow(key = "new-releases:${settings.dataSyncId.orEmpty()}", useCache = useCache) {
+        cachedApiFlow(
+            key = localizedCacheKey("new-releases:${settings.dataSyncId.orEmpty()}"),
+            useCache = useCache,
+            diskSerializer = ListSerializer(HomeFeedItem.Album.serializer()),
+        ) {
             fetchNewReleases(settings)
         }
 
@@ -126,7 +136,8 @@ class LibraryRepository {
          * ResponseCache key of the library page. Exposed so the local library search can read the
          * cached liked songs without triggering a fetch of its own.
          */
-        fun cacheKey(settings: UmihiSettings) = "library:${settings.dataSyncId.orEmpty()}"
+        fun cacheKey(settings: UmihiSettings) =
+            localizedCacheKey("library:${settings.dataSyncId.orEmpty()}")
     }
 }
 

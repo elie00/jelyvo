@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.cachedApiFlow
+import ca.ilianokokoro.umihi.music.core.localizedCacheKey
 import ca.ilianokokoro.umihi.music.data.datasources.SongDataSource
 import ca.ilianokokoro.umihi.music.extensions.toException
 import ca.ilianokokoro.umihi.music.models.SearchResult
@@ -22,7 +23,11 @@ class SongRepository {
         filter: SearchFilter = SearchFilter.Songs,
         paramsOverride: String? = null,
     ): Flow<ApiResult<SearchResult>> =
-        cachedApiFlow(key = "search:${filter.name}:${paramsOverride.orEmpty()}:$query") {
+        cachedApiFlow(
+            key = localizedCacheKey(
+                "search:${filter.name}:${paramsOverride.orEmpty()}:$query"
+            )
+        ) {
             songDataSource.search(query, filter, paramsOverride)
         }
 

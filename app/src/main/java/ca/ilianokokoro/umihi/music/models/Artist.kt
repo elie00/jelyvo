@@ -1,7 +1,9 @@
 package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Immutable
 data class Artist(
     val name: String,
@@ -13,6 +15,7 @@ data class Artist(
     val subscriberCount: String? = null,
 )
 
+@Serializable
 @Immutable
 data class ArtistAlbum(
     val browseId: String,
@@ -27,6 +30,7 @@ data class ArtistAlbum(
 }
 
 /** A carousel section of an artist page (e.g. "Albums", "Singles", "Videos", "Fans might also like"). */
+@Serializable
 @Immutable
 data class ArtistSection(
     val title: String,
@@ -36,6 +40,7 @@ data class ArtistSection(
     val artists: List<Artist> = emptyList(),
 )
 
+@Serializable
 @Immutable
 data class ArtistPage(
     val artist: Artist,

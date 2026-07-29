@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.cachedApiFlow
+import ca.ilianokokoro.umihi.music.core.localizedCacheKey
 import ca.ilianokokoro.umihi.music.data.datasources.HomeDataSource
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
@@ -16,7 +17,7 @@ class HomeRepository {
         useCache: Boolean = true,
     ): Flow<ApiResult<List<HomeFeedSection>>> =
         cachedApiFlow(
-            key = "home:${settings.dataSyncId.orEmpty()}",
+            key = localizedCacheKey("home:${settings.dataSyncId.orEmpty()}"),
             useCache = useCache,
             // The home feed models are fully @Serializable, so mirror it to disk for an instant
             // cold-start paint (revalidated in the background).

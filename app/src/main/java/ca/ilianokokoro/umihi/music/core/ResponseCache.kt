@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -13,6 +14,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.io.File
+import java.util.Locale
 
 /**
  * Small in-memory LRU cache for network responses, keyed by browseId/query. Entries expire after
@@ -45,6 +47,7 @@ object ResponseCache {
 
     private val json = Json { ignoreUnknownKeys = true }
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val inFlight = HashMap<String, CompletableDeferred<Any>>()
 
     @Volatile
     private var diskDir: File? = null
@@ -127,6 +130,35 @@ object ResponseCache {
         diskDir?.listFiles()?.forEach { runCatching { it.delete() } }
     }
 
+    /**
+     * Shares one fetch between every concurrent caller of [key]. A waiting collector can be
+     * cancelled without cancelling the owner computation or the other waiters; owner failures are
+     * replayed to all waiters and the key is always released for a later retry.
+     */
+    @Suppress("UNCHECKED_CAST")
+    suspend fun <T : Any> getOrFetch(key: String, fetch: suspend () -> T): T {
+        val (deferred, ownsFetch) = synchronized(inFlight) {
+            inFlight[key]?.let { existing -> existing to false }
+                ?: CompletableDeferred<Any>().also { created ->
+                    inFlight[key] = created
+                } to true
+        }
+
+        if (ownsFetch) {
+            try {
+                deferred.complete(fetch())
+            } catch (throwable: Throwable) {
+                deferred.completeExceptionally(throwable)
+            } finally {
+                synchronized(inFlight) {
+                    if (inFlight[key] === deferred) inFlight.remove(key)
+                }
+            }
+        }
+
+        return deferred.await() as T
+    }
+
     /** Maps a cache key to a filesystem-safe file under the mirror directory. */
     private fun diskFileFor(key: String): File? {
         val dir = diskDir ?: return null
@@ -134,6 +166,10 @@ object ResponseCache {
         return File(dir, "$safeName.json")
     }
 }
+
+/** Server-rendered labels are language-dependent, so they must never share a cache key. */
+fun localizedCacheKey(base: String): String =
+    "$base:${Locale.getDefault().toLanguageTag().ifBlank { "en" }}"
 
 /**
  * Stale-while-revalidate wrapper around the usual `Loading -> Success/Error` repository flow:
@@ -169,7 +205,7 @@ fun <T : Any> cachedApiFlow(
     }
 
     val fresh = try {
-        fetch()
+        ResponseCache.getOrFetch(key, fetch)
     } catch (exception: CancellationException) {
         throw exception
     } catch (exception: Exception) {
