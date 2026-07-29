@@ -143,6 +143,10 @@ android {
         generateLocaleConfig = true
     }
 
+    sourceSets {
+        getByName("androidTest").assets.srcDir("$projectDir/schemas")
+    }
+
     // APK size: strip metadata files that R8/AGP would otherwise package. None of these are read
     // at runtime; Rhino's default Messages.properties is intentionally NOT excluded because Rhino
     // loads it for runtime error text.
@@ -272,5 +276,7 @@ dependencies {
 
     // Unit tests
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.room.testing)
 
 }
