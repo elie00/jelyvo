@@ -219,12 +219,22 @@ class DatastoreRepository(private val context: Context) {
         } ?: ThemePreset.Jelyvo
     }
 
-    /** Lightweight flows used on the latency-sensitive stream-resolution path. */
-    val audioQuality: Flow<AudioQuality> =
-        settings.map { it.audioQuality }.distinctUntilChanged()
+    /**
+     * Lightweight flows used on the latency-sensitive stream-resolution path.
+     *
+     * Read DataStore directly here. Mapping [settings] during construction re-entered
+     * [sharedSettings] before its singleton had been assigned, recursively constructing
+     * repositories until the release app crashed with a StackOverflowError on launch.
+     */
+    val audioQuality: Flow<AudioQuality> = context.dataStore.data.map { preferences ->
+        preferences[AUDIO_QUALITY]?.let { value ->
+            runCatching { AudioQuality.valueOf(value) }.getOrNull()
+        } ?: AudioQuality.High
+    }.distinctUntilChanged()
 
-    val dataSaverOnMetered: Flow<Boolean> =
-        settings.map { it.dataSaverOnMetered }.distinctUntilChanged()
+    val dataSaverOnMetered: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[DATA_SAVER_ON_METERED] ?: false
+    }.distinctUntilChanged()
 
     suspend fun getLastStreamQuality(): AudioQuality {
         cachedLastStreamQuality?.let { return it }
