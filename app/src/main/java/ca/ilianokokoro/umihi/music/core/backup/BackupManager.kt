@@ -77,6 +77,7 @@ data class BackupPlayerQueue(
     val shuffleEnabled: Boolean,
     val sourceName: String? = null,
     val isRadio: Boolean = false,
+    val sourceId: String? = null,
 )
 
 /**
@@ -178,6 +179,7 @@ object BackupManager {
                 shuffleEnabled = it.shuffleEnabled,
                 sourceName = it.sourceName,
                 isRadio = it.isRadio,
+                sourceId = it.sourceId,
             )
         }
 
@@ -258,6 +260,7 @@ object BackupManager {
                     shuffleEnabled = it.shuffleEnabled,
                     sourceName = it.sourceName,
                     isRadio = it.isRadio,
+                    sourceId = it.sourceId,
                 )
             )
         }

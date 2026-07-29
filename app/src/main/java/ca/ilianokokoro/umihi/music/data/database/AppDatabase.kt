@@ -8,12 +8,14 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalHistoryDataSource
+import ca.ilianokokoro.umihi.music.data.datasources.local.LocalPlayEventDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalPlaylistDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalPlayerQueueDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalSongDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalUserPlaylistDataSource
 import ca.ilianokokoro.umihi.music.data.datasources.local.VersionDataSource
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
+import ca.ilianokokoro.umihi.music.models.PlayEvent
 import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.PlaylistSongCrossRef
@@ -28,6 +30,7 @@ import ca.ilianokokoro.umihi.music.models.Version
         PlaylistSongCrossRef::class,
         Version::class,
         PlayHistoryEntry::class,
+        PlayEvent::class,
         PlayerQueueState::class,
         LocalPlaylist::class,
     ],
@@ -41,6 +44,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistRepository(): LocalPlaylistDataSource
     abstract fun versionRepository(): VersionDataSource
     abstract fun historyRepository(): LocalHistoryDataSource
+    abstract fun playEventRepository(): LocalPlayEventDataSource
     abstract fun playerQueueRepository(): LocalPlayerQueueDataSource
     abstract fun localPlaylistRepository(): LocalUserPlaylistDataSource
 
@@ -66,7 +70,10 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java, Constants.Database.NAME
             )
                 .addMigrations(*MIGRATIONS)
-                .fallbackToDestructiveMigration(dropAllTables = true)
+                // Versions 9+ contain user history, queues and local playlists and must always
+                // migrate explicitly. Only pre-v9 installs, for which this fork has no schema or
+                // migration chain, may use the legacy destructive fallback.
+                .fallbackToDestructiveMigrationFrom(true, 1, 2, 3, 4, 5, 6, 7, 8)
                 .build()
 
         private val MIGRATION_9_10 = object : Migration(9, 10) {
@@ -162,6 +169,38 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `${Constants.Database.PLAY_EVENTS_TABLE}` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `youtubeId` TEXT NOT NULL,
+                        `playedAt` INTEGER NOT NULL,
+                        `durationListenedMs` INTEGER NOT NULL,
+                        `trackDurationMs` INTEGER NOT NULL,
+                        `completionRatio` REAL NOT NULL,
+                        `endReason` TEXT NOT NULL,
+                        `hourOfDay` INTEGER NOT NULL,
+                        `dayOfWeek` INTEGER NOT NULL,
+                        `audioOutput` TEXT,
+                        `sourceContext` TEXT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_play_events_youtubeId` ON `${Constants.Database.PLAY_EVENTS_TABLE}` (`youtubeId`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_play_events_playedAt` ON `${Constants.Database.PLAY_EVENTS_TABLE}` (`playedAt`)")
+            }
+        }
+
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Nullable, like `sourceName` above: the stable queue-source identifier stored
+                // alongside the display name (e.g. "daily-mix").
+                db.execSQL("ALTER TABLE `${Constants.Database.PLAYER_QUEUE_TABLE}` ADD COLUMN `sourceId` TEXT")
+            }
+        }
+
         // Declared last on purpose: companion properties initialize top-down, so hoisting this
         // above the migrations above would capture nulls. `internal` so the unit test can assert
         // the chain has no gap (a missing hop is silently swallowed by the destructive fallback).
@@ -173,6 +212,8 @@ abstract class AppDatabase : RoomDatabase() {
             MIGRATION_13_14,
             MIGRATION_14_15,
             MIGRATION_15_16,
+            MIGRATION_16_17,
+            MIGRATION_17_18,
         )
     }
 }

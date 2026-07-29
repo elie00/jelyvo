@@ -37,6 +37,13 @@ data class DailyPlayCount(
     val playCount: Int,
 )
 
+/** Last known display artist of a track, used to key affinity scores by artist name. */
+@Immutable
+data class TrackArtist(
+    val youtubeId: String,
+    val artist: String,
+)
+
 /**
  * Per-track play count with the best known duration, used to estimate total listening time.
  * [durationMs] comes from playback progress tracking and may be 0; [duration] is the

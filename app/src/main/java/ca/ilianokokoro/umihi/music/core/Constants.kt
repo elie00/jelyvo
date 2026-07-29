@@ -119,11 +119,12 @@ object Constants {
 
     object Database {
         const val NAME = "umihi-music"
-        const val VERSION = 16
+        const val VERSION = 18
         const val SONGS_TABLE = "songs"
         const val PLAYLISTS_TABLE = "playlists"
         const val VERSIONS_TABLE = "versions"
         const val HISTORY_TABLE = "play_history"
+        const val PLAY_EVENTS_TABLE = "play_events"
         const val PLAYER_QUEUE_TABLE = "player_queue_state"
         const val LOCAL_PLAYLISTS_TABLE = "local_playlists"
         const val LOCAL_PLAYLIST_ID_PREFIX = "local_"

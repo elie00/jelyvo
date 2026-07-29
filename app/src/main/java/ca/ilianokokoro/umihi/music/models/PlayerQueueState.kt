@@ -14,6 +14,8 @@ data class PlayerQueueState(
     val shuffleEnabled: Boolean,
     val sourceName: String? = null,
     val isRadio: Boolean = false,
+    /** Stable non-localized source identifier (e.g. "daily-mix"); see PlayerManager. */
+    val sourceId: String? = null,
 ) {
     companion object {
         const val SINGLETON_ID = 0

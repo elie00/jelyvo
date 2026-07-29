@@ -162,6 +162,14 @@ object PlayerManager {
     private val _queueProvenance = MutableStateFlow<QueueProvenance?>(null)
     val queueProvenance: StateFlow<QueueProvenance?> = _queueProvenance.asStateFlow()
 
+    /**
+     * Stable, non-localized identifier of the queue source (e.g. "daily-mix"), when the queue
+     * was built by a feature that wants its plays recognizable in the play events regardless of
+     * the display language. Null for ordinary collections, which are identified by their name.
+     */
+    private val _queueSourceId = MutableStateFlow<String?>(null)
+    val queueSourceId: StateFlow<String?> = _queueSourceId.asStateFlow()
+
     /** True when the current queue is a radio built around a seed song. */
     private val _isRadioQueue = MutableStateFlow(false)
     val isRadioQueue: StateFlow<Boolean> = _isRadioQueue.asStateFlow()
@@ -173,6 +181,7 @@ object PlayerManager {
         sourceType: QueueSourceType? = null,
     ) {
         _queueSourceName.value = sourceName
+        _queueSourceId.value = sourceId
         _isRadioQueue.value = isRadio
         _queueProvenance.value = sourceName?.let {
             QueueProvenance(
@@ -187,9 +196,9 @@ object PlayerManager {
      * Re-applies the provenance of a queue restored from its persisted snapshot. A restored
      * collection queue keeps behaving like one (no autoplay extension past its end).
      */
-    fun restoreQueueProvenance(sourceName: String?, isRadio: Boolean) {
+    fun restoreQueueProvenance(sourceName: String?, isRadio: Boolean, sourceId: String? = null) {
         isCollectionQueue = sourceName != null
-        setQueueProvenance(sourceName, isRadio)
+        setQueueProvenance(sourceName, isRadio, sourceId)
     }
 
     fun updatePlaybackInfo(info: PlaybackAudioInfo) {

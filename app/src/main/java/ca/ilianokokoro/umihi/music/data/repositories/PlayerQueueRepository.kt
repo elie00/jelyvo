@@ -23,6 +23,7 @@ class PlayerQueueRepository(context: Context) {
         shuffleEnabled: Boolean,
         sourceName: String? = null,
         isRadio: Boolean = false,
+        sourceId: String? = null,
     ) {
         if (songs.isEmpty()) {
             dataSource.clear()
@@ -37,6 +38,7 @@ class PlayerQueueRepository(context: Context) {
                 shuffleEnabled = shuffleEnabled,
                 sourceName = sourceName,
                 isRadio = isRadio,
+                sourceId = sourceId,
             )
         )
     }
@@ -56,6 +58,7 @@ class PlayerQueueRepository(context: Context) {
             shuffleEnabled = state.shuffleEnabled,
             sourceName = state.sourceName,
             isRadio = state.isRadio,
+            sourceId = state.sourceId,
         )
     }
 
@@ -67,6 +70,7 @@ class PlayerQueueRepository(context: Context) {
         val shuffleEnabled: Boolean,
         val sourceName: String?,
         val isRadio: Boolean,
+        val sourceId: String?,
     )
 }
 

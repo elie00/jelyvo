@@ -56,10 +56,13 @@ import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
+import ca.ilianokokoro.umihi.music.core.reco.TasteProfileRepository
+import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayerQueueRepository
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
+import ca.ilianokokoro.umihi.music.models.PlayEvent
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.extensions.cappedTo
@@ -112,6 +115,8 @@ class PlaybackService : MediaLibraryService() {
     @Volatile private var isRestoringQueue = false
     private var consecutivePlaybackErrors = 0
     private val historyRepository by lazy { HistoryRepository(applicationContext) }
+    private val playEventRepository by lazy { PlayEventRepository(applicationContext) }
+    private val playEventTracker = PlayEventTracker()
     private val radioRepository = RadioRepository()
     private var lastRadioSeedId: String? = null
 
@@ -245,6 +250,17 @@ class PlaybackService : MediaLibraryService() {
                 mediaItem: MediaItem?,
                 reason: Int
             ) {
+                // Finalizes the previous track's play event and opens one for the new track.
+                // Safe during a queue restore: a play that never ran is never recorded.
+                persistPlayEvent(
+                    playEventTracker.onMediaItemTransition(
+                        youtubeId = mediaItem?.mediaId,
+                        isPlaying = activePlayer.isPlaying,
+                        nowMs = System.currentTimeMillis(),
+                        audioOutput = AudioOutputManager.currentOutput.value.name,
+                        sourceContext = playEventSourceContext(),
+                    )
+                )
                 scheduleQueuePersistence()
                 PlayerManager.updatePlaybackInfo(PlaybackAudioInfo())
                 updatePlaybackWidget(
@@ -274,6 +290,12 @@ class PlaybackService : MediaLibraryService() {
                 if (playbackState == Player.STATE_READY) {
                     // A track played successfully: reset the failure guard.
                     consecutivePlaybackErrors = 0
+                    playEventTracker.onDurationKnown(activePlayer.duration)
+                }
+                if (playbackState == Player.STATE_ENDED) {
+                    // The queue played out with no further transition: close the last play here.
+                    playEventTracker.onDurationKnown(activePlayer.duration)
+                    persistPlayEvent(playEventTracker.onPlaybackEnded(System.currentTimeMillis()))
                 }
             }
 
@@ -294,6 +316,7 @@ class PlaybackService : MediaLibraryService() {
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                playEventTracker.onIsPlayingChanged(isPlaying, System.currentTimeMillis())
                 if (!isPlaying) {
                     scheduleQueuePersistence()
                     serviceScope.launch { persistPlaybackPosition() }
@@ -388,6 +411,34 @@ class PlaybackService : MediaLibraryService() {
         restoreQueueAndStartPersistence()
         startAudioVolumeManagement()
         startAudioOutputEqualizer()
+
+        // Retention: listening signals older than a year no longer describe current taste.
+        serviceScope.launch {
+            playEventRepository.purgeExpired(System.currentTimeMillis())
+        }
+
+        // Publishes the persisted taste profile immediately, then recomputes it in the background.
+        TasteProfileRepository.getInstance(applicationContext).start()
+    }
+
+    /**
+     * Provenance stored on each play event: the stable source identifier when the feature that
+     * built the queue declared one (e.g. "daily-mix" — language-independent, so downstream
+     * feedback can key on it), else the collection name the queue was built from, or the
+     * "radio" marker for seed radios, which have no name of their own.
+     */
+    private fun playEventSourceContext(): String? =
+        PlayerManager.queueSourceId.value
+            ?: PlayerManager.queueSourceName.value
+            ?: PLAY_EVENT_SOURCE_RADIO.takeIf { PlayerManager.isRadioQueue.value }
+
+    private fun persistPlayEvent(event: PlayEvent?) {
+        if (event == null) return
+        serviceScope.launch {
+            playEventRepository.record(event)
+            // Debounced: a burst of skips ends in a single taste profile recomputation.
+            TasteProfileRepository.getInstance(applicationContext).onTrackFinished()
+        }
     }
 
     /**
@@ -461,6 +512,13 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         audioManager?.unregisterAudioDeviceCallback(audioDeviceCallback)
+        // Blocking on purpose (like the queue snapshot above): serviceScope is about to die, and
+        // the interrupted play is exactly the signal APP_KILLED exists for.
+        playEventTracker.onServiceDestroyed(System.currentTimeMillis())?.let { event ->
+            runBlocking(Dispatchers.IO) {
+                playEventRepository.record(event)
+            }
+        }
         serviceScope.cancel()
         mediaLibrarySession?.run {
             if (currentAudioSessionId > 0) {
@@ -512,6 +570,7 @@ class PlaybackService : MediaLibraryService() {
                     PlayerManager.restoreQueueProvenance(
                         sourceName = restored.sourceName,
                         isRadio = restored.isRadio,
+                        sourceId = restored.sourceId,
                     )
                     isRestoringQueue = false
                 }
@@ -821,6 +880,7 @@ class PlaybackService : MediaLibraryService() {
             shuffleEnabled = snapshot.shuffleEnabled,
             sourceName = snapshot.sourceName,
             isRadio = snapshot.isRadio,
+            sourceId = snapshot.sourceId,
         )
     }
 
@@ -837,6 +897,7 @@ class PlaybackService : MediaLibraryService() {
             shuffleEnabled = current.shuffleModeEnabled,
             sourceName = PlayerManager.queueSourceName.value,
             isRadio = PlayerManager.isRadioQueue.value,
+            sourceId = PlayerManager.queueSourceId.value,
         )
     }
 
@@ -848,6 +909,7 @@ class PlaybackService : MediaLibraryService() {
         val shuffleEnabled: Boolean,
         val sourceName: String?,
         val isRadio: Boolean,
+        val sourceId: String?,
     )
 
     /**

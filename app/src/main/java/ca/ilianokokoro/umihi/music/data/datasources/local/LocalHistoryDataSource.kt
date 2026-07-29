@@ -7,6 +7,7 @@ import androidx.room.Query
 import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.ArtistListeningStat
 import ca.ilianokokoro.umihi.music.models.DailyPlayCount
+import ca.ilianokokoro.umihi.music.models.TrackArtist
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
 import ca.ilianokokoro.umihi.music.models.TrackPlayDuration
 import kotlinx.coroutines.flow.Flow
@@ -138,6 +139,28 @@ interface LocalHistoryDataSource {
     /** Removes every play of the given track, so it leaves the recent and resume rows at once. */
     @Query("DELETE FROM play_history WHERE youtubeId = :youtubeId")
     suspend fun deleteTrack(youtubeId: String)
+
+    /** Latest known display artist per track, for the artist-name keyed taste profile. */
+    @Query(
+        """
+        SELECT youtubeId, artist FROM play_history
+        WHERE id IN (
+            SELECT MAX(id) FROM play_history WHERE artist != '' GROUP BY youtubeId
+        )
+        """
+    )
+    suspend fun getTrackArtists(): List<TrackArtist>
+
+    /** Latest history row per requested track, to resolve bare ids back into full songs. */
+    @Query(
+        """
+        SELECT * FROM play_history
+        WHERE id IN (
+            SELECT MAX(id) FROM play_history WHERE youtubeId IN (:ids) GROUP BY youtubeId
+        )
+        """
+    )
+    suspend fun getByYoutubeIds(ids: List<String>): List<PlayHistoryEntry>
 
     @Query("DELETE FROM play_history")
     suspend fun clear()

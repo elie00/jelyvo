@@ -42,6 +42,15 @@ class HistoryRepository(context: Context) {
     fun trackPlayDurations(since: Long): Flow<List<TrackPlayDuration>> =
         localHistoryDataSource.getTrackPlayDurations(since)
 
+    /** youtubeId -> latest known display artist, the join key of the taste profile. */
+    suspend fun artistByYoutubeId(): Map<String, String> =
+        localHistoryDataSource.getTrackArtists().associate { it.youtubeId to it.artist }
+
+    /** Resolves bare youtubeIds into full songs via their latest history row; unknown ids drop. */
+    suspend fun songsByIds(ids: List<String>): List<Song> =
+        if (ids.isEmpty()) emptyList()
+        else localHistoryDataSource.getByYoutubeIds(ids).map { it.toSong() }
+
     suspend fun record(song: Song, playedAt: Long) {
         if (song.youtubeId.isBlank()) return
         localHistoryDataSource.upsert(PlayHistoryEntry.fromSong(song, playedAt))
