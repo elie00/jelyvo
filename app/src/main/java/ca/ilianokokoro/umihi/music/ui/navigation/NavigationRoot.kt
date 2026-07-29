@@ -68,6 +68,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.LocalPlaylistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.moods.MoodCategoryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
+import ca.ilianokokoro.umihi.music.ui.screens.recodebug.RecoDebugScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
 import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.stats.ListeningStatsScreen
@@ -272,6 +273,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 openEqualizerScreen = { backStack.add(EqualizerScreenKey) },
                                 openSpotifyImport = { backStack.add(SpotifyImportScreenKey) },
                                 openListeningStats = { backStack.add(ListeningStatsScreenKey) },
+                                openRecoDebug = { backStack.add(RecoDebugScreenKey) },
                                 application = app
                             )
                         }
@@ -281,6 +283,13 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 application = app,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
+                            )
+                        }
+
+                        is RecoDebugScreenKey -> NavEntry(key) {
+                            RecoDebugScreen(
+                                application = app,
+                                onBack = backStack::safePop,
                             )
                         }
 

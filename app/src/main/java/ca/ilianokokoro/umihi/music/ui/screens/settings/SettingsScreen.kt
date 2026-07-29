@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FeaturedPlayList
 import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
+import androidx.compose.material.icons.automirrored.outlined.Rule
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Autorenew
@@ -122,6 +123,7 @@ fun SettingsScreen(
     openEqualizerScreen: () -> Unit,
     openSpotifyImport: () -> Unit,
     openListeningStats: () -> Unit,
+    openRecoDebug: () -> Unit,
     application: Application,
     settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory(application))
 ) {
@@ -349,6 +351,13 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.listening_stats_subtitle),
                                 leadingIcon = Icons.Outlined.Leaderboard,
                                 onClick = openListeningStats,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.reco_debug_title),
+                                subtitle = stringResource(R.string.reco_debug_subtitle),
+                                leadingIcon = Icons.AutoMirrored.Outlined.Rule,
+                                onClick = openRecoDebug,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(

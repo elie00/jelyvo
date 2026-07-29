@@ -22,6 +22,9 @@ data object SettingsScreenKey : NavKey
 data object ListeningStatsScreenKey : NavKey
 
 @Serializable
+data object RecoDebugScreenKey : NavKey
+
+@Serializable
 data class PlaylistScreenKey(val playlistInfo: PlaylistInfo) : NavKey
 
 @Serializable
@@ -81,6 +84,8 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             )
 
             ListeningStatsScreenKey -> ScreenUiConfig(showBottomBar = false)
+
+            RecoDebugScreenKey -> ScreenUiConfig(showBottomBar = false)
 
             is PlaylistScreenKey -> ScreenUiConfig(
                 showBottomBar = false
