@@ -15,7 +15,7 @@ concurrency:
 
 env:
   MAIN_PROJECT_MODULE: app
-  APK_FILE_NAME: UmihiMusic
+  APK_FILE_NAME: Jelyvo
   STORE_FILE: release-key.jks
   BETA_TAG: beta
 
@@ -70,9 +70,8 @@ jobs:
         run: |
           mkdir -p release-apks
 
-          # Gradle names the file Umihi.apk (outputFileName in app/build.gradle.kts); the release
-          # asset keeps the longer APK_FILE_NAME. These have been out of sync since c96021c.
-          cp app/build/outputs/apk/standalone/release/Umihi.apk \
+          # Keep this source name aligned with outputFileName in app/build.gradle.kts.
+          cp app/build/outputs/apk/standalone/release/Jelyvo.apk \
             release-apks/${{env.APK_FILE_NAME}}.apk
 
       - name: Upload APK Artifacts

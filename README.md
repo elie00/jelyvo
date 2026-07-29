@@ -10,19 +10,22 @@ A **Material YouTube Music player** for Android, built with **Kotlin** and **Jet
 
 ## Status ⚠️
 
-**Sideload only.** This fork is not published anywhere — no GitHub release, no F-Droid, no
-IzzyOnDroid, no Obtainium. You build it yourself and install the APK by hand.
+**Sideload only.** Signed APK releases are published on the dedicated public
+[`elie00/jelyvo-releases`](https://github.com/elie00/jelyvo-releases/releases) repository; Jelyvo is
+not distributed through Google Play, F-Droid, IzzyOnDroid or Obtainium.
 
-- The APK is **debug-signed**, so Play Protect warns on install ("Install anyway").
-- Updating means rebuilding and installing over the top **with the same debug key**. The in-app
-  updater was removed, so nothing updates itself.
+- Published APKs use Jelyvo's release key and the app can notify, download and install newer
+  versions from the dedicated releases repository.
+- Local release builds use the configured release key when `keystore.properties` is present and
+  otherwise fall back to the machine's debug key. A debug-signed build cannot update an officially
+  signed installation (and vice versa).
 - It keeps upstream's application id (`ca.ilianokokoro.umihi.music`), so it **cannot be installed
   alongside** the original app.
 
-Verification is partial and stated honestly: **127 JVM unit tests across 21 classes** pass, both
-debug and minified release APKs build, and the release APK has been installed and smoke-tested on
-an arm64 Android emulator. There is still no instrumented test suite; Chromecast hand-off still
-needs a physical receiver test and the full matrix needs a pass on the target phone.
+Verification is partial and stated honestly: the JVM unit-test suite passes, both debug and
+minified release APKs build, and the release APK has been installed and smoke-tested on an arm64
+Android emulator. There is still no instrumented test suite; Chromecast hand-off still needs a
+physical receiver test and the full matrix needs a pass on the target phone.
 
 ## Features ✨
 
