@@ -9,12 +9,17 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.reco.ContextMix
+import ca.ilianokokoro.umihi.music.core.reco.ContextMixRepository
+import ca.ilianokokoro.umihi.music.core.reco.DailyMixRepository
+import ca.ilianokokoro.umihi.music.core.workers.DailyMixScheduler
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HomeRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -43,12 +48,42 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val libraryRepository = LibraryRepository()
 
 
+    /** Today's generated daily mix; empty until loaded (or when generation yields nothing). */
+    private val dailyMixSongs = MutableStateFlow<List<Song>>(emptyList())
+
+    /** The morning/evening mix of the current slot; null outside both slots or until loaded. */
+    private val contextMix = MutableStateFlow<ContextMix?>(null)
+
     init {
         observeAccountSession()
         observeRecentlyPlayed()
         observeResumable()
         observeShortcuts()
         observeForYouMixes()
+        loadDailyMix()
+        loadContextMix()
+    }
+
+    /**
+     * Loads (generating on the fly when the cache misses today's date) the daily mix, and makes
+     * sure the periodic pre-generation worker is scheduled.
+     */
+    private fun loadDailyMix() {
+        viewModelScope.launch {
+            DailyMixScheduler.schedule(getApplication())
+            dailyMixSongs.value = DailyMixRepository
+                .getInstance(getApplication())
+                .todaysMix()
+        }
+    }
+
+    /** Loads the morning/evening mix; the repository returns null outside both slots. */
+    private fun loadContextMix() {
+        viewModelScope.launch {
+            contextMix.value = ContextMixRepository
+                .getInstance(getApplication())
+                .currentMix()
+        }
     }
 
     /**
@@ -112,14 +147,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** "For you" mixes derived from the local play history; see [buildForYouMixes]. */
+    /** "For you" mixes: the daily mix first, then the history-derived ones ([buildForYouMixes]). */
     private fun observeForYouMixes() {
         val now = System.currentTimeMillis()
         viewModelScope.launch {
             combine(
                 historyRepository.topTracks(now - REPLAY_WINDOW_MS, limit = HOME_MIX_MAX_SONGS),
                 historyRepository.topTracks(since = 0L, limit = ALL_TIME_SAMPLE),
-            ) { recentTops, allTimeTops -> buildForYouMixes(recentTops, allTimeTops, now) }
+                dailyMixSongs,
+                contextMix,
+            ) { recentTops, allTimeTops, daily, context ->
+                withContextMix(
+                    contextMixSongs = context?.songs.orEmpty(),
+                    bucket = context?.bucket,
+                    mixes = withDailyMix(daily, buildForYouMixes(recentTops, allTimeTops, now)),
+                )
+            }
                 .collect { mixes ->
                     _uiState.update { it.copy(forYouMixes = mixes) }
                 }

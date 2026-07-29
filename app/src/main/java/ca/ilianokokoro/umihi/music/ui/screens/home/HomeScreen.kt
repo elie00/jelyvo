@@ -48,6 +48,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.core.reco.CONTEXT_MIX_SOURCE_CONTEXT
+import ca.ilianokokoro.umihi.music.core.reco.DAILY_MIX_SOURCE_CONTEXT
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
@@ -192,8 +194,18 @@ fun HomeScreen(
                                                 ) {
                                                     // Resolved here so the click lambda stays plain.
                                                     val mixTitles = mapOf(
+                                                        HomeMixKind.DAILY to stringResource(R.string.home_mix_daily),
+                                                        HomeMixKind.CONTEXT_MORNING to stringResource(R.string.home_mix_morning),
+                                                        HomeMixKind.CONTEXT_EVENING to stringResource(R.string.home_mix_evening),
                                                         HomeMixKind.REPLAY to stringResource(R.string.home_mix_replay),
                                                         HomeMixKind.REDISCOVER to stringResource(R.string.home_mix_rediscover),
+                                                    )
+                                                    // Stable ids in the play events so the feedback
+                                                    // loop survives localization.
+                                                    val mixSourceIds = mapOf(
+                                                        HomeMixKind.DAILY to DAILY_MIX_SOURCE_CONTEXT,
+                                                        HomeMixKind.CONTEXT_MORNING to CONTEXT_MIX_SOURCE_CONTEXT,
+                                                        HomeMixKind.CONTEXT_EVENING to CONTEXT_MIX_SOURCE_CONTEXT,
                                                     )
                                                     ForYouMixesRow(
                                                         mixes = uiState.forYouMixes,
@@ -201,6 +213,7 @@ fun HomeScreen(
                                                             PlayerManager.playQueue(
                                                                 mix.songs.map { it.mediaItem },
                                                                 sourceName = mixTitles[mix.kind],
+                                                                sourceId = mixSourceIds[mix.kind],
                                                             )
                                                         }
                                                     )

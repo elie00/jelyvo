@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.home
 
 import androidx.compose.runtime.Immutable
+import ca.ilianokokoro.umihi.music.core.reco.DayBucket
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
 
@@ -10,6 +11,15 @@ import ca.ilianokokoro.umihi.music.models.TrackListeningStat
  * what was actually listened to.
  */
 enum class HomeMixKind {
+    /** The taste-profile-driven mix of the day, regenerated daily; see core/reco/DailyMix.kt. */
+    DAILY,
+
+    /** The morning slice of the context mix (5-11 h); see core/reco/ContextMix.kt. */
+    CONTEXT_MORNING,
+
+    /** The evening slice of the context mix (from 18 h); see core/reco/ContextMix.kt. */
+    CONTEXT_EVENING,
+
     /** The most played tracks of the recent period. */
     REPLAY,
 
@@ -63,4 +73,37 @@ fun buildForYouMixes(
     }
 
     return mixes
+}
+
+/**
+ * Prepends the daily mix card to the history-derived mixes. The daily mix always takes the
+ * first slot: it is the freshest, most personalized entry of the row. Skipped entirely while
+ * too small to feel like a real mix (below [HOME_MIX_MIN_SONGS]).
+ */
+fun withDailyMix(dailyMixSongs: List<Song>, mixes: List<HomeMix>): List<HomeMix> =
+    if (dailyMixSongs.size >= HOME_MIX_MIN_SONGS) {
+        listOf(HomeMix(HomeMixKind.DAILY, dailyMixSongs)) + mixes
+    } else {
+        mixes
+    }
+
+/**
+ * Inserts the context (morning/evening) mix card right behind the daily mix — or in front when
+ * there is no daily mix. Only the two slots that actually have a card are honoured: any other
+ * bucket (or none — outside both slots) leaves the row untouched, as does a too-small mix.
+ */
+fun withContextMix(
+    contextMixSongs: List<Song>,
+    bucket: DayBucket?,
+    mixes: List<HomeMix>,
+): List<HomeMix> {
+    val kind = when (bucket) {
+        DayBucket.MORNING -> HomeMixKind.CONTEXT_MORNING
+        DayBucket.EVENING -> HomeMixKind.CONTEXT_EVENING
+        else -> return mixes
+    }
+    if (contextMixSongs.size < HOME_MIX_MIN_SONGS) return mixes
+
+    val insertAt = if (mixes.firstOrNull()?.kind == HomeMixKind.DAILY) 1 else 0
+    return mixes.toMutableList().apply { add(insertAt, HomeMix(kind, contextMixSongs)) }
 }
