@@ -11,16 +11,22 @@ signé les versions publiques de Jelyvo.
 - L'application vérifie bien les mises à jour via
   `https://api.github.com/repos/elie00/jelyvo-releases/releases/latest`.
 - Elle attend un asset nommé exactement `Jelyvo.apk`.
-- La dernière version publique est `v2.3.1`.
-- `app/build.gradle.kts` annonce encore `2.3.1` avec le `versionCode` `20301`.
-- Le dernier code poussé pendant la session est `5140e948`.
-- Le certificat de l'APK public `v2.3.1` a cette empreinte SHA-256 :
+- La dernière version publique stable est `v2.3.3`, publiée le 29 juillet 2026 avec l'asset
+  `Jelyvo.apk`.
+- `app/build.gradle.kts` annonce `2.3.3` avec le `versionCode` `20303`.
+- Le commit de préparation de cette version est `503f2557`.
+- `v2.3.2` a été retirée du canal stable et marquée comme pré-release après la découverte d'un
+  crash récursif au démarrage. Le correctif est dans `cd88fcd3` et fait partie de `v2.3.3`.
+- Le certificat de l'APK public `v2.3.3` a cette empreinte SHA-256 :
 
   ```text
   b47ac9b86845664530b6e1a77465f210fa7b4913e77b1d44fde6a4f28fbe081d
   ```
 
-- L'APK construit sur le PC du bureau a une autre empreinte :
+- La clé officielle est présente sur le Mac dans
+  `/Users/eybo/keystores/jelyvo-release.keystore` et référencée par le fichier local
+  `keystore.properties`, ignoré par Git.
+- L'APK construit sur le PC du bureau avec son ancienne clé a une autre empreinte :
 
   ```text
   05c8405692fc3b43ec659d73d5d3db0570dd13d030f188a29d3d306afe13df1d
@@ -61,7 +67,8 @@ git status --short
 
 La dernière commande doit rester vide.
 
-Retrouver la clé qui a servi à publier `v2.3.1`. Si nécessaire :
+Sur le Mac de publication actuel, la clé officielle est déjà installée. Sur un nouveau poste,
+restaurer depuis la sauvegarde la clé qui a servi à publier `v2.3.3`. Si nécessaire :
 
 ```bash
 find ~ -type f \( -name "*.jks" -o -name "*.keystore" \) 2>/dev/null
@@ -83,13 +90,14 @@ FA:7B:49:13:E7:7B:1D:44:FD:E6:A4:F2:8F:BE:08:1D
 Copier ensuite la clé localement, sans l'ajouter à Git :
 
 ```bash
-cp /chemin/vers/la-cle.jks app/release-key.jks
+mkdir -p ~/keystores
+cp /chemin/vers/la-cle.jks ~/keystores/jelyvo-release.keystore
 ```
 
 Créer `keystore.properties` à la racine :
 
 ```properties
-storeFile=release-key.jks
+storeFile=/chemin/absolu/vers/jelyvo-release.keystore
 storePassword=REMPLACER
 keyAlias=REMPLACER
 keyPassword=REMPLACER
@@ -98,18 +106,21 @@ keyPassword=REMPLACER
 Vérifier immédiatement que ces fichiers sont bien ignorés :
 
 ```bash
-git status --short --ignored app/release-key.jks keystore.properties
+git status --short --ignored keystore.properties
 ```
 
 Ils doivent apparaître comme ignorés (`!!`), jamais comme fichiers à committer.
 
-## 2. Préparer la version 2.3.2
+## 2. Préparer la prochaine version
+
+La version qui suit `v2.3.3` doit utiliser au minimum le `versionCode` `20304`. Par exemple, pour
+préparer `v2.3.4` :
 
 Dans `app/build.gradle.kts`, modifier :
 
 ```kotlin
-val appVersionName = "2.3.2"
-val appVersionCode = 20302
+val appVersionName = "2.3.4"
+val appVersionCode = 20304
 ```
 
 Le `versionCode` doit toujours augmenter, même si le nom de version change autrement.
@@ -118,7 +129,7 @@ Puis créer un micro-commit :
 
 ```bash
 git add app/build.gradle.kts
-git commit -m "chore(release): prepare 2.3.2"
+git commit -m "chore(release): prepare 2.3.4"
 git push origin main
 ```
 
@@ -179,11 +190,11 @@ gh auth status
 Créer la release publique :
 
 ```bash
-gh release create v2.3.2 \
+gh release create v2.3.4 \
   app/build/outputs/apk/standalone/release/Jelyvo.apk \
   --repo elie00/jelyvo-releases \
-  --title "Jelyvo v2.3.2" \
-  --notes "Optimisations de vitesse, interface française complète et première étape du découpage architectural." \
+  --title "Jelyvo v2.3.4" \
+  --notes-file /chemin/vers/les-notes.md \
   --latest
 ```
 
@@ -192,7 +203,7 @@ L'asset doit conserver exactement le nom `Jelyvo.apk`.
 Vérifier ensuite :
 
 ```bash
-gh release view v2.3.2 \
+gh release view v2.3.4 \
   --repo elie00/jelyvo-releases \
   --json tagName,name,isDraft,isPrerelease,assets,url
 
@@ -208,7 +219,7 @@ Enfin, sur le S24 Ultra :
 1. ouvrir Jelyvo déjà installé ;
 2. aller dans Réglages > Mises à jour ;
 3. lancer une vérification manuelle ;
-4. télécharger et installer `2.3.2` sans désinstaller `2.3.1` ;
+4. télécharger et installer la nouvelle version sans désinstaller `2.3.3` ;
 5. vérifier que bibliothèque, téléchargements, historique et connexion sont conservés.
 
 Si Android affiche `INSTALL_FAILED_UPDATE_INCOMPATIBLE` ou demande de désinstaller l'application,
@@ -226,7 +237,7 @@ modifier le YAML ne suffira pas tant que ce blocage existe.
 Depuis le Mac, encoder la clé et créer le secret sans écrire la valeur dans un fichier suivi :
 
 ```bash
-base64 < app/release-key.jks | tr -d '\n' | \
+base64 < ~/keystores/jelyvo-release.keystore | tr -d '\n' | \
   gh secret set SIGNING_KEY --repo elie00/umihi-music
 
 gh secret set KEY_STORE_PASSWORD --repo elie00/umihi-music
@@ -316,11 +327,13 @@ Contrôler systématiquement :
 
 ## Résumé opérationnel
 
-Le dépôt de releases est déjà correctement lu par l'application. Les trois pièces manquantes sont :
+Le circuit manuel est opérationnel : la clé officielle est installée sur le Mac, `v2.3.3` est la
+release stable courante et son asset possède le bon nom et le bon certificat.
 
-1. récupérer sur le Mac la clé correspondant à `b47ac9b…` ;
-2. réparer la facturation et les secrets GitHub Actions ;
-3. publier explicitement dans `elie00/jelyvo-releases`, pas dans le dépôt source.
+Les deux chantiers restants concernent l'automatisation :
+
+1. réparer la facturation et configurer les secrets GitHub Actions ;
+2. faire publier le workflow explicitement dans `elie00/jelyvo-releases`, pas dans le dépôt source.
 
 En attendant l'automatisation, une publication manuelle avec `gh release create` est sûre à
 condition d'avoir vérifié la version et la signature officielle.

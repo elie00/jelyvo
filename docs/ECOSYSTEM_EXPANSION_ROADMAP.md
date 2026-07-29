@@ -1,5 +1,16 @@
 # Feuille de route d'expansion de l'écosystème Jelyvo
 
+## État d'avancement au 29 juillet 2026
+
+La phase A est lancée sur la base Android `v2.3.3`. Le premier incrément porte sur la classification
+réactive des largeurs de fenêtre et le remplacement de la navigation inférieure par une navigation
+latérale sur tablette, pliable et Samsung DeX. Les panneaux permanents, raccourcis clavier et menus
+contextuels viendront ensuite par petits lots validables.
+
+Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
+l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
+nouvelle application.
+
 ## Vision
 
 Jelyvo peut évoluer d'une application Android vers un écosystème musical cohérent sur téléphone,

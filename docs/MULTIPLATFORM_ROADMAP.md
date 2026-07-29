@@ -1,5 +1,17 @@
 # Feuille de route macOS Apple Silicon et Web
 
+## État d'avancement au 29 juillet 2026
+
+- Android stable : `v2.3.3` est publiée avec signature pérenne et mise à jour intégrée.
+- Découplage commencé : `SearchResponseParser` et plusieurs règles de lecture, de recommandation et
+  de file disposent déjà de tests JVM purs.
+- Blocage actuel : l'application reste organisée autour d'un unique module Android et les écrans
+  connaissent encore directement Media3, Room ou `Application`.
+- Chantier actif : terminer d'abord l'adaptation téléphone/tablette/DeX, puis extraire dans cet
+  ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
+- Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
+  adapter Android couvert par des tests contractuels.
+
 ## Décision recommandée
 
 Jelyvo peut devenir multiplateforme, mais les deux cibles ne doivent pas être développées en
