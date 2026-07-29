@@ -2,10 +2,16 @@
 
 ## État d'avancement au 29 juillet 2026
 
-La phase A est lancée sur la base Android `v2.3.3`. Le premier incrément porte sur la classification
-réactive des largeurs de fenêtre et le remplacement de la navigation inférieure par une navigation
-latérale sur tablette, pliable et Samsung DeX. Les panneaux permanents, raccourcis clavier et menus
-contextuels viendront ensuite par petits lots validables.
+La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments sont livrés sur `main` :
+
+- classification réactive compacte, moyenne et étendue ;
+- rail latéral à partir de 600 dp ;
+- file permanente dans le lecteur lorsque largeur et hauteur le permettent ;
+- conservation du lecteur pendant le redimensionnement d'une fenêtre DeX ;
+- commandes clavier du lecteur : espace, gauche, droite et Échap.
+
+Les prochains lots grand écran concernent les panneaux permanents hors lecteur, les menus
+contextuels à la souris et les raccourcis de navigation.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

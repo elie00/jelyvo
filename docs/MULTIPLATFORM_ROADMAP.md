@@ -7,8 +7,10 @@
   de file disposent déjà de tests JVM purs.
 - Blocage actuel : l'application reste organisée autour d'un unique module Android et les écrans
   connaissent encore directement Media3, Room ou `Application`.
-- Chantier actif : terminer d'abord l'adaptation téléphone/tablette/DeX, puis extraire dans cet
-  ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
+- Adaptation livrée : navigation latérale, file permanente du lecteur, redimensionnement continu et
+  premières commandes clavier sont présents sur `main`.
+- Chantier actif : terminer les interactions souris et les autres panneaux grand écran, puis
+  extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
