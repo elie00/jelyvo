@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.core.youtube
 import android.content.Context
 import android.widget.Toast
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.SingleFlight
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
@@ -2080,6 +2081,7 @@ object YoutubeDataExtractor {
      */
     private val videoStreamCache = ConcurrentHashMap<String, ResolvedAudioStream>()
     private val audioStreamCache = ConcurrentHashMap<String, ResolvedAudioStream>()
+    private val streamResolutionSingleFlight = SingleFlight()
 
     /**
      * Pre-flight check for video mode: resolves [song]'s stream with the video preference and
@@ -2203,24 +2205,30 @@ object YoutubeDataExtractor {
             }
         }
 
-        val resolved = getSongUrlFromYoutube(
-            song,
-            forceVideo = song.forceVideo,
-            quality = quality,
-        )
-        if (!song.forceVideo) {
-            audioStreamCache[song.youtubeId] = resolved
-            localSongRepository.setStreamInfo(
-                songId = song.youtubeId,
-                streamUrl = resolved.url,
-                loudnessDb = resolved.loudnessDb,
+        val resolutionKey = "${song.youtubeId}:${song.forceVideo}:${quality.name}"
+        return streamResolutionSingleFlight.execute(resolutionKey) {
+            // Prefetch and an immediate user skip can arrive together. Only the owner resolves the
+            // signed URL; every waiter receives the same stream instead of issuing a second player
+            // request (and a second NewPipe fallback on failure).
+            val resolved = getSongUrlFromYoutube(
+                song,
+                forceVideo = song.forceVideo,
+                quality = quality,
             )
-        } else {
-            videoStreamCache[song.youtubeId] = resolved
+            if (!song.forceVideo) {
+                audioStreamCache[song.youtubeId] = resolved
+                localSongRepository.setStreamInfo(
+                    songId = song.youtubeId,
+                    streamUrl = resolved.url,
+                    loudnessDb = resolved.loudnessDb,
+                )
+            } else {
+                videoStreamCache[song.youtubeId] = resolved
+            }
+            PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
+            printd("${song.youtubeId} : Got url from YouTube and saved song")
+            resolved
         }
-        PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
-        printd("${song.youtubeId} : Got url from YouTube and saved song")
-        return resolved
     }
 
     private suspend fun effectiveAudioQuality(context: Context): AudioQuality {

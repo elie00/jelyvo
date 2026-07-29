@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.encodeToString
@@ -219,22 +220,23 @@ class DatastoreRepository(private val context: Context) {
     }
 
     /** Lightweight flows used on the latency-sensitive stream-resolution path. */
-    val audioQuality: Flow<AudioQuality> = context.dataStore.data.map {
-        it[AUDIO_QUALITY]?.let { value ->
+    val audioQuality: Flow<AudioQuality> =
+        settings.map { it.audioQuality }.distinctUntilChanged()
+
+    val dataSaverOnMetered: Flow<Boolean> =
+        settings.map { it.dataSaverOnMetered }.distinctUntilChanged()
+
+    suspend fun getLastStreamQuality(): AudioQuality {
+        cachedLastStreamQuality?.let { return it }
+        val loaded = context.dataStore.data.first()[LAST_STREAM_QUALITY]?.let { value ->
             runCatching { AudioQuality.valueOf(value) }.getOrNull()
         } ?: AudioQuality.High
+        cachedLastStreamQuality = loaded
+        return loaded
     }
-
-    val dataSaverOnMetered: Flow<Boolean> = context.dataStore.data.map {
-        it[DATA_SAVER_ON_METERED] ?: false
-    }
-
-    suspend fun getLastStreamQuality(): AudioQuality =
-        context.dataStore.data.first()[LAST_STREAM_QUALITY]?.let { value ->
-            runCatching { AudioQuality.valueOf(value) }.getOrNull()
-        } ?: AudioQuality.High
 
     suspend fun setLastStreamQuality(quality: AudioQuality) {
+        cachedLastStreamQuality = quality
         context.dataStore.edit {
             it[LAST_STREAM_QUALITY] = quality.name
         }
@@ -400,6 +402,9 @@ class DatastoreRepository(private val context: Context) {
 
         @Volatile
         private var sharedSettingsFlow: StateFlow<UmihiSettings?>? = null
+
+        @Volatile
+        private var cachedLastStreamQuality: AudioQuality? = null
 
         private fun sharedSettings(applicationContext: Context): StateFlow<UmihiSettings?> {
             return sharedSettingsFlow ?: synchronized(this) {

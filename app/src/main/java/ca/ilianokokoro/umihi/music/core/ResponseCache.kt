@@ -1,7 +1,6 @@
 package ca.ilianokokoro.umihi.music.core
 
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -47,7 +46,7 @@ object ResponseCache {
 
     private val json = Json { ignoreUnknownKeys = true }
     private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val inFlight = HashMap<String, CompletableDeferred<Any>>()
+    private val fetchSingleFlight = SingleFlight()
 
     @Volatile
     private var diskDir: File? = null
@@ -135,29 +134,8 @@ object ResponseCache {
      * cancelled without cancelling the owner computation or the other waiters; owner failures are
      * replayed to all waiters and the key is always released for a later retry.
      */
-    @Suppress("UNCHECKED_CAST")
-    suspend fun <T : Any> getOrFetch(key: String, fetch: suspend () -> T): T {
-        val (deferred, ownsFetch) = synchronized(inFlight) {
-            inFlight[key]?.let { existing -> existing to false }
-                ?: CompletableDeferred<Any>().also { created ->
-                    inFlight[key] = created
-                } to true
-        }
-
-        if (ownsFetch) {
-            try {
-                deferred.complete(fetch())
-            } catch (throwable: Throwable) {
-                deferred.completeExceptionally(throwable)
-            } finally {
-                synchronized(inFlight) {
-                    if (inFlight[key] === deferred) inFlight.remove(key)
-                }
-            }
-        }
-
-        return deferred.await() as T
-    }
+    suspend fun <T : Any> getOrFetch(key: String, fetch: suspend () -> T): T =
+        fetchSingleFlight.execute(key, fetch)
 
     /** Maps a cache key to a filesystem-safe file under the mirror directory. */
     private fun diskFileFor(key: String): File? {
