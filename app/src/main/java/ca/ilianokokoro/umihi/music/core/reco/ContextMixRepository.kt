@@ -8,6 +8,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -53,16 +54,18 @@ class ContextMixRepository private constructor(context: Context) {
     suspend fun currentMix(
         nowMs: Long = System.currentTimeMillis(),
         zone: ZoneId = ZoneId.systemDefault(),
-    ): ContextMix? = generationMutex.withLock {
-        val bucket = contextMixBucket(hourOfDay(nowMs, zone)) ?: return@withLock null
-        val today = dailyMixEpochDay(nowMs, zone)
-        val cached = loadCache()
-        if (cached != null && cached.epochDay == today && cached.bucket == bucket &&
-            cached.songs.isNotEmpty()
-        ) {
-            return@withLock ContextMix(bucket = bucket, songs = cached.songs)
+    ): ContextMix? = withContext(Dispatchers.IO) {
+        generationMutex.withLock {
+            val bucket = contextMixBucket(hourOfDay(nowMs, zone)) ?: return@withLock null
+            val today = dailyMixEpochDay(nowMs, zone)
+            val cached = loadCache()
+            if (cached != null && cached.epochDay == today && cached.bucket == bucket &&
+                cached.songs.isNotEmpty()
+            ) {
+                return@withLock ContextMix(bucket = bucket, songs = cached.songs)
+            }
+            regenerate(nowMs, today, bucket)
         }
-        regenerate(nowMs, today, bucket)
     }
 
     private suspend fun regenerate(nowMs: Long, epochDay: Long, bucket: DayBucket): ContextMix? {

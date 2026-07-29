@@ -22,8 +22,10 @@ import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,29 +62,31 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         observeResumable()
         observeShortcuts()
         observeForYouMixes()
-        loadDailyMix()
-        loadContextMix()
+        loadPersonalMixesAfterFirstPaint()
     }
 
     /**
-     * Loads (generating on the fly when the cache misses today's date) the daily mix, and makes
-     * sure the periodic pre-generation worker is scheduled.
+     * Keeps recommendation generation off the first-frame critical path. Local history and the
+     * stale home feed can paint first; then both mixes load concurrently on IO and continue to
+     * share their expensive profile/candidate prefix through MixGenerationInputsProvider.
+     *
+     * WorkManager initialization is deferred with the same job because scheduling a periodic
+     * worker may otherwise initialize its database while Compose is creating the Home screen.
      */
-    private fun loadDailyMix() {
-        viewModelScope.launch {
+    private fun loadPersonalMixesAfterFirstPaint() {
+        viewModelScope.launch(Dispatchers.IO) {
+            delay(PERSONAL_MIX_STARTUP_DELAY_MS)
             DailyMixScheduler.schedule(getApplication())
-            dailyMixSongs.value = DailyMixRepository
-                .getInstance(getApplication())
-                .todaysMix()
-        }
-    }
-
-    /** Loads the morning/evening mix; the repository returns null outside both slots. */
-    private fun loadContextMix() {
-        viewModelScope.launch {
-            contextMix.value = ContextMixRepository
-                .getInstance(getApplication())
-                .currentMix()
+            coroutineScope {
+                val daily = async {
+                    DailyMixRepository.getInstance(getApplication()).todaysMix()
+                }
+                val context = async {
+                    ContextMixRepository.getInstance(getApplication()).currentMix()
+                }
+                dailyMixSongs.value = daily.await()
+                contextMix.value = context.await()
+            }
         }
     }
 
@@ -310,6 +314,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     companion object {
+        private const val PERSONAL_MIX_STARTUP_DELAY_MS = 750L
         /** Shortcut tiles look at the last 30 days of plays. */
         private const val SHORTCUTS_WINDOW_MS = 30L * 24 * 60 * 60 * 1000
 

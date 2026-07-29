@@ -8,8 +8,10 @@ import ca.ilianokokoro.umihi.music.models.PlayEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -83,7 +85,9 @@ class RecoWeightsStore internal constructor(
     val weights: StateFlow<StoredRecoWeights?> = _weights.asStateFlow()
 
     /** Returns the persisted weights, loading them from disk on first call. */
-    suspend fun current(): StoredRecoWeights = mutex.withLock { loadLocked() }
+    suspend fun current(): StoredRecoWeights = withContext(Dispatchers.IO) {
+        mutex.withLock { loadLocked() }
+    }
 
     /**
      * Runs one feedback pass ([tuneWeights]) per local day: the daily weights learn from the
@@ -94,7 +98,7 @@ class RecoWeightsStore internal constructor(
         profile: TasteProfile,
         nowMs: Long,
         zone: ZoneId = ZoneId.systemDefault(),
-    ) {
+    ) = withContext(Dispatchers.IO) {
         try {
             mutex.withLock {
                 val stored = loadLocked()
@@ -137,7 +141,7 @@ class RecoWeightsStore internal constructor(
     suspend fun reset(
         nowMs: Long = System.currentTimeMillis(),
         zone: ZoneId = ZoneId.systemDefault(),
-    ) {
+    ) = withContext(Dispatchers.IO) {
         mutex.withLock {
             persistLocked(
                 StoredRecoWeights(

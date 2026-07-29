@@ -7,6 +7,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -46,13 +47,15 @@ class DailyMixRepository private constructor(context: Context) {
     suspend fun todaysMix(
         nowMs: Long = System.currentTimeMillis(),
         zone: ZoneId = ZoneId.systemDefault(),
-    ): List<Song> = generationMutex.withLock {
-        val today = dailyMixEpochDay(nowMs, zone)
-        val cached = loadCache()
-        if (cached != null && cached.epochDay == today && cached.songs.isNotEmpty()) {
-            return cached.songs
+    ): List<Song> = withContext(Dispatchers.IO) {
+        generationMutex.withLock {
+            val today = dailyMixEpochDay(nowMs, zone)
+            val cached = loadCache()
+            if (cached != null && cached.epochDay == today && cached.songs.isNotEmpty()) {
+                return@withLock cached.songs
+            }
+            regenerate(nowMs, today)
         }
-        regenerate(nowMs, today)
     }
 
     private suspend fun regenerate(nowMs: Long, epochDay: Long): List<Song> {
