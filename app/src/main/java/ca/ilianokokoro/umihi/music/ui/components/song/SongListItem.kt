@@ -66,6 +66,7 @@ import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlinx.coroutines.launch
 
@@ -181,6 +182,7 @@ fun SongListItem(
                         Color.Transparent
                     }
                 )
+                .onSecondaryClick { expanded = true }
                 .combinedClickable(onClick = onPress, onLongClick = { expanded = true }),
         leadingContent = {
             if (trackNumber != null) {

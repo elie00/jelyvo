@@ -34,6 +34,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 
 @Composable
 fun RecentlyPlayedRow(
@@ -79,6 +80,7 @@ private fun RecentlyPlayedCard(
         Column(
             modifier = Modifier
                 .width(136.dp)
+                .onSecondaryClick { menuExpanded = true }
                 .combinedClickable(
                     onClick = onClick,
                     onLongClick = { menuExpanded = true },
