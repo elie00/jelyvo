@@ -51,20 +51,34 @@ class BaselineProfileGenerator {
         device.waitForIdle()
 
         // These screens benefit from AOT compilation but must not pollute startup dex layout.
-        runCatching {
-            device.findObject(By.text("Search"))?.click()
-            device.wait(Until.hasObject(By.text("Search")), 3_000)
-            device.waitForIdle()
+        clickMainTab("Search", "Rechercher")
+        clickMainTab("Library", "Bibliothèque")
+        clickMainTab("Home", "Accueil")
+    }
 
-            device.findObject(By.text("Settings"))?.click()
-            device.waitForIdle()
-
-            device.findObject(By.text("Home"))?.click()
-            device.waitForIdle()
+    private fun androidx.benchmark.macro.MacrobenchmarkScope.clickMainTab(
+        englishLabel: String,
+        frenchLabel: String,
+    ) {
+        val tab = device.findObject(By.text(englishLabel))
+            ?: device.findObject(By.text(frenchLabel))
+            ?: run {
+                device.wait(Until.hasObject(By.text(englishLabel)), TAB_TIMEOUT_MS / 2)
+                device.findObject(By.text(englishLabel))
+                    ?: run {
+                        device.wait(Until.hasObject(By.text(frenchLabel)), TAB_TIMEOUT_MS / 2)
+                        device.findObject(By.text(frenchLabel))
+                    }
+            }
+        checkNotNull(tab) {
+            "Main tab not found: $englishLabel / $frenchLabel"
         }
+        tab.click()
+        device.waitForIdle()
     }
 
     companion object {
         private const val PACKAGE_NAME = "ca.ilianokokoro.umihi.music"
+        private const val TAB_TIMEOUT_MS = 5_000L
     }
 }
