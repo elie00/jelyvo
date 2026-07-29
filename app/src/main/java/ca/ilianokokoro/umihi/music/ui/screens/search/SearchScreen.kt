@@ -74,6 +74,7 @@ import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
@@ -608,7 +609,7 @@ private fun MoodSectionChips(
     ) {
         if (section.title.isNotBlank()) {
             Text(
-                text = section.title,
+                text = localizedApiSectionTitle(section.title),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 4.dp),
@@ -618,7 +619,7 @@ private fun MoodSectionChips(
             section.categories.forEach { category ->
                 SuggestionChip(
                     onClick = { onOpenMoodCategory(category) },
-                    label = { Text(category.title) },
+                    label = { Text(localizedApiSectionTitle(category.title)) },
                 )
             }
         }

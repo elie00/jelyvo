@@ -25,6 +25,7 @@ import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 
 @Composable
 fun HomeFeedSectionRow(
@@ -39,7 +40,7 @@ fun HomeFeedSectionRow(
     Column(modifier.fillMaxWidth()) {
         if (section.title.isNotBlank()) {
             Text(
-                text = section.title,
+                text = localizedApiSectionTitle(section.title),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             )

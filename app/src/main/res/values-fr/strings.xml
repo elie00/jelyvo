@@ -489,4 +489,26 @@
     <string name="reco_weight_fatigue">Fatigue d\'écoute</string>
     <string name="reco_weight_skip">Pénalité de passage</string>
     <string name="search_request_failed">Impossible de charger la recherche. Vérifiez votre connexion puis réessayez.</string>
+    <string name="popular">Titres populaires</string>
+    <string name="all_songs">Tous les titres</string>
+    <string name="show_less">Afficher moins</string>
+    <string name="edit_description">Modifier la description</string>
+    <string name="playlist_description">Description</string>
+    <string name="spotify_import_unavailable">L\'import Spotify n\'est pas disponible dans cette version.</string>
+    <string name="singles">Singles</string>
+    <string name="fans_might_also_like">Les fans aiment aussi</string>
+    <string name="related_artists">Artistes similaires</string>
+    <string name="other_versions">Autres versions</string>
+    <string name="quick_picks">Sélection rapide</string>
+    <string name="listen_again">À réécouter</string>
+    <string name="recommended_albums">Albums recommandés</string>
+    <string name="mixed_for_you">Mix pour vous</string>
+    <string name="music_videos">Clips musicaux</string>
+    <string name="live_performances">Concerts et performances</string>
+    <string name="moods_and_moments">Ambiances et moments</string>
+    <string name="music_by_decade">Musique par décennie</string>
+    <string name="charts">Classements</string>
+    <string name="api_more_from">Plus de %1$s</string>
+    <string name="api_similar_to">Dans le même style que %1$s</string>
+    <string name="local_song_repository_error">Impossible de lire le titre enregistré localement.</string>
 </resources>

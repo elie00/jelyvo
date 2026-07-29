@@ -66,6 +66,7 @@ import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButton
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.isTrackArtistRedundant
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
@@ -433,7 +434,7 @@ fun AlbumScreen(
                         sections.forEachIndexed { index, section ->
                             item(key = "album-section-title-$index", contentType = "section-title") {
                                 Text(
-                                    text = section.title,
+                                    text = localizedApiSectionTitle(section.title),
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(
                                         start = 8.dp,

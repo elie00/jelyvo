@@ -509,4 +509,20 @@
     <string name="reco_weight_fatigue">Listening fatigue</string>
     <string name="reco_weight_skip">Skip penalty</string>
     <string name="search_request_failed">Search couldn\'t be loaded. Check your connection and try again.</string>
+    <string name="singles">Singles</string>
+    <string name="fans_might_also_like">Fans might also like</string>
+    <string name="related_artists">Related artists</string>
+    <string name="other_versions">Other versions</string>
+    <string name="quick_picks">Quick picks</string>
+    <string name="listen_again">Listen again</string>
+    <string name="recommended_albums">Recommended albums</string>
+    <string name="mixed_for_you">Mixed for you</string>
+    <string name="music_videos">Music videos</string>
+    <string name="live_performances">Live performances</string>
+    <string name="moods_and_moments">Moods &amp; moments</string>
+    <string name="music_by_decade">Music by decade</string>
+    <string name="charts">Charts</string>
+    <string name="api_more_from">More from %1$s</string>
+    <string name="api_similar_to">Similar to %1$s</string>
+    <string name="local_song_repository_error">Couldn\'t read the locally saved track.</string>
 </resources>

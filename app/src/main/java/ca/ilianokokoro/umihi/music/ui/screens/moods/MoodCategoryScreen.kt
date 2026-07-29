@@ -29,6 +29,7 @@ import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
@@ -87,7 +88,7 @@ fun MoodCategoryScreen(
                             ) {
                                 BackButton(onBack = onBack)
                                 Text(
-                                    text = title,
+                                    text = localizedApiSectionTitle(title),
                                     style = MaterialTheme.typography.headlineSmallEmphasized.copy(
                                         fontFamily = nunitoFontFamily
                                     ),

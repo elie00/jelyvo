@@ -50,6 +50,7 @@ import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
@@ -175,7 +176,7 @@ fun ArtistScreen(
                         page.sections.forEachIndexed { index, section ->
                             item(key = "section-title-$index", contentType = "section-title") {
                                 Text(
-                                    text = section.title,
+                                    text = localizedApiSectionTitle(section.title),
                                     style = MaterialTheme.typography.titleMedium,
                                     modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
                                 )
