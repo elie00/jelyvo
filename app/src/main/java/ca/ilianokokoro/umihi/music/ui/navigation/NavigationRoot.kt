@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -85,7 +86,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
     val showSideNavigation =
         screenConfig.showBottomBar && windowWidthClass != WindowWidthClass.Compact
 
-    var showFullPlayer by remember { mutableStateOf(false) }
+    var showFullPlayer by rememberSaveable { mutableStateOf(false) }
     val bottomDockState = remember { BottomDockState() }
     var dockHeightPixels by remember { mutableIntStateOf(0) }
     BackHandler(enabled = showFullPlayer) { showFullPlayer = false }
