@@ -70,6 +70,40 @@ fun QueueBottomSheet(
     onSaveQueue: (name: String, songs: List<Song>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
+    ModalBottomSheet(
+        onDismissRequest = { changeVisibility(false) },
+        sheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Expanded, SheetValue.Hidden),
+        ),
+    ) {
+        QueuePanel(
+            songs = songs,
+            currentIndex = currentIndex,
+            isSavingQueue = isSavingQueue,
+            smartTransitions = smartTransitions,
+            onSmartTransitionsChange = onSmartTransitionsChange,
+            onOpenSource = onOpenSource,
+            onSaveQueue = onSaveQueue,
+            modifier = modifier,
+        )
+    }
+}
+
+/**
+ * Queue content shared by the compact modal sheet and the permanent expanded player pane.
+ */
+@Composable
+fun QueuePanel(
+    songs: List<Song>,
+    currentIndex: Int,
+    isSavingQueue: Boolean = false,
+    smartTransitions: Boolean = true,
+    onSmartTransitionsChange: (Boolean) -> Unit = {},
+    onOpenSource: (QueueProvenance) -> Unit = {},
+    onSaveQueue: (name: String, songs: List<Song>) -> Unit = { _, _ -> },
+    modifier: Modifier = Modifier,
+) {
     val hapticFeedback = LocalHapticFeedback.current
 
     var mutableSongList by remember(songs) { mutableStateOf(songs) }
@@ -99,19 +133,10 @@ fun QueueBottomSheet(
         }
     }
 
-    ModalBottomSheet(
-        onDismissRequest = {
-            changeVisibility(false)
-        },
-        sheetState = rememberBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            enabledValues = setOf(SheetValue.Expanded, SheetValue.Hidden),
-        ),
+    Column(
+        modifier = modifier
+            .fillMaxSize()
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -280,7 +305,6 @@ fun QueueBottomSheet(
                 }
             }
         }
-    }
 
     if (isSaveDialogShown) {
         SaveQueueDialog(
