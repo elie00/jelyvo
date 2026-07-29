@@ -8,10 +8,12 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - rail latéral à partir de 600 dp ;
 - file permanente dans le lecteur lorsque largeur et hauteur le permettent ;
 - conservation du lecteur pendant le redimensionnement d'une fenêtre DeX ;
-- commandes clavier du lecteur : espace, gauche, droite et Échap.
+- commandes clavier du lecteur : espace, gauche, droite et Échap ;
+- raccourcis globaux vers Accueil, Recherche, Bibliothèque et Réglages ;
+- menus des titres accessibles au clic droit, sans modifier les gestes tactiles existants.
 
-Les prochains lots grand écran concernent les panneaux permanents hors lecteur, les menus
-contextuels à la souris et les raccourcis de navigation.
+Les prochains lots grand écran concernent les panneaux permanents hors lecteur, le glisser-déposer
+et la navigation complète au clavier avec focus visible.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
