@@ -40,6 +40,9 @@ data object EqualizerScreenKey : NavKey
 data object SpotifyImportScreenKey : NavKey
 
 @Serializable
+data object MusicImportScreenKey : NavKey
+
+@Serializable
 data class ArtistScreenKey(val artistId: String, val artistName: String) : NavKey
 
 @Serializable
@@ -104,7 +107,7 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
                 showBottomBar = false
             )
 
-            SpotifyImportScreenKey -> ScreenUiConfig(
+            SpotifyImportScreenKey, MusicImportScreenKey -> ScreenUiConfig(
                 showBottomBar = false,
                 showMiniPlayer = false
             )
@@ -125,4 +128,3 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
         }
     }
 }
-

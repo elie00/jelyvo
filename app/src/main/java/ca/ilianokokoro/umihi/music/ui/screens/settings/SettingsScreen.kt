@@ -91,7 +91,6 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.backup.BackupManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
-import ca.ilianokokoro.umihi.music.core.spotify.SpotifyConstants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
@@ -121,7 +120,7 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     openAuthScreen: () -> Unit,
     openEqualizerScreen: () -> Unit,
-    openSpotifyImport: () -> Unit,
+    openMusicImport: () -> Unit,
     openListeningStats: () -> Unit,
     openRecoDebug: () -> Unit,
     application: Application,
@@ -253,17 +252,13 @@ fun SettingsScreen(
                                 leadingIcon = Icons.Outlined.Delete,
                                 onClick = settingsViewModel::clearLogins
                             )
-                            // No client id compiled in -> the OAuth flow can only fail, so do not
-                            // advertise it. See SpotifyConstants.
-                            if (SpotifyConstants.IS_CONFIGURED) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                SettingsItem(
-                                    title = stringResource(R.string.import_from_spotify_title),
-                                    subtitle = stringResource(R.string.import_from_spotify_subtitle),
-                                    leadingIcon = Icons.Outlined.LibraryMusic,
-                                    onClick = openSpotifyImport
-                                )
-                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.music_import_title),
+                                subtitle = stringResource(R.string.music_import_settings_subtitle),
+                                leadingIcon = Icons.Outlined.LibraryMusic,
+                                onClick = openMusicImport
+                            )
                         }
 
                         SettingsSection(

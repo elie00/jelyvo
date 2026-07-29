@@ -1,7 +1,6 @@
 package ca.ilianokokoro.umihi.music.ui.navigation
 
 import android.app.Application
-import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -56,8 +55,6 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
-import ca.ilianokokoro.umihi.music.core.spotify.SpotifyAuthHelper
-import ca.ilianokokoro.umihi.music.core.spotify.SpotifyPkce
 import ca.ilianokokoro.umihi.music.ui.screens.album.AlbumScreen
 import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
@@ -65,6 +62,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
 import ca.ilianokokoro.umihi.music.ui.screens.library.LibraryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.LocalPlaylistScreen
+import ca.ilianokokoro.umihi.music.ui.screens.musicimport.MusicImportScreen
 import ca.ilianokokoro.umihi.music.ui.screens.moods.MoodCategoryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlayerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.PlaylistScreen
@@ -72,10 +70,8 @@ import ca.ilianokokoro.umihi.music.ui.screens.recodebug.RecoDebugScreen
 import ca.ilianokokoro.umihi.music.ui.screens.search.SearchScreen
 import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.stats.ListeningStatsScreen
-import ca.ilianokokoro.umihi.music.ui.screens.spotifyimport.SpotifyImportScreen
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
-import androidx.core.net.toUri
 
 
 @Composable
@@ -271,7 +267,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             SettingsScreen(
                                 openAuthScreen = { backStack.add(AuthScreenKey) },
                                 openEqualizerScreen = { backStack.add(EqualizerScreenKey) },
-                                openSpotifyImport = { backStack.add(SpotifyImportScreenKey) },
+                                openMusicImport = { backStack.add(MusicImportScreenKey) },
                                 openListeningStats = { backStack.add(ListeningStatsScreenKey) },
                                 openRecoDebug = { backStack.add(RecoDebugScreenKey) },
                                 application = app
@@ -300,18 +296,12 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             )
                         }
 
-                        is SpotifyImportScreenKey -> NavEntry(key) {
-                            val context = LocalContext.current
-                            SpotifyImportScreen(
+                        is MusicImportScreenKey, is SpotifyImportScreenKey -> NavEntry(key) {
+                            MusicImportScreen(
                                 application = app,
                                 onBack = backStack::safePop,
-                                onStartAuth = {
-                                    val pkce = SpotifyPkce.generate()
-                                    val url = SpotifyAuthHelper.buildAuthorizationUrl(
-                                        pkce.codeChallenge,
-                                        "umihi_state"
-                                    )
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
+                                onOpenPlaylist = { playlistId ->
+                                    backStack.add(LocalPlaylistScreenKey(playlistId))
                                 },
                             )
                         }
