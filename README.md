@@ -22,15 +22,16 @@ not distributed through Google Play, F-Droid, IzzyOnDroid or Obtainium.
 - It keeps upstream's application id (`ca.ilianokokoro.umihi.music`), so it **cannot be installed
   alongside** the original app.
 
-Verification is partial and stated honestly: the JVM unit-test suite passes, both debug and
-minified release APKs build, and the release APK has been installed and smoke-tested on an arm64
-Android emulator. There is still no instrumented test suite; Chromecast hand-off still needs a
-physical receiver test and the full matrix needs a pass on the target phone.
+Verification is partial and stated honestly: the JVM unit-test suite passes, recent Room migrations
+have instrumented tests, both debug and minified release APKs build, and the release APK has been
+installed and smoke-tested on an arm64 Android emulator. The migration tests still require an
+Android device or emulator to execute; Chromecast hand-off needs a physical receiver test and the
+full matrix needs a pass on the target phone.
 
 ## Features ✨
 
 Inherited from upstream: play your YouTube / YT Music playlists, search and play without signing
-in, brand-account login, offline downloads, Android Auto browsing, 31 languages. Streams come from
+in, brand-account login, offline downloads, Android Auto browsing, 32 UI languages. Streams come from
 the InnerTube API, so no ads are served — that is a consequence of how it plays, not a feature this
 fork implements.
 
@@ -108,7 +109,9 @@ keystore. Share that keystore between machines if you want to install over an ex
 - Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
 - **Jelyvo identity and app logo**: created for this fork.
 - **Translations**: inherited from the upstream project's Crowdin, and still shipped here. This fork
-  no longer syncs with it, so the list is frozen as of the fork point — thank you to
+  no longer syncs with it, so the list is frozen as of the fork point. New Jelyvo features are
+  maintained in English and French; the other 30 locales intentionally fall back to English for
+  untranslated new strings. See [the translation policy](docs/I18N.md). Thank you to
   [ilianoKokoro](https://crowdin.com/profile/ilianoKokoro),
   [Tusk](https://crowdin.com/profile/frittusk),
   [Mickael81](https://crowdin.com/profile/Mickael81),
