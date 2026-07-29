@@ -54,4 +54,28 @@ class ArtworkUrlTest {
             ArtworkUrl.upgrade("https://lh3.googleusercontent.com/abc=w60-h60-l90-rj", 226),
         )
     }
+
+    @Test
+    fun `thumbnail can reduce a google image to the bounded list size`() {
+        assertEquals(
+            "https://lh3.googleusercontent.com/abc=w180-h180-l90-rj",
+            ArtworkUrl.thumbnail(
+                "https://lh3.googleusercontent.com/abc=w544-h544-l90-rj",
+                180,
+            ),
+        )
+        assertEquals(
+            "https://yt3.ggpht.com/abc=s180-c-k-no-rj",
+            ArtworkUrl.thumbnail("https://yt3.ggpht.com/abc=s544-c-k-no-rj", 180),
+        )
+    }
+
+    @Test
+    fun `thumbnail leaves unsupported or invalid requests untouched`() {
+        val ytimg = "https://i.ytimg.com/vi/id/hqdefault.jpg"
+        assertEquals(ytimg, ArtworkUrl.thumbnail(ytimg, 180))
+
+        val google = "https://lh3.googleusercontent.com/abc=w544-h544-l90-rj"
+        assertEquals(google, ArtworkUrl.thumbnail(google, 0))
+    }
 }

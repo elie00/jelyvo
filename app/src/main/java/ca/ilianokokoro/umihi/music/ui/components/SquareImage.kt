@@ -10,9 +10,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.helpers.ArtworkUrl
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -23,11 +25,21 @@ fun SquareImage(
     uri: String,
     contentDescription: String? = null,
     cornerRadius: Dp = 12.dp,
+    requestSize: Dp? = null,
 ) {
     val context = LocalContext.current
-    val request = remember(uri) {
-        ImageRequest.Builder(context).data(uri)
-            .crossfade(Constants.Animation.IMAGE_FADE_DURATION).build()
+    val density = LocalDensity.current
+    val requestSizePx = remember(requestSize, density) {
+        requestSize?.let { with(density) { it.roundToPx() } }
+    }
+    val request = remember(uri, requestSizePx) {
+        ImageRequest.Builder(context)
+            .data(requestSizePx?.let { ArtworkUrl.thumbnail(uri, it) } ?: uri)
+            .apply {
+                requestSizePx?.let { size(it, it) }
+            }
+            .crossfade(Constants.Animation.IMAGE_FADE_DURATION)
+            .build()
     }
     AsyncImage(
         model = request,

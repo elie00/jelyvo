@@ -13,9 +13,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.helpers.ArtworkUrl
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import coil3.compose.AsyncImage
@@ -35,9 +37,15 @@ fun SongThumbnail(
     val uri = song.thumbnailPath ?: song.thumbnailHref
     if (song.isVideo) {
         val context = LocalContext.current
-        val request = remember(uri) {
-            ImageRequest.Builder(context).data(uri)
-                .crossfade(Constants.Animation.IMAGE_FADE_DURATION).build()
+        val density = LocalDensity.current
+        val heightPx = remember(size, density) { with(density) { size.roundToPx() } }
+        val widthPx = remember(heightPx) { (heightPx * 16f / 9f).toInt() }
+        val request = remember(uri, widthPx, heightPx) {
+            ImageRequest.Builder(context)
+                .data(ArtworkUrl.thumbnail(uri, widthPx))
+                .size(widthPx, heightPx)
+                .crossfade(Constants.Animation.IMAGE_FADE_DURATION)
+                .build()
         }
         AsyncImage(
             model = request,
@@ -58,7 +66,8 @@ fun SongThumbnail(
         ) {
             SquareImage(
                 uri = uri,
-                modifier = Modifier.matchParentSize()
+                modifier = Modifier.matchParentSize(),
+                requestSize = size,
             )
         }
     }

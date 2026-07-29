@@ -44,4 +44,27 @@ object ArtworkUrl {
 
         return url
     }
+
+    /**
+     * Rewrites a Google-hosted thumbnail to the exact requested square size.
+     *
+     * Unlike [upgrade], this is intentionally allowed to reduce the source size. It is only for
+     * bounded list thumbnails, where downloading the full-player artwork wastes bandwidth and
+     * decode time. Local files and hosts with fixed thumbnail paths remain untouched.
+     */
+    fun thumbnail(url: String, targetSize: Int): String {
+        if (targetSize <= 0 || RESIZABLE_HOSTS.none { url.contains(it) }) {
+            return url
+        }
+
+        WIDTH_HEIGHT_PARAM.find(url)?.let { match ->
+            return url.replaceRange(match.range, "=w$targetSize-h$targetSize")
+        }
+
+        SQUARE_PARAM.find(url)?.let { match ->
+            return url.replaceRange(match.range, "=s$targetSize")
+        }
+
+        return url
+    }
 }
