@@ -114,9 +114,11 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerArtworkBac
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueuePanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBottomSheet
+import ca.ilianokokoro.umihi.music.ui.navigation.supportsPermanentSecondaryPane
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import kotlinx.coroutines.delay
@@ -169,13 +171,24 @@ fun PlayerScreen(
     var showGestureHelp by remember {
         mutableStateOf(!gesturePreferences.getBoolean("gestures-seen", false))
     }
-    val orientation = LocalConfiguration.current.orientation
+    val configuration = LocalConfiguration.current
+    val orientation = configuration.orientation
+    val showPermanentQueue = supportsPermanentSecondaryPane(
+        widthDp = configuration.screenWidthDp,
+        heightDp = configuration.screenHeightDp,
+    )
     val currentSong = uiState.queue.getOrNull(uiState.currentIndex)
     val isVideoMode = currentSong?.forceVideo == true
     val isFullscreenVideo = isVideoMode && !isCasting && uiState.isVideoFullscreen
 
     LaunchedEffect(Unit) {
         AudioOutputManager.refresh(context.applicationContext)
+    }
+
+    LaunchedEffect(showPermanentQueue) {
+        if (showPermanentQueue) {
+            playerViewModel.setQueueVisibility(false)
+        }
     }
 
     // Rotating to landscape while in Video mode goes fullscreen; rotating back to portrait (or
@@ -244,7 +257,9 @@ fun PlayerScreen(
                 onSeekBackward = { playerViewModel.seekBy(-10_000L) },
                 modifier = Modifier.fillMaxSize()
             )
-        } else if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+        } else if (
+            orientation == Configuration.ORIENTATION_PORTRAIT && !showPermanentQueue
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -321,7 +336,9 @@ fun PlayerScreen(
                     )
                 }
             }
-        } else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        } else if (
+            orientation == Configuration.ORIENTATION_LANDSCAPE || showPermanentQueue
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -335,7 +352,18 @@ fun PlayerScreen(
                         .weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (uiState.hasVideoVariant && !isCasting) {
+                    if (showPermanentQueue) {
+                        PlayerTopBar(
+                            onBack = onBack,
+                            onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
+                            isExternalDevice = isExternalDevice,
+                            onDevicesClick = { showDevicePicker = true },
+                            hasVideoVariant = uiState.hasVideoVariant && !isCasting,
+                            isVideoMode = isVideoMode,
+                            isModeSwitchEnabled = !uiState.isSwitchingPlaybackMode,
+                            onSelectMode = playerViewModel::setPlaybackMode,
+                        )
+                    } else if (uiState.hasVideoVariant && !isCasting) {
                         PlaybackModeToggle(
                             isVideoMode = currentSong?.forceVideo == true,
                             enabled = !uiState.isSwitchingPlaybackMode,
@@ -376,6 +404,7 @@ fun PlayerScreen(
                         onToggleLike = playerViewModel::toggleLike,
                         onArtistClick = { playerViewModel.openArtist(onOpenArtist) },
                         onMoreClick = { playerViewModel.setPlayerMenuVisibility(true) },
+                        showMoreButton = !showPermanentQueue,
                     )
 
                     PlayerControls(
@@ -396,10 +425,34 @@ fun PlayerScreen(
                         },
                         playbackSpeed = uiState.playbackSpeed,
                         sleepTimerRemainingSeconds = uiState.sleepTimerRemainingSeconds,
+                        showQueueButton = !showPermanentQueue,
                         isCasting = isCasting,
                         outputDeviceName = outputDeviceName,
                         audioInfo = playbackData,
                     )
+                }
+
+                if (showPermanentQueue) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .weight(1.05f)
+                            .padding(top = 12.dp, end = 12.dp, bottom = 12.dp),
+                        shape = RoundedCornerShape(28.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f),
+                        tonalElevation = 2.dp,
+                    ) {
+                        QueuePanel(
+                            songs = uiState.queue,
+                            currentIndex = uiState.currentIndex,
+                            isSavingQueue = uiState.isSavingQueue,
+                            smartTransitions = uiState.smartTransitions,
+                            onSmartTransitionsChange = playerViewModel::setSmartTransitions,
+                            onOpenSource = onOpenQueueSource,
+                            onSaveQueue = playerViewModel::saveQueueAsPlaylist,
+                            modifier = Modifier.padding(top = 20.dp),
+                        )
+                    }
                 }
             }
 
@@ -416,7 +469,7 @@ fun PlayerScreen(
         )
     }
 
-    if (uiState.isQueueModalShown) {
+    if (uiState.isQueueModalShown && !showPermanentQueue) {
         QueueBottomSheet(
             changeVisibility = playerViewModel::setQueueVisibility,
             songs = uiState.queue,

@@ -89,6 +89,7 @@ fun PlayerControls(
     onOpenSpeedSelector: () -> Unit,
     playbackSpeed: Float,
     sleepTimerRemainingSeconds: Long?,
+    showQueueButton: Boolean = true,
     isCasting: Boolean = false,
     outputDeviceName: String? = null,
     audioInfo: PlaybackAudioInfo = PlaybackAudioInfo(),
@@ -285,24 +286,26 @@ fun PlayerControls(
                     },
                 )
 
-                // Queue
-                IconButton(
-                    onClick = {
-                        hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
-                        onOpenQueue()
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .size(SecondaryButtonSize),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
-                        contentDescription = stringResource(R.string.queue),
-                        modifier = Modifier.size(SecondaryIconSize)
-                    )
+                if (showQueueButton) {
+                    // Queue
+                    IconButton(
+                        onClick = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
+                            onOpenQueue()
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .size(SecondaryButtonSize),
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+                            contentDescription = stringResource(R.string.queue),
+                            modifier = Modifier.size(SecondaryIconSize)
+                        )
+                    }
                 }
 
                 // Shuffle
