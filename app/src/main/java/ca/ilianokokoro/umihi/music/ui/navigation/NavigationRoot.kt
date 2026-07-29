@@ -5,7 +5,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -16,15 +15,15 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -36,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
@@ -81,6 +79,11 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
     val app = LocalContext.current.applicationContext as Application
     val currentScreen = backStack.last()
     val screenConfig = rememberScreenUiConfig(currentScreen)
+    val windowWidthClass = currentWindowWidthClass()
+    val showBottomNavigation =
+        screenConfig.showBottomBar && windowWidthClass == WindowWidthClass.Compact
+    val showSideNavigation =
+        screenConfig.showBottomBar && windowWidthClass != WindowWidthClass.Compact
 
     var showFullPlayer by remember { mutableStateOf(false) }
     val bottomDockState = remember { BottomDockState() }
@@ -89,6 +92,21 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
 
     // Every navigation starts with the dock revealed again.
     LaunchedEffect(currentScreen) { bottomDockState.showDock() }
+
+    fun selectRootTab(key: NavKey) {
+        if (backStack.last() == key) {
+            // Re-tap on the active tab: pop its stack back to the root and scroll the visible list
+            // back up.
+            val rootIndex = backStack.indexOfFirst { it == key }
+            while (backStack.lastIndex > rootIndex) {
+                backStack.removeLastOrNull()
+            }
+            bottomDockState.requestScrollToTop()
+            bottomDockState.showDock()
+        } else {
+            backStack.add(key)
+        }
+    }
 
     SharedTransitionLayout(modifier = modifier.fillMaxSize()) {
     AnimatedContent(
@@ -161,7 +179,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
         // Without the bar, the floating mini player clears the navigation inset itself; docked,
         // the bar underneath already consumes it.
         val dockBottomPadding by animateDpAsState(
-            targetValue = if (!screenConfig.showBottomBar) {
+            targetValue = if (!showBottomNavigation) {
                 WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             } else {
                 0.dp
@@ -169,20 +187,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
             animationSpec = tween(Constants.Animation.NAVIGATION_DURATION)
         )
 
-        // Welds the mini player to the bar: the strip behind it shares the bar's surface, so the
-        // two read as one continuous dock. Transparent again when the mini player floats alone.
-        val dockSurfaceColor by animateColorAsState(
-            targetValue = if (screenConfig.showBottomBar) {
-                NavigationBarDefaults.containerColor
-            } else {
-                Color.Transparent
-            },
-            animationSpec = tween(Constants.Animation.NAVIGATION_DURATION)
-        )
-
         // Auto-hide on scroll: the whole dock (mini player + bar) slides down together.
         val dockTranslation by animateFloatAsState(
-            targetValue = if (bottomDockState.isDockHidden && screenConfig.showBottomBar) {
+            targetValue = if (bottomDockState.isDockHidden && showBottomNavigation) {
                 dockHeightPixels.toFloat()
             } else {
                 0f
@@ -191,12 +198,24 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
         )
 
         CompositionLocalProvider(LocalBottomDockState provides bottomDockState) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            if (showSideNavigation) {
+                PrimaryNavigationRail(
+                    currentTab = screenConfig.selectedTab,
+                    onTabSelected = ::selectRootTab,
+                    modifier = Modifier.fillMaxHeight(),
+                )
+            }
 
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+            ) {
             NavDisplay(
                 modifier = Modifier
                     .fillMaxSize()
@@ -451,7 +470,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                 )
 
                 AnimatedVisibility(
-                    visible = screenConfig.showBottomBar,
+                    visible = showBottomNavigation,
                     enter = slideInVertically(
                         animationSpec = tween(Constants.Animation.NAVIGATION_DURATION),
                         initialOffsetY = { it }
@@ -463,23 +482,11 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                 ) {
                     BottomNavigationBar(
                         currentTab = screenConfig.selectedTab,
-                        onTabSelected = { key ->
-                            if (backStack.last() == key) {
-                                // Re-tap on the active tab: pop its stack back to the root and
-                                // scroll the visible list back up.
-                                val rootIndex = backStack.indexOfFirst { it == key }
-                                while (backStack.lastIndex > rootIndex) {
-                                    backStack.removeLastOrNull()
-                                }
-                                bottomDockState.requestScrollToTop()
-                                bottomDockState.showDock()
-                            } else {
-                                backStack.add(key)
-                            }
-                        },
+                        onTabSelected = ::selectRootTab,
                     )
                 }
             }
+        }
         }
         }
 

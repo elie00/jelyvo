@@ -34,7 +34,7 @@ import androidx.navigation3.runtime.NavKey
 import ca.ilianokokoro.umihi.music.R
 
 /** Les trois onglets racine, dans l'ordre visuel — l'ordre sert aussi au swipe. */
-private val NAV_TABS: List<Triple<NavKey, ImageVector, Int>> = listOf(
+internal val NAV_TABS: List<Triple<NavKey, ImageVector, Int>> = listOf(
     Triple(HomeScreenKey, Icons.Rounded.Home, R.string.home),
     Triple(SearchScreenKey, Icons.Rounded.Search, R.string.search),
     Triple(LibraryScreenKey, Icons.Rounded.LibraryMusic, R.string.library),
