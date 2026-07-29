@@ -21,4 +21,12 @@ class WindowWidthClassTest {
         assertEquals(WindowWidthClass.Expanded, classifyWindowWidth(840))
         assertEquals(WindowWidthClass.Expanded, classifyWindowWidth(1920))
     }
+
+    @Test
+    fun `a permanent pane requires expanded width and usable height`() {
+        assertEquals(false, supportsPermanentSecondaryPane(widthDp = 839, heightDp = 900))
+        assertEquals(false, supportsPermanentSecondaryPane(widthDp = 900, heightDp = 479))
+        assertEquals(true, supportsPermanentSecondaryPane(widthDp = 840, heightDp = 480))
+        assertEquals(true, supportsPermanentSecondaryPane(widthDp = 1200, heightDp = 900))
+    }
 }

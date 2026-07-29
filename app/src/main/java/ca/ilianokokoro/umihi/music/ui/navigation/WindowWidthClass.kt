@@ -21,6 +21,14 @@ internal fun classifyWindowWidth(widthDp: Int): WindowWidthClass = when {
     else -> WindowWidthClass.Expanded
 }
 
+/**
+ * Permanent secondary panes need both enough width and enough usable height. This keeps a wide
+ * phone in landscape on the two-pane player while tablets and desktop-style DeX windows gain the
+ * third pane.
+ */
+internal fun supportsPermanentSecondaryPane(widthDp: Int, heightDp: Int): Boolean =
+    classifyWindowWidth(widthDp) == WindowWidthClass.Expanded && heightDp >= 480
+
 @Composable
 fun currentWindowWidthClass(): WindowWidthClass =
     classifyWindowWidth(LocalConfiguration.current.screenWidthDp)
