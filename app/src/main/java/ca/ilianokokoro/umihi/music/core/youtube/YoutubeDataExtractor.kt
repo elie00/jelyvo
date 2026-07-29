@@ -63,6 +63,13 @@ val visitorData: String?
 object YoutubeDataExtractor {
     private val VIEW_COUNT_KEYWORDS = listOf("view", "vue")
     private val PLAY_COUNT_KEYWORDS = listOf("play", "écoute", "ecoute", "lecture")
+    private val searchResponseParser by lazy {
+        SearchResponseParser(
+            songExtractor = { item -> extractSong(item) },
+            thumbnailExtractor = { thumbnail -> getBestThumbnailUrl(thumbnail) },
+            viewCountExtractor = { renderer -> extractViewCount(renderer) },
+        )
+    }
 
     private val HEADER_RENDERER_KEYS = listOf(
         "musicImmersiveHeaderRenderer",
@@ -413,54 +420,7 @@ object YoutubeDataExtractor {
     }
 
     fun extractSearchItems(jsonString: String, filter: SearchFilter): List<SearchItem> {
-        val root = Json.parseToJsonElement(jsonString)
-        return when (filter) {
-            SearchFilter.Songs, SearchFilter.Videos -> {
-                // Scoped song and video searches both return musicResponsiveListItemRenderer rows
-                // whose payload is a playable videoId, so they share the same extraction.
-                val songItems = mutableListOf<JsonObject>()
-                collectSongItems(root, songItems)
-                songItems.mapNotNull { item ->
-                    extractSong(item)?.also { song ->
-                        // Every row of the Videos tab is a video, even when its watch payload
-                        // does not expose a musicVideoType.
-                        if (filter == SearchFilter.Videos && !song.isVideo) {
-                            song.isVideo = true
-                            song.viewCount = item["musicResponsiveListItemRenderer"]
-                                ?.safeObject()?.let(::extractViewCount)
-                        }
-                    }?.let(SearchItem::Track)
-                }
-            }
-            SearchFilter.Albums, SearchFilter.Artists -> {
-                // Scoped album/artist search returns musicResponsiveListItemRenderer list rows
-                // (not musicTwoRowItemRenderer tiles). Classify each by its browseId, then keep
-                // only the entity type this tab asked for.
-                val rows = mutableListOf<JsonObject>()
-                collectSongItems(root, rows)
-                val items = rows.mapNotNull { it.toMixedSearchItem() }
-                when (filter) {
-                    SearchFilter.Albums -> items.filterIsInstance<SearchItem.Album>()
-                    else -> items.filterIsInstance<SearchItem.Artist>()
-                }
-            }
-
-            SearchFilter.All -> {
-                // "Top results" mixes entity types: the musicShelf list rows (classified per item:
-                // album/artist browseId, else a track) and the album/artist carousel tiles
-                // (musicTwoRowItemRenderer). The top-result card shelf is surfaced separately
-                // through [extractTopResult] so the UI can render it as a dedicated card.
-                val rows = mutableListOf<JsonObject>()
-                collectSongItems(root, rows)
-                val tiles = mutableListOf<JsonObject>()
-                collectTwoRowItems(root, tiles)
-                rows.mapNotNull { it.toMixedSearchItem() } +
-                        tiles.mapNotNull { it.twoRowToSearchItem() }
-            }
-
-            // The "My library" tab is resolved locally and never reaches the network extractor.
-            SearchFilter.Library -> emptyList()
-        }.distinctBy(SearchItem::id)
+        return searchResponseParser.extractItems(jsonString, filter)
     }
 
     /**
@@ -468,11 +428,7 @@ object YoutubeDataExtractor {
      * `musicTwoRowItemRenderer` tiles whose browseIds start with "MPRE".
      */
     fun extractLibraryAlbums(jsonString: String): List<SearchItem.Album> {
-        val rows = mutableListOf<JsonObject>()
-        collectTwoRowItems(Json.parseToJsonElement(jsonString), rows)
-        return rows
-            .mapNotNull { it.toSearchItem(SearchFilter.Albums) as? SearchItem.Album }
-            .distinctBy(SearchItem.Album::id)
+        return searchResponseParser.extractLibraryAlbums(jsonString)
     }
 
     /**
@@ -481,17 +437,7 @@ object YoutubeDataExtractor {
      * `musicTwoRowItemRenderer` tiles, both navigating to a "UC…" artist browseId.
      */
     fun extractLibraryArtists(jsonString: String): List<SearchItem.Artist> {
-        val root = Json.parseToJsonElement(jsonString)
-
-        val listRows = mutableListOf<JsonObject>()
-        collectSongItems(root, listRows)
-
-        val tiles = mutableListOf<JsonObject>()
-        collectTwoRowItems(root, tiles)
-
-        return (listRows.mapNotNull { it.toMixedSearchItem() as? SearchItem.Artist } +
-                tiles.mapNotNull { it.toSearchItem(SearchFilter.Artists) as? SearchItem.Artist })
-            .distinctBy(SearchItem.Artist::id)
+        return searchResponseParser.extractLibraryArtists(jsonString)
     }
 
     /**
@@ -501,93 +447,11 @@ object YoutubeDataExtractor {
      * Null when the response carries neither.
      */
     fun extractSpellCorrection(jsonString: String): SpellCorrection? {
-        var correction: SpellCorrection? = null
-
-        fun JsonObject.searchEndpoint(key: String): JsonObject? =
-            this[key]?.safeObject()?.get("searchEndpoint")?.safeObject()
-
-        fun JsonObject?.endpointQuery(): String? =
-            this?.get("query")?.jsonPrimitive?.contentOrNull
-
-        fun JsonObject?.endpointParams(): String? =
-            this?.get("params")?.jsonPrimitive?.contentOrNull
-
-        fun JsonObject.toCorrection(autoCorrected: Boolean): SpellCorrection? {
-            val correctedEndpoint = searchEndpoint("correctedQueryEndpoint")
-            val correctedQuery = correctedEndpoint.endpointQuery()
-                ?: this["correctedQuery"].runsText().takeIf(String::isNotBlank)
-                ?: return null
-            val originalEndpoint = searchEndpoint("originalQueryEndpoint")
-            return SpellCorrection(
-                correctedQuery = correctedQuery,
-                correctedParams = correctedEndpoint.endpointParams(),
-                originalQuery = originalEndpoint.endpointQuery()
-                    ?: this["originalQuery"].runsText().takeIf(String::isNotBlank),
-                originalParams = originalEndpoint.endpointParams(),
-                autoCorrected = autoCorrected,
-            )
-        }
-
-        fun walk(element: JsonElement) {
-            if (correction != null) return
-            when (element) {
-                is JsonObject -> {
-                    element["showingResultsForRenderer"]?.safeObject()
-                        ?.toCorrection(autoCorrected = true)
-                        ?.let { correction = it }
-                        ?: element["didYouMeanRenderer"]?.safeObject()
-                            ?.toCorrection(autoCorrected = false)
-                            ?.let { correction = it }
-                    element.values.forEach(::walk)
-                }
-
-                is JsonArray -> element.forEach(::walk)
-                else -> Unit
-            }
-        }
-        walk(Json.parseToJsonElement(jsonString))
-        return correction
+        return searchResponseParser.extractSpellCorrection(jsonString)
     }
 
     fun extractSearchSuggestions(jsonString: String): List<String> {
-        val suggestions = mutableListOf<String>()
-        fun walk(element: JsonElement) {
-            when (element) {
-                is JsonObject -> {
-                    element["searchSuggestionRenderer"]?.safeObject()
-                        ?.get("suggestion").runsText()
-                        .takeIf(String::isNotBlank)
-                        ?.let(suggestions::add)
-                    element.values.forEach(::walk)
-                }
-                is JsonArray -> element.forEach(::walk)
-                else -> Unit
-            }
-        }
-        walk(Json.parseToJsonElement(jsonString))
-        return suggestions.distinct().take(8)
-    }
-
-    private fun collectTwoRowItems(element: JsonElement, output: MutableList<JsonObject>) {
-        when (element) {
-            is JsonObject -> {
-                element["musicTwoRowItemRenderer"]?.safeObject()?.let(output::add)
-                element.values.forEach { collectTwoRowItems(it, output) }
-            }
-            is JsonArray -> element.forEach { collectTwoRowItems(it, output) }
-            else -> Unit
-        }
-    }
-
-    private fun collectCardShelves(element: JsonElement, output: MutableList<JsonObject>) {
-        when (element) {
-            is JsonObject -> {
-                element["musicCardShelfRenderer"]?.safeObject()?.let(output::add)
-                element.values.forEach { collectCardShelves(it, output) }
-            }
-            is JsonArray -> element.forEach { collectCardShelves(it, output) }
-            else -> Unit
-        }
+        return searchResponseParser.extractSuggestions(jsonString)
     }
 
     /**
@@ -595,189 +459,7 @@ object YoutubeDataExtractor {
      * artist, album or track item. Null when the response carries no card the app can render.
      */
     fun extractTopResult(jsonString: String): SearchItem? {
-        val cards = mutableListOf<JsonObject>()
-        collectCardShelves(Json.parseToJsonElement(jsonString), cards)
-        return cards.firstNotNullOfOrNull { it.cardToSearchItem() }
-    }
-
-    /**
-     * Classifies a top-result card (musicCardShelfRenderer) into an album, artist or track item.
-     * The card's title run navigates either to an entity page (browseEndpoint) or, for song/video
-     * top results, straight to playback (watchEndpoint).
-     */
-    private fun JsonObject.cardToSearchItem(): SearchItem? {
-        val titleRun = this["title"]?.safeObject()?.get("runs")?.safeArray()
-            ?.firstOrNull()?.safeObject()
-        val endpoint = titleRun?.get("navigationEndpoint")?.safeObject()
-        val browseId = endpoint?.get("browseEndpoint")?.safeObject()
-            ?.get("browseId")?.jsonPrimitive?.contentOrNull
-        val title = this["title"].runsText()
-        val thumbnail = this["thumbnail"]?.let(::getBestThumbnailUrl).orEmpty()
-        return when {
-            browseId?.startsWith("UC") == true -> SearchItem.Artist(
-                id = browseId,
-                name = title,
-                thumbnail = thumbnail,
-            )
-
-            browseId?.startsWith("MPRE") == true -> SearchItem.Album(
-                id = browseId,
-                title = title,
-                subtitle = this["subtitle"].runsText(),
-                thumbnail = thumbnail,
-            )
-
-            else -> cardToTrack(titleRun, title, thumbnail)?.let(SearchItem::Track)
-        }
-    }
-
-    /**
-     * A song/video top-result card: its title run carries a watchEndpoint instead of a browseId.
-     * Subtitle runs read "Song • Artist • 3:45" (or "Video • Artist • 1.2M views • 3:45").
-     */
-    private fun JsonObject.cardToTrack(
-        titleRun: JsonObject?,
-        title: String,
-        thumbnail: String,
-    ): Song? {
-        val videoId = titleRun?.get("navigationEndpoint")?.safeObject()
-            ?.get("watchEndpoint")?.safeObject()
-            ?.get("videoId")?.jsonPrimitive?.contentOrNull ?: return null
-
-        val subtitleParts = this["subtitle"]?.safeObject()
-            ?.get("runs")?.safeArray()
-            ?.mapNotNull { it.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull?.trim() }
-            ?.filter { it.isNotEmpty() && it != "•" }
-            .orEmpty()
-        // First run is the entity type ("Song"/"Video"), the second the artist; the duration is
-        // the trailing "m:ss"-shaped run.
-        val artist = subtitleParts.getOrNull(1).orEmpty()
-        val duration = subtitleParts.lastOrNull { it.matches(DURATION_REGEX) }.orEmpty()
-
-        val isExplicit = this["subtitleBadges"]
-            ?.safeArray()
-            ?.any { badge ->
-                badge.safeObject()
-                    ?.get("musicInlineBadgeRenderer")
-                    ?.safeObject()
-                    ?.get("icon")
-                    ?.safeObject()
-                    ?.get("iconType")
-                    ?.jsonPrimitive
-                    ?.contentOrNull == "MUSIC_EXPLICIT_BADGE"
-            } ?: false
-
-        return Song(
-            youtubeId = videoId,
-            title = title,
-            artist = artist,
-            duration = duration,
-            thumbnailHref = thumbnail,
-            isExplicit = isExplicit,
-        ).also { song ->
-            val videoType = titleRun?.let(::musicVideoType)
-            song.isVideo = videoType != null && videoType != MUSIC_VIDEO_TYPE_ATV
-            if (song.isVideo) {
-                // On video cards the run between the artist and the duration is the view count.
-                song.viewCount = subtitleParts.drop(2)
-                    .firstOrNull { !it.matches(DURATION_REGEX) }
-            }
-        }
-    }
-
-    /**
-     * Classifies a musicResponsiveListItemRenderer wrapper from the unscoped ("All") results:
-     * an item navigating to an album/artist page becomes that entity, anything else that has a
-     * videoId becomes a track.
-     */
-    private fun JsonObject.toMixedSearchItem(): SearchItem? {
-        val renderer = this["musicResponsiveListItemRenderer"]?.safeObject() ?: return null
-        val browseId = renderer["navigationEndpoint"]?.safeObject()
-            ?.get("browseEndpoint")?.safeObject()
-            ?.get("browseId")?.jsonPrimitive?.contentOrNull
-        val thumbnail = renderer["thumbnail"]?.let(::getBestThumbnailUrl).orEmpty()
-        return when {
-            browseId?.startsWith("MPRE") == true -> SearchItem.Album(
-                id = browseId,
-                title = flexColumnText(renderer, 0),
-                subtitle = flexColumnText(renderer, 1),
-                thumbnail = thumbnail,
-            )
-
-            browseId?.startsWith("UC") == true -> SearchItem.Artist(
-                id = browseId,
-                name = flexColumnText(renderer, 0),
-                thumbnail = thumbnail,
-            )
-
-            else -> extractSong(this)?.let(SearchItem::Track)
-        }
-    }
-
-    private fun flexColumnText(renderer: JsonObject, index: Int): String =
-        renderer["flexColumns"]?.safeArray()?.getOrNull(index)
-            ?.safeObject()?.get("musicResponsiveListItemFlexColumnRenderer")
-            ?.safeObject()?.get("text").runsText()
-
-    private fun JsonObject.toSearchItem(filter: SearchFilter): SearchItem? {
-        val endpoint = this["navigationEndpoint"]?.safeObject()
-            ?: this["title"]?.safeObject()?.get("runs")?.safeArray()
-                ?.firstOrNull()?.safeObject()?.get("navigationEndpoint")?.safeObject()
-            ?: return null
-        val browseId = endpoint["browseEndpoint"]?.safeObject()
-            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
-        val title = this["title"].runsText()
-        val thumbnail = (this["thumbnailRenderer"] ?: this["thumbnail"])
-            ?.let(::getBestThumbnailUrl).orEmpty()
-        return when (filter) {
-            SearchFilter.Albums -> browseId.takeIf { it.startsWith("MPRE") }?.let {
-                SearchItem.Album(
-                    id = it,
-                    title = title,
-                    subtitle = this["subtitle"].runsText(),
-                    thumbnail = thumbnail,
-                )
-            }
-            SearchFilter.Artists -> browseId.takeIf { it.startsWith("UC") }?.let {
-                SearchItem.Artist(id = it, name = title, thumbnail = thumbnail)
-            }
-            SearchFilter.Songs, SearchFilter.Videos, SearchFilter.All,
-            SearchFilter.Library -> null
-        }
-    }
-
-    /**
-     * Classifies a musicTwoRowItemRenderer tile (a carousel card in "Top results") into an album or
-     * artist by its browseId prefix. Tracks/playlists (watch or "VL…" endpoints) return null, since
-     * the "All" view already collects tracks from the list rows.
-     */
-    private fun JsonObject.twoRowToSearchItem(): SearchItem? {
-        val renderer = this["musicTwoRowItemRenderer"]?.safeObject() ?: this
-        val endpoint = renderer["navigationEndpoint"]?.safeObject()
-            ?: renderer["title"]?.safeObject()?.get("runs")?.safeArray()
-                ?.firstOrNull()?.safeObject()?.get("navigationEndpoint")?.safeObject()
-            ?: return null
-        val browseId = endpoint["browseEndpoint"]?.safeObject()
-            ?.get("browseId")?.jsonPrimitive?.contentOrNull ?: return null
-        val title = renderer["title"].runsText()
-        val thumbnail = (renderer["thumbnailRenderer"] ?: renderer["thumbnail"])
-            ?.let(::getBestThumbnailUrl).orEmpty()
-        return when {
-            browseId.startsWith("MPRE") -> SearchItem.Album(
-                id = browseId,
-                title = title,
-                subtitle = renderer["subtitle"].runsText(),
-                thumbnail = thumbnail,
-            )
-
-            browseId.startsWith("UC") -> SearchItem.Artist(
-                id = browseId,
-                name = title,
-                thumbnail = thumbnail,
-            )
-
-            else -> null
-        }
+        return searchResponseParser.extractTopResult(jsonString)
     }
 
     fun extractHomeFeed(jsonString: String): List<HomeFeedSection> {
@@ -1494,9 +1176,6 @@ object YoutubeDataExtractor {
     }
 
     private const val MUSIC_VIDEO_TYPE_ATV = "MUSIC_VIDEO_TYPE_ATV"
-
-    /** A "m:ss" / "h:mm:ss" display duration, as YouTube formats track lengths. */
-    private val DURATION_REGEX = Regex("""\d+:\d{2}(:\d{2})?""")
 
     /**
      * From a watch-next response, returns the audio ("song") version of a music video, or null
