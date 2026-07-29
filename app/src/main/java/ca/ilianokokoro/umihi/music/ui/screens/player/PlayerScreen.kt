@@ -79,7 +79,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -89,6 +96,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.foundation.focusable
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -177,12 +185,14 @@ fun PlayerScreen(
         widthDp = configuration.screenWidthDp,
         heightDp = configuration.screenHeightDp,
     )
+    val playerFocusRequester = remember { FocusRequester() }
     val currentSong = uiState.queue.getOrNull(uiState.currentIndex)
     val isVideoMode = currentSong?.forceVideo == true
     val isFullscreenVideo = isVideoMode && !isCasting && uiState.isVideoFullscreen
 
     LaunchedEffect(Unit) {
         AudioOutputManager.refresh(context.applicationContext)
+        playerFocusRequester.requestFocus()
     }
 
     LaunchedEffect(showPermanentQueue) {
@@ -238,7 +248,45 @@ fun PlayerScreen(
     Scaffold(
         containerColor = androidx.compose.ui.graphics.Color.Transparent
     ) { paddingValues ->
-        Box(modifier = modifier.fillMaxSize()) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .focusRequester(playerFocusRequester)
+                .focusable()
+                .onKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) {
+                        false
+                    } else {
+                        when (event.key) {
+                            Key.Spacebar -> {
+                                if (uiState.isPlaying) {
+                                    PlayerManager.currentController?.pause()
+                                } else {
+                                    PlayerManager.currentController?.play()
+                                }
+                                true
+                            }
+
+                            Key.DirectionLeft -> {
+                                playerViewModel.seekBy(-10_000L)
+                                true
+                            }
+
+                            Key.DirectionRight -> {
+                                playerViewModel.seekBy(10_000L)
+                                true
+                            }
+
+                            Key.Escape -> {
+                                onBack()
+                                true
+                            }
+
+                            else -> false
+                        }
+                    }
+                },
+        ) {
         if (!isFullscreenVideo) {
             PlayerArtworkBackground(
                 artworkUri = currentSong?.thumbnailPath ?: currentSong?.thumbnailHref,
