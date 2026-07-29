@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.focusable
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -36,8 +37,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -88,11 +97,13 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
 
     var showFullPlayer by rememberSaveable { mutableStateOf(false) }
     val bottomDockState = remember { BottomDockState() }
+    val navigationFocusRequester = remember { FocusRequester() }
     var dockHeightPixels by remember { mutableIntStateOf(0) }
     BackHandler(enabled = showFullPlayer) { showFullPlayer = false }
 
     // Every navigation starts with the dock revealed again.
     LaunchedEffect(currentScreen) { bottomDockState.showDock() }
+    LaunchedEffect(Unit) { navigationFocusRequester.requestFocus() }
 
     fun selectRootTab(key: NavKey) {
         if (backStack.last() == key) {
@@ -109,7 +120,32 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
         }
     }
 
-    SharedTransitionLayout(modifier = modifier.fillMaxSize()) {
+    SharedTransitionLayout(
+        modifier = modifier
+            .fillMaxSize()
+            .focusRequester(navigationFocusRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) {
+                    false
+                } else {
+                    val destination = navigationShortcutDestination(
+                        key = event.key,
+                        hasCommandModifier = event.isCtrlPressed || event.isMetaPressed,
+                    ) ?: return@onPreviewKeyEvent false
+
+                    showFullPlayer = false
+                    if (destination == SettingsScreenKey) {
+                        if (backStack.last() != SettingsScreenKey) {
+                            backStack.add(SettingsScreenKey)
+                        }
+                    } else {
+                        selectRootTab(destination)
+                    }
+                    true
+                }
+            },
+    ) {
     AnimatedContent(
         targetState = showFullPlayer,
         transitionSpec = {
