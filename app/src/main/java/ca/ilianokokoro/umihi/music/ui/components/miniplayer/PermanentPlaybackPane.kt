@@ -71,6 +71,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongThumbnail
 import ca.ilianokokoro.umihi.music.ui.components.song.songSubtitle
+import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropSource
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropTarget
 import kotlinx.coroutines.delay
 
@@ -211,6 +212,7 @@ fun PermanentPlaybackPane(
                         requestSize = 320.dp,
                         modifier = artworkModifier
                             .fillMaxWidth()
+                            .songDragAndDropSource(song)
                             .clickable(onClick = onOpenPlayer),
                     )
 
@@ -314,6 +316,7 @@ fun PermanentPlaybackPane(
                                 ListItem(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .songDragAndDropSource(entry.value)
                                         .clickable {
                                             PlayerManager.seekToIndex(entry.index)
                                             player?.play()
