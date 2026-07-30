@@ -73,7 +73,9 @@ import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
 import ca.ilianokokoro.umihi.music.ui.components.song.isTrackArtistRedundant
+import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
@@ -109,6 +111,8 @@ fun AlbumScreen(
     val localPlaylists by albumViewModel.localPlaylists.collectAsStateWithLifecycle()
     var showAlbumMenu by remember { mutableStateOf(false) }
     var showPlaylistPicker by remember { mutableStateOf(false) }
+    var selectedSongIds by remember(albumId) { mutableStateOf(emptySet<String>()) }
+    var selectionAnchorId by remember(albumId) { mutableStateOf<String?>(null) }
 
     val listState = rememberLazyListState()
     val density = LocalDensity.current
@@ -198,6 +202,9 @@ fun AlbumScreen(
                             albumName = resolvedAlbumName,
                             artworkHref = cover,
                         )
+                    }
+                    val selectedSongs = playableSongs.filter {
+                        it.youtubeId in selectedSongIds
                     }
                     // Un album multi-CD est rendu disque par disque, la numerotation repartant a 1
                     // sur chacun (comme Spotify). Un seul groupe = aucun en-tete, affichage a plat.
@@ -380,6 +387,19 @@ fun AlbumScreen(
                                     // Album rows come from the network: the offline marker is
                                     // resolved against the shared in-memory Set of downloaded ids.
                                     isDownloaded = song.youtubeId in downloadedIds,
+                                    isSelected = song.youtubeId in selectedSongIds,
+                                    selectionActive = selectedSongIds.isNotEmpty(),
+                                    onSelectionClick = { modifiers ->
+                                        val update = updateSongSelection(
+                                            orderedIds = playableSongs.map(Song::youtubeId),
+                                            selectedIds = selectedSongIds,
+                                            anchorId = selectionAnchorId,
+                                            clickedId = song.youtubeId,
+                                            modifiers = modifiers,
+                                        )
+                                        selectedSongIds = update.selectedIds
+                                        selectionAnchorId = update.anchorId
+                                    },
                                 )
                             }
                         }
@@ -452,6 +472,28 @@ fun AlbumScreen(
                         }
                     }
                     }
+
+                    SongSelectionActionBar(
+                        songs = selectedSongs,
+                        newPlaylistName = resolvedAlbumName,
+                        onPlay = {
+                            playSongs(selectedSongs, 0)
+                        },
+                        onAddToQueue = {
+                            PlayerManager.addToQueue(selectedSongs, context)
+                        },
+                        onClear = {
+                            selectedSongIds = emptySet()
+                            selectionAnchorId = null
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(
+                                top = paddingValues.calculateTopPadding() + 8.dp,
+                                start = 12.dp,
+                                end = 12.dp,
+                            ),
+                    )
 
                     if (showAlbumMenu) {
                         val shareTitle = page.name.ifBlank { albumName }

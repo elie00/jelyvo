@@ -31,6 +31,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,6 +59,8 @@ import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
+import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import kotlin.math.roundToInt
@@ -107,6 +110,25 @@ fun ArtistScreen(
                     }
                     var bioExpanded by rememberSaveable(page.artist.channelUrl) {
                         mutableStateOf(false)
+                    }
+                    var selectedSongIds by remember(page.artist.channelUrl) {
+                        mutableStateOf(emptySet<String>())
+                    }
+                    var selectionAnchorId by remember(page.artist.channelUrl) {
+                        mutableStateOf<String?>(null)
+                    }
+                    // The top shelf is the artist's most-streamed tracks, in the API's ranking
+                    // and carrying play counts. "Show all" swaps in the full discography, which
+                    // is ordered differently and has no counts — so it is a choice, not a
+                    // silent upgrade.
+                    val hasMore = page.songs.size > page.topSongs.size
+                    val shownSongs = if (showAllSongs || page.topSongs.isEmpty()) {
+                        page.songs
+                    } else {
+                        page.topSongs
+                    }
+                    val selectedSongs = shownSongs.filter {
+                        it.youtubeId in selectedSongIds
                     }
                     Row(modifier = Modifier.fillMaxSize()) {
                     if (showContextPane) {
@@ -243,17 +265,6 @@ fun ArtistScreen(
                             }
                         }
 
-                        // The top shelf is the artist's most-streamed tracks, in the API's ranking
-                        // and carrying play counts. "Show all" swaps in the full discography, which
-                        // is ordered differently and has no counts — so it is a choice, not a
-                        // silent upgrade.
-                        val hasMore = page.songs.size > page.topSongs.size
-                        val shownSongs = if (showAllSongs || page.topSongs.isEmpty()) {
-                            page.songs
-                        } else {
-                            page.topSongs
-                        }
-
                         if (shownSongs.isNotEmpty()) {
                             item(key = "songs-title", contentType = "section-title") {
                                 Text(
@@ -292,13 +303,30 @@ fun ArtistScreen(
                                 playNext = { PlayerManager.addNext(song, context) },
                                 addToQueue = { PlayerManager.addToQueue(song, context) },
                                 startRadio = { PlayerManager.startRadio(song, context) },
+                                isSelected = song.youtubeId in selectedSongIds,
+                                selectionActive = selectedSongIds.isNotEmpty(),
+                                onSelectionClick = { modifiers ->
+                                    val update = updateSongSelection(
+                                        orderedIds = shownSongs.map(Song::youtubeId),
+                                        selectedIds = selectedSongIds,
+                                        anchorId = selectionAnchorId,
+                                        clickedId = song.youtubeId,
+                                        modifiers = modifiers,
+                                    )
+                                    selectedSongIds = update.selectedIds
+                                    selectionAnchorId = update.anchorId
+                                },
                             )
                         }
 
                         if (hasMore && page.topSongs.isNotEmpty()) {
                             item(key = "songs-toggle", contentType = "songs-toggle") {
                                 TextButton(
-                                    onClick = { showAllSongs = !showAllSongs },
+                                    onClick = {
+                                        showAllSongs = !showAllSongs
+                                        selectedSongIds = emptySet()
+                                        selectionAnchorId = null
+                                    },
                                     modifier = Modifier.padding(start = 8.dp)
                                 ) {
                                     Text(
@@ -324,6 +352,30 @@ fun ArtistScreen(
                         }
                     }
                     }
+
+                    SongSelectionActionBar(
+                        songs = selectedSongs,
+                        newPlaylistName = page.artist.name,
+                        onPlay = {
+                            onOpenPlayer()
+                            PlayerManager.playQueue(
+                                selectedSongs.map { it.mediaItem },
+                                sourceName = page.artist.name,
+                                sourceId = artistId,
+                                sourceType = QueueSourceType.Artist,
+                            )
+                        },
+                        onAddToQueue = {
+                            PlayerManager.addToQueue(selectedSongs, context)
+                        },
+                        onClear = {
+                            selectedSongIds = emptySet()
+                            selectionAnchorId = null
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
                 }
             }
         }
