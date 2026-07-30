@@ -33,6 +33,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.ResumeItem
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 
 @Composable
@@ -80,6 +81,7 @@ private fun ResumeCard(
         Column(
             modifier = Modifier
                 .width(136.dp)
+                .keyboardFocusOutline(RoundedCornerShape(20.dp))
                 .onSecondaryClick { menuExpanded = true }
                 .combinedClickable(
                     onClick = onClick,

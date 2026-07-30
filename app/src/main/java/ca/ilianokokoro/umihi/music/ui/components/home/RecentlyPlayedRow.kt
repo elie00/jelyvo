@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.DropdownMenu
@@ -34,6 +35,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 
 @Composable
@@ -80,6 +82,7 @@ private fun RecentlyPlayedCard(
         Column(
             modifier = Modifier
                 .width(136.dp)
+                .keyboardFocusOutline(RoundedCornerShape(20.dp))
                 .onSecondaryClick { menuExpanded = true }
                 .combinedClickable(
                     onClick = onClick,

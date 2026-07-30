@@ -64,6 +64,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
+import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
@@ -182,6 +183,7 @@ fun SongListItem(
                         Color.Transparent
                     }
                 )
+                .keyboardFocusOutline()
                 .onSecondaryClick { expanded = true }
                 .combinedClickable(onClick = onPress, onLongClick = { expanded = true }),
         leadingContent = {

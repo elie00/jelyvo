@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 
 /** Les trois onglets racine, dans l'ordre visuel — l'ordre sert aussi au swipe. */
 internal val NAV_TABS: List<Triple<NavKey, ImageVector, Int>> = listOf(
@@ -102,6 +103,7 @@ fun BottomNavigationBar(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
+                        .keyboardFocusOutline(RoundedCornerShape(18.dp))
                         .clickable { onTabSelected(key) },
                     contentAlignment = Alignment.Center,
                 ) {
