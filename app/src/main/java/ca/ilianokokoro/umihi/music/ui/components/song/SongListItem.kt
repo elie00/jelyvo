@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Album
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Favorite
@@ -47,8 +48,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.InputMode.Companion.Touch
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -104,6 +107,9 @@ fun SongListItem(
     // Contextual fallback for surfaces that are authoritative even when a YouTube row omits its
     // like button, notably the automatic "Liked songs" playlist.
     initialLikeStatus: Boolean? = null,
+    isSelected: Boolean = false,
+    selectionActive: Boolean = false,
+    onSelectionClick: ((SongSelectionModifiers) -> Unit)? = null,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var showPlaylistPicker by remember { mutableStateOf(false) }
@@ -124,12 +130,14 @@ fun SongListItem(
     val currentMediaId = ComposeHelper.rememberCurrentMediaId(controller)
     val isPlaying = ComposeHelper.rememberIsPlaying(controller)
     val isCurrentSong = currentMediaId != null && currentMediaId == song.youtubeId
+    val pointerSelectionEnabled =
+        onSelectionClick != null && LocalInputModeManager.current.inputMode != Touch
 
     val containerColor by animateColorAsState(
-        targetValue = if (isCurrentSong) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.38f)
-        } else {
-            Color.Transparent
+        targetValue = when {
+            isSelected -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f)
+            isCurrentSong -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.38f)
+            else -> Color.Transparent
         },
         animationSpec = tween(durationMillis = 180),
         label = "songItemContainer",
@@ -189,9 +197,25 @@ fun SongListItem(
                 .songDragAndDropSource(song)
                 .onKeyboardContextMenu { expanded = true }
                 .onSecondaryClick { expanded = true }
+                .onSongSelectionClick(
+                    enabled = pointerSelectionEnabled,
+                    selectionActive = selectionActive,
+                    onSelectionClick = { modifiers -> onSelectionClick?.invoke(modifiers) },
+                )
                 .combinedClickable(onClick = onPress, onLongClick = { expanded = true }),
         leadingContent = {
-            if (trackNumber != null) {
+            if (isSelected) {
+                Box(
+                    modifier = Modifier.size(TRACK_NUMBER_SLOT_SIZE),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            } else if (trackNumber != null) {
                 // On an album page the number replaces the cover, which every row would repeat.
                 // The playing track yields the number to the indicator, as YT Music does.
                 Box(
@@ -213,17 +237,18 @@ fun SongListItem(
             }
         },
         trailingContent = {
-            IconButton(onClick = { expanded = true }) {
-                Icon(
-                    Icons.Rounded.MoreVert,
-                    contentDescription = stringResource(R.string.more)
-                )
-            }
-            MaterialUDropdown(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                MaterialUDropdownItem(
+            if (!selectionActive) {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(
+                        Icons.Rounded.MoreVert,
+                        contentDescription = stringResource(R.string.more)
+                    )
+                }
+                MaterialUDropdown(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                ) {
+                    MaterialUDropdownItem(
                     leadingIcon = Icons.Rounded.PlayCircleOutline,
                     text = stringResource(R.string.play_next),
                     onClick = {
@@ -319,16 +344,17 @@ fun SongListItem(
                         }
                     )
                 }
-                // Local MediaStore files have no YouTube link to share.
-                if (!song.isLocal) {
-                    MaterialUDropdownItem(
-                        leadingIcon = Icons.Rounded.Share,
-                        text = stringResource(R.string.share),
-                        onClick = {
-                            ShareHelper.shareSong(context, song)
-                            expanded = false
-                        }
-                    )
+                    // Local MediaStore files have no YouTube link to share.
+                    if (!song.isLocal) {
+                        MaterialUDropdownItem(
+                            leadingIcon = Icons.Rounded.Share,
+                            text = stringResource(R.string.share),
+                            onClick = {
+                                ShareHelper.shareSong(context, song)
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
         },
