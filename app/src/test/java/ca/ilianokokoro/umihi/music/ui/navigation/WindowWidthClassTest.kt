@@ -45,4 +45,24 @@ class WindowWidthClassTest {
         assertEquals(true, supportsPermanentLibraryPane(widthDp = 1360, heightDp = 700))
         assertEquals(true, supportsPermanentLibraryPane(widthDp = 1920, heightDp = 1080))
     }
+
+    @Test
+    fun `browsing context pane uses the remaining content size`() {
+        assertEquals(
+            false,
+            supportsBrowsingContextPane(availableWidthDp = 759, availableHeightDp = 900),
+        )
+        assertEquals(
+            false,
+            supportsBrowsingContextPane(availableWidthDp = 1000, availableHeightDp = 559),
+        )
+        assertEquals(
+            true,
+            supportsBrowsingContextPane(availableWidthDp = 760, availableHeightDp = 560),
+        )
+        assertEquals(
+            true,
+            supportsBrowsingContextPane(availableWidthDp = 980, availableHeightDp = 900),
+        )
+    }
 }

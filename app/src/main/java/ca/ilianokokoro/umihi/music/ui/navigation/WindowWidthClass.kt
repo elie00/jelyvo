@@ -44,6 +44,16 @@ internal fun supportsPermanentPlaybackPane(widthDp: Int, heightDp: Int): Boolean
 internal fun supportsPermanentLibraryPane(widthDp: Int, heightDp: Int): Boolean =
     widthDp >= 1360 && heightDp >= 700
 
+/**
+ * Browsing screens use this against their own measured content area, after global navigation and
+ * playback panes have taken their space. This avoids a cramped nested split around 1000 dp where
+ * the outer window is wide but the remaining album/artist surface is not.
+ */
+internal fun supportsBrowsingContextPane(
+    availableWidthDp: Int,
+    availableHeightDp: Int,
+): Boolean = availableWidthDp >= 760 && availableHeightDp >= 560
+
 @Composable
 fun currentWindowWidthClass(): WindowWidthClass =
     classifyWindowWidth(LocalConfiguration.current.screenWidthDp)

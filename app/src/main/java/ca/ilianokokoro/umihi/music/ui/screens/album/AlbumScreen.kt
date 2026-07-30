@@ -6,10 +6,13 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -50,6 +53,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -60,6 +64,7 @@ import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.groupSongsByDisc
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.BrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
@@ -69,9 +74,11 @@ import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.isTrackArtistRedundant
+import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
+import kotlin.math.roundToInt
 
 /**
  * Distance de defilement au bout de laquelle la barre superieure est totalement opaque.
@@ -153,7 +160,7 @@ fun AlbumScreen(
             )
         }
     ) { paddingValues ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier.fillMaxSize()
         ) {
             when (state) {
@@ -176,6 +183,10 @@ fun AlbumScreen(
 
                 is AlbumState.Success -> {
                     val page = state.page
+                    val showContextPane = supportsBrowsingContextPane(
+                        availableWidthDp = maxWidth.value.roundToInt(),
+                        availableHeightDp = maxHeight.value.roundToInt(),
+                    )
                     // Prefer the high-res cover from the browse response, fall back to the passed one.
                     val cover = page.cover.ifBlank { albumCover }
                     // Album rows rely on their surrounding page for album identity and often for
@@ -228,8 +239,47 @@ fun AlbumScreen(
                             section.copy(albums = section.albums.filter { it.browseId != albumId })
                         }
                         .filter { it.albums.isNotEmpty() }
+                    Row(modifier = Modifier.fillMaxSize()) {
+                    if (showContextPane) {
+                        BrowsingContextPane(
+                            modifier = Modifier.padding(
+                                top = paddingValues.calculateTopPadding()
+                            ),
+                        ) {
+                            AlbumContextHeader(
+                                coverUri = cover.ifBlank {
+                                    page.songs.firstOrNull()?.thumbnailHref ?: ""
+                                },
+                                name = resolvedAlbumName,
+                                artist = page.artist,
+                                artistId = page.artistId,
+                                metadataLine = metadataLine,
+                                description = page.description,
+                                artworkSize = 220.dp,
+                                hasSongs = playableSongs.isNotEmpty(),
+                                isLoggedIn = isLoggedIn,
+                                canSaveAlbum = page.playlistId != null,
+                                isAlbumSaved = isAlbumSaved,
+                                onOpenArtist = onOpenArtist,
+                                onToggleAlbumSaved = albumViewModel::toggleAlbumSaved,
+                                onPlay = { playSongs(playableSongs, 0) },
+                                onShuffle = { playSongs(playableSongs.shuffled(), 0) },
+                                onStartRadio = {
+                                    onOpenPlayer()
+                                    PlayerManager.startRadio(playableSongs.first(), context)
+                                },
+                                onDownload = {
+                                    albumViewModel.downloadAlbum(playableSongs, cover)
+                                },
+                                onMore = { showAlbumMenu = true },
+                            )
+                        }
+                    }
+
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         state = listState,
                         // Le contenu defile SOUS la barre superieure : sa hauteur est reportee
                         // dans le contentPadding plutot que sur le conteneur.
@@ -240,116 +290,46 @@ fun AlbumScreen(
                             end = 8.dp
                         )
                     ) {
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                SquareImage(
-                                    uri = cover.ifBlank {
-                                        page.songs.firstOrNull()?.thumbnailHref ?: ""
-                                    },
-                                    modifier = Modifier.size(180.dp)
-                                )
-                                Text(
-                                    text = page.name,
-                                    style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                                        fontFamily = nunitoFontFamily
-                                    ),
-                                    textAlign = TextAlign.Center
-                                )
-                                if (page.artist.isNotBlank()) {
-                                    val artistId = page.artistId
-                                    Text(
-                                        text = page.artist,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        textAlign = TextAlign.Center,
-                                        modifier = if (artistId != null) {
-                                            Modifier.clickable {
-                                                onOpenArtist(artistId, page.artist)
-                                            }
-                                        } else {
-                                            Modifier
-                                        }
-                                    )
-                                }
-                                if (metadataLine.isNotBlank()) {
-                                    Text(
-                                        text = metadataLine,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                                if (playableSongs.isNotEmpty()) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        // Coeur "album dans la bibliotheque" : visible connecte
-                                        // seulement, et uniquement si la reponse expose l'id de
-                                        // playlist audio que l'endpoint like attend.
-                                        if (isLoggedIn && page.playlistId != null) {
-                                            FilledIconToggleButton(
-                                                checked = isAlbumSaved,
-                                                onCheckedChange = {
-                                                    albumViewModel.toggleAlbumSaved()
-                                                },
-                                                shapes = IconButtonDefaults.toggleableShapes(),
-                                                colors = IconButtonDefaults.filledIconToggleButtonColors(
-                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                                ),
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (isAlbumSaved) {
-                                                        Icons.Rounded.Favorite
-                                                    } else {
-                                                        Icons.Rounded.FavoriteBorder
-                                                    },
-                                                    contentDescription = stringResource(
-                                                        if (isAlbumSaved) {
-                                                            R.string.remove_album_from_library
-                                                        } else {
-                                                            R.string.save_album_to_library
-                                                        }
-                                                    ),
-                                                )
-                                            }
-                                        }
-                                        PlaySplitButton(
-                                            onPlay = { playSongs(playableSongs, 0) },
-                                            menuActions = listOf(
-                                                PlaySplitButtonAction(
-                                                    label = stringResource(R.string.shuffle),
-                                                    icon = Icons.Rounded.Shuffle,
-                                                    onClick = { playSongs(playableSongs.shuffled(), 0) },
-                                                ),
-                                                PlaySplitButtonAction(
-                                                    label = stringResource(R.string.start_radio),
-                                                    icon = Icons.Rounded.Radio,
-                                                    onClick = {
-                                                        onOpenPlayer()
-                                                        PlayerManager.startRadio(playableSongs.first(), context)
-                                                    },
-                                                ),
-                                                PlaySplitButtonAction(
-                                                    label = stringResource(R.string.download),
-                                                    icon = Icons.Rounded.Download,
-                                                    onClick = {
-                                                        albumViewModel.downloadAlbum(playableSongs, cover)
-                                                    },
-                                                ),
-                                            ),
-                                        )
-                                        IconButton(onClick = { showAlbumMenu = true }) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.MoreVert,
-                                                contentDescription = stringResource(R.string.more),
+                        if (!showContextPane) {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    AlbumContextHeader(
+                                        coverUri = cover.ifBlank {
+                                            page.songs.firstOrNull()?.thumbnailHref ?: ""
+                                        },
+                                        name = resolvedAlbumName,
+                                        artist = page.artist,
+                                        artistId = page.artistId,
+                                        metadataLine = metadataLine,
+                                        description = "",
+                                        artworkSize = 180.dp,
+                                        hasSongs = playableSongs.isNotEmpty(),
+                                        isLoggedIn = isLoggedIn,
+                                        canSaveAlbum = page.playlistId != null,
+                                        isAlbumSaved = isAlbumSaved,
+                                        onOpenArtist = onOpenArtist,
+                                        onToggleAlbumSaved =
+                                            albumViewModel::toggleAlbumSaved,
+                                        onPlay = { playSongs(playableSongs, 0) },
+                                        onShuffle = {
+                                            playSongs(playableSongs.shuffled(), 0)
+                                        },
+                                        onStartRadio = {
+                                            onOpenPlayer()
+                                            PlayerManager.startRadio(
+                                                playableSongs.first(),
+                                                context,
                                             )
-                                        }
-                                    }
+                                        },
+                                        onDownload = {
+                                            albumViewModel.downloadAlbum(playableSongs, cover)
+                                        },
+                                        onMore = { showAlbumMenu = true },
+                                    )
                                 }
                             }
                         }
@@ -413,7 +393,7 @@ fun AlbumScreen(
                             }
                         }
 
-                        if (page.description.isNotBlank()) {
+                        if (!showContextPane && page.description.isNotBlank()) {
                             item(key = "album-description") {
                                 var expanded by remember { mutableStateOf(false) }
                                 Text(
@@ -471,6 +451,7 @@ fun AlbumScreen(
                             }
                         }
                     }
+                    }
 
                     if (showAlbumMenu) {
                         val shareTitle = page.name.ifBlank { albumName }
@@ -524,6 +505,133 @@ fun AlbumScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ColumnScope.AlbumContextHeader(
+    coverUri: String,
+    name: String,
+    artist: String,
+    artistId: String?,
+    metadataLine: String,
+    description: String,
+    artworkSize: Dp,
+    hasSongs: Boolean,
+    isLoggedIn: Boolean,
+    canSaveAlbum: Boolean,
+    isAlbumSaved: Boolean,
+    onOpenArtist: (String, String) -> Unit,
+    onToggleAlbumSaved: () -> Unit,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+    onStartRadio: () -> Unit,
+    onDownload: () -> Unit,
+    onMore: () -> Unit,
+) {
+    SquareImage(
+        uri = coverUri,
+        modifier = Modifier.size(artworkSize),
+    )
+    Text(
+        text = name,
+        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
+            fontFamily = nunitoFontFamily
+        ),
+        textAlign = TextAlign.Center,
+    )
+    if (artist.isNotBlank()) {
+        Text(
+            text = artist,
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+            modifier = if (artistId != null) {
+                Modifier.clickable { onOpenArtist(artistId, artist) }
+            } else {
+                Modifier
+            },
+        )
+    }
+    if (metadataLine.isNotBlank()) {
+        Text(
+            text = metadataLine,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+    if (hasSongs) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (isLoggedIn && canSaveAlbum) {
+                FilledIconToggleButton(
+                    checked = isAlbumSaved,
+                    onCheckedChange = { onToggleAlbumSaved() },
+                    shapes = IconButtonDefaults.toggleableShapes(),
+                    colors = IconButtonDefaults.filledIconToggleButtonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+                ) {
+                    Icon(
+                        imageVector = if (isAlbumSaved) {
+                            Icons.Rounded.Favorite
+                        } else {
+                            Icons.Rounded.FavoriteBorder
+                        },
+                        contentDescription = stringResource(
+                            if (isAlbumSaved) {
+                                R.string.remove_album_from_library
+                            } else {
+                                R.string.save_album_to_library
+                            }
+                        ),
+                    )
+                }
+            }
+            PlaySplitButton(
+                onPlay = onPlay,
+                menuActions = listOf(
+                    PlaySplitButtonAction(
+                        label = stringResource(R.string.shuffle),
+                        icon = Icons.Rounded.Shuffle,
+                        onClick = onShuffle,
+                    ),
+                    PlaySplitButtonAction(
+                        label = stringResource(R.string.start_radio),
+                        icon = Icons.Rounded.Radio,
+                        onClick = onStartRadio,
+                    ),
+                    PlaySplitButtonAction(
+                        label = stringResource(R.string.download),
+                        icon = Icons.Rounded.Download,
+                        onClick = onDownload,
+                    ),
+                ),
+            )
+            IconButton(onClick = onMore) {
+                Icon(
+                    imageVector = Icons.Rounded.MoreVert,
+                    contentDescription = stringResource(R.string.more),
+                )
+            }
+        }
+    }
+    if (description.isNotBlank()) {
+        var expanded by remember(description) { mutableStateOf(false) }
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = if (expanded) Int.MAX_VALUE else 8,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .animateContentSize(),
+        )
     }
 }
 
