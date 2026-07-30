@@ -4,10 +4,13 @@ import android.app.Application
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -45,6 +49,7 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.BrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
@@ -52,7 +57,9 @@ import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -72,7 +79,7 @@ fun ArtistScreen(
     val context = LocalContext.current
 
     Scaffold(contentWindowInsets = WindowInsets(0.dp)) { paddingValues ->
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
@@ -90,14 +97,56 @@ fun ArtistScreen(
 
                 is ArtistState.Success -> {
                     val page = state.page
+                    val showContextPane = supportsBrowsingContextPane(
+                        availableWidthDp = maxWidth.value.roundToInt(),
+                        availableHeightDp = maxHeight.value.roundToInt(),
+                    )
                     var showAllSongs by rememberSaveable(page.artist.channelUrl) {
                         mutableStateOf(false)
                     }
                     var bioExpanded by rememberSaveable(page.artist.channelUrl) {
                         mutableStateOf(false)
                     }
+                    Row(modifier = Modifier.fillMaxSize()) {
+                    if (showContextPane) {
+                        BrowsingContextPane {
+                            ArtistContextHeader(
+                                onBack = onBack,
+                                thumbnail = page.artist.thumbnailHref,
+                                name = page.artist.name,
+                                subscriberCount = page.artist.subscriberCount,
+                                description = page.artist.description,
+                                artworkSize = 220.dp,
+                                bioExpanded = bioExpanded,
+                                collapsedBioLines = 8,
+                                onToggleBio = { bioExpanded = !bioExpanded },
+                                hasSongs = page.songs.isNotEmpty(),
+                                onPlay = {
+                                    onOpenPlayer()
+                                    PlayerManager.playQueue(
+                                        page.songs.map { it.mediaItem },
+                                        sourceName = page.artist.name,
+                                        sourceId = artistId,
+                                        sourceType = QueueSourceType.Artist,
+                                    )
+                                },
+                                onShuffle = {
+                                    onOpenPlayer()
+                                    PlayerManager.playQueue(
+                                        page.songs.shuffled().map { it.mediaItem },
+                                        sourceName = page.artist.name,
+                                        sourceId = artistId,
+                                        sourceType = QueueSourceType.Artist,
+                                    )
+                                },
+                            )
+                        }
+                    }
+
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         contentPadding = PaddingValues(
                             top = 8.dp,
                             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
@@ -105,51 +154,24 @@ fun ArtistScreen(
                             end = 8.dp
                         )
                     ) {
-                        item {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Row(modifier = Modifier.fillMaxSize()) {
-                                    BackButton(onBack = onBack)
-                                }
-                                SquareImage(
-                                    uri = page.artist.thumbnailHref,
-                                    cornerRadius = 0.dp,
-                                    modifier = Modifier
-                                        .size(140.dp)
-                                        .clip(MaterialShapes.Cookie12Sided.toShape())
-                                )
-                                Text(
-                                    text = page.artist.name,
-                                    style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                                        fontFamily = nunitoFontFamily
-                                    )
-                                )
-                                page.artist.subscriberCount?.takeIf { it.isNotBlank() }?.let {
-                                    Text(
-                                        text = it,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                page.artist.description?.takeIf { it.isNotBlank() }?.let { bio ->
-                                    // Bios run to several paragraphs; collapsed by default so they
-                                    // never push the music below the fold.
-                                    Text(
-                                        text = bio,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = if (bioExpanded) Int.MAX_VALUE else 3,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier
-                                            .padding(horizontal = 8.dp)
-                                            .clickable { bioExpanded = !bioExpanded }
-                                    )
-                                }
-                                if (page.songs.isNotEmpty()) {
-                                    PlayShuffleRow(
+                        if (!showContextPane) {
+                            item {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                ) {
+                                    ArtistContextHeader(
+                                        onBack = onBack,
+                                        thumbnail = page.artist.thumbnailHref,
+                                        name = page.artist.name,
+                                        subscriberCount = page.artist.subscriberCount,
+                                        description = page.artist.description,
+                                        artworkSize = 140.dp,
+                                        bioExpanded = bioExpanded,
+                                        collapsedBioLines = 3,
+                                        onToggleBio = { bioExpanded = !bioExpanded },
+                                        hasSongs = page.songs.isNotEmpty(),
                                         onPlay = {
                                             onOpenPlayer()
                                             PlayerManager.playQueue(
@@ -300,9 +322,71 @@ fun ArtistScreen(
                             }
                         }
                     }
+                    }
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ColumnScope.ArtistContextHeader(
+    onBack: () -> Unit,
+    thumbnail: String,
+    name: String,
+    subscriberCount: String?,
+    description: String?,
+    artworkSize: Dp,
+    bioExpanded: Boolean,
+    collapsedBioLines: Int,
+    onToggleBio: () -> Unit,
+    hasSongs: Boolean,
+    onPlay: () -> Unit,
+    onShuffle: () -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        BackButton(onBack = onBack)
+    }
+    SquareImage(
+        uri = thumbnail,
+        cornerRadius = 0.dp,
+        modifier = Modifier
+            .size(artworkSize)
+            .clip(MaterialShapes.Cookie12Sided.toShape()),
+    )
+    Text(
+        text = name,
+        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
+            fontFamily = nunitoFontFamily
+        ),
+        textAlign = TextAlign.Center,
+    )
+    subscriberCount?.takeIf { it.isNotBlank() }?.let { count ->
+        Text(
+            text = count,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+    description?.takeIf { it.isNotBlank() }?.let { bio ->
+        Text(
+            text = bio,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = if (bioExpanded) Int.MAX_VALUE else collapsedBioLines,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggleBio),
+        )
+    }
+    if (hasSongs) {
+        PlayShuffleRow(
+            onPlay = onPlay,
+            onShuffle = onShuffle,
+        )
     }
 }
 
