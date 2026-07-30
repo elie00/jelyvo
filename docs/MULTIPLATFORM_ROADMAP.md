@@ -15,9 +15,9 @@
   1360 × 700 dp, un panneau de bibliothèque expose en permanence les playlists locales comme cibles
   de dépôt ; la pochette courante et les titres de la file permanente sont eux-mêmes déplaçables
   vers ces cibles. Les pages Album et Artiste séparent aussi leur contexte de leur contenu lorsque
-  l'espace réellement restant le permet.
-- Chantier actif : ajouter la sélection multiple grand écran, puis extraire dans cet ordre `Track`,
-  `PlaybackEngine` et `MusicCatalog`.
+  l'espace réellement restant le permet. Leurs listes prennent désormais en charge la sélection
+  multiple conventionnelle Ctrl/Commande–Maj et les actions groupées de lecture, file et playlist.
+- Chantier actif : extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

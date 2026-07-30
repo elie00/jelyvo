@@ -26,8 +26,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - panneaux contextuels Album et Artiste dès que leur zone de contenu restante atteint 760 × 560 dp :
   identité, métadonnées, biographie et commandes restent visibles pendant que titres et
   discographie défilent indépendamment, avec repli vertical continu sous le seuil.
-
-Le prochain lot grand écran concerne la sélection multiple à la souris.
+- sélection multiple des titres sur Album et Artiste : Ctrl/Commande + clic ajoute ou retire un
+  titre, Maj + clic sélectionne une plage, puis une barre contextuelle permet de lire la sélection,
+  de l'ajouter en une opération à la file ou à une playlist locale sans doublons.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
