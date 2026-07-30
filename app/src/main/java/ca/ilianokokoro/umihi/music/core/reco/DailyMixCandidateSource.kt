@@ -10,6 +10,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.models.Library
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.flow.first
 
 /**
@@ -39,7 +40,7 @@ class DailyMixCandidateSource(context: Context) {
     private val datastoreRepository = DatastoreRepository(appContext)
     private val radioRepository = RadioRepository()
 
-    suspend fun collect(profile: TasteProfile): List<DailyMixCandidate> {
+    suspend fun collect(profile: TasteProfile): List<DailyMixCandidate<Song>> {
         // youtubeId -> start of its latest play; drives both novelty and the fatigue rule.
         val lastPlayedAt = playEventRepository.aggregatesSince(0L)
             .associate { it.youtubeId to it.lastPlayedAt }
@@ -79,11 +80,15 @@ class DailyMixCandidateSource(context: Context) {
             .take(MAX_PER_SOURCE)
         val neighborSongs = resolveSongs(neighborIds)
 
-        fun tag(songs: List<Song>, source: CandidateSource): List<DailyMixCandidate> = songs
+        fun tag(
+            songs: List<Song>,
+            source: CandidateSource,
+        ): List<DailyMixCandidate<Song>> = songs
             .filter { it.youtubeId.isNotBlank() }
             .map {
                 DailyMixCandidate(
-                    song = it,
+                    track = it.toTrack(),
+                    value = it,
                     lastPlayedAtMs = lastPlayedAt[it.youtubeId],
                     source = source,
                 )

@@ -33,18 +33,18 @@ fun contextMixBucket(hourOfDay: Int): DayBucket? = when (hourOfDay) {
  * discovery order still means something downstream. A bucket with no profile data (or only
  * unknown artists) leaves the pool untouched.
  */
-fun biasCandidatesToBucket(
-    candidates: List<DailyMixCandidate>,
+fun <T> biasCandidatesToBucket(
+    candidates: List<DailyMixCandidate<T>>,
     profile: TasteProfile,
     bucket: DayBucket,
-): List<DailyMixCandidate> {
+): List<DailyMixCandidate<T>> {
     val bucketArtistKeys = profile.hourlyTopArtists[bucket].orEmpty()
         .map { artistKey(it) }
         .filterTo(HashSet()) { it.isNotBlank() }
     if (bucketArtistKeys.isEmpty()) return candidates
 
     val (matching, others) = candidates.partition {
-        artistKey(it.song.artist) in bucketArtistKeys
+        artistKey(it.track.artist.name) in bucketArtistKeys
     }
     return matching + others
 }

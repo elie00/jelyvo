@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.reco
 
-import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.core.domain.ArtistRef
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -9,8 +10,11 @@ class ContextMixTest {
 
     private val now = 1_700_000_000_000L
 
-    private fun candidate(id: String, artist: String) =
-        DailyMixCandidate(song = Song(youtubeId = id, title = "Title $id", artist = artist))
+    private fun candidate(id: String, artist: String) = Track(
+        id = id,
+        title = "Title $id",
+        artist = ArtistRef(name = artist),
+    ).let { track -> DailyMixCandidate(track = track, value = track) }
 
     private fun profile(hourlyTopArtists: Map<DayBucket, List<String>>) = TasteProfile(
         computedAtMs = now,
@@ -53,7 +57,7 @@ class ContextMixTest {
             bucket = DayBucket.EVENING,
         )
 
-        assertEquals(listOf("b", "d", "a", "c"), biased.map { it.song.youtubeId })
+        assertEquals(listOf("b", "d", "a", "c"), biased.map { it.track.id })
     }
 
     @Test

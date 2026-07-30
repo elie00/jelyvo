@@ -88,17 +88,18 @@ fun topAffinitySeeds(profile: TasteProfile, count: Int = RECO_SEED_COUNT): Set<S
  * Scores one candidate; higher is a better pick right now. Returns null when the track is
  * vetoed (blank id or not-interested) — a veto is an absence, not a very low score.
  */
-fun recoScore(
-    candidate: DailyMixCandidate,
+fun <T> recoScore(
+    candidate: DailyMixCandidate<T>,
     profile: TasteProfile,
     context: RecoContext,
     weights: RecoWeights = RecoWeights.DAILY,
 ): Double? {
-    val id = candidate.song.youtubeId
+    val id = candidate.track.id
     if (id.isBlank() || id in context.notInterestedIds) return null
 
     val songAffinity = profile.affinity.songAffinity[id] ?: 0.0
-    val artistAffinity = profile.affinity.artistAffinity[artistKey(candidate.song.artist)] ?: 0.0
+    val artistAffinity =
+        profile.affinity.artistAffinity[artistKey(candidate.track.artist.name)] ?: 0.0
     val coListenToSeeds = context.seedIds.sumOf { seed ->
         profile.coListen.edges[seed]?.get(id) ?: 0.0
     }
@@ -117,8 +118,8 @@ fun recoScore(
  * artists, 1.0 for the first, sliding down to 1/n for the last, 0 outside the list (or with no
  * bucket). Names are compared through [artistKey], matching how the hourly profile groups them.
  */
-private fun contextMatchTerm(
-    candidate: DailyMixCandidate,
+private fun <T> contextMatchTerm(
+    candidate: DailyMixCandidate<T>,
     profile: TasteProfile,
     dayBucket: DayBucket?,
 ): Double {
@@ -126,7 +127,7 @@ private fun contextMatchTerm(
     val topArtists = profile.hourlyTopArtists[bucket].orEmpty()
     if (topArtists.isEmpty()) return 0.0
 
-    val key = artistKey(candidate.song.artist)
+    val key = artistKey(candidate.track.artist.name)
     if (key.isBlank()) return 0.0
     val rank = topArtists.indexOfFirst { artistKey(it) == key }
     return if (rank >= 0) (topArtists.size - rank).toDouble() / topArtists.size else 0.0
@@ -136,7 +137,7 @@ private fun contextMatchTerm(
  * Fatigue in [0, 1]: 1.0 right after a play, linearly down to 0 at [DAILY_MIX_FATIGUE_MS] (48 h),
  * 0 beyond. Clock skew (a play "in the future") clamps to full fatigue.
  */
-private fun fatigueTerm(candidate: DailyMixCandidate, nowMs: Long): Double {
+private fun <T> fatigueTerm(candidate: DailyMixCandidate<T>, nowMs: Long): Double {
     val lastPlayedAt = candidate.lastPlayedAtMs ?: return 0.0
     val age = nowMs - lastPlayedAt
     if (age < 0) return 1.0

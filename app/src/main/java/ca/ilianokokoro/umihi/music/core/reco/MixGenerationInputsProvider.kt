@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.reco
 
 import android.content.Context
+import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
@@ -9,7 +10,7 @@ import kotlinx.coroutines.sync.withLock
 /** One consistent profile/candidate snapshot shared by every mix generated at the same time. */
 data class MixGenerationInputs(
     val profile: TasteProfile,
-    val candidates: List<DailyMixCandidate>,
+    val candidates: List<DailyMixCandidate<Song>>,
 )
 
 /**

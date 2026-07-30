@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.reco
 
-import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.core.domain.ArtistRef
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -15,7 +16,17 @@ class RecoScorerTest {
         id: String,
         artist: String = "Artist $id",
         lastPlayedAtMs: Long? = null,
-    ) = DailyMixCandidate(song = Song(youtubeId = id, title = "Title $id", artist = artist), lastPlayedAtMs = lastPlayedAtMs)
+    ) = Track(
+        id = id,
+        title = "Title $id",
+        artist = ArtistRef(name = artist),
+    ).let { track ->
+        DailyMixCandidate(
+            track = track,
+            value = track,
+            lastPlayedAtMs = lastPlayedAtMs,
+        )
+    }
 
     private fun profile(
         songAffinity: Map<String, Double> = emptyMap(),

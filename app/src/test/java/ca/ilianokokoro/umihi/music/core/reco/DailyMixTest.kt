@@ -1,8 +1,10 @@
 package ca.ilianokokoro.umihi.music.core.reco
 
-import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.core.domain.ArtistRef
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.ZoneId
@@ -13,17 +15,23 @@ class DailyMixTest {
     private val fresh = now - DAILY_MIX_FATIGUE_MS - 1_000L
     private val fatigued = now - 1_000L
 
-    private fun song(id: String, artist: String = "Artist $id") = Song(
-        youtubeId = id,
+    private fun track(id: String, artist: String = "Artist $id") = Track(
+        id = id,
         title = "Title $id",
-        artist = artist,
+        artist = ArtistRef(name = artist),
     )
 
     private fun candidate(
         id: String,
         artist: String = "Artist $id",
         lastPlayedAtMs: Long? = null,
-    ) = DailyMixCandidate(song = song(id, artist), lastPlayedAtMs = lastPlayedAtMs)
+    ) = track(id, artist).let { track ->
+        DailyMixCandidate(
+            track = track,
+            value = track,
+            lastPlayedAtMs = lastPlayedAtMs,
+        )
+    }
 
     private fun profile(songAffinity: Map<String, Double>) = TasteProfile(
         computedAtMs = now,
@@ -41,7 +49,7 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        assertEquals(listOf("b"), mix.map { it.youtubeId })
+        assertEquals(listOf("b"), mix.map { it.id })
     }
 
     @Test
@@ -56,7 +64,7 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        assertEquals(listOf("liked"), mix.map { it.youtubeId })
+        assertEquals(listOf("liked"), mix.map { it.id })
     }
 
     @Test
@@ -71,7 +79,26 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        assertEquals(listOf("a"), mix.map { it.youtubeId })
+        assertEquals(listOf("a"), mix.map { it.id })
+    }
+
+    @Test
+    fun `ranking returns the original platform value without rebuilding it`() {
+        val legacyValue = Any()
+        val candidate = DailyMixCandidate(
+            track = track("a"),
+            value = legacyValue,
+            lastPlayedAtMs = fresh,
+        )
+
+        val mix = buildDailyMix(
+            profile = profile(mapOf("a" to 1.0)),
+            candidates = listOf(candidate),
+            notInterestedIds = emptySet(),
+            nowMs = now,
+        )
+
+        assertSame(legacyValue, mix.single())
     }
 
     // --- anchor -----------------------------------------------------------------------------
@@ -90,7 +117,7 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        assertEquals("mid", mix.first().youtubeId)
+        assertEquals("mid", mix.first().id)
     }
 
     // --- fatigue ----------------------------------------------------------------------------
@@ -106,7 +133,7 @@ class DailyMixTest {
             targetSize = 10,
         )
 
-        assertFalse("tired" in mix.map { it.youtubeId })
+        assertFalse("tired" in mix.map { it.id })
     }
 
     @Test
@@ -121,7 +148,7 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        assertEquals(listOf("a", "b"), mix.map { it.youtubeId })
+        assertEquals(listOf("a", "b"), mix.map { it.id })
     }
 
     // --- familiar / new balance -------------------------------------------------------------
@@ -138,7 +165,7 @@ class DailyMixTest {
         )
 
         assertEquals(DAILY_MIX_TARGET_SIZE, mix.size)
-        val familiarCount = mix.count { it.youtubeId.startsWith("f") }
+        val familiarCount = mix.count { it.id.startsWith("f") }
         val ratio = familiarCount.toDouble() / mix.size
         assertTrue("familiar ratio was $ratio", ratio in 0.65..0.8)
     }
@@ -156,8 +183,8 @@ class DailyMixTest {
 
         mix.zipWithNext().forEach { (first, second) ->
             assertFalse(
-                "two new tracks in a row: ${first.youtubeId} -> ${second.youtubeId}",
-                first.youtubeId.startsWith("n") && second.youtubeId.startsWith("n"),
+                "two new tracks in a row: ${first.id} -> ${second.id}",
+                first.id.startsWith("n") && second.id.startsWith("n"),
             )
         }
     }
@@ -172,7 +199,7 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        mix.map { it.youtubeId }.zipWithNext().forEach { (first, second) ->
+        mix.map { it.id }.zipWithNext().forEach { (first, second) ->
             assertFalse(first.startsWith("n") && second.startsWith("n"))
         }
         assertTrue(mix.size < DAILY_MIX_TARGET_SIZE)
@@ -192,7 +219,9 @@ class DailyMixTest {
             nowMs = now,
         )
 
-        mix.map { artistKey(it.artist) }.windowed(DAILY_MIX_ARTIST_WINDOW).forEach { window ->
+        mix.map { artistKey(it.artist.name) }
+            .windowed(DAILY_MIX_ARTIST_WINDOW)
+            .forEach { window ->
             assertEquals("artist repeated in $window", window.size, window.distinct().size)
         }
     }
