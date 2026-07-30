@@ -36,6 +36,7 @@ import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
+import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropSource
 
 @Composable
 fun ResumeListeningRow(
@@ -83,6 +84,7 @@ private fun ResumeCard(
             modifier = Modifier
                 .width(136.dp)
                 .keyboardFocusOutline(RoundedCornerShape(20.dp))
+                .songDragAndDropSource(song)
                 .onKeyboardContextMenu { menuExpanded = true }
                 .onSecondaryClick { menuExpanded = true }
                 .combinedClickable(

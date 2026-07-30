@@ -51,6 +51,7 @@
     <string name="retry">Réessayer</string>
     <string name="play_next_toast">Lecture de ce titre suivant</string>
     <string name="added_queue_toast">Ajout du titre à la file d\'attente</string>
+    <string name="drop_to_queue">Relâcher pour ajouter à la file d\'attente</string>
     <string name="playing_now">En cours de lecture</string>
     <string name="lyrics">Paroles</string>
     <string name="show_artwork">Pochette</string>
