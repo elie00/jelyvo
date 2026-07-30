@@ -17,7 +17,11 @@
   vers ces cibles. Les pages Album et Artiste séparent aussi leur contexte de leur contenu lorsque
   l'espace réellement restant le permet. Leurs listes prennent désormais en charge la sélection
   multiple conventionnelle Ctrl/Commande–Maj et les actions groupées de lecture, file et playlist.
-- Chantier actif : extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
+- Découplage livré : `Track`, `ArtistRef`, `AlbumRef` et `TrackSource` ne dépendent d'aucune API
+  Android. L'adaptateur `Song ↔ Track` est couvert par des tests contractuels et le classement des
+  Daily/Context Mix repose déjà sur ce modèle partagé sans reconstruire les `Song` transportés.
+- Chantier actif : étendre cette frontière aux données locales, puis extraire `PlaybackEngine` et
+  `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
@@ -256,6 +260,11 @@ Track ── WebTrackAdapter ──────> MediaMetadata
 
 `Song` peut rester temporairement comme modèle Android pendant que `Track` devient le modèle partagé.
 Une migration progressive limite le risque de casser l'application existante.
+
+Premier jalon livré sur `main` : le modèle partagé et l'adaptateur Android existent, et le moteur de
+recommandations transporte une valeur de plateforme opaque autour de `Track`. Les décisions de
+classement n'accèdent donc plus à `Song`, tandis que les écrans et caches Android continuent de
+recevoir exactement leurs objets existants.
 
 ## Interfaces partagées à introduire
 

@@ -29,6 +29,10 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - sélection multiple des titres sur Album et Artiste : Ctrl/Commande + clic ajoute ou retire un
   titre, Maj + clic sélectionne une plage, puis une barre contextuelle permet de lire la sélection,
   de l'ajouter en une opération à la file ou à une playlist locale sans doublons.
+- premier modèle de domaine `Track` indépendant d'Android, accompagné des références artiste,
+  album et source, d'un adaptateur `Song ↔ Track` testé et d'une première utilisation réelle :
+  Daily Mix et Context Mix classent désormais les `Track` purs tout en restituant les objets Android
+  originaux sans perte.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
