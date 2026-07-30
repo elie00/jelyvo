@@ -1,6 +1,6 @@
 # Feuille de route macOS Apple Silicon et Web
 
-## État d'avancement au 29 juillet 2026
+## État d'avancement au 30 juillet 2026
 
 - Android stable : `v2.3.3` est publiée avec signature pérenne et mise à jour intégrée.
 - Découplage commencé : `SearchResponseParser` et plusieurs règles de lecture, de recommandation et
@@ -8,10 +8,10 @@
 - Blocage actuel : l'application reste organisée autour d'un unique module Android et les écrans
   connaissent encore directement Media3, Room ou `Application`.
 - Adaptation livrée : navigation latérale, file permanente du lecteur, redimensionnement continu,
-  commandes clavier du lecteur, raccourcis de navigation et menus de titres au clic droit sont
-  présents sur `main`.
-- Chantier actif : compléter la navigation au clavier, le glisser-déposer et les autres panneaux
-  grand écran, puis extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
+  commandes clavier du lecteur, raccourcis de navigation, focus visible et menus de titres
+  accessibles à la souris comme au clavier sont présents sur `main`.
+- Chantier actif : ajouter le glisser-déposer et les autres panneaux grand écran, puis extraire dans
+  cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

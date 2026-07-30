@@ -1,6 +1,6 @@
 # Feuille de route d'expansion de l'écosystème Jelyvo
 
-## État d'avancement au 29 juillet 2026
+## État d'avancement au 30 juillet 2026
 
 La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments sont livrés sur `main` :
 
@@ -10,10 +10,12 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - conservation du lecteur pendant le redimensionnement d'une fenêtre DeX ;
 - commandes clavier du lecteur : espace, gauche, droite et Échap ;
 - raccourcis globaux vers Accueil, Recherche, Bibliothèque et Réglages ;
-- menus des titres accessibles au clic droit, sans modifier les gestes tactiles existants.
+- menus des titres accessibles au clic droit, sans modifier les gestes tactiles existants ;
+- focus visible au clavier sur la navigation, les titres, la file et les cartes d'accueil ;
+- activation des titres avec Entrée et ouverture de leurs menus avec Menu ou Maj+F10.
 
-Les prochains lots grand écran concernent les panneaux permanents hors lecteur, le glisser-déposer
-et la navigation complète au clavier avec focus visible.
+Les prochains lots grand écran concernent les panneaux permanents hors lecteur et le glisser-déposer
+entre les titres, les playlists et la file.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
