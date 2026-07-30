@@ -29,6 +29,13 @@ internal fun classifyWindowWidth(widthDp: Int): WindowWidthClass = when {
 internal fun supportsPermanentSecondaryPane(widthDp: Int, heightDp: Int): Boolean =
     classifyWindowWidth(widthDp) == WindowWidthClass.Expanded && heightDp >= 480
 
+/**
+ * The app-wide playback pane reserves more horizontal space than the full player's third column.
+ * Keep it for desktop-sized windows so 840 dp tablets retain a comfortable content area.
+ */
+internal fun supportsPermanentPlaybackPane(widthDp: Int, heightDp: Int): Boolean =
+    widthDp >= 1000 && heightDp >= 600
+
 @Composable
 fun currentWindowWidthClass(): WindowWidthClass =
     classifyWindowWidth(LocalConfiguration.current.screenWidthDp)

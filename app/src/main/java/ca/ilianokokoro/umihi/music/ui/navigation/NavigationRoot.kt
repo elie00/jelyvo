@@ -48,6 +48,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -62,6 +63,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
+import ca.ilianokokoro.umihi.music.ui.components.miniplayer.PermanentPlaybackPane
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.album.AlbumScreen
 import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
@@ -89,11 +91,17 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
     val app = LocalContext.current.applicationContext as Application
     val currentScreen = backStack.last()
     val screenConfig = rememberScreenUiConfig(currentScreen)
+    val configuration = LocalConfiguration.current
     val windowWidthClass = currentWindowWidthClass()
     val showBottomNavigation =
         screenConfig.showBottomBar && windowWidthClass == WindowWidthClass.Compact
     val showSideNavigation =
         screenConfig.showBottomBar && windowWidthClass != WindowWidthClass.Compact
+    val showPermanentPlaybackPane =
+        screenConfig.showMiniPlayer && supportsPermanentPlaybackPane(
+            widthDp = configuration.screenWidthDp,
+            heightDp = configuration.screenHeightDp,
+        )
 
     var showFullPlayer by rememberSaveable { mutableStateOf(false) }
     val bottomDockState = remember { BottomDockState() }
@@ -500,7 +508,8 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     .padding(bottom = dockBottomPadding)
             ) {
                 MiniPlayerWrapper(
-                    showMiniPlayer = screenConfig.showMiniPlayer,
+                    showMiniPlayer =
+                        screenConfig.showMiniPlayer && !showPermanentPlaybackPane,
                     onMiniPlayerPressed = { showFullPlayer = true },
                     artworkModifier = artworkModifier,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -524,6 +533,13 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                 }
             }
         }
+
+            PermanentPlaybackPane(
+                visible = showPermanentPlaybackPane,
+                onOpenPlayer = { showFullPlayer = true },
+                artworkModifier = artworkModifier,
+                modifier = Modifier.fillMaxHeight(),
+            )
         }
         }
 

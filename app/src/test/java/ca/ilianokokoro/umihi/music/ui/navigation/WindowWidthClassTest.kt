@@ -29,4 +29,12 @@ class WindowWidthClassTest {
         assertEquals(true, supportsPermanentSecondaryPane(widthDp = 840, heightDp = 480))
         assertEquals(true, supportsPermanentSecondaryPane(widthDp = 1200, heightDp = 900))
     }
+
+    @Test
+    fun `app wide playback pane is reserved for desktop sized windows`() {
+        assertEquals(false, supportsPermanentPlaybackPane(widthDp = 999, heightDp = 900))
+        assertEquals(false, supportsPermanentPlaybackPane(widthDp = 1200, heightDp = 599))
+        assertEquals(true, supportsPermanentPlaybackPane(widthDp = 1000, heightDp = 600))
+        assertEquals(true, supportsPermanentPlaybackPane(widthDp = 1600, heightDp = 1000))
+    }
 }

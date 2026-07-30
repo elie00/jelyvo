@@ -114,6 +114,7 @@
     <string name="get_song_failed">Failed to get Song Information</string>
     <string name="playback_failed">Playback stopped. Check your connection and try again.</string>
     <string name="queue_empty">No songs in the queue</string>
+    <string name="queue_up_next_empty">Nothing else is queued</string>
     <string name="save_queue">Save queue</string>
     <string name="save_queue_title">Save this queue</string>
     <string name="my_queue">My queue</string>

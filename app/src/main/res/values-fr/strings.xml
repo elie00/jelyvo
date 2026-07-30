@@ -110,6 +110,7 @@
     <string name="get_song_failed">Impossible d\'obtenir les informations du titre</string>
     <string name="playback_failed">La lecture s\'est arrêtée. Vérifiez votre connexion et réessayez.</string>
     <string name="queue_empty">Aucun titre dans la file d\'attente</string>
+    <string name="queue_up_next_empty">Aucun autre titre dans la file</string>
     <string name="save_queue">Enregistrer la file</string>
     <string name="save_queue_title">Enregistrer cette file</string>
     <string name="my_queue">Ma file</string>
