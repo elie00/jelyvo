@@ -11,9 +11,11 @@
   commandes clavier du lecteur, raccourcis de navigation, focus visible et menus de titres
   accessibles à la souris comme au clavier, ainsi que glisser d'un titre vers la file via le
   mini-lecteur ou vers une playlist locale, sont présents sur `main`. Un volet de lecture et de file
-  remplace aussi le mini-lecteur dans les fenêtres de bureau assez grandes.
-- Chantier actif : compléter les panneaux contextuels grand écran, puis extraire dans cet ordre
-  `Track`, `PlaybackEngine` et `MusicCatalog`.
+  remplace aussi le mini-lecteur dans les fenêtres de bureau assez grandes. À partir de
+  1360 × 700 dp, un panneau de bibliothèque expose en permanence les playlists locales comme cibles
+  de dépôt.
+- Chantier actif : compléter les panneaux de contexte album/artiste et la sélection multiple grand
+  écran, puis extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
