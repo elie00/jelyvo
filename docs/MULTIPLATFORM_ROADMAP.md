@@ -14,9 +14,10 @@
   remplace aussi le mini-lecteur dans les fenêtres de bureau assez grandes. À partir de
   1360 × 700 dp, un panneau de bibliothèque expose en permanence les playlists locales comme cibles
   de dépôt ; la pochette courante et les titres de la file permanente sont eux-mêmes déplaçables
-  vers ces cibles.
-- Chantier actif : compléter les panneaux de contexte album/artiste et la sélection multiple grand
-  écran, puis extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
+  vers ces cibles. Les pages Album et Artiste séparent aussi leur contexte de leur contenu lorsque
+  l'espace réellement restant le permet.
+- Chantier actif : ajouter la sélection multiple grand écran, puis extraire dans cet ordre `Track`,
+  `PlaybackEngine` et `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

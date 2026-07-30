@@ -23,9 +23,11 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - panneau permanent de bibliothèque à partir de 1360 × 700 dp : accès aux playlists locales,
   pochettes mosaïques, nombre de titres et dépôt direct depuis les écrans de navigation, avec refus
   visible des doublons.
+- panneaux contextuels Album et Artiste dès que leur zone de contenu restante atteint 760 × 560 dp :
+  identité, métadonnées, biographie et commandes restent visibles pendant que titres et
+  discographie défilent indépendamment, avec repli vertical continu sous le seuil.
 
-Les prochains lots grand écran concernent les panneaux de contexte album/artiste et la sélection
-multiple à la souris.
+Le prochain lot grand écran concerne la sélection multiple à la souris.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
