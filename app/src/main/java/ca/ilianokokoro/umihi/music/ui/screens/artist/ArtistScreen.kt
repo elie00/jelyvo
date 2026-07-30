@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -78,7 +79,7 @@ fun ArtistScreen(
     val state = artistViewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
 
-    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { paddingValues ->
+    Scaffold(contentWindowInsets = WindowInsets.systemBars) { paddingValues ->
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
