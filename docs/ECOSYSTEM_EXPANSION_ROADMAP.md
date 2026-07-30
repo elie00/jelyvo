@@ -14,10 +14,12 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - focus visible au clavier sur la navigation, les titres, la file et les cartes d'accueil ;
 - activation des titres avec Entrée et ouverture de leurs menus avec Menu ou Maj+F10 ;
 - glisser d'un titre depuis une liste ou une carte d'accueil vers le mini-lecteur pour l'ajouter à la
-  file, sans remplacer l'appui long tactile.
+  file, sans remplacer l'appui long tactile ;
+- dépôt d'un titre sur une carte de playlist locale, avec surbrillance de la cible et refus des
+  doublons.
 
-Les prochains lots grand écran concernent les panneaux permanents hors lecteur et l'extension du
-glisser-déposer aux playlists.
+Les prochains lots grand écran concernent les panneaux permanents hors lecteur et l'exposition des
+cibles de dépôt depuis davantage d'écrans.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

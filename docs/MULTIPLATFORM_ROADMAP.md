@@ -10,9 +10,9 @@
 - Adaptation livrée : navigation latérale, file permanente du lecteur, redimensionnement continu,
   commandes clavier du lecteur, raccourcis de navigation, focus visible et menus de titres
   accessibles à la souris comme au clavier, ainsi que glisser d'un titre vers la file via le
-  mini-lecteur, sont présents sur `main`.
-- Chantier actif : étendre le glisser-déposer aux playlists et ajouter les autres panneaux grand
-  écran, puis extraire dans cet ordre `Track`, `PlaybackEngine` et `MusicCatalog`.
+  mini-lecteur ou vers une playlist locale, sont présents sur `main`.
+- Chantier actif : ajouter les autres panneaux grand écran, puis extraire dans cet ordre `Track`,
+  `PlaybackEngine` et `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
