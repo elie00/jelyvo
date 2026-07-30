@@ -16,10 +16,12 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - glisser d'un titre depuis une liste ou une carte d'accueil vers le mini-lecteur pour l'ajouter à la
   file, sans remplacer l'appui long tactile ;
 - dépôt d'un titre sur une carte de playlist locale, avec surbrillance de la cible et refus des
-  doublons.
+  doublons ;
+- volet permanent de lecture hors lecteur complet à partir de 1000 × 600 dp : pochette, progression,
+  contrôles, file à suivre et cible de dépôt, avec retour automatique au mini-lecteur sous ce seuil.
 
-Les prochains lots grand écran concernent les panneaux permanents hors lecteur et l'exposition des
-cibles de dépôt depuis davantage d'écrans.
+Les prochains lots grand écran concernent les panneaux de bibliothèque/contexte complémentaires et
+l'exposition des cibles de dépôt depuis davantage d'écrans.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
