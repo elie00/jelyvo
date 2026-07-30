@@ -36,6 +36,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
+import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 
 @Composable
@@ -83,6 +84,7 @@ private fun RecentlyPlayedCard(
             modifier = Modifier
                 .width(136.dp)
                 .keyboardFocusOutline(RoundedCornerShape(20.dp))
+                .onKeyboardContextMenu { menuExpanded = true }
                 .onSecondaryClick { menuExpanded = true }
                 .combinedClickable(
                     onClick = onClick,

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
+import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
@@ -68,6 +69,7 @@ fun QueueSongListItem(
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
             .keyboardFocusOutline(RoundedCornerShape(18.dp))
+            .onKeyboardContextMenu { expanded = true }
             .onSecondaryClick { expanded = true }
             .clickable(onClick = onPress),
         leadingContent = {
