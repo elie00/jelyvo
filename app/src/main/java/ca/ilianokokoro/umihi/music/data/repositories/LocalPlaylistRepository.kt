@@ -83,10 +83,10 @@ class LocalPlaylistRepository(application: Application) {
     suspend fun addSong(id: String, song: Song): Boolean {
         val existing = dao.getById(id) ?: return false
         val songs = songsOf(existing)
-        if (songs.any { it.id == song.youtubeId }) return false
+        val updatedSongs = appendSongIfMissing(songs, song) ?: return false
         dao.upsert(
             existing.copy(
-                songsJson = json.encodeToString(songs + LocalPlaylistSong.fromSong(song))
+                songsJson = json.encodeToString(updatedSongs)
             )
         )
         return true
@@ -143,4 +143,16 @@ class LocalPlaylistRepository(application: Application) {
         const val EXPORT_VERSION = 1
         private const val DEFAULT_IMPORT_NAME = "Imported playlist"
     }
+}
+
+/**
+ * Preserves manual playlist order while rejecting a duplicate stable media id.
+ * Kept pure so every pointer/menu entry point relies on the same testable rule.
+ */
+internal fun appendSongIfMissing(
+    existing: List<LocalPlaylistSong>,
+    song: Song,
+): List<LocalPlaylistSong>? {
+    if (existing.any { it.id == song.youtubeId }) return null
+    return existing + LocalPlaylistSong.fromSong(song)
 }

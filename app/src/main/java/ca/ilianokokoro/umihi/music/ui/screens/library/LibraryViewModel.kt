@@ -19,6 +19,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -136,6 +137,27 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
 
     fun consumeImportMessage() {
         _uiState.update { it.copy(importMessage = null) }
+    }
+
+    /** Adds a pointer-dropped title to an editable playlist and surfaces duplicate/failure state. */
+    fun addDroppedSongToLocalPlaylist(playlistId: String, song: Song) {
+        viewModelScope.launch {
+            val message = try {
+                if (localPlaylistRepository.addSong(playlistId, song)) {
+                    R.string.song_added_to_playlist
+                } else {
+                    R.string.song_already_in_playlist
+                }
+            } catch (ex: Exception) {
+                printe(message = "Failed to add dropped song to local playlist", exception = ex)
+                R.string.playlist_update_failed
+            }
+            _uiState.update { it.copy(playlistDropMessage = message) }
+        }
+    }
+
+    fun consumePlaylistDropMessage() {
+        _uiState.update { it.copy(playlistDropMessage = null) }
     }
 
     fun load() {

@@ -53,6 +53,7 @@
     <string name="play_next_toast">Playing this song next</string>
     <string name="added_queue_toast">Added song to the queue</string>
     <string name="drop_to_queue">Release to add to queue</string>
+    <string name="drop_to_playlist">Release to add to playlist</string>
     <string name="playing_now">Playing Now</string>
     <string name="lyrics">Lyrics</string>
     <string name="show_artwork">Artwork</string>
@@ -320,6 +321,7 @@
     <string name="playlist_default_name">My playlist</string>
     <string name="song_already_in_playlist">This title is already in this playlist</string>
     <string name="song_added_to_playlist">Title added to playlist</string>
+    <string name="playlist_update_failed">Couldn’t update this playlist</string>
     <string name="album_share_text" translatable="false">%1$s\n%2$s</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="audio_quality_title">Audio quality</string>

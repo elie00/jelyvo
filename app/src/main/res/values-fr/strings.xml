@@ -52,6 +52,7 @@
     <string name="play_next_toast">Lecture de ce titre suivant</string>
     <string name="added_queue_toast">Ajout du titre à la file d\'attente</string>
     <string name="drop_to_queue">Relâcher pour ajouter à la file d\'attente</string>
+    <string name="drop_to_playlist">Relâcher pour ajouter à la playlist</string>
     <string name="playing_now">En cours de lecture</string>
     <string name="lyrics">Paroles</string>
     <string name="show_artwork">Pochette</string>
@@ -309,6 +310,7 @@
     <string name="playlist_default_name">Ma playlist</string>
     <string name="song_already_in_playlist">Ce titre est déjà dans cette playlist</string>
     <string name="song_added_to_playlist">Titre ajouté à la playlist</string>
+    <string name="playlist_update_failed">Impossible de mettre à jour cette playlist</string>
     <string name="download_on_metered_title">Télécharger via les données mobiles</string>
     <string name="audio_quality_title">Qualité audio</string>
     <string name="audio_quality_subtitle">Streaming et téléchargements : %1$s</string>

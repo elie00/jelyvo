@@ -146,6 +146,12 @@ fun LibraryScreen(
             libraryViewModel.consumeImportMessage()
         }
     }
+    uiState.playlistDropMessage?.let { messageRes ->
+        LaunchedEffect(messageRes) {
+            Toast.makeText(context, context.getString(messageRes), Toast.LENGTH_SHORT).show()
+            libraryViewModel.consumePlaylistDropMessage()
+        }
+    }
 
     val deletedPlaylistIds by sharedViewModel.deletedPlaylistIds.collectAsStateWithLifecycle()
     val playlistRefreshNeeded by sharedViewModel.playlistRefreshNeeded.collectAsStateWithLifecycle()
@@ -232,6 +238,8 @@ fun LibraryScreen(
                                 onOpenPlayer = onOpenPlayer,
                                 onPlaylistPressed = onPlaylistPressed,
                                 onLocalPlaylistPressed = onLocalPlaylistPressed,
+                                onSongDroppedOnLocalPlaylist =
+                                    libraryViewModel::addDroppedSongToLocalPlaylist,
                                 onCreatePlaylist = { createPlaylistOpen = true },
                                 onImportPlaylist = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                                 onOpenAlbum = onOpenAlbum,
@@ -300,6 +308,8 @@ fun LibraryScreen(
                             onOpenPlayer = onOpenPlayer,
                             onPlaylistPressed = onPlaylistPressed,
                             onLocalPlaylistPressed = onLocalPlaylistPressed,
+                            onSongDroppedOnLocalPlaylist =
+                                libraryViewModel::addDroppedSongToLocalPlaylist,
                             // Creating an account playlist requires sign-in.
                             onCreatePlaylist = null,
                             onImportPlaylist = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
@@ -375,6 +385,7 @@ private fun LibraryContent(
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
+    onSongDroppedOnLocalPlaylist: (playlistId: String, song: Song) -> Unit,
     onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
@@ -396,6 +407,7 @@ private fun LibraryContent(
             onOpenPlayer = onOpenPlayer,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onSongDroppedOnLocalPlaylist = onSongDroppedOnLocalPlaylist,
             onCreatePlaylist = onCreatePlaylist,
             onImportPlaylist = onImportPlaylist,
             onOpenAlbum = onOpenAlbum,
@@ -408,6 +420,7 @@ private fun LibraryContent(
             localPlaylistCovers = localPlaylistCovers,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onSongDroppedOnLocalPlaylist = onSongDroppedOnLocalPlaylist,
             onCreatePlaylist = onCreatePlaylist,
             onImportPlaylist = onImportPlaylist,
         )
@@ -458,6 +471,7 @@ private fun AllSectionsContent(
     onOpenPlayer: () -> Unit,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
+    onSongDroppedOnLocalPlaylist: (playlistId: String, song: Song) -> Unit,
     onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
     onOpenAlbum: (id: String, name: String, cover: String) -> Unit,
@@ -505,6 +519,7 @@ private fun AllSectionsContent(
             localPlaylistCovers = localPlaylistCovers,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onSongDroppedOnLocalPlaylist = onSongDroppedOnLocalPlaylist,
             onCreatePlaylist = onCreatePlaylist,
             onImportPlaylist = onImportPlaylist,
         )
@@ -766,6 +781,7 @@ private fun PlaylistsTab(
     localPlaylistCovers: Map<String, List<String>>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
+    onSongDroppedOnLocalPlaylist: (playlistId: String, song: Song) -> Unit,
     onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
 ) {
@@ -791,6 +807,7 @@ private fun PlaylistsTab(
             localPlaylistCovers = localPlaylistCovers,
             onPlaylistPressed = onPlaylistPressed,
             onLocalPlaylistPressed = onLocalPlaylistPressed,
+            onSongDroppedOnLocalPlaylist = onSongDroppedOnLocalPlaylist,
             onCreatePlaylist = onCreatePlaylist,
             onImportPlaylist = onImportPlaylist,
         )
@@ -807,6 +824,7 @@ private fun LazyGridScope.playlistItems(
     localPlaylistCovers: Map<String, List<String>>,
     onPlaylistPressed: (playlistInfo: PlaylistInfo) -> Unit,
     onLocalPlaylistPressed: (id: String) -> Unit,
+    onSongDroppedOnLocalPlaylist: (playlistId: String, song: Song) -> Unit,
     onCreatePlaylist: (() -> Unit)?,
     onImportPlaylist: () -> Unit,
 ) {
@@ -850,6 +868,9 @@ private fun LazyGridScope.playlistItems(
                 playlistInfo = PlaylistInfo(id = local.id, title = local.name),
                 onClicked = { onLocalPlaylistPressed(local.id) },
                 coverUris = localPlaylistCovers[local.id].orEmpty(),
+                onSongDropped = { song ->
+                    onSongDroppedOnLocalPlaylist(local.id, song)
+                },
             )
         }
     }
