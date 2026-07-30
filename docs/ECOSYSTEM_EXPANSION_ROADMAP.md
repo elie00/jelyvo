@@ -18,13 +18,14 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - dépôt d'un titre sur une carte de playlist locale, avec surbrillance de la cible et refus des
   doublons ;
 - volet permanent de lecture hors lecteur complet à partir de 1000 × 600 dp : pochette, progression,
-  contrôles, file à suivre et cible de dépôt, avec retour automatique au mini-lecteur sous ce seuil.
+  contrôles, file à suivre et cible de dépôt, avec retour automatique au mini-lecteur sous ce seuil ;
+  le titre courant et chaque titre à suivre peuvent aussi être glissés vers une playlist locale.
 - panneau permanent de bibliothèque à partir de 1360 × 700 dp : accès aux playlists locales,
   pochettes mosaïques, nombre de titres et dépôt direct depuis les écrans de navigation, avec refus
   visible des doublons.
 
-Les prochains lots grand écran concernent les panneaux de contexte album/artiste, l'exposition du
-glisser-déposer depuis la file permanente et la sélection multiple à la souris.
+Les prochains lots grand écran concernent les panneaux de contexte album/artiste et la sélection
+multiple à la souris.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
