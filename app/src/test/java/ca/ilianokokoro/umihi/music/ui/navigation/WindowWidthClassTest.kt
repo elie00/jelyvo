@@ -37,4 +37,12 @@ class WindowWidthClassTest {
         assertEquals(true, supportsPermanentPlaybackPane(widthDp = 1000, heightDp = 600))
         assertEquals(true, supportsPermanentPlaybackPane(widthDp = 1600, heightDp = 1000))
     }
+
+    @Test
+    fun `library companion is reserved for very wide desktop windows`() {
+        assertEquals(false, supportsPermanentLibraryPane(widthDp = 1359, heightDp = 900))
+        assertEquals(false, supportsPermanentLibraryPane(widthDp = 1600, heightDp = 699))
+        assertEquals(true, supportsPermanentLibraryPane(widthDp = 1360, heightDp = 700))
+        assertEquals(true, supportsPermanentLibraryPane(widthDp = 1920, heightDp = 1080))
+    }
 }

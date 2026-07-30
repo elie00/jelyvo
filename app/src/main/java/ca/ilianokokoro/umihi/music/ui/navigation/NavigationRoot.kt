@@ -62,6 +62,7 @@ import androidx.navigation3.ui.NavDisplay
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.ui.components.library.PermanentLibraryPane
 import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
 import ca.ilianokokoro.umihi.music.ui.components.miniplayer.PermanentPlaybackPane
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
@@ -99,6 +100,11 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
         screenConfig.showBottomBar && windowWidthClass != WindowWidthClass.Compact
     val showPermanentPlaybackPane =
         screenConfig.showMiniPlayer && supportsPermanentPlaybackPane(
+            widthDp = configuration.screenWidthDp,
+            heightDp = configuration.screenHeightDp,
+        )
+    val showPermanentLibraryPane =
+        screenConfig.showMiniPlayer && supportsPermanentLibraryPane(
             widthDp = configuration.screenWidthDp,
             heightDp = configuration.screenHeightDp,
         )
@@ -255,6 +261,21 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     modifier = Modifier.fillMaxHeight(),
                 )
             }
+
+            PermanentLibraryPane(
+                application = app,
+                visible = showPermanentLibraryPane,
+                onOpenLibrary = { selectRootTab(LibraryScreenKey) },
+                onOpenPlaylist = { playlistId ->
+                    val destination = LocalPlaylistScreenKey(playlistId)
+                    if (backStack.last() != destination) {
+                        backStack.add(destination)
+                    } else {
+                        bottomDockState.requestScrollToTop()
+                    }
+                },
+                modifier = Modifier.fillMaxHeight(),
+            )
 
             Box(
                 modifier = Modifier

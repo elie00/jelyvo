@@ -36,6 +36,14 @@ internal fun supportsPermanentSecondaryPane(widthDp: Int, heightDp: Int): Boolea
 internal fun supportsPermanentPlaybackPane(widthDp: Int, heightDp: Int): Boolean =
     widthDp >= 1000 && heightDp >= 600
 
+/**
+ * The library companion sits alongside the navigation rail and the playback pane, so it is
+ * reserved for genuinely wide desktop windows. At the threshold, the main content still keeps
+ * roughly a compact phone's width when every pane is visible.
+ */
+internal fun supportsPermanentLibraryPane(widthDp: Int, heightDp: Int): Boolean =
+    widthDp >= 1360 && heightDp >= 700
+
 @Composable
 fun currentWindowWidthClass(): WindowWidthClass =
     classifyWindowWidth(LocalConfiguration.current.screenWidthDp)
