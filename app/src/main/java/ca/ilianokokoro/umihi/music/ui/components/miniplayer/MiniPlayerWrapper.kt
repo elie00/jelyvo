@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -34,14 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draganddrop.DragAndDropEvent
-import androidx.compose.ui.draganddrop.DragAndDropTarget
-import androidx.compose.ui.draganddrop.toAndroidDragEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,7 +46,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toSong
-import ca.ilianokokoro.umihi.music.ui.components.songFromDragLocalState
+import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropTarget
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import kotlinx.coroutines.delay
 
@@ -64,7 +58,6 @@ fun MiniPlayerWrapper(
     showMiniPlayer: Boolean,
 ) {
     val context = LocalContext.current
-    val hapticFeedback = LocalHapticFeedback.current
     val player by PlayerManager.controllerState.collectAsStateWithLifecycle()
     var currentSong by remember { mutableStateOf(player?.currentMediaItem?.toSong()) }
     var songIsPlaying by remember(player) {
@@ -77,35 +70,6 @@ fun MiniPlayerWrapper(
         mutableFloatStateOf(0f)
     }
     var isQueueDropHovered by remember { mutableStateOf(false) }
-    val queueDropTarget = remember(context, hapticFeedback) {
-        object : DragAndDropTarget {
-            override fun onEntered(event: DragAndDropEvent) {
-                isQueueDropHovered = true
-                hapticFeedback.performHapticFeedback(
-                    HapticFeedbackType.GestureThresholdActivate
-                )
-            }
-
-            override fun onExited(event: DragAndDropEvent) {
-                isQueueDropHovered = false
-            }
-
-            override fun onEnded(event: DragAndDropEvent) {
-                isQueueDropHovered = false
-            }
-
-            override fun onDrop(event: DragAndDropEvent): Boolean {
-                val song = songFromDragLocalState(
-                    event.toAndroidDragEvent().localState
-                ) ?: return false
-
-                isQueueDropHovered = false
-                PlayerManager.addToQueue(song, context)
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                return true
-            }
-        }
-    }
 
     val bottomInsetPx: Int = with(LocalDensity.current) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().roundToPx()
@@ -185,13 +149,12 @@ fun MiniPlayerWrapper(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .dragAndDropTarget(
-                        shouldStartDragAndDrop = { event ->
-                            songFromDragLocalState(
-                                event.toAndroidDragEvent().localState
-                            ) != null
+                    .songDragAndDropTarget(
+                        onSongDropped = { droppedSong ->
+                            PlayerManager.addToQueue(droppedSong, context)
+                            true
                         },
-                        target = queueDropTarget,
+                        onHoverChanged = { isQueueDropHovered = it },
                     ),
             ) {
                 MiniPlayer(
