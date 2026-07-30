@@ -553,4 +553,21 @@
     <string name="api_more_from">More from %1$s</string>
     <string name="api_similar_to">Similar to %1$s</string>
     <string name="local_song_repository_error">Couldn\'t read the locally saved track.</string>
+    <plurals name="songs_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <plurals name="selected_added_to_queue">
+        <item quantity="one">%1$d track added to the queue</item>
+        <item quantity="other">%1$d tracks added to the queue</item>
+    </plurals>
+    <plurals name="selected_added_to_playlist">
+        <item quantity="one">%1$d track added to “%2$s”</item>
+        <item quantity="other">%1$d tracks added to “%2$s”</item>
+    </plurals>
+    <string name="clear_selection">Clear selection</string>
+    <string name="play_selection">Play selection</string>
+    <string name="add_selection_to_queue">Add selection to queue</string>
+    <string name="add_selection_to_playlist">Add selection to playlist</string>
+    <string name="selection_already_in_playlist">Every selected track is already in this playlist</string>
 </resources>

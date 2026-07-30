@@ -591,6 +591,31 @@ object PlayerManager {
         playIfFirstQueueItem()
     }
 
+    /** Appends a desktop multi-selection as one ordered queue operation and one user message. */
+    fun addToQueue(songs: List<Song>, context: Context? = null) {
+        if (songs.isEmpty()) return
+        val controller = currentController ?: return
+
+        controller.addMediaItems(
+            controller.mediaItemCount,
+            songs.map { it.mediaItem },
+        )
+
+        context?.let {
+            Toast.makeText(
+                it,
+                it.resources.getQuantityString(
+                    R.plurals.selected_added_to_queue,
+                    songs.size,
+                    songs.size,
+                ),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+
+        playIfFirstQueueItem()
+    }
+
     fun removeMediaItem(index: Int) {
         val controller = currentController ?: return
 

@@ -92,6 +92,29 @@ class LocalPlaylistRepository(application: Application) {
         return true
     }
 
+    /**
+     * Adds several tracks in their current order and returns the number of genuinely new entries.
+     * Reading the latest persisted playlist here prevents a stale picker snapshot from overwriting
+     * edits made from another window or drop target.
+     */
+    suspend fun addSongs(id: String, songs: List<Song>): Int {
+        if (songs.isEmpty()) return 0
+        val existing = dao.getById(id) ?: return 0
+        val currentSongs = songsOf(existing)
+        val knownIds = currentSongs.mapTo(mutableSetOf()) { it.id }
+        val additions = songs
+            .filter { knownIds.add(it.youtubeId) }
+            .map(LocalPlaylistSong::fromSong)
+        if (additions.isEmpty()) return 0
+
+        dao.upsert(
+            existing.copy(
+                songsJson = json.encodeToString(currentSongs + additions)
+            )
+        )
+        return additions.size
+    }
+
     /** Serializes [name]/[songs] to the versioned JSON format at the user-chosen [uri]. */
     suspend fun exportToUri(
         context: Context,

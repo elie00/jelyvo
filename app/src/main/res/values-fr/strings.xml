@@ -539,4 +539,21 @@
     <string name="api_more_from">Plus de %1$s</string>
     <string name="api_similar_to">Dans le même style que %1$s</string>
     <string name="local_song_repository_error">Impossible de lire le titre enregistré localement.</string>
+    <plurals name="songs_selected">
+        <item quantity="one">%1$d sélectionné</item>
+        <item quantity="other">%1$d sélectionnés</item>
+    </plurals>
+    <plurals name="selected_added_to_queue">
+        <item quantity="one">%1$d titre ajouté à la file d’attente</item>
+        <item quantity="other">%1$d titres ajoutés à la file d’attente</item>
+    </plurals>
+    <plurals name="selected_added_to_playlist">
+        <item quantity="one">%1$d titre ajouté à « %2$s »</item>
+        <item quantity="other">%1$d titres ajoutés à « %2$s »</item>
+    </plurals>
+    <string name="clear_selection">Annuler la sélection</string>
+    <string name="play_selection">Lire la sélection</string>
+    <string name="add_selection_to_queue">Ajouter la sélection à la file d’attente</string>
+    <string name="add_selection_to_playlist">Ajouter la sélection à une playlist</string>
+    <string name="selection_already_in_playlist">Tous les titres sélectionnés sont déjà dans cette playlist</string>
 </resources>
