@@ -67,6 +67,7 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.extensions.cappedTo
 import ca.ilianokokoro.umihi.music.extensions.toSong
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import ca.ilianokokoro.umihi.music.widget.PlaybackWidget
 import ca.ilianokokoro.umihi.music.widget.PlaybackWidgetStateStore
@@ -277,7 +278,7 @@ class PlaybackService : MediaLibraryService() {
                 serviceScope.launch {
                     val settings = datastoreRepository.getSettings()
                     YoutubeStatsTracker.onPlaybackStarted(songId, settings)
-                    historyRepository.record(playedSong, System.currentTimeMillis())
+                    historyRepository.record(playedSong.toTrack(), System.currentTimeMillis())
                     maybeAppendRadio(playedSong, settings)
                 }
                 prefetchNextStreamUrl()

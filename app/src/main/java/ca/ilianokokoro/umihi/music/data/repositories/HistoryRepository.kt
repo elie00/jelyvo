@@ -1,14 +1,17 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import android.content.Context
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
-import ca.ilianokokoro.umihi.music.models.PlayHistoryEntry
 import ca.ilianokokoro.umihi.music.models.ArtistListeningStat
 import ca.ilianokokoro.umihi.music.models.DailyPlayCount
 import ca.ilianokokoro.umihi.music.models.ResumeItem
 import ca.ilianokokoro.umihi.music.models.TrackPlayDuration
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.TrackListeningStat
+import ca.ilianokokoro.umihi.music.models.adapters.toPlayHistoryEntry
+import ca.ilianokokoro.umihi.music.models.adapters.toSong
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -16,11 +19,12 @@ class HistoryRepository(context: Context) {
     private val localHistoryDataSource = AppDatabase.getInstance(context).historyRepository()
 
     fun recentSongs(limit: Int = DEFAULT_LIMIT): Flow<List<Song>> =
-        localHistoryDataSource.getRecent(limit).map { entries -> entries.map { it.toSong() } }
+        localHistoryDataSource.getRecent(limit)
+            .map { entries -> entries.map { it.toTrack().toSong() } }
 
     fun resumableSongs(limit: Int = RESUME_LIMIT): Flow<List<ResumeItem>> =
         localHistoryDataSource.getResumable(limit).map { entries ->
-            entries.map { ResumeItem(it.toSong(), it.positionMs, it.durationMs) }
+            entries.map { ResumeItem(it.toTrack().toSong(), it.positionMs, it.durationMs) }
         }
 
     suspend fun updatePosition(youtubeId: String, positionMs: Long, durationMs: Long) {
@@ -49,11 +53,11 @@ class HistoryRepository(context: Context) {
     /** Resolves bare youtubeIds into full songs via their latest history row; unknown ids drop. */
     suspend fun songsByIds(ids: List<String>): List<Song> =
         if (ids.isEmpty()) emptyList()
-        else localHistoryDataSource.getByYoutubeIds(ids).map { it.toSong() }
+        else localHistoryDataSource.getByYoutubeIds(ids).map { it.toTrack().toSong() }
 
-    suspend fun record(song: Song, playedAt: Long) {
-        if (song.youtubeId.isBlank()) return
-        localHistoryDataSource.upsert(PlayHistoryEntry.fromSong(song, playedAt))
+    suspend fun record(track: Track, playedAt: Long) {
+        if (track.id.isBlank()) return
+        localHistoryDataSource.upsert(track.toPlayHistoryEntry(playedAt))
     }
 
     suspend fun deleteTrack(youtubeId: String) {
