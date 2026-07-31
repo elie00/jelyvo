@@ -33,6 +33,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   album et source, d'un adaptateur `Song ↔ Track` testé et d'une première utilisation réelle :
   Daily Mix et Context Mix classent désormais les `Track` purs tout en restituant les objets Android
   originaux sans perte.
+- persistance des playlists locales raccordée à `Track` : les ajouts depuis un titre, un album, une
+  sélection multiple, une file sauvegardée ou un import externe partagent la même fusion ordonnée
+  et dédupliquée ; les anciennes API `Song` restent des ponts compatibles pendant la migration.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

@@ -19,8 +19,10 @@
   multiple conventionnelle Ctrl/Commande–Maj et les actions groupées de lecture, file et playlist.
 - Découplage livré : `Track`, `ArtistRef`, `AlbumRef` et `TrackSource` ne dépendent d'aucune API
   Android. L'adaptateur `Song ↔ Track` est couvert par des tests contractuels et le classement des
-  Daily/Context Mix repose déjà sur ce modèle partagé sans reconstruire les `Song` transportés.
-- Chantier actif : étendre cette frontière aux données locales, puis extraire `PlaybackEngine` et
+  Daily/Context Mix repose déjà sur ce modèle partagé sans reconstruire les `Song` transportés. Les
+  écritures de playlists locales passent également par `Track` et un adaptateur dédié, quel que
+  soit leur point d'entrée Android.
+- Chantier actif : étendre cette frontière à l'historique local, puis extraire `PlaybackEngine` et
   `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
@@ -264,7 +266,9 @@ Une migration progressive limite le risque de casser l'application existante.
 Premier jalon livré sur `main` : le modèle partagé et l'adaptateur Android existent, et le moteur de
 recommandations transporte une valeur de plateforme opaque autour de `Track`. Les décisions de
 classement n'accèdent donc plus à `Song`, tandis que les écrans et caches Android continuent de
-recevoir exactement leurs objets existants.
+recevoir exactement leurs objets existants. Le second jalon raccorde les créations et ajouts de
+playlists locales à `Track` ; Room conserve temporairement son JSON historique grâce à l'adaptateur
+`LocalPlaylistSong ↔ Track`, sans migration de base de données.
 
 ## Interfaces partagées à introduire
 
