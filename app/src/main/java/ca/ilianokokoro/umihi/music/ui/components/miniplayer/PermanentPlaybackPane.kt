@@ -41,11 +41,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -59,15 +57,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-import androidx.media3.common.Timeline
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
-import ca.ilianokokoro.umihi.music.extensions.toSong
+import ca.ilianokokoro.umihi.music.core.playback.Media3PlaybackEngine
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toSong
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.song.SongThumbnail
 import ca.ilianokokoro.umihi.music.ui.components.song.songSubtitle
@@ -80,8 +75,9 @@ private const val PLAYBACK_PANE_PROGRESS_REFRESH_MS = 500L
 /**
  * Lightweight app-wide playback companion for desktop-sized windows.
  *
- * It intentionally observes Media3 directly instead of creating the full player ViewModel, so
- * browsing does not trigger lyrics, video-variant or stream-prewarming work in the background.
+ * It intentionally observes the playback engine directly instead of creating the full player
+ * ViewModel, so browsing does not trigger lyrics, video-variant or stream-prewarming work in the
+ * background.
  */
 @Composable
 fun PermanentPlaybackPane(
@@ -91,78 +87,28 @@ fun PermanentPlaybackPane(
     artworkModifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val player by PlayerManager.controllerState.collectAsStateWithLifecycle()
-    var currentSong by remember(player) {
-        mutableStateOf(player?.currentMediaItem?.toSong())
+    val playbackState by Media3PlaybackEngine.state.collectAsStateWithLifecycle()
+    val playbackQueue by Media3PlaybackEngine.queue.collectAsStateWithLifecycle()
+    val currentSong = remember(playbackState.currentTrack) {
+        playbackState.currentTrack?.toSong()
     }
-    var queue by remember(player) { mutableStateOf(PlayerManager.getQueue()) }
-    var currentIndex by remember(player) {
-        mutableIntStateOf(player?.currentMediaItemIndex ?: -1)
-    }
-    var isPlaying by remember(player) { mutableStateOf(player?.isPlaying == true) }
-    var isLoading by remember(player) {
-        mutableStateOf(player?.playbackState == Player.STATE_BUFFERING)
-    }
-    var progressFraction by remember(player) { mutableFloatStateOf(0f) }
+    val isPlaying = playbackState.isPlaying
+    val isLoading = playbackState.status == PlaybackStatus.BUFFERING
+    var progressFraction by remember { mutableFloatStateOf(0f) }
     var isDropHovered by remember { mutableStateOf(false) }
 
-    DisposableEffect(player) {
-        fun refreshTimeline() {
-            queue = PlayerManager.getQueue()
-            currentIndex = player?.currentMediaItemIndex ?: -1
-            currentSong = player?.currentMediaItem?.toSong()
-        }
-
-        refreshTimeline()
-        isPlaying = player?.isPlaying == true
-        isLoading = player?.playbackState == Player.STATE_BUFFERING
-
-        val listener = object : Player.Listener {
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                refreshTimeline()
-            }
-
-            override fun onTimelineChanged(timeline: Timeline, reason: Int) {
-                refreshTimeline()
-            }
-
-            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-                currentSong = player?.currentMediaItem?.toSong()
-            }
-
-            override fun onIsPlayingChanged(value: Boolean) {
-                isPlaying = value
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                isLoading = playbackState == Player.STATE_BUFFERING
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                isPlaying = false
-                isLoading = false
-            }
-        }
-        player?.addListener(listener)
-        onDispose { player?.removeListener(listener) }
-    }
-
-    LaunchedEffect(player, currentSong?.youtubeId, isPlaying, visible) {
+    LaunchedEffect(playbackState.currentTrack?.id, isPlaying, visible) {
         while (true) {
-            val duration = player?.duration ?: 0L
-            progressFraction = if (duration > 0L) {
-                ((player?.currentPosition ?: 0L).toFloat() / duration.toFloat())
-                    .coerceIn(0f, 1f)
-            } else {
-                0f
-            }
+            progressFraction = Media3PlaybackEngine.progress()?.fraction ?: 0f
             if (!visible || !isPlaying) break
             delay(PLAYBACK_PANE_PROGRESS_REFRESH_MS)
         }
     }
 
-    val upNext = remember(queue, currentIndex) {
-        upNextQueueEntries(queue, currentIndex)
+    val upNext = remember(playbackQueue) {
+        playbackQueue.upNext().map { (index, entry) ->
+            UpNextRow(index = index, entryId = entry.entryId, song = entry.track.toSong())
+        }
     }
 
     AnimatedVisibility(
@@ -253,7 +199,7 @@ fun PermanentPlaybackPane(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         FilledIconButton(
-                            onClick = PlayerManager::skipToPrevious,
+                            onClick = Media3PlaybackEngine::skipPrevious,
                             enabled = !isLoading,
                         ) {
                             Icon(
@@ -263,7 +209,11 @@ fun PermanentPlaybackPane(
                         }
                         FilledIconButton(
                             onClick = {
-                                if (player?.isPlaying == true) player?.pause() else player?.play()
+                                if (isPlaying) {
+                                    Media3PlaybackEngine.pause()
+                                } else {
+                                    Media3PlaybackEngine.play()
+                                }
                             },
                             enabled = !isLoading,
                             modifier = Modifier.size(56.dp),
@@ -280,7 +230,7 @@ fun PermanentPlaybackPane(
                             )
                         }
                         FilledIconButton(
-                            onClick = PlayerManager::skipToNext,
+                            onClick = Media3PlaybackEngine::skipNext,
                             enabled = !isLoading,
                         ) {
                             Icon(
@@ -311,22 +261,22 @@ fun PermanentPlaybackPane(
                         ) {
                             items(
                                 items = upNext,
-                                key = { it.value.uid },
+                                key = UpNextRow::entryId,
                             ) { entry ->
                                 ListItem(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .songDragAndDropSource(entry.value)
+                                        .songDragAndDropSource(entry.song)
                                         .clickable {
-                                            PlayerManager.seekToIndex(entry.index)
-                                            player?.play()
+                                            Media3PlaybackEngine.seekToIndex(entry.index)
+                                            Media3PlaybackEngine.play()
                                         },
                                     leadingContent = {
-                                        SongThumbnail(song = entry.value, size = 44.dp)
+                                        SongThumbnail(song = entry.song, size = 44.dp)
                                     },
                                     supportingContent = {
                                         Text(
-                                            text = songSubtitle(entry.value),
+                                            text = songSubtitle(entry.song),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -336,7 +286,7 @@ fun PermanentPlaybackPane(
                                     ),
                                 ) {
                                     Text(
-                                        text = entry.value.title,
+                                        text = entry.song.title,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -378,11 +328,9 @@ fun PermanentPlaybackPane(
     }
 }
 
-/** Queue entries after the current item, retaining their controller indices for seeking. */
-internal fun upNextQueueEntries(
-    queue: List<Song>,
-    currentIndex: Int,
-): List<IndexedValue<Song>> {
-    if (currentIndex !in queue.indices) return emptyList()
-    return queue.withIndex().drop(currentIndex + 1)
-}
+/** Up-next row with its queue index for seeking and a display [Song] bridged from the track. */
+private data class UpNextRow(
+    val index: Int,
+    val entryId: String,
+    val song: Song,
+)
