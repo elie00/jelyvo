@@ -65,8 +65,8 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.normalizedForSearch
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
-import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropSource
@@ -432,9 +432,9 @@ fun SongListItem(
                 showPlaylistPicker = false
                 swipeScope.launch {
                     val name = defaultPlaylistName
-                    localPlaylistRepository.create(
+                    localPlaylistRepository.createFromTracks(
                         name,
-                        listOf(LocalPlaylistSong.fromSong(song)),
+                        listOf(song.toTrack()),
                     )
                     Toast.makeText(
                         context,

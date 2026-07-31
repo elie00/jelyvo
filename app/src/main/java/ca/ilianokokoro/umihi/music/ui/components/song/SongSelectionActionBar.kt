@@ -35,8 +35,8 @@ import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
-import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlinx.coroutines.launch
 
@@ -141,7 +141,10 @@ fun SongSelectionActionBar(
             onPick = { playlist ->
                 showPlaylistPicker = false
                 scope.launch {
-                    val added = repository.addSongs(playlist.id, songs)
+                    val added = repository.addTracks(
+                        playlist.id,
+                        songs.map { it.toTrack() },
+                    )
                     Toast.makeText(
                         context,
                         if (added == 0) {
@@ -162,17 +165,19 @@ fun SongSelectionActionBar(
             onCreateNew = {
                 showPlaylistPicker = false
                 scope.launch {
-                    val distinctSongs = songs.distinctBy(Song::youtubeId)
-                    repository.create(
+                    val distinctTracks = songs
+                        .map { it.toTrack() }
+                        .distinctBy { it.id }
+                    repository.createFromTracks(
                         resolvedNewPlaylistName,
-                        distinctSongs.map(LocalPlaylistSong::fromSong),
+                        distinctTracks,
                     )
                     Toast.makeText(
                         context,
                         context.resources.getQuantityString(
                             R.plurals.selected_added_to_playlist,
-                            distinctSongs.size,
-                            distinctSongs.size,
+                            distinctTracks.size,
+                            distinctTracks.size,
                             resolvedNewPlaylistName,
                         ),
                         Toast.LENGTH_SHORT,

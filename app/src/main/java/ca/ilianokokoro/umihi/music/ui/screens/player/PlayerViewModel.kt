@@ -27,8 +27,8 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
-import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -193,9 +193,9 @@ class PlayerViewModel(application: Application) :
         _uiState.update { it.copy(isSavingQueue = true) }
         viewModelScope.launch {
             try {
-                localPlaylistRepository.create(
+                localPlaylistRepository.createFromTracks(
                     name = playlistName,
-                    songs = songs.map(LocalPlaylistSong::fromSong),
+                    tracks = songs.map { it.toTrack() },
                 )
                 Toast.makeText(
                     getApplication(),

@@ -52,7 +52,7 @@ import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
-import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlinx.coroutines.launch
@@ -231,9 +231,9 @@ fun PlayerMenuBottomSheet(
                 showPlaylistPicker = false
                 scope.launch {
                     val name = defaultPlaylistName
-                    playlistRepository.create(
+                    playlistRepository.createFromTracks(
                         name,
-                        listOf(LocalPlaylistSong.fromSong(song)),
+                        listOf(song.toTrack()),
                     )
                     Toast.makeText(
                         context,

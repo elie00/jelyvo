@@ -4,10 +4,13 @@ import android.app.Application
 import android.content.Context
 import android.net.Uri
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toLocalPlaylistSong
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.models.PlaylistExportFile
 import ca.ilianokokoro.umihi.music.models.PlaylistExportSong
@@ -42,6 +45,11 @@ class LocalPlaylistRepository(application: Application) {
         runCatching { json.decodeFromString<List<LocalPlaylistSong>>(playlist.songsJson) }
             .getOrDefault(emptyList())
 
+    /** Domain view of a persisted playlist, used by platform-neutral consumers. */
+    fun tracksOf(playlist: LocalPlaylist): List<Track> = songsOf(playlist).map {
+        it.toTrack()
+    }
+
     /** Artwork URLs for [playlist]'s mosaic cover; decodes [LocalPlaylist.songsJson] once. */
     fun coversOf(playlist: LocalPlaylist): List<String> = songsOf(playlist).mosaicCoverUris()
 
@@ -57,6 +65,9 @@ class LocalPlaylistRepository(application: Application) {
         )
         return id
     }
+
+    suspend fun createFromTracks(name: String, tracks: List<Track>): String =
+        create(name, tracks.map(Track::toLocalPlaylistSong))
 
     suspend fun rename(id: String, name: String) {
         val existing = dao.getById(id) ?: return
@@ -80,39 +91,31 @@ class LocalPlaylistRepository(application: Application) {
      * Adds one track without duplicating a YouTube id already present in the playlist.
      * Returns false when the playlist no longer exists or already contains the track.
      */
-    suspend fun addSong(id: String, song: Song): Boolean {
-        val existing = dao.getById(id) ?: return false
-        val songs = songsOf(existing)
-        val updatedSongs = appendSongIfMissing(songs, song) ?: return false
-        dao.upsert(
-            existing.copy(
-                songsJson = json.encodeToString(updatedSongs)
-            )
-        )
-        return true
-    }
+    suspend fun addSong(id: String, song: Song): Boolean = addTrack(id, song.toTrack())
+
+    suspend fun addTrack(id: String, track: Track): Boolean = addTracks(id, listOf(track)) == 1
 
     /**
      * Adds several tracks in their current order and returns the number of genuinely new entries.
      * Reading the latest persisted playlist here prevents a stale picker snapshot from overwriting
      * edits made from another window or drop target.
      */
-    suspend fun addSongs(id: String, songs: List<Song>): Int {
-        if (songs.isEmpty()) return 0
+    suspend fun addSongs(id: String, songs: List<Song>): Int =
+        addTracks(id, songs.map { it.toTrack() })
+
+    suspend fun addTracks(id: String, tracks: List<Track>): Int {
+        if (tracks.isEmpty()) return 0
         val existing = dao.getById(id) ?: return 0
         val currentSongs = songsOf(existing)
-        val knownIds = currentSongs.mapTo(mutableSetOf()) { it.id }
-        val additions = songs
-            .filter { knownIds.add(it.youtubeId) }
-            .map(LocalPlaylistSong::fromSong)
-        if (additions.isEmpty()) return 0
+        val merge = mergeTracksIntoLocalPlaylist(currentSongs, tracks)
+        if (merge.addedCount == 0) return 0
 
         dao.upsert(
             existing.copy(
-                songsJson = json.encodeToString(currentSongs + additions)
+                songsJson = json.encodeToString(merge.songs)
             )
         )
-        return additions.size
+        return merge.addedCount
     }
 
     /** Serializes [name]/[songs] to the versioned JSON format at the user-chosen [uri]. */
@@ -172,10 +175,21 @@ class LocalPlaylistRepository(application: Application) {
  * Preserves manual playlist order while rejecting a duplicate stable media id.
  * Kept pure so every pointer/menu entry point relies on the same testable rule.
  */
-internal fun appendSongIfMissing(
+internal data class LocalPlaylistTrackMerge(
+    val songs: List<LocalPlaylistSong>,
+    val addedCount: Int,
+)
+
+internal fun mergeTracksIntoLocalPlaylist(
     existing: List<LocalPlaylistSong>,
-    song: Song,
-): List<LocalPlaylistSong>? {
-    if (existing.any { it.id == song.youtubeId }) return null
-    return existing + LocalPlaylistSong.fromSong(song)
+    tracks: List<Track>,
+): LocalPlaylistTrackMerge {
+    val knownIds = existing.mapTo(mutableSetOf(), LocalPlaylistSong::id)
+    val additions = tracks
+        .filter { it.id.isNotBlank() && knownIds.add(it.id) }
+        .map(Track::toLocalPlaylistSong)
+    return LocalPlaylistTrackMerge(
+        songs = existing + additions,
+        addedCount = additions.size,
+    )
 }

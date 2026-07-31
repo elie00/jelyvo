@@ -3,8 +3,8 @@ package ca.ilianokokoro.umihi.music.data.repositories
 import android.app.Application
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.extensions.durationToSeconds
-import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.models.importing.ExternalMusicPlaylist
 import ca.ilianokokoro.umihi.music.models.importing.MusicImportProgress
 import ca.ilianokokoro.umihi.music.models.importing.MusicImportTrack
@@ -32,9 +32,9 @@ class ExternalMusicImportRepository(
 
             val complete = index == playlist.tracks.lastIndex
             val playlistId = if (complete && matched.isNotEmpty()) {
-                localPlaylistRepository.create(
+                localPlaylistRepository.createFromTracks(
                     name = playlist.name,
-                    songs = matched.map(LocalPlaylistSong::fromSong),
+                    tracks = matched.map { it.toTrack() },
                 )
             } else {
                 null

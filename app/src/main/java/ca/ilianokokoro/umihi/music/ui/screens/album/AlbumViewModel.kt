@@ -18,10 +18,10 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
-import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -121,11 +121,10 @@ class AlbumViewModel(
     fun addAlbumToLocalPlaylist(playlist: LocalPlaylist, songs: List<Song>) {
         if (songs.isEmpty()) return
         viewModelScope.launch {
-            val merged = mergeSongsIntoLocalPlaylist(
-                existing = localPlaylistRepository.songsOf(playlist),
-                added = songs.map(LocalPlaylistSong::fromSong),
+            localPlaylistRepository.addTracks(
+                playlist.id,
+                songs.map { it.toTrack() },
             )
-            localPlaylistRepository.updateSongs(playlist.id, merged)
             showToast(R.string.album_added_to_playlist_toast, playlist.name)
         }
     }
@@ -134,7 +133,7 @@ class AlbumViewModel(
     fun createLocalPlaylistFromAlbum(name: String, songs: List<Song>) {
         if (songs.isEmpty()) return
         viewModelScope.launch {
-            localPlaylistRepository.create(name, songs.map(LocalPlaylistSong::fromSong))
+            localPlaylistRepository.createFromTracks(name, songs.map { it.toTrack() })
             showToast(R.string.album_added_to_playlist_toast, name)
         }
     }

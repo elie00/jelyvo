@@ -1,9 +1,9 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
+import ca.ilianokokoro.umihi.music.core.domain.ArtistRef
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
-import ca.ilianokokoro.umihi.music.models.Song
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class LocalPlaylistRepositoryTest {
@@ -12,35 +12,42 @@ class LocalPlaylistRepositoryTest {
         val existing = listOf(
             LocalPlaylistSong(id = "first", title = "First", artist = "Artist"),
         )
-        val dropped = Song(
-            youtubeId = "second",
+        val dropped = Track(
+            id = "second",
             title = "Second",
-            artist = "Another artist",
-            duration = "3:21",
-            thumbnailHref = "https://example.test/cover.jpg",
+            artist = ArtistRef(name = "Another artist"),
+            durationMs = 201_000L,
+            artworkUrl = "https://example.test/cover.jpg",
         )
 
-        val result = appendSongIfMissing(existing, dropped)
+        val result = mergeTracksIntoLocalPlaylist(existing, listOf(dropped))
 
-        requireNotNull(result)
-        assertEquals(2, result.size)
-        assertEquals(existing.single(), result.first())
-        assertEquals(dropped.youtubeId, result.last().id)
-        assertEquals(dropped.title, result.last().title)
-        assertEquals(dropped.artist, result.last().artist)
-        assertEquals(dropped.duration, result.last().duration)
-        assertEquals(dropped.thumbnailHref, result.last().thumbnailHref)
+        assertEquals(1, result.addedCount)
+        assertEquals(2, result.songs.size)
+        assertEquals(existing.single(), result.songs.first())
+        assertEquals(dropped.id, result.songs.last().id)
+        assertEquals(dropped.title, result.songs.last().title)
+        assertEquals(dropped.artist.name, result.songs.last().artist)
+        assertEquals("3:21", result.songs.last().duration)
+        assertEquals(dropped.artworkUrl, result.songs.last().thumbnailHref)
     }
 
     @Test
-    fun `duplicate media id is rejected`() {
+    fun `duplicates and blank ids are rejected while new order is preserved`() {
         val existing = listOf(LocalPlaylistSong(id = "same", title = "Original"))
 
-        val result = appendSongIfMissing(
+        val result = mergeTracksIntoLocalPlaylist(
             existing = existing,
-            song = Song(youtubeId = "same", title = "Duplicate"),
+            tracks = listOf(
+                Track(id = "same", title = "Existing duplicate"),
+                Track(id = "", title = "Blank"),
+                Track(id = "new", title = "First new"),
+                Track(id = "new", title = "New duplicate"),
+                Track(id = "last", title = "Last new"),
+            ),
         )
 
-        assertNull(result)
+        assertEquals(2, result.addedCount)
+        assertEquals(listOf("same", "new", "last"), result.songs.map { it.id })
     }
 }
