@@ -36,6 +36,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
 - persistance des playlists locales raccordée à `Track` : les ajouts depuis un titre, un album, une
   sélection multiple, une file sauvegardée ou un import externe partagent la même fusion ordonnée
   et dédupliquée ; les anciennes API `Song` restent des ponts compatibles pendant la migration.
+- historique local raccordé à `Track` : l'enregistrement d'une lecture et la relecture des titres
+  récents, reprenables ou résolus par identifiant passent par un adaptateur
+  `PlayHistoryEntry ↔ Track` testé, sans migration du schéma Room existant.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

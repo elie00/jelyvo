@@ -21,9 +21,10 @@
   Android. L'adaptateur `Song ↔ Track` est couvert par des tests contractuels et le classement des
   Daily/Context Mix repose déjà sur ce modèle partagé sans reconstruire les `Song` transportés. Les
   écritures de playlists locales passent également par `Track` et un adaptateur dédié, quel que
-  soit leur point d'entrée Android.
-- Chantier actif : étendre cette frontière à l'historique local, puis extraire `PlaybackEngine` et
-  `MusicCatalog`.
+  soit leur point d'entrée Android. L'historique local suit la même frontière : les lectures sont
+  enregistrées et relues via `Track` grâce à un adaptateur `PlayHistoryEntry ↔ Track` testé, sans
+  changement de schéma Room.
+- Chantier actif : extraire `PlaybackEngine` devant Media3, puis `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
