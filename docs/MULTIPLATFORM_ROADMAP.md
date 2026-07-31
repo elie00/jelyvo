@@ -24,7 +24,12 @@
   soit leur point d'entrée Android. L'historique local suit la même frontière : les lectures sont
   enregistrées et relues via `Track` grâce à un adaptateur `PlayHistoryEntry ↔ Track` testé, sans
   changement de schéma Room.
-- Chantier actif : extraire `PlaybackEngine` devant Media3, puis `MusicCatalog`.
+- Seam de lecture ouvert : l'interface `PlaybackEngine` (état, file à identité d'emplacement,
+  commandes de transport) vit dans le domaine pur, avec `Media3PlaybackEngine` comme premier
+  adapter Android. Le volet de lecture permanent des grandes fenêtres est le premier écran qui
+  n'importe plus Media3 : il observe l'état neutre et émet des commandes via l'interface.
+- Chantier actif : migrer les autres consommateurs de `PlayerManager` vers `PlaybackEngine`
+  (mini-lecteur, widget, commandes clavier), puis extraire `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
