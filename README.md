@@ -74,6 +74,10 @@ synced lyrics via LRCLIB, no account needed.
 local playlists, queue and preferences. Session cookies are deliberately excluded from backups: they
 are encrypted with a device-bound Keystore key and could never be decrypted after a restore.
 
+**Wear OS** — Galaxy Watch companion with artwork, title, artist, live progress and
+previous/play-pause/next controls. Playback stays on the paired phone and is controlled through the
+encrypted Wear OS Data Layer. See [the Galaxy Watch guide](docs/GALAXY_WATCH.md).
+
 ### Not implemented
 
 - **Editing YouTube Music playlists themselves.** Creating and deleting a remote playlist works;
@@ -81,7 +85,6 @@ are encrypted with a device-bound Keystore key and could never be decrypted afte
 - **Spotify import** — the code is present but hidden and unfinished. It needs a client id at build
   time (`-PspotifyClientId=…`) *and* the OAuth redirect is still not wired up, so it does not work
   end to end even when enabled.
-- **Wear OS** — no `:wear` module.
 
 ## Build it yourself 🔨
 
@@ -90,6 +93,9 @@ Requires **JDK 21** and the Android SDK (compileSdk 37, minSdk 24).
 ```bash
 ./gradlew assembleStandaloneRelease
 # → app/build/outputs/apk/standalone/release/Jelyvo.apk
+
+./gradlew :wear:assembleRelease
+# → wear/build/outputs/apk/release/Jelyvo-Watch.apk
 ```
 
 Useful properties:
