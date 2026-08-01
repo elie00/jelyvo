@@ -71,6 +71,7 @@ import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import ca.ilianokokoro.umihi.music.widget.PlaybackWidget
 import ca.ilianokokoro.umihi.music.widget.PlaybackWidgetStateStore
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackStatePublisher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -137,6 +138,7 @@ class PlaybackService : MediaLibraryService() {
 
     private lateinit var callback: UmihiMediaLibraryCallback
     private lateinit var sessionListener: Player.Listener
+    private lateinit var wearPlaybackStatePublisher: WearPlaybackStatePublisher
 
 
     override fun onCreate() {
@@ -245,6 +247,7 @@ class PlaybackService : MediaLibraryService() {
         sessionListener = object : Player.Listener {
             override fun onTimelineChanged(timeline: Timeline, reason: Int) {
                 scheduleQueuePersistence()
+                wearPlaybackStatePublisher.publish(activePlayer)
             }
 
             override fun onMediaItemTransition(
@@ -282,9 +285,11 @@ class PlaybackService : MediaLibraryService() {
                     maybeAppendRadio(playedSong, settings)
                 }
                 prefetchNextStreamUrl()
+                wearPlaybackStatePublisher.publish(activePlayer)
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
+                wearPlaybackStatePublisher.publish(activePlayer)
                 if (playbackState == Player.STATE_IDLE) {
                     YoutubeStatsTracker.stopPlaybackTracking()
                 }
@@ -306,6 +311,7 @@ class PlaybackService : MediaLibraryService() {
                 reason: Int,
             ) {
                 scheduleQueuePersistence()
+                wearPlaybackStatePublisher.publish(activePlayer)
             }
 
             override fun onRepeatModeChanged(repeatMode: Int) {
@@ -323,6 +329,7 @@ class PlaybackService : MediaLibraryService() {
                     serviceScope.launch { persistPlaybackPosition() }
                 }
                 updatePlaybackWidget(activePlayer.currentMediaItem)
+                wearPlaybackStatePublisher.publish(activePlayer)
             }
 
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
@@ -385,6 +392,7 @@ class PlaybackService : MediaLibraryService() {
                 }
             }
         }
+        wearPlaybackStatePublisher = WearPlaybackStatePublisher(applicationContext)
         player.addListener(sessionListener)
 
         val intent = packageManager.getLaunchIntentForPackage(packageName)
@@ -407,6 +415,7 @@ class PlaybackService : MediaLibraryService() {
             .setSessionActivity(pendingIntent)
             .setBitmapLoader(CacheBitmapLoader(DataSourceBitmapLoader.Builder(this).build()))
             .build()
+        wearPlaybackStatePublisher.publish(activePlayer)
 
         observeCastSessions()
         restoreQueueAndStartPersistence()

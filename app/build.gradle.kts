@@ -243,6 +243,8 @@ dependencies {
     // MediaRouter directly for route discovery.
     implementation(libs.androidx.mediarouter)
     implementation(libs.androidx.car.app)
+    implementation(libs.play.services.wearable)
+    implementation(project(":wear-shared"))
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

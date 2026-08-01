@@ -37,6 +37,8 @@ androidxTestRunner = "1.7.0"
 # Resolved transitively by play-services-cast-framework; declared so the catalog is not a guess.
 mediarouter = "1.8.1"
 carApp = "1.7.0"
+playServicesWearable = "20.0.1"
+wearCompose = "1.6.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -67,6 +69,9 @@ androidx-media3-datasource-okhttp = { module = "androidx.media3:media3-datasourc
 androidx-media3-cast = { module = "androidx.media3:media3-cast", version.ref = "media3Exoplayer" }
 androidx-mediarouter = { module = "androidx.mediarouter:mediarouter", version.ref = "mediarouter" }
 androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
+play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
+androidx-wear-compose-material3 = { module = "androidx.wear.compose:compose-material3", version.ref = "wearCompose" }
+androidx-wear-compose-foundation = { module = "androidx.wear.compose:compose-foundation", version.ref = "wearCompose" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "webkit" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
@@ -93,6 +98,7 @@ androidx-test-runner = { module = "androidx.test:runner", version.ref = "android
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerialization" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 baselineprofile = { id = "androidx.baselineprofile", version.ref = "baselineprofile" }

@@ -28,5 +28,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "Jelyvo"
 include(":app")
+include(":wear")
+include(":wear-shared")
 
 include(":baselineprofile")
