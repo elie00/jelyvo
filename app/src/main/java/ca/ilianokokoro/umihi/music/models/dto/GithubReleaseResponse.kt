@@ -32,8 +32,8 @@ data class GithubReleaseResponse(
         }?.url
             ?: Constants.Url.Github.Release.DOWNLOAD
 
-    private companion object {
-        const val PHONE_APK_NAME = "Jelyvo.apk"
+    companion object {
+        private const val PHONE_APK_NAME = "Jelyvo.apk"
     }
 }
 
