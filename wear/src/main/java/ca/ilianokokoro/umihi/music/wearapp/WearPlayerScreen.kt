@@ -24,6 +24,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Forward10
@@ -36,8 +38,6 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.VolumeDown
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -442,13 +442,16 @@ private fun VolumeControl(
     val fraction = if (playback.maxDeviceVolume > 0) {
         playback.deviceVolume.toFloat() / playback.maxDeviceVolume
     } else 0f
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
+    ) {
         RoundActionButton(
             enabled = enabled && playback.deviceVolume > 0,
             onClick = onDown,
             size = 38,
             description = stringResource(R.string.volume_down),
-        ) { Icon(Icons.Filled.VolumeDown, null, tint = Color.White, modifier = Modifier.size(19.dp)) }
+        ) { Icon(Icons.AutoMirrored.Filled.VolumeDown, null, tint = Color.White, modifier = Modifier.size(19.dp)) }
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(stringResource(R.string.volume), color = MutedText, fontSize = 9.sp)
@@ -466,7 +469,7 @@ private fun VolumeControl(
             onClick = onUp,
             size = 38,
             description = stringResource(R.string.volume_up),
-        ) { Icon(Icons.Filled.VolumeUp, null, tint = Color.White, modifier = Modifier.size(19.dp)) }
+        ) { Icon(Icons.AutoMirrored.Filled.VolumeUp, null, tint = Color.White, modifier = Modifier.size(19.dp)) }
     }
 }
 

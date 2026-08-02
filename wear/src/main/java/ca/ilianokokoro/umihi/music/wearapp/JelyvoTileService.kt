@@ -97,7 +97,6 @@ class JelyvoTileService : TileService() {
     ): LayoutElementBuilders.Text = LayoutElementBuilders.Text.Builder()
         .setText(value)
         .setMaxLines(1)
-        .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
         .setFontStyle(
             LayoutElementBuilders.FontStyle.Builder()
                 .setSize(sp(size))
