@@ -74,9 +74,10 @@ synced lyrics via LRCLIB, no account needed.
 local playlists, queue and preferences. Session cookies are deliberately excluded from backups: they
 are encrypted with a device-bound Keystore key and could never be decrypted after a restore.
 
-**Wear OS** — Galaxy Watch companion with artwork, title, artist, live progress and
-previous/play-pause/next controls. Playback stays on the paired phone and is controlled through the
-encrypted Wear OS Data Layer. See [the Galaxy Watch guide](docs/GALAXY_WATCH.md).
+**Wear OS** — full Galaxy Watch companion with artwork and live progress, transport and seek
+controls, likes, shuffle/repeat, phone volume, a rotary-friendly queue, low-power ambient UI and a
+launcher tile. Playback stays on the paired phone and is controlled through the encrypted Wear OS
+Data Layer. See [the Galaxy Watch guide](docs/GALAXY_WATCH.md).
 
 ### Not implemented
 

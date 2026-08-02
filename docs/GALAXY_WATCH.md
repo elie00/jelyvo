@@ -1,6 +1,6 @@
 # Jelyvo pour Galaxy Watch
 
-Le module `wear` est le compagnon Wear OS du lecteur Android. Sa première version vise la
+Le module `wear` est le compagnon Wear OS du lecteur Android. La version stable vise la
 Galaxy Watch 8 et reste compatible avec les montres Wear OS 3 ou plus récentes (API 30+).
 
 ## Fonctionnalités actuelles
@@ -9,6 +9,12 @@ Galaxy Watch 8 et reste compatible avec les montres Wear OS 3 ou plus récentes 
 - pochette, titre et artiste en cours ;
 - progression interpolée sur la montre sans trafic permanent ;
 - lecture/pause, titre précédent et titre suivant ;
+- recul/avance de 10 secondes, favoris, lecture aléatoire et répétition ;
+- réglage du volume du téléphone ;
+- file d'attente navigable au toucher ou avec la molette, avec sélection directe d'un titre ;
+- interface en français et en anglais avec retours d'erreur explicites ;
+- mode ambiant basse consommation ;
+- tuile Jelyvo ajoutable au carrousel Wear OS pour voir le dernier titre et ouvrir le lecteur ;
 - commandes disponibles lorsque l'écran du téléphone est éteint grâce à la session Media3.
 
 La musique continue à être diffusée par le téléphone. Cette architecture conserve les comptes,
@@ -39,8 +45,11 @@ Les APK générés sont :
 Installez d'abord la mise à jour Jelyvo sur le téléphone, puis envoyez l'APK montre avec Android
 Studio, ADB Wi-Fi ou l'outil de débogage Wear OS de Samsung.
 
-## Suite prévue
+## Utilisation
 
-Les prochains lots pourront ajouter une tuile de lecture, les favoris, la file d'attente et une
-complication. L'écoute autonome sur la montre est volontairement séparée : elle nécessitera un
-moteur réseau, un stockage hors ligne et une authentification adaptés à Wear OS.
+Glissez horizontalement depuis le lecteur pour ouvrir les commandes, puis la file d'attente.
+La couronne ou la lunette rotative fait défiler la file. Pour ajouter la tuile, effectuez un appui
+long sur le cadran, ouvrez **Tuiles**, puis choisissez **Lecteur Jelyvo**.
+
+La lecture reste volontairement pilotée par le téléphone : le compte, le cache, les téléchargements
+et le moteur YouTube restent ainsi centralisés, sans dupliquer des données sensibles sur la montre.
