@@ -20,6 +20,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import org.schabi.newpipe.extractor.ServiceList
 
 class WatchYoutubeClient(
     private val httpClient: OkHttpClient = defaultHttpClient(),
@@ -61,10 +62,26 @@ class WatchYoutubeClient(
                 }
             }.thenBy { it.intAt("bitrate") ?: 0 },
         )
-        best?.stringAt("url") ?: throw IOException(
-            root.objectAt("playabilityStatus")?.stringAt("reason")
-                ?: "Flux audio indisponible ($status)",
-        )
+        best?.stringAt("url") ?: resolveAudioWithNewPipe(videoId, status)
+    }
+
+    private fun resolveAudioWithNewPipe(videoId: String, fastStatus: String?): String {
+        WatchYoutubeDownloader.ensureInitialized()
+        return runCatching {
+            ServiceList.YouTube
+                .getStreamExtractor("https://www.youtube.com/watch?v=$videoId")
+                .apply { fetchPage() }
+                .audioStreams
+                .filter { it.content.isNotBlank() }
+                .maxByOrNull { it.averageBitrate }
+                ?.content
+                ?: throw IOException("Aucun flux audio compatible")
+        }.getOrElse { failure ->
+            throw IOException(
+                "Lecture indisponible${fastStatus?.let { " ($it)" }.orEmpty()}",
+                failure,
+            )
+        }
     }
 
     internal fun parseSearchResponse(response: String): List<WatchSong> {

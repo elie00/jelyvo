@@ -89,6 +89,7 @@ dependencies {
     implementation(libs.androidx.media3.session)
     implementation(libs.androidx.media3.datasource.okhttp)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.newpipeextractor)
 
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
