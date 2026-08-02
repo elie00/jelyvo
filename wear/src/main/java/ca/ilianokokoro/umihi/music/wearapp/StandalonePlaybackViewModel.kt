@@ -10,6 +10,8 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackSnapshot
+import ca.ilianokokoro.umihi.music.wear.WearQueueItem
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -58,6 +60,7 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     private val youtubeClient = WatchYoutubeClient()
     private val library = WatchLibraryStore(application)
     private val workManager = WorkManager.getInstance(application)
+    private val tileCache = WearPlaybackCache(application)
     private val _state = MutableStateFlow(
         StandaloneUiState(
             favorites = library.favorites(),
@@ -241,18 +244,38 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
 
     private fun updatePlayerState(player: Player) {
         val item = player.currentMediaItem
+        val currentSong = item?.toWatchSong()
+        val queue = List(player.mediaItemCount) { index -> player.getMediaItemAt(index).toWatchSong() }
         _state.update { state ->
             state.copy(
                 controllerReady = true,
-                currentSong = item?.toWatchSong(),
+                currentSong = currentSong,
                 currentIndex = player.currentMediaItemIndex,
                 queueSize = player.mediaItemCount,
-                queue = List(player.mediaItemCount) { index -> player.getMediaItemAt(index).toWatchSong() },
+                queue = queue,
                 isPlaying = player.isPlaying,
                 positionMs = player.currentPosition.coerceAtLeast(0),
                 durationMs = player.duration.takeIf { it > 0 } ?: 0,
                 repeatMode = player.repeatMode,
                 shuffleEnabled = player.shuffleModeEnabled,
+            )
+        }
+        currentSong?.let { song ->
+            tileCache.save(
+                WearPlaybackSnapshot(
+                    mediaId = song.videoId,
+                    title = song.title,
+                    artist = song.artist,
+                    artworkUri = song.artworkUrl,
+                    positionMs = player.currentPosition.coerceAtLeast(0),
+                    durationMs = player.duration.takeIf { it > 0 } ?: 0,
+                    isPlaying = player.isPlaying,
+                    hasPrevious = player.hasPreviousMediaItem(),
+                    hasNext = player.hasNextMediaItem(),
+                    queue = queue.map { WearQueueItem(it.videoId, it.title, it.artist, it.artworkUrl) },
+                    queueIndex = player.currentMediaItemIndex,
+                    updatedAtMs = System.currentTimeMillis(),
+                ),
             )
         }
     }

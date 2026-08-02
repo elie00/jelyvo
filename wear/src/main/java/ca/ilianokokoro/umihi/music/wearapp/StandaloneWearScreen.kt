@@ -475,16 +475,16 @@ private fun LocalPlayerMain(state: StandaloneUiState, song: WatchSong, actions: 
 
 @Composable
 private fun LocalPlayerControls(state: StandaloneUiState, song: WatchSong, actions: StandaloneActions) {
-    Column(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 17.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 22.dp, vertical = 15.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         ScreenTitle("Commandes", song.title)
-        Spacer(Modifier.height(11.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ControlItem(Icons.Filled.Replay10, "−10 s", actions.seekBack)
+            ControlItem(if (state.currentIsFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (state.currentIsFavorite) "Aimé" else "Aimer", actions.toggleFavorite, state.currentIsFavorite)
             ControlItem(Icons.Filled.Forward10, "+10 s", actions.seekForward)
         }
-        Spacer(Modifier.height(13.dp))
+        Spacer(Modifier.height(9.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ControlItem(if (state.currentIsFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, if (state.currentIsFavorite) "Aimé" else "Aimer", actions.toggleFavorite, state.currentIsFavorite)
             ControlItem(
                 if (state.currentIsDownloaded) Icons.Filled.DownloadDone else Icons.Filled.Download,
                 when {
@@ -496,14 +496,13 @@ private fun LocalPlayerControls(state: StandaloneUiState, song: WatchSong, actio
                 state.currentIsDownloaded,
             )
             ControlItem(Icons.Filled.Shuffle, "Aléatoire", actions.toggleShuffle, state.shuffleEnabled)
+            ControlItem(
+                if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                when (state.repeatMode) { Player.REPEAT_MODE_ONE -> "Un titre"; Player.REPEAT_MODE_ALL -> "Tout"; else -> "Boucle" },
+                actions.cycleRepeat,
+                state.repeatMode != Player.REPEAT_MODE_OFF,
+            )
         }
-        Spacer(Modifier.height(11.dp))
-        ControlItem(
-            if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-            when (state.repeatMode) { Player.REPEAT_MODE_ONE -> "Un titre"; Player.REPEAT_MODE_ALL -> "Tout"; else -> "Boucle" },
-            actions.cycleRepeat,
-            state.repeatMode != Player.REPEAT_MODE_OFF,
-        )
     }
 }
 

@@ -65,7 +65,7 @@ class JelyvoTileService : TileService() {
         val subtitle = if (state.hasMedia) {
             state.artist.ifBlank { getString(R.string.unknown_artist) }
         } else {
-            getString(R.string.start_on_phone)
+            getString(R.string.open_jelyvo)
         }
         val launchApp = ActionBuilders.LaunchAction.Builder()
             .setAndroidActivity(

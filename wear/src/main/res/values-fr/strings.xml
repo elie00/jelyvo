@@ -6,6 +6,7 @@
     <string name="phone_unavailable">Téléphone indisponible</string>
     <string name="nothing_playing">Aucune lecture</string>
     <string name="start_on_phone">Lancez un titre dans Jelyvo</string>
+    <string name="open_jelyvo">Ouvrir Jelyvo sur la montre</string>
     <string name="bring_phone_closer">Rapprochez la montre du téléphone</string>
     <string name="unknown_title">Titre inconnu</string>
     <string name="unknown_artist">Artiste inconnu</string>
