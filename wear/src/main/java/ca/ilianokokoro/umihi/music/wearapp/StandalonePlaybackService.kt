@@ -26,7 +26,7 @@ class StandalonePlaybackService : MediaSessionService() {
             .setUserAgent("Jelyvo-Watch/1")
         val upstreamFactory = DefaultDataSource.Factory(this, httpFactory)
         val resolvingFactory = ResolvingDataSource.Factory(upstreamFactory) { dataSpec ->
-            dataSpec.resolveJelyvoUri(youtubeClient)
+            dataSpec.resolveJelyvoUri(youtubeClient, this)
         }
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(
@@ -57,10 +57,12 @@ class StandalonePlaybackService : MediaSessionService() {
     }
 }
 
-private fun DataSpec.resolveJelyvoUri(client: WatchYoutubeClient): DataSpec {
+private fun DataSpec.resolveJelyvoUri(client: WatchYoutubeClient, context: android.content.Context): DataSpec {
     if (uri.scheme != "jelyvo" || uri.host != "youtube") return this
     val videoId = uri.lastPathSegment?.takeIf(String::isNotBlank)
         ?: error("Identifiant du titre manquant")
+    val localFile = WatchLibraryStore(context).audioFile(videoId)
+    if (localFile.exists()) return withUri(Uri.fromFile(localFile))
     val directUrl = runBlocking { client.resolveAudioUrl(videoId) }
     return withUri(Uri.parse(directUrl))
 }

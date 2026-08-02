@@ -8,6 +8,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -26,8 +28,13 @@ data class StandaloneUiState(
     val searching: Boolean = false,
     val searchPerformed: Boolean = false,
     val results: List<WatchSong> = emptyList(),
+    val homeSongs: List<WatchSong> = emptyList(),
+    val homeLoading: Boolean = true,
     val favorites: List<WatchSong> = emptyList(),
     val recents: List<WatchSong> = emptyList(),
+    val downloads: List<WatchSong> = emptyList(),
+    val downloadingIds: Set<String> = emptySet(),
+    val queue: List<WatchSong> = emptyList(),
     val currentSong: WatchSong? = null,
     val currentIndex: Int = -1,
     val queueSize: Int = 0,
@@ -36,17 +43,30 @@ data class StandaloneUiState(
     val durationMs: Long = 0,
     val repeatMode: Int = Player.REPEAT_MODE_OFF,
     val shuffleEnabled: Boolean = false,
+    val smartDownloadLimit: Int = 0,
+    val wifiOnly: Boolean = true,
+    val restrictedMode: Boolean = false,
     val error: String? = null,
 ) {
     val currentIsFavorite: Boolean
         get() = currentSong?.videoId in favorites.map(WatchSong::videoId)
+    val currentIsDownloaded: Boolean
+        get() = currentSong?.videoId in downloads.map(WatchSong::videoId)
 }
 
 class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(application) {
     private val youtubeClient = WatchYoutubeClient()
     private val library = WatchLibraryStore(application)
+    private val workManager = WorkManager.getInstance(application)
     private val _state = MutableStateFlow(
-        StandaloneUiState(favorites = library.favorites(), recents = library.recents()),
+        StandaloneUiState(
+            favorites = library.favorites(),
+            recents = library.recents(),
+            downloads = library.downloads(),
+            smartDownloadLimit = library.smartDownloadLimit,
+            wifiOnly = library.wifiOnly,
+            restrictedMode = library.restrictedMode,
+        ),
     )
     val state: StateFlow<StandaloneUiState> = _state.asStateFlow()
     private var controller: MediaController? = null
@@ -61,6 +81,7 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     }
 
     init {
+        refreshHome()
         val token = SessionToken(application, ComponentName(application, StandalonePlaybackService::class.java))
         controllerFuture = MediaController.Builder(application, token).buildAsync()
         Futures.addCallback(
@@ -83,6 +104,32 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
                 controller?.let(::updatePlayerState)
                 delay(500)
             }
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            while (true) {
+                val activeDownloads = runCatching {
+                    workManager.getWorkInfosByTag(WatchDownloadWorker.TAG).get()
+                        .filter { !it.state.isFinished }
+                        .mapNotNull { info ->
+                            info.tags.firstOrNull { it.startsWith("${WatchDownloadWorker.TAG}:") }
+                                ?.substringAfter(':')
+                        }
+                        .toSet()
+                }.getOrDefault(emptySet())
+                _state.update {
+                    it.copy(downloads = library.downloads(), downloadingIds = activeDownloads)
+                }
+                delay(1_000)
+            }
+        }
+    }
+
+    fun refreshHome() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _state.update { it.copy(homeLoading = true) }
+            runCatching { youtubeClient.homeSongs() }
+                .onSuccess { songs -> _state.update { it.copy(homeSongs = songs, homeLoading = false) } }
+                .onFailure { _state.update { it.copy(homeLoading = false) } }
         }
     }
 
@@ -118,6 +165,13 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
         _state.update { it.copy(recents = library.recents(), error = null) }
     }
 
+    fun playQueueIndex(index: Int) = controller?.let { player ->
+        if (index in 0 until player.mediaItemCount) {
+            player.seekToDefaultPosition(index)
+            player.play()
+        }
+    }
+
     fun togglePlayback() = controller?.let { if (it.isPlaying) it.pause() else it.play() }
     fun previous() = controller?.seekToPreviousMediaItem()
     fun next() = controller?.seekToNextMediaItem()
@@ -141,6 +195,48 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
         _state.update { it.copy(favorites = library.favorites()) }
     }
 
+    fun toggleDownload() {
+        val song = _state.value.currentSong ?: return
+        toggleDownload(song)
+    }
+
+    fun toggleDownload(song: WatchSong) {
+        if (song.videoId in library.downloads().map(WatchSong::videoId)) {
+            library.removeDownload(song.videoId)
+            _state.update { it.copy(downloads = library.downloads()) }
+        } else {
+            WatchDownloadWorker.enqueue(getApplication(), song, library.wifiOnly)
+            _state.update { it.copy(downloadingIds = it.downloadingIds + song.videoId) }
+        }
+    }
+
+    fun clearDownloads() {
+        library.clearDownloads()
+        _state.update { it.copy(downloads = emptyList()) }
+    }
+
+    fun setSmartDownloadLimit(limit: Int) {
+        library.smartDownloadLimit = limit
+        _state.update { it.copy(smartDownloadLimit = limit) }
+        if (limit > 0) {
+            val candidates = (_state.value.favorites + _state.value.recents + _state.value.homeSongs)
+                .distinctBy(WatchSong::videoId)
+                .filterNot { it.videoId in library.downloads().map(WatchSong::videoId) }
+                .take((limit - library.downloads().size).coerceAtLeast(0))
+            candidates.forEach { WatchDownloadWorker.enqueue(getApplication(), it, library.wifiOnly) }
+        }
+    }
+
+    fun toggleWifiOnly() {
+        library.wifiOnly = !library.wifiOnly
+        _state.update { it.copy(wifiOnly = library.wifiOnly) }
+    }
+
+    fun toggleRestrictedMode() {
+        library.restrictedMode = !library.restrictedMode
+        _state.update { it.copy(restrictedMode = library.restrictedMode) }
+    }
+
     fun clearError() = _state.update { it.copy(error = null) }
 
     private fun updatePlayerState(player: Player) {
@@ -151,6 +247,7 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
                 currentSong = item?.toWatchSong(),
                 currentIndex = player.currentMediaItemIndex,
                 queueSize = player.mediaItemCount,
+                queue = List(player.mediaItemCount) { index -> player.getMediaItemAt(index).toWatchSong() },
                 isPlaying = player.isPlaying,
                 positionMs = player.currentPosition.coerceAtLeast(0),
                 durationMs = player.duration.takeIf { it > 0 } ?: 0,

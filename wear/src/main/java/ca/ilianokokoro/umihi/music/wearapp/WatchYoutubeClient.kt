@@ -35,6 +35,14 @@ class WatchYoutubeClient(
         parseSearchResponse(post(SEARCH_URL, body, WEB_REMIX_HEADERS))
     }
 
+    suspend fun homeSongs(): List<WatchSong> = withContext(Dispatchers.IO) {
+        val body = """{
+            "context":{"client":$WEB_REMIX_CLIENT,"user":{"lockedSafetyMode":false}},
+            "browseId":"FEmusic_home"
+        }""".trimIndent()
+        parseSearchResponse(post(BROWSE_URL, body, WEB_REMIX_HEADERS))
+    }
+
     suspend fun resolveAudioUrl(videoId: String): String = withContext(Dispatchers.IO) {
         val body = """{
             "context":{"client":$ANDROID_VR_CLIENT,"user":{"lockedSafetyMode":false}},
@@ -158,6 +166,7 @@ class WatchYoutubeClient(
 
     private companion object {
         const val SEARCH_URL = "https://music.youtube.com/youtubei/v1/search?prettyPrint=false"
+        const val BROWSE_URL = "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
         const val PLAYER_URL = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
         const val SONGS_FILTER = "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
         const val MAX_RESULTS = 30
