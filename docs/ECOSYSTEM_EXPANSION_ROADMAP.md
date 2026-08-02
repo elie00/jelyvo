@@ -46,6 +46,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   listeners Media3 parallèles et les sauts relatifs sont calculés par une règle pure testée. L'état
   persistant des widgets consomme aussi `Track` plutôt que `MediaItem`; leurs actions restent
   routées par `PlaybackService` pour pouvoir réveiller la lecture sans interface active.
+- premier seam catalogue : `MusicCatalog` porte la recherche, ses continuations et les suggestions
+  avec des résultats neutres ; `YoutubeMusicCatalog` adapte `SongRepository` et `SearchViewModel`
+  consomme désormais l'interface injectable, sans envoyer la recherche locale au réseau.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

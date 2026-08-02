@@ -9,8 +9,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.ResponseCache
+import ca.ilianokokoro.umihi.music.core.domain.CatalogResult
+import ca.ilianokokoro.umihi.music.core.domain.MusicCatalog
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.data.catalog.YoutubeMusicCatalog
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.data.repositories.AlbumRepository
@@ -20,7 +23,6 @@ import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.MoodsRepository
-import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.extensions.containsNormalized
 import ca.ilianokokoro.umihi.music.models.Library
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSearchSource
@@ -29,6 +31,8 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.SearchResult
+import ca.ilianokokoro.umihi.music.models.adapters.toCatalogSearchFilter
+import ca.ilianokokoro.umihi.music.models.adapters.toSearchResult
 import ca.ilianokokoro.umihi.music.models.searchLocalLibrary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -41,11 +45,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SearchViewModel(application: Application) : AndroidViewModel(application) {
+class SearchViewModel(
+    application: Application,
+    private val musicCatalog: MusicCatalog = YoutubeMusicCatalog(),
+) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SearchState())
     val uiState = _uiState.asStateFlow()
 
-    val songRepository = SongRepository()
     private val albumRepository = AlbumRepository()
     private val artistRepository = ArtistRepository()
     private val moodsRepository = MoodsRepository()
@@ -135,6 +141,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 searchLibraryLocally(query)
                 return@launch
             }
+            val catalogFilter = filter.toCatalogSearchFilter() ?: return@launch
 
             refreshHistoryMatches(query)
 
@@ -153,28 +160,29 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
 
-            songRepository.search(query, filter, paramsOverride).collect { apiResult ->
+            musicCatalog.search(query, catalogFilter, paramsOverride).collect { catalogResult ->
                 _uiState.update {
-                    when (apiResult) {
-                        ApiResult.Loading -> it.copy(
+                    when (catalogResult) {
+                        CatalogResult.Loading -> it.copy(
                             screenState = ScreenState.Loading,
                             continuation = null
                         )
 
-                        is ApiResult.Error -> it.copy(
-                            screenState = ScreenState.Error(apiResult.exception),
+                        is CatalogResult.Error -> it.copy(
+                            screenState = ScreenState.Error(catalogResult.exception),
                             continuation = null
                         )
 
-                        is ApiResult.Success -> {
-                            cachePage(query, filter, apiResult.data)
+                        is CatalogResult.Success -> {
+                            val page = catalogResult.data.toSearchResult()
+                            cachePage(query, filter, page)
                             it.copy(
                                 screenState = ScreenState.Success(
-                                    results = apiResult.data.items,
-                                    topResult = apiResult.data.topResult,
-                                    spellCorrection = apiResult.data.spellCorrection,
+                                    results = page.items,
+                                    topResult = page.topResult,
+                                    spellCorrection = page.spellCorrection,
                                 ),
-                                continuation = apiResult.data.continuation
+                                continuation = page.continuation
                             )
                         }
                     }
@@ -288,7 +296,8 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         _uiState.update { it.copy(isLoadingMore = true) }
         loadMoreJob = viewModelScope.launch {
             try {
-                val more = songRepository.searchMore(token, state.filter)
+                val catalogFilter = state.filter.toCatalogSearchFilter() ?: return@launch
+                val more = musicCatalog.searchMore(token, catalogFilter).toSearchResult()
                 val combined = (current + more.items).distinctBy { it.id }
                 cachePage(
                     query = state.search,
@@ -331,7 +340,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         }
         suggestionsJob = viewModelScope.launch {
             delay(250)
-            val suggestions = runCatching { songRepository.suggestions(newValue) }
+            val suggestions = runCatching { musicCatalog.suggestions(newValue) }
                 .getOrDefault(emptyList())
             if (_uiState.value.search == newValue) {
                 _uiState.update { it.copy(suggestions = suggestions) }
@@ -439,9 +448,12 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         /** Maximum rows in the "Listened before" section, to keep the remote results in view. */
         private const val MAX_HISTORY_MATCHES = 5
 
-        fun Factory(application: Application): ViewModelProvider.Factory = viewModelFactory {
+        fun Factory(
+            application: Application,
+            musicCatalog: MusicCatalog = YoutubeMusicCatalog(),
+        ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                SearchViewModel(application)
+                SearchViewModel(application, musicCatalog)
             }
         }
     }

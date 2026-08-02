@@ -33,7 +33,12 @@
   widget persiste désormais les métadonnées d'un `Track` neutre, sans importer Media3 ; ses actions
   restent volontairement des commandes Android vers `PlaybackService` afin de fonctionner lorsque
   l'interface de l'application n'est pas lancée.
-- Chantier actif : extraire `MusicCatalog` devant les appels YouTube.
+- Premier seam catalogue livré : la recherche initiale, les continuations et les suggestions de
+  `SearchViewModel` passent par `MusicCatalog`. `YoutubeMusicCatalog` adapte le dépôt Android et
+  transporte des `Track`, albums et artistes neutres ; l'onglet Bibliothèque reste explicitement
+  local et ne traverse jamais ce contrat.
+- Chantier actif : étendre `MusicCatalog` aux pages album, artiste et playlist, puis à la résolution
+  de flux.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
