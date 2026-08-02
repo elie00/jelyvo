@@ -20,8 +20,8 @@ android {
         applicationId = "ca.ilianokokoro.umihi.music"
         minSdk = 30
         targetSdk = 37
-        versionCode = 20303
-        versionName = "2.3.3-beta"
+        versionCode = 20304
+        versionName = "2.3.4"
     }
 
     signingConfigs {
