@@ -55,9 +55,18 @@ object ResponseCache {
     @Serializable
     private class DiskEnvelope(val storedAtMs: Long, val payload: JsonElement)
 
-    /** Wires the on-disk mirror to a real directory. Call once from Application.onCreate(). */
-    fun init(cacheDir: File) {
-        diskDir = File(cacheDir, "response_cache").apply { mkdirs() }
+    /**
+     * Wires the on-disk mirror to persistent app storage. The optional legacy directory is
+     * migrated with a cheap same-filesystem rename so users upgrading from the old cache-backed
+     * implementation keep their already-fetched library on the very first launch.
+     */
+    fun init(storageDir: File, legacyStorageDir: File? = null) {
+        val target = File(storageDir, CACHE_DIRECTORY)
+        val legacy = legacyStorageDir?.let { File(it, CACHE_DIRECTORY) }
+        if (!target.exists() && legacy?.exists() == true) {
+            legacy.renameTo(target)
+        }
+        diskDir = target.apply { mkdirs() }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -76,10 +85,11 @@ object ResponseCache {
         entries[key] = Entry(value, System.currentTimeMillis())
     }
 
-    /** Invalidates one memory entry after a mutation without flushing unrelated cached screens. */
+    /** Invalidates one entry after a mutation without flushing unrelated cached screens. */
     @Synchronized
     fun remove(key: String) {
         entries.remove(key)
+        runCatching { diskFileFor(key)?.delete() }
     }
 
     /**
@@ -143,6 +153,8 @@ object ResponseCache {
         val safeName = key.replace(Regex("[^A-Za-z0-9_-]"), "_").take(128)
         return File(dir, "$safeName.json")
     }
+
+    private const val CACHE_DIRECTORY = "response_cache"
 }
 
 /** Server-rendered labels are language-dependent, so they must never share a cache key. */

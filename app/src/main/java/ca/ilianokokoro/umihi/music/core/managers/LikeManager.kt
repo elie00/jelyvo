@@ -9,6 +9,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
+import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -130,6 +131,7 @@ object LikeManager {
         return try {
             YoutubeApiClient.setLike(song.youtubeId, liked = liked, settings)
             ResponseCache.remove(LibraryRepository.cacheKey(settings))
+            PlaylistRepository.invalidateLikedCache(settings)
             if (showConfirmation) {
                 showToast(
                     appContext,

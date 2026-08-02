@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.cachedApiFlow
 import ca.ilianokokoro.umihi.music.core.localizedCacheKey
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
@@ -138,6 +139,13 @@ class LibraryRepository {
          */
         fun cacheKey(settings: UmihiSettings) =
             localizedCacheKey("library:${settings.dataSyncId.orEmpty()}")
+
+        /** Last-known account library for instant cold-start rendering. */
+        fun cachedLibrary(settings: UmihiSettings): Library? {
+            val key = cacheKey(settings)
+            return ResponseCache.get<Library>(key)
+                ?: ResponseCache.getFromDisk(key, Library.serializer())
+        }
     }
 }
 

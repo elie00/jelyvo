@@ -2,7 +2,15 @@ package ca.ilianokokoro.umihi.music
 
 import android.app.Application
 import androidx.work.Configuration
+import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
+import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
+import ca.ilianokokoro.umihi.music.models.Playlist
+import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import coil3.ImageLoader
 import coil3.PlatformContext
 import coil3.SingletonImageLoader
@@ -10,9 +18,60 @@ import coil3.disk.DiskCache
 import coil3.memory.MemoryCache
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import okio.Path.Companion.toOkioPath
 
 class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provider {
+    private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // Account screens are product data, not disposable artwork. Keep their last snapshot in
+        // filesDir so Android cache cleanup cannot bring skeletons back on every cold launch.
+        ResponseCache.init(storageDir = filesDir, legacyStorageDir = cacheDir)
+        prewarmAccountLibrary()
+    }
+
+    private fun prewarmAccountLibrary() {
+        startupScope.launch {
+            val settings = runCatching {
+                DatastoreRepository(this@Umihi).getSettings()
+            }.getOrNull() ?: return@launch
+            if (settings.cookies.isEmpty()) return@launch
+
+            // Each flow paints its disk snapshot first and refreshes silently. Running them at app
+            // startup means Library and J'aime are ready before the user reaches either screen.
+            launch {
+                runCatching {
+                    LibraryRepository().getLibrary(settings).first { it !is ApiResult.Loading }
+                }
+            }
+            launch {
+                runCatching {
+                    PlaylistRepository(this@Umihi).retrieveAll(settings)
+                        .first { it !is ApiResult.Loading }
+                }
+            }
+            launch {
+                runCatching {
+                    PlaylistRepository(this@Umihi).retrieveOne(
+                        playlist = Playlist(
+                            PlaylistInfo(
+                                id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID,
+                                title = getString(R.string.liked_songs),
+                            )
+                        ),
+                        settings = settings,
+                    ).first { it !is ApiResult.Loading }
+                }
+            }
+        }
+    }
 
     /**
      * Disables WorkManager's eager ContentProvider startup. Feature toggles initialize it only

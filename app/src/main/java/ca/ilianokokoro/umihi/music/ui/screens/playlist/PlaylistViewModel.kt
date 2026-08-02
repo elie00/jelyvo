@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
+import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
@@ -161,7 +162,7 @@ class PlaylistViewModel(
                     isRefreshing = true
                 )
             }
-            getPlaylistInfoAsync()
+            getPlaylistInfoAsync(useCache = false)
             _uiState.update {
                 _uiState.value.copy(
                     isRefreshing = false
@@ -173,7 +174,7 @@ class PlaylistViewModel(
 
     fun getPlaylistInfo() {
         viewModelScope.launch {
-            getPlaylistInfoAsync()
+            getPlaylistInfoAsync(useCache = false)
         }
     }
 
@@ -308,20 +309,42 @@ class PlaylistViewModel(
         }
     }
 
-    private suspend fun getPlaylistInfoAsync() {
+    private suspend fun getPlaylistInfoAsync(useCache: Boolean = true) {
         try {
             val settings = datastoreRepository.getSettings()
 
-            playlistRepository.retrieveOne(Playlist(playlistInfo), settings)
-                .collect { apiResult ->
-                    _uiState.update { _ ->
-                        _uiState.value.copy(
-                            screenState = when (apiResult) {
-                                is ApiResult.Error -> {
-                                    ScreenState.Error(apiResult.exception)
-                                }
+            // "J'aime" is already part of the account library snapshot. Reuse it before the
+            // dedicated playlist request so opening this screen never waits on the network.
+            if (playlistInfo.isLikedSongsPlaylist) {
+                LibraryRepository.cachedLibrary(settings)
+                    ?.likedSongs
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { cachedSongs ->
+                        _uiState.update { current ->
+                            current.copy(
+                                screenState = ScreenState.Success(
+                                    Playlist(
+                                        info = playlistInfo,
+                                        songs = LikeManager.mergeLikedSongs(cachedSongs),
+                                    )
+                                )
+                            )
+                        }
+                    }
+            }
 
-                                ApiResult.Loading -> ScreenState.Loading(playlistInfo)
+            playlistRepository.retrieveOne(Playlist(playlistInfo), settings, useCache)
+                .collect { apiResult ->
+                    _uiState.update { currentState ->
+                        currentState.copy(
+                            screenState = when (apiResult) {
+                                is ApiResult.Error ->
+                                    currentState.screenState.takeIf { it is ScreenState.Success }
+                                        ?: ScreenState.Error(apiResult.exception)
+
+                                ApiResult.Loading ->
+                                    currentState.screenState.takeIf { it is ScreenState.Success }
+                                        ?: ScreenState.Loading(playlistInfo)
                                 is ApiResult.Success -> {
                                     ScreenState.Success(
                                         playlist = if (playlistInfo.isLikedSongsPlaylist) {

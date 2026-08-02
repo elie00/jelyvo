@@ -14,6 +14,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import kotlinx.serialization.Serializable
 
 
+@Serializable
 @Immutable
 data class Playlist(
     @Embedded val info: PlaylistInfo,

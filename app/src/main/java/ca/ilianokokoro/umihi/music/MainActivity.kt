@@ -39,7 +39,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
@@ -115,10 +114,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun setAppContent() {
-        // The native launch frame does not consume the response cache. Initialize its JSON and
-        // disk machinery only when Compose is about to create the home feed.
-        ResponseCache.init(cacheDir)
-
         setContent {
             val themeColor by datastoreRepository.themeColor
                 .collectAsStateWithLifecycle(

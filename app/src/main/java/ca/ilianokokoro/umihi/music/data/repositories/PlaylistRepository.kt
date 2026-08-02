@@ -3,7 +3,10 @@ package ca.ilianokokoro.umihi.music.data.repositories
 import android.app.Application
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.ResponseCache
+import ca.ilianokokoro.umihi.music.core.cachedApiFlow
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.localizedCacheKey
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.datasources.PlaylistDataSource
 import ca.ilianokokoro.umihi.music.extensions.toException
@@ -16,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.serialization.builtins.ListSerializer
 import kotlin.uuid.Uuid
 
 class PlaylistRepository(application: Application) {
@@ -24,40 +28,47 @@ class PlaylistRepository(application: Application) {
     private val localSongDataSource = AppDatabase.getInstance(application).songRepository()
 
     fun retrieveAll(settings: UmihiSettings): Flow<ApiResult<List<PlaylistInfo>>> {
-        return flow {
-            emit(ApiResult.Loading)
+        return cachedApiFlow(
+            key = allCacheKey(settings),
+            diskSerializer = ListSerializer(PlaylistInfo.serializer()),
+        ) {
             try {
-                val remotePlaylists = playlistDataSource.retrieveAll(settings)
-                emit(ApiResult.Success(remotePlaylists))
+                playlistDataSource.retrieveAll(settings)
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
                 }
-                // Network/API failure: fall back to the local cache, but surface the cause.
+                // On the first ever launch there may be no response mirror yet. Room still gives
+                // downloaded playlists a useful offline fallback; otherwise let cachedApiFlow
+                // retain the previously painted response.
                 printe(message = "retrieveAll failed, using local cache", exception = e)
                 val localPlaylists = localPlaylistDataSource.getAll().map { it.info }
-                emit(ApiResult.Success(localPlaylists))
+                if (localPlaylists.isNotEmpty()) localPlaylists else throw e
             }
-        }.flowOn(Dispatchers.IO)
+        }
     }
 
     fun retrieveOne(
         playlist: Playlist,
-        settings: UmihiSettings
+        settings: UmihiSettings,
+        useCache: Boolean = true,
     ): Flow<ApiResult<Playlist>> {
-        return flow {
-            emit(ApiResult.Loading)
-
-            if (playlist.info.id == Constants.Downloads.DOWNLOADED_PLAYLIST_ID) {
+        if (playlist.info.id == Constants.Downloads.DOWNLOADED_PLAYLIST_ID) {
+            return flow {
                 val downloadedSongs = localSongDataSource.getDownloadedSongs()
                 emit(ApiResult.Success(Playlist(info = playlist.info, songs = downloadedSongs)))
-                return@flow
-            }
+            }.flowOn(Dispatchers.IO)
+        }
 
+        return cachedApiFlow(
+            key = oneCacheKey(settings, playlist.info),
+            useCache = useCache,
+            diskSerializer = Playlist.serializer(),
+        ) {
             try {
                 val remotePlaylist = playlistDataSource.retrieveOne(playlist, settings)
                 val localPlaylist = localPlaylistDataSource.getPlaylistById(playlist.info.id)
-                emit(ApiResult.Success(mergeWithLocal(remotePlaylist, localPlaylist)))
+                mergeWithLocal(remotePlaylist, localPlaylist)
             } catch (e: Exception) {
                 if (e is CancellationException) {
                     throw e
@@ -65,16 +76,12 @@ class PlaylistRepository(application: Application) {
                 printe(message = "retrieveOne failed, using local cache", exception = e)
                 val localPlaylist = localPlaylistDataSource.getPlaylistById(playlist.info.id)
                 if (localPlaylist != null) {
-                    emit(
-                        ApiResult.Success(
-                            localPlaylist.copy(songs = localPlaylist.songs.filter { it.downloaded })
-                        )
-                    )
+                    localPlaylist.copy(songs = localPlaylist.songs.filter { it.downloaded })
                 } else {
-                    emit(ApiResult.Error(e.toException()))
+                    throw e.toException()
                 }
             }
-        }.flowOn(Dispatchers.IO)
+        }
     }
 
     fun create(
@@ -112,5 +119,28 @@ class PlaylistRepository(application: Application) {
             localMap[remoteSong.youtubeId]?.copy(uid = Uuid.random().toString()) ?: remoteSong
         }
         return remotePlaylist.copy(songs = mergedSongs)
+    }
+
+    companion object {
+        fun allCacheKey(settings: UmihiSettings): String =
+            localizedCacheKey("playlists:${settings.dataSyncId.orEmpty()}")
+
+        fun oneCacheKey(settings: UmihiSettings, info: PlaylistInfo): String {
+            val id = if (info.isLikedSongsPlaylist) {
+                Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID
+            } else {
+                info.id
+            }
+            return localizedCacheKey("playlist:${settings.dataSyncId.orEmpty()}:$id")
+        }
+
+        fun invalidateLikedCache(settings: UmihiSettings) {
+            ResponseCache.remove(
+                oneCacheKey(
+                    settings,
+                    PlaylistInfo(id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID),
+                )
+            )
+        }
     }
 }
