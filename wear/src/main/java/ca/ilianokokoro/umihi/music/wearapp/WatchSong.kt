@@ -10,6 +10,7 @@ data class WatchSong(
     val artist: String,
     val artworkUrl: String,
     val durationText: String = "",
+    val isExplicit: Boolean = false,
 )
 
 fun WatchSong.toMediaItem(): MediaItem = MediaItem.Builder()

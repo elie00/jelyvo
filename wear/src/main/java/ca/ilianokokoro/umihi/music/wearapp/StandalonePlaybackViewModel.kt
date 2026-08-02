@@ -131,7 +131,14 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
         viewModelScope.launch(Dispatchers.IO) {
             _state.update { it.copy(homeLoading = true) }
             runCatching { youtubeClient.homeSongs(_state.value.favorites.firstOrNull()?.artist) }
-                .onSuccess { songs -> _state.update { it.copy(homeSongs = songs, homeLoading = false) } }
+                .onSuccess { songs ->
+                    _state.update { state ->
+                        state.copy(
+                            homeSongs = songs.filterNot { state.restrictedMode && it.isExplicit },
+                            homeLoading = false,
+                        )
+                    }
+                }
                 .onFailure { _state.update { it.copy(homeLoading = false) } }
         }
     }
@@ -147,7 +154,12 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
             _state.update { it.copy(searching = true, searchPerformed = true, error = null) }
             runCatching { youtubeClient.searchSongs(query) }
                 .onSuccess { songs ->
-                    _state.update { it.copy(searching = false, results = songs) }
+                    _state.update { state ->
+                        state.copy(
+                            searching = false,
+                            results = songs.filterNot { state.restrictedMode && it.isExplicit },
+                        )
+                    }
                 }
                 .onFailure { failure ->
                     _state.update {
@@ -237,7 +249,13 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
 
     fun toggleRestrictedMode() {
         library.restrictedMode = !library.restrictedMode
-        _state.update { it.copy(restrictedMode = library.restrictedMode) }
+        _state.update { state ->
+            state.copy(
+                restrictedMode = library.restrictedMode,
+                results = state.results.filterNot { library.restrictedMode && it.isExplicit },
+                homeSongs = state.homeSongs.filterNot { library.restrictedMode && it.isExplicit },
+            )
+        }
     }
 
     fun clearError() = _state.update { it.copy(error = null) }

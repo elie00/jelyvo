@@ -144,7 +144,8 @@ class WatchYoutubeClient(
             .firstOrNull { DURATION_REGEX.matches(it) }
             .orEmpty()
 
-        return WatchSong(videoId, title, artist, artworkUrl, duration)
+        val isExplicit = renderer.walkObjects().any { it.stringAt("iconType") == "MUSIC_EXPLICIT_BADGE" }
+        return WatchSong(videoId, title, artist, artworkUrl, duration, isExplicit)
     }
 
     private fun JsonObject.columnRuns(): List<JsonObject> = objectAt(

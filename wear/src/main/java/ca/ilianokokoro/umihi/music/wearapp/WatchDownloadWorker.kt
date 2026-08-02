@@ -61,6 +61,7 @@ class WatchDownloadWorker(
         const val KEY_ARTIST = "artist"
         const val KEY_ARTWORK = "artwork"
         const val KEY_DURATION = "duration"
+        const val KEY_EXPLICIT = "explicit"
         const val KEY_ERROR = "error"
         private val HTTP_CLIENT = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
@@ -82,7 +83,7 @@ class WatchDownloadWorker(
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 "$TAG:${song.videoId}",
-                ExistingWorkPolicy.KEEP,
+                ExistingWorkPolicy.REPLACE,
                 request,
             )
         }
@@ -95,6 +96,7 @@ private fun WatchSong.toData(): Data = Data.Builder()
     .putString(WatchDownloadWorker.KEY_ARTIST, artist)
     .putString(WatchDownloadWorker.KEY_ARTWORK, artworkUrl)
     .putString(WatchDownloadWorker.KEY_DURATION, durationText)
+    .putBoolean(WatchDownloadWorker.KEY_EXPLICIT, isExplicit)
     .build()
 
 private fun Data.toSong(): WatchSong? = WatchSong(
@@ -103,4 +105,5 @@ private fun Data.toSong(): WatchSong? = WatchSong(
     artist = getString(WatchDownloadWorker.KEY_ARTIST).orEmpty(),
     artworkUrl = getString(WatchDownloadWorker.KEY_ARTWORK).orEmpty(),
     durationText = getString(WatchDownloadWorker.KEY_DURATION).orEmpty(),
+    isExplicit = getBoolean(WatchDownloadWorker.KEY_EXPLICIT, false),
 )

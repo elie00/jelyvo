@@ -82,6 +82,7 @@ class WatchLibraryStore(context: Context) {
                 artist = item.text("artist").orEmpty(),
                 artworkUrl = item.text("artworkUrl").orEmpty(),
                 durationText = item.text("durationText").orEmpty(),
+                isExplicit = item.boolean("isExplicit"),
             )
         }
     }.getOrDefault(emptyList())
@@ -95,6 +96,7 @@ class WatchLibraryStore(context: Context) {
                     put("artist", JsonPrimitive(song.artist))
                     put("artworkUrl", JsonPrimitive(song.artworkUrl))
                     put("durationText", JsonPrimitive(song.durationText))
+                    put("isExplicit", JsonPrimitive(song.isExplicit))
                 })
             }
         }
@@ -117,3 +119,5 @@ class WatchLibraryStore(context: Context) {
 }
 
 private fun JsonObject.text(key: String): String? = get(key)?.jsonPrimitive?.contentOrNull
+private fun JsonObject.boolean(key: String): Boolean =
+    get(key)?.jsonPrimitive?.contentOrNull?.toBooleanStrictOrNull() ?: false
