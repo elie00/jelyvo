@@ -401,7 +401,7 @@ private fun SettingsScreen(state: StandaloneUiState, actions: StandaloneActions)
         }
         item { StatusCard(Icons.Filled.Devices, "Lecture autonome", "Wi‑Fi, LTE et fichiers hors ligne") }
         item { StatusCard(Icons.Filled.PhoneAndroid, "Mode téléphone", "Disponible depuis l’écran de départ") }
-        item { Text("Jelyvo 2.5.0", color = WatchMuted, fontSize = 9.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(8.dp)) }
+        item { Text("Jelyvo ${BuildConfig.VERSION_NAME}", color = WatchMuted, fontSize = 9.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(8.dp)) }
     }
 }
 
