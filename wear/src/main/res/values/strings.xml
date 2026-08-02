@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Jelyvo</string>
+    <string name="connected">Connected</string>
+    <string name="offline">Offline</string>
+    <string name="connecting">Connecting…</string>
+    <string name="phone_unavailable">Phone unavailable</string>
+    <string name="nothing_playing">Nothing playing</string>
+    <string name="start_on_phone">Start a track in Jelyvo</string>
+    <string name="bring_phone_closer">Bring the watch closer to the phone</string>
+    <string name="unknown_title">Unknown title</string>
+    <string name="unknown_artist">Unknown artist</string>
+    <string name="previous_track">Previous track</string>
+    <string name="next_track">Next track</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="artwork_description">Cover for %1$s</string>
+    <string name="controls">Controls</string>
+    <string name="liked">Liked</string>
+    <string name="like">Like</string>
+    <string name="shuffle">Shuffle</string>
+    <string name="repeat_off">Repeat off</string>
+    <string name="repeat_all">Repeat all</string>
+    <string name="repeat_one">Repeat one</string>
+    <string name="seek_back">Back 10 seconds</string>
+    <string name="seek_forward">Forward 10 seconds</string>
+    <string name="volume">Volume</string>
+    <string name="volume_down">Volume down</string>
+    <string name="volume_up">Volume up</string>
+    <string name="queue">Queue</string>
+    <string name="queue_empty">The queue is empty</string>
+    <string name="now_playing">Playing</string>
+    <string name="action_failed">Action failed</string>
+    <string name="login_required">Sign in to Jelyvo on your phone</string>
+    <string name="send_failed">Unable to reach the phone</string>
+    <string name="no_media">No track is playing</string>
+    <string name="unsupported_command">Update Jelyvo on your phone</string>
+    <string name="tile_label">Jelyvo player</string>
+    <string name="tile_description">See what is playing and open the controls</string>
+    <string name="open_player">Open player</string>
+</resources>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="connected">Connecté</string>
+    <string name="offline">Hors connexion</string>
+    <string name="connecting">Connexion…</string>
+    <string name="phone_unavailable">Téléphone indisponible</string>
+    <string name="nothing_playing">Aucune lecture</string>
+    <string name="start_on_phone">Lancez un titre dans Jelyvo</string>
+    <string name="bring_phone_closer">Rapprochez la montre du téléphone</string>
+    <string name="unknown_title">Titre inconnu</string>
+    <string name="unknown_artist">Artiste inconnu</string>
+    <string name="previous_track">Titre précédent</string>
+    <string name="next_track">Titre suivant</string>
+    <string name="play">Lecture</string>
+    <string name="pause">Pause</string>
+    <string name="artwork_description">Pochette de %1$s</string>
+    <string name="controls">Commandes</string>
+    <string name="liked">Aimé</string>
+    <string name="like">Aimer</string>
+    <string name="shuffle">Aléatoire</string>
+    <string name="repeat_off">Répétition désactivée</string>
+    <string name="repeat_all">Tout répéter</string>
+    <string name="repeat_one">Répéter ce titre</string>
+    <string name="seek_back">Reculer de 10 secondes</string>
+    <string name="seek_forward">Avancer de 10 secondes</string>
+    <string name="volume">Volume</string>
+    <string name="volume_down">Baisser le volume</string>
+    <string name="volume_up">Augmenter le volume</string>
+    <string name="queue">File d’attente</string>
+    <string name="queue_empty">La file d’attente est vide</string>
+    <string name="now_playing">En lecture</string>
+    <string name="action_failed">L’action a échoué</string>
+    <string name="login_required">Connectez-vous à Jelyvo sur le téléphone</string>
+    <string name="send_failed">Impossible de joindre le téléphone</string>
+    <string name="no_media">Aucun titre n’est en cours de lecture</string>
+    <string name="unsupported_command">Mettez Jelyvo à jour sur le téléphone</string>
+    <string name="tile_label">Lecteur Jelyvo</string>
+    <string name="tile_description">Voir le titre en lecture et ouvrir les commandes</string>
+    <string name="open_player">Ouvrir le lecteur</string>
+</resources>

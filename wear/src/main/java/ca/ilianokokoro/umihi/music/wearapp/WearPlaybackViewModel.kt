@@ -15,6 +15,15 @@ class WearPlaybackViewModel(application: Application) : AndroidViewModel(applica
     fun previous() = client.send(WearPlaybackContract.COMMAND_PREVIOUS)
     fun togglePlayback() = client.send(WearPlaybackContract.COMMAND_TOGGLE)
     fun next() = client.send(WearPlaybackContract.COMMAND_NEXT)
+    fun seekBack() = client.send(WearPlaybackContract.COMMAND_SEEK_BACK)
+    fun seekForward() = client.send(WearPlaybackContract.COMMAND_SEEK_FORWARD)
+    fun toggleLike() = client.send(WearPlaybackContract.COMMAND_TOGGLE_LIKE)
+    fun toggleShuffle() = client.send(WearPlaybackContract.COMMAND_TOGGLE_SHUFFLE)
+    fun cycleRepeat() = client.send(WearPlaybackContract.COMMAND_CYCLE_REPEAT)
+    fun volumeUp() = client.send(WearPlaybackContract.COMMAND_VOLUME_UP)
+    fun volumeDown() = client.send(WearPlaybackContract.COMMAND_VOLUME_DOWN)
+    fun playQueueIndex(index: Int) = client.send(WearPlaybackContract.playQueueCommand(index))
+    fun clearError() = client.clearError()
 
     override fun onCleared() {
         client.stop()
