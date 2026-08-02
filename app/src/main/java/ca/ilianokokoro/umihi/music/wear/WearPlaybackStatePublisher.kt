@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.media3.common.C
 import androidx.media3.common.Player
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.extensions.toSong
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.DataClient
@@ -26,6 +28,9 @@ class WearPlaybackStatePublisher(context: Context) {
         val position = player.currentPosition.coerceAtLeast(0L).coerceAtMost(
             duration.takeIf { it > 0L } ?: Long.MAX_VALUE,
         )
+        val queueStart = (player.currentMediaItemIndex - QUEUE_ITEMS_BEFORE_CURRENT).coerceAtLeast(0)
+        val queueEnd = (queueStart + MAX_QUEUE_ITEMS).coerceAtMost(player.mediaItemCount)
+        val queueItems = (queueStart until queueEnd).map(player::getMediaItemAt)
 
         val request = PutDataMapRequest.create(WearPlaybackContract.STATE_PATH).apply {
             dataMap.putString(WearPlaybackContract.KEY_MEDIA_ID, item?.mediaId.orEmpty())
@@ -40,6 +45,36 @@ class WearPlaybackStatePublisher(context: Context) {
             dataMap.putBoolean(WearPlaybackContract.KEY_IS_PLAYING, player.isPlaying)
             dataMap.putBoolean(WearPlaybackContract.KEY_HAS_PREVIOUS, player.hasPreviousMediaItem())
             dataMap.putBoolean(WearPlaybackContract.KEY_HAS_NEXT, player.hasNextMediaItem())
+            dataMap.putBoolean(
+                WearPlaybackContract.KEY_IS_LIKED,
+                item?.let { LikeManager.isLiked(it.toSong()) } ?: false,
+            )
+            dataMap.putBoolean(WearPlaybackContract.KEY_SHUFFLE_ENABLED, player.shuffleModeEnabled)
+            dataMap.putInt(WearPlaybackContract.KEY_REPEAT_MODE, player.repeatMode)
+            dataMap.putInt(WearPlaybackContract.KEY_DEVICE_VOLUME, player.deviceVolume)
+            dataMap.putInt(WearPlaybackContract.KEY_MAX_DEVICE_VOLUME, player.deviceInfo.maxVolume)
+            dataMap.putBoolean(WearPlaybackContract.KEY_IS_DEVICE_MUTED, player.isDeviceMuted)
+            dataMap.putStringArrayList(
+                WearPlaybackContract.KEY_QUEUE_MEDIA_IDS,
+                ArrayList(queueItems.map { it.mediaId }),
+            )
+            dataMap.putStringArrayList(
+                WearPlaybackContract.KEY_QUEUE_TITLES,
+                ArrayList(queueItems.map { it.mediaMetadata.title?.toString().orEmpty() }),
+            )
+            dataMap.putStringArrayList(
+                WearPlaybackContract.KEY_QUEUE_ARTISTS,
+                ArrayList(queueItems.map { it.mediaMetadata.artist?.toString().orEmpty() }),
+            )
+            dataMap.putStringArrayList(
+                WearPlaybackContract.KEY_QUEUE_ARTWORK_URIS,
+                ArrayList(queueItems.map { it.mediaMetadata.artworkUri?.toString().orEmpty() }),
+            )
+            dataMap.putInt(
+                WearPlaybackContract.KEY_QUEUE_INDEX,
+                (player.currentMediaItemIndex - queueStart).coerceAtLeast(0),
+            )
+            dataMap.putInt(WearPlaybackContract.KEY_QUEUE_OFFSET, queueStart)
             dataMap.putLong(WearPlaybackContract.KEY_UPDATED_AT_MS, System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
 
@@ -50,5 +85,7 @@ class WearPlaybackStatePublisher(context: Context) {
 
     private companion object {
         const val TAG = "WearPlaybackPublisher"
+        const val MAX_QUEUE_ITEMS = 30
+        const val QUEUE_ITEMS_BEFORE_CURRENT = 3
     }
 }

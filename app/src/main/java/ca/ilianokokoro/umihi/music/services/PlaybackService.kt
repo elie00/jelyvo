@@ -316,10 +316,16 @@ class PlaybackService : MediaLibraryService() {
 
             override fun onRepeatModeChanged(repeatMode: Int) {
                 scheduleQueuePersistence()
+                wearPlaybackStatePublisher.publish(activePlayer)
             }
 
             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
                 scheduleQueuePersistence()
+                wearPlaybackStatePublisher.publish(activePlayer)
+            }
+
+            override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
+                wearPlaybackStatePublisher.publish(activePlayer)
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
