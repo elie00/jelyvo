@@ -34,6 +34,7 @@ class StandalonePlaybackService : MediaSessionService() {
             )
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .setHandleAudioBecomingNoisy(true)
+            .setSuppressPlaybackOnUnsuitableOutput(true)
             .build()
         mediaSession = MediaSession.Builder(this, player).build()
     }

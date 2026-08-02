@@ -72,6 +72,8 @@ import androidx.media3.common.Player
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.foundation.pager.HorizontalPager
+import androidx.wear.compose.foundation.pager.rememberPagerState
 import ca.ilianokokoro.umihi.music.wear.WearPlaybackSnapshot
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
@@ -337,8 +339,41 @@ private fun SongRow(song: WatchSong, trailing: String, onClick: () -> Unit) {
 @Composable
 private fun LocalPlayer(state: StandaloneUiState, actions: StandaloneActions, onBrowse: () -> Unit) {
     val song = state.currentSong ?: return
+    val pagerState = rememberPagerState(pageCount = { 2 })
+    Box(Modifier.fillMaxSize()) {
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+            if (page == 0) {
+                LocalPlayerMain(state, song, actions, onBrowse)
+            } else {
+                LocalPlayerControls(state, actions)
+            }
+        }
+        Row(
+            Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            repeat(2) { index ->
+                Box(
+                    Modifier.size(if (pagerState.currentPage == index) 5.dp else 3.dp)
+                        .background(
+                            if (pagerState.currentPage == index) Color.White else Color.White.copy(alpha = .3f),
+                            CircleShape,
+                        ),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocalPlayerMain(
+    state: StandaloneUiState,
+    song: WatchSong,
+    actions: StandaloneActions,
+    onBrowse: () -> Unit,
+) {
     Column(
-        Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 12.dp),
+        Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("SUR LA MONTRE", color = WatchCoral, fontSize = 9.sp, fontWeight = FontWeight.Bold,
@@ -346,7 +381,7 @@ private fun LocalPlayer(state: StandaloneUiState, actions: StandaloneActions, on
         Spacer(Modifier.height(4.dp))
         AsyncImage(
             song.artworkUrl.takeIf(String::isNotBlank), null,
-            Modifier.size(86.dp).clip(CircleShape).background(WatchSurfaceHigh),
+            Modifier.size(73.dp).clip(CircleShape).background(WatchSurfaceHigh),
             contentScale = ContentScale.Crop,
         )
         Spacer(Modifier.height(5.dp))
@@ -370,15 +405,56 @@ private fun LocalPlayer(state: StandaloneUiState, actions: StandaloneActions, on
             PlayerCircle(Icons.Filled.SkipNext, state.currentIndex < state.queueSize - 1, actions.next, 37)
         }
         Spacer(Modifier.height(7.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PlayerCircle(Icons.Filled.Replay10, true, actions.seekBack, 31)
-            PlayerCircle(if (state.currentIsFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                true, actions.toggleFavorite, 31, active = state.currentIsFavorite)
-            PlayerCircle(Icons.Filled.Forward10, true, actions.seekForward, 31)
-            PlayerCircle(Icons.Filled.Shuffle, true, actions.toggleShuffle, 31, active = state.shuffleEnabled)
-            PlayerCircle(if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
-                true, actions.cycleRepeat, 31, active = state.repeatMode != Player.REPEAT_MODE_OFF)
+    }
+}
+
+@Composable
+private fun LocalPlayerControls(state: StandaloneUiState, actions: StandaloneActions) {
+    Column(
+        Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 19.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("Commandes", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text("Lecture sur la montre", color = WatchCoral, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(18.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+            ControlItem(Icons.Filled.Replay10, "−10 s", actions.seekBack)
+            ControlItem(Icons.Filled.Forward10, "+10 s", actions.seekForward)
         }
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ControlItem(
+                if (state.currentIsFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                if (state.currentIsFavorite) "Aimé" else "Aimer",
+                actions.toggleFavorite,
+                state.currentIsFavorite,
+            )
+            ControlItem(Icons.Filled.Shuffle, "Aléatoire", actions.toggleShuffle, state.shuffleEnabled)
+            ControlItem(
+                if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
+                when (state.repeatMode) {
+                    Player.REPEAT_MODE_ONE -> "Un titre"
+                    Player.REPEAT_MODE_ALL -> "Tout"
+                    else -> "Boucle"
+                },
+                actions.cycleRepeat,
+                state.repeatMode != Player.REPEAT_MODE_OFF,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ControlItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    active: Boolean = false,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        PlayerCircle(icon, true, onClick, 43, active = active)
+        Spacer(Modifier.height(4.dp))
+        Text(label, color = if (active) WatchCoral else WatchMuted, fontSize = 8.sp, maxLines = 1)
     }
 }
 
