@@ -18,6 +18,7 @@ interface PlaybackEngine {
     fun play()
     fun pause()
     fun seekTo(positionMs: Long)
+    fun seekBy(deltaMs: Long)
     fun seekToIndex(index: Int)
     fun skipNext()
     fun skipPrevious()
@@ -71,5 +72,17 @@ data class PlaybackProgress(
             (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
         } else {
             0f
-        }
+    }
+}
+
+/** Computes a relative seek without crossing track bounds or overflowing at [Long.MAX_VALUE]. */
+fun relativeSeekTarget(positionMs: Long, durationMs: Long, deltaMs: Long): Long {
+    val upperBound = durationMs.takeIf { it > 0L } ?: Long.MAX_VALUE
+    val current = positionMs.coerceIn(0L, upperBound)
+    val shifted = if (deltaMs > 0L && current > Long.MAX_VALUE - deltaMs) {
+        Long.MAX_VALUE
+    } else {
+        current + deltaMs
+    }
+    return shifted.coerceIn(0L, upperBound)
 }

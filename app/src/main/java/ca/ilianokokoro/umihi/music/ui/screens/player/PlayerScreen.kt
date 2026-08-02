@@ -108,6 +108,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.domain.PlaybackEngine
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
@@ -134,6 +135,7 @@ import androidx.car.app.connection.CarConnection
 
 @Composable
 fun PlayerScreen(
+    playbackEngine: PlaybackEngine,
     onBack: () -> Unit,
     onOpenArtist: (Song) -> Unit = {},
     onOpenAlbum: (Song) -> Unit = {},
@@ -260,20 +262,20 @@ fun PlayerScreen(
                         when (event.key) {
                             Key.Spacebar -> {
                                 if (uiState.isPlaying) {
-                                    PlayerManager.currentController?.pause()
+                                    playbackEngine.pause()
                                 } else {
-                                    PlayerManager.currentController?.play()
+                                    playbackEngine.play()
                                 }
                                 true
                             }
 
                             Key.DirectionLeft -> {
-                                playerViewModel.seekBy(-10_000L)
+                                playbackEngine.seekBy(-10_000L)
                                 true
                             }
 
                             Key.DirectionRight -> {
-                                playerViewModel.seekBy(10_000L)
+                                playbackEngine.seekBy(10_000L)
                                 true
                             }
 

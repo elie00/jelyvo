@@ -41,8 +41,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   `PlayHistoryEntry ↔ Track` testé, sans migration du schéma Room existant.
 - premier seam de lecture : l'interface `PlaybackEngine` du domaine expose l'état, la file (avec
   identité d'emplacement séparée de `Track`), son ajout et les commandes de transport ;
-  `Media3PlaybackEngine` l'implémente sur Android. Le volet permanent et le mini-lecteur sont
-  migrés sur cette frontière, et le mini-lecteur ne maintient plus de listeners Media3 parallèles.
+  `Media3PlaybackEngine` l'implémente sur Android. Le volet permanent, le mini-lecteur et les
+  commandes clavier sont migrés sur cette frontière ; le mini-lecteur ne maintient plus de
+  listeners Media3 parallèles et les sauts relatifs sont calculés par une règle pure testée.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

@@ -178,6 +178,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
 
         if (fullPlayer) {
             PlayerScreen(
+                playbackEngine = Media3PlaybackEngine,
                 onBack = { showFullPlayer = false },
                 onOpenArtist = { song ->
                     song.artistId?.let { id ->

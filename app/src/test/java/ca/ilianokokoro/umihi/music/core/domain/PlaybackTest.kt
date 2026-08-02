@@ -42,4 +42,24 @@ class PlaybackTest {
         assertEquals(1f, PlaybackProgress(positionMs = 150, durationMs = 100).fraction)
         assertEquals(0f, PlaybackProgress(positionMs = 10, durationMs = 0).fraction)
     }
+
+    @Test
+    fun `relative seek clamps to track bounds`() {
+        assertEquals(0L, relativeSeekTarget(positionMs = 5_000, durationMs = 60_000, deltaMs = -10_000))
+        assertEquals(60_000L, relativeSeekTarget(positionMs = 55_000, durationMs = 60_000, deltaMs = 10_000))
+        assertEquals(35_000L, relativeSeekTarget(positionMs = 25_000, durationMs = 60_000, deltaMs = 10_000))
+    }
+
+    @Test
+    fun `relative seek handles unknown duration and overflow`() {
+        assertEquals(15_000L, relativeSeekTarget(positionMs = 5_000, durationMs = 0, deltaMs = 10_000))
+        assertEquals(
+            Long.MAX_VALUE,
+            relativeSeekTarget(
+                positionMs = Long.MAX_VALUE - 1,
+                durationMs = 0,
+                deltaMs = 10_000,
+            )
+        )
+    }
 }

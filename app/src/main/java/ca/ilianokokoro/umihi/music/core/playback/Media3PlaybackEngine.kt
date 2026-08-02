@@ -11,6 +11,7 @@ import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
 import ca.ilianokokoro.umihi.music.core.domain.QueueEntry
 import ca.ilianokokoro.umihi.music.core.domain.RepeatMode
 import ca.ilianokokoro.umihi.music.core.domain.Track
+import ca.ilianokokoro.umihi.music.core.domain.relativeSeekTarget
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.adapters.toSong
@@ -120,6 +121,17 @@ object Media3PlaybackEngine : PlaybackEngine {
 
     override fun seekTo(positionMs: Long) {
         PlayerManager.currentController?.seekTo(positionMs)
+    }
+
+    override fun seekBy(deltaMs: Long) {
+        val controller = PlayerManager.currentController ?: return
+        controller.seekTo(
+            relativeSeekTarget(
+                positionMs = controller.currentPosition,
+                durationMs = controller.duration,
+                deltaMs = deltaMs,
+            )
+        )
     }
 
     override fun seekToIndex(index: Int) {
