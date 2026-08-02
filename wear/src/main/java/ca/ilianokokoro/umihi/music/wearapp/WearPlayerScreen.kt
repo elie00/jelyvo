@@ -204,14 +204,14 @@ private fun NowPlayingPage(state: WearUiState, actions: WearPlayerActions) {
             RoundActionButton(
                 enabled = state.phoneConnected && playback.hasPrevious,
                 onClick = actions.previous,
-                size = 40,
+                size = 36,
                 description = stringResource(R.string.previous_track),
             ) { Icon(Icons.Filled.SkipPrevious, null, tint = Color.White) }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(6.dp))
             RoundActionButton(
                 enabled = state.phoneConnected,
                 onClick = actions.togglePlayback,
-                size = 54,
+                size = 49,
                 emphasized = true,
                 description = stringResource(if (playback.isPlaying) R.string.pause else R.string.play),
             ) {
@@ -224,14 +224,16 @@ private fun NowPlayingPage(state: WearUiState, actions: WearPlayerActions) {
                     )
                 }
             }
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(6.dp))
             RoundActionButton(
                 enabled = state.phoneConnected && playback.hasNext,
                 onClick = actions.next,
-                size = 40,
+                size = 36,
                 description = stringResource(R.string.next_track),
             ) { Icon(Icons.Filled.SkipNext, null, tint = Color.White) }
         }
+        // The bottom edge of a round watch is substantially narrower than its center.
+        Spacer(Modifier.height(24.dp))
     }
 }
 

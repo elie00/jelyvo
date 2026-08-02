@@ -450,8 +450,8 @@ private fun LocalPlayerMain(state: StandaloneUiState, song: WatchSong, actions: 
     ) {
         Text("sur la montre", color = WatchCoral, fontSize = 9.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onBrowse))
         Spacer(Modifier.height(3.dp))
-        Box(Modifier.size(74.dp), contentAlignment = Alignment.Center) {
-            AsyncImage(song.artworkUrl.takeIf(String::isNotBlank), null, Modifier.fillMaxSize().clip(RoundedCornerShape(25.dp)).background(WatchSurfaceHigh), contentScale = ContentScale.Crop)
+        Box(Modifier.size(68.dp), contentAlignment = Alignment.Center) {
+            AsyncImage(song.artworkUrl.takeIf(String::isNotBlank), null, Modifier.fillMaxSize().clip(RoundedCornerShape(23.dp)).background(WatchSurfaceHigh), contentScale = ContentScale.Crop)
             if (song.artworkUrl.isBlank()) Icon(Icons.Filled.MusicNote, null, tint = WatchMuted, modifier = Modifier.size(30.dp))
         }
         Spacer(Modifier.height(4.dp))
@@ -464,12 +464,13 @@ private fun LocalPlayerMain(state: StandaloneUiState, song: WatchSong, actions: 
             Text(formatTime(state.durationMs), color = WatchMuted, fontSize = 8.sp)
         }
         Spacer(Modifier.weight(1f))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-            PlayerCircle(Icons.Filled.SkipPrevious, state.currentIndex > 0, actions.previous, 38)
-            PlayerCircle(if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, state.controllerReady, actions.togglePlayback, 51, emphasized = true)
-            PlayerCircle(Icons.Filled.SkipNext, state.currentIndex < state.queueSize - 1, actions.next, 38)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            PlayerCircle(Icons.Filled.SkipPrevious, state.currentIndex > 0, actions.previous, 36)
+            PlayerCircle(if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, state.controllerReady, actions.togglePlayback, 49, emphasized = true)
+            PlayerCircle(Icons.Filled.SkipNext, state.currentIndex < state.queueSize - 1, actions.next, 36)
         }
-        Spacer(Modifier.height(7.dp))
+        // Keep the transport controls inside the narrower safe chord near the bottom of a round display.
+        Spacer(Modifier.height(30.dp))
     }
 }
 
