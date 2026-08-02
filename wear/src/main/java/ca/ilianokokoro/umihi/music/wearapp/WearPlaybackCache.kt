@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.wearapp
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.wear.tiles.TileService
 import ca.ilianokokoro.umihi.music.wear.WearPlaybackSnapshot
 
@@ -16,12 +17,12 @@ class WearPlaybackCache(context: Context) {
     private val preferences = appContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
 
     fun save(snapshot: WearPlaybackSnapshot) {
-        preferences.edit()
-            .putString(KEY_TITLE, snapshot.title)
-            .putString(KEY_ARTIST, snapshot.artist)
-            .putBoolean(KEY_IS_PLAYING, snapshot.isPlaying)
-            .putBoolean(KEY_HAS_MEDIA, snapshot.hasMedia)
-            .apply()
+        preferences.edit {
+            putString(KEY_TITLE, snapshot.title)
+            putString(KEY_ARTIST, snapshot.artist)
+            putBoolean(KEY_IS_PLAYING, snapshot.isPlaying)
+            putBoolean(KEY_HAS_MEDIA, snapshot.hasMedia)
+        }
         TileService.getUpdater(appContext).requestUpdate(JelyvoTileService::class.java)
     }
 

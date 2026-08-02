@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Jelyvo</string>
+    <string name="app_name" translatable="false">Jelyvo</string>
     <string name="connected">Connected</string>
     <string name="offline">Offline</string>
     <string name="connecting">Connecting…</string>
@@ -29,7 +29,6 @@
     <string name="volume_up">Volume up</string>
     <string name="queue">Queue</string>
     <string name="queue_empty">The queue is empty</string>
-    <string name="now_playing">Playing</string>
     <string name="action_failed">Action failed</string>
     <string name="login_required">Sign in to Jelyvo on your phone</string>
     <string name="send_failed">Unable to reach the phone</string>
@@ -37,5 +36,4 @@
     <string name="unsupported_command">Update Jelyvo on your phone</string>
     <string name="tile_label">Jelyvo player</string>
     <string name="tile_description">See what is playing and open the controls</string>
-    <string name="open_player">Open player</string>
 </resources>

@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.wearapp
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
@@ -62,6 +63,7 @@ import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -217,7 +219,7 @@ private fun NowPlayingPage(state: WearUiState, actions: WearPlayerActions) {
                     Icon(
                         if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                         null,
-                        tint = Color.White,
+                        tint = BrandPlum,
                         modifier = Modifier.size(29.dp),
                     )
                 }
@@ -248,6 +250,7 @@ private fun ControlsPage(state: WearUiState, actions: WearPlayerActions) {
                 icon = if (playback.isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                 label = stringResource(if (playback.isLiked) R.string.liked else R.string.like),
                 active = playback.isLiked,
+                activeContainer = BrandPlum,
                 enabled = enabled,
                 onClick = actions.toggleLike,
             )
@@ -255,6 +258,7 @@ private fun ControlsPage(state: WearUiState, actions: WearPlayerActions) {
                 icon = Icons.Filled.Shuffle,
                 label = stringResource(R.string.shuffle),
                 active = playback.shuffleEnabled,
+                activeContainer = SecondaryContainer,
                 enabled = enabled,
                 onClick = actions.toggleShuffle,
             )
@@ -271,6 +275,7 @@ private fun ControlsPage(state: WearUiState, actions: WearPlayerActions) {
                 },
                 label = stringResource(repeatLabel),
                 active = playback.repeatMode != REPEAT_MODE_OFF,
+                activeContainer = TertiaryContainer,
                 enabled = enabled,
                 onClick = actions.cycleRepeat,
             )
@@ -363,13 +368,13 @@ private fun QueueRow(item: WearQueueItem, active: Boolean, enabled: Boolean, onC
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(if (active) Accent.copy(alpha = 0.24f) else Color.White.copy(alpha = 0.08f))
+            .background(if (active) BrandPlum.copy(alpha = 0.72f) else SurfaceContainer)
             .clickable(enabled = enabled, onClick = onClick)
             .padding(7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.size(37.dp).clip(CircleShape).background(Color(0xFF2C2C2C)),
+            modifier = Modifier.size(37.dp).clip(CircleShape).background(SurfaceContainerHigh),
             contentAlignment = Alignment.Center,
         ) {
             AsyncImage(
@@ -401,7 +406,7 @@ private fun QueueRow(item: WearQueueItem, active: Boolean, enabled: Boolean, onC
             )
         }
         if (active) {
-            Text("•", color = Accent, fontSize = 19.sp, fontWeight = FontWeight.Black)
+            Text("•", color = BrandCoral, fontSize = 19.sp, fontWeight = FontWeight.Black)
         }
     }
 }
@@ -414,7 +419,7 @@ private fun ArtworkWithProgress(playback: WearPlaybackSnapshot) {
             model = playback.artworkUri.takeIf(String::isNotBlank),
             contentDescription = stringResource(R.string.artwork_description, playback.title),
             contentScale = ContentScale.Crop,
-            modifier = Modifier.size(85.dp).clip(CircleShape).background(Color(0xFF272727)),
+            modifier = Modifier.size(85.dp).clip(CircleShape).background(SurfaceContainer),
         )
         Canvas(Modifier.fillMaxSize()) {
             val stroke = 3.dp.toPx()
@@ -425,7 +430,7 @@ private fun ArtworkWithProgress(playback: WearPlaybackSnapshot) {
                 Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round),
             )
             drawArc(
-                Accent, -90f, 360f * timed.fraction, false,
+                BrandCoral, -90f, 360f * timed.fraction, false,
                 Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round),
             )
         }
@@ -459,7 +464,7 @@ private fun VolumeControl(
             Box(Modifier.fillMaxWidth().height(4.dp).background(Color.White.copy(alpha = 0.15f), CircleShape)) {
                 Box(
                     Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(4.dp)
-                        .background(Accent, CircleShape),
+                        .background(Primary, CircleShape),
                 )
             }
         }
@@ -478,6 +483,7 @@ private fun LabeledAction(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     active: Boolean = false,
+    activeContainer: Color = BrandPlum,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
@@ -485,9 +491,9 @@ private fun LabeledAction(
         enabled = enabled,
         onClick = onClick,
         size = 44,
-        emphasized = active,
+        containerColor = activeContainer.takeIf { active },
         description = label,
-    ) { Icon(icon, null, tint = Color.White, modifier = Modifier.size(21.dp)) }
+    ) { Icon(icon, null, tint = OnSurface, modifier = Modifier.size(21.dp)) }
 }
 
 @Composable
@@ -497,6 +503,7 @@ private fun RoundActionButton(
     size: Int,
     description: String,
     emphasized: Boolean = false,
+    containerColor: Color? = null,
     content: @Composable () -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -506,8 +513,9 @@ private fun RoundActionButton(
             .background(
                 when {
                     !enabled -> Color.White.copy(alpha = 0.06f)
-                    emphasized -> Accent
-                    else -> Color.White.copy(alpha = 0.14f)
+                    containerColor != null -> containerColor
+                    emphasized -> IconCream
+                    else -> SurfaceContainerHigh
                 },
                 CircleShape,
             )
@@ -522,7 +530,7 @@ private fun RoundActionButton(
 @Composable
 private fun ConnectionLabel(connected: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(5.dp).background(if (connected) Accent else Color(0xFF777777), CircleShape))
+        Box(Modifier.size(5.dp).background(if (connected) BrandCoral else MutedText, CircleShape))
         Spacer(Modifier.width(5.dp))
         Text(
             stringResource(if (connected) R.string.connected else R.string.offline).uppercase(),
@@ -570,9 +578,15 @@ private fun EmptyContent(connected: Boolean, loading: Boolean) {
         verticalArrangement = Arrangement.Center,
     ) {
         Box(
-            modifier = Modifier.size(62.dp).background(Accent.copy(alpha = 0.16f), CircleShape),
+            modifier = Modifier.size(72.dp).background(IconCream, CircleShape),
             contentAlignment = Alignment.Center,
-        ) { Text("J", color = Accent, fontSize = 34.sp, fontWeight = FontWeight.Black) }
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_jelyvo_watch),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier.size(62.dp),
+            )
+        }
         Spacer(Modifier.height(13.dp))
         Text(
             stringResource(
@@ -702,6 +716,14 @@ private const val PAGE_COUNT = 3
 private const val REPEAT_MODE_OFF = 0
 private const val REPEAT_MODE_ONE = 1
 private const val REPEAT_MODE_ALL = 2
-private val Background = Color(0xFF090909)
-private val Accent = Color(0xFFE8492A)
-private val MutedText = Color.White.copy(alpha = 0.64f)
+private val Background = Color(0xFF151110)
+private val OnSurface = Color(0xFFF2DFDB)
+private val MutedText = Color(0xFFDCC1BC)
+private val Primary = Color(0xFFFFB4A8)
+private val BrandCoral = Color(0xFFF47B67)
+private val BrandPlum = Color(0xFF74304F)
+private val SecondaryContainer = Color(0xFF5D3F3A)
+private val TertiaryContainer = Color(0xFF52452F)
+private val SurfaceContainer = Color(0xFF221B1A)
+private val SurfaceContainerHigh = Color(0xFF2D2523)
+private val IconCream = Color(0xFFFFF8ED)
