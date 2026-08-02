@@ -35,12 +35,14 @@ class WatchYoutubeClient(
         parseSearchResponse(post(SEARCH_URL, body, WEB_REMIX_HEADERS))
     }
 
-    suspend fun homeSongs(): List<WatchSong> = withContext(Dispatchers.IO) {
+    suspend fun homeSongs(seedArtist: String? = null): List<WatchSong> = withContext(Dispatchers.IO) {
         val body = """{
             "context":{"client":$WEB_REMIX_CLIENT,"user":{"lockedSafetyMode":false}},
             "browseId":"FEmusic_home"
         }""".trimIndent()
-        parseSearchResponse(post(BROWSE_URL, body, WEB_REMIX_HEADERS))
+        val directSongs = parseSearchResponse(post(BROWSE_URL, body, WEB_REMIX_HEADERS))
+        if (directSongs.isNotEmpty()) directSongs
+        else searchSongs(seedArtist?.takeIf(String::isNotBlank) ?: "Nouveautés musique")
     }
 
     suspend fun resolveAudioUrl(videoId: String): String = withContext(Dispatchers.IO) {

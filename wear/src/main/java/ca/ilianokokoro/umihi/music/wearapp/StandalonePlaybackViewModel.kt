@@ -127,7 +127,7 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     fun refreshHome() {
         viewModelScope.launch(Dispatchers.IO) {
             _state.update { it.copy(homeLoading = true) }
-            runCatching { youtubeClient.homeSongs() }
+            runCatching { youtubeClient.homeSongs(_state.value.favorites.firstOrNull()?.artist) }
                 .onSuccess { songs -> _state.update { it.copy(homeSongs = songs, homeLoading = false) } }
                 .onFailure { _state.update { it.copy(homeLoading = false) } }
         }
