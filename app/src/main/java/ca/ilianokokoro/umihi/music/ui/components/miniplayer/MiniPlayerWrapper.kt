@@ -24,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -34,106 +33,51 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
-import ca.ilianokokoro.umihi.music.extensions.toSong
+import ca.ilianokokoro.umihi.music.core.domain.PlaybackEngine
+import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropTarget
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import kotlinx.coroutines.delay
 
 @Composable
 fun MiniPlayerWrapper(
+    playbackEngine: PlaybackEngine,
     modifier: Modifier = Modifier,
     artworkModifier: Modifier = Modifier,
     onMiniPlayerPressed: () -> Unit,
     showMiniPlayer: Boolean,
 ) {
-    val context = LocalContext.current
-    val player by PlayerManager.controllerState.collectAsStateWithLifecycle()
-    var currentSong by remember { mutableStateOf(player?.currentMediaItem?.toSong()) }
-    var songIsPlaying by remember(player) {
-        mutableStateOf(player?.isPlaying)
-    }
-    var songIsLoading by remember(player) {
-        mutableStateOf(player?.playbackState == Player.STATE_BUFFERING)
-    }
-    var progressFraction by remember(player) {
-        mutableFloatStateOf(0f)
-    }
+    val playbackState by playbackEngine.state.collectAsStateWithLifecycle()
+    val currentTrack = playbackState.currentTrack
+    val isPlaying = playbackState.isPlaying
+    val isLoading = playbackState.status == PlaybackStatus.BUFFERING
+    var progressFraction by remember { mutableFloatStateOf(0f) }
     var isQueueDropHovered by remember { mutableStateOf(false) }
 
     val bottomInsetPx: Int = with(LocalDensity.current) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().roundToPx()
     }
 
-    DisposableEffect(player) {
-        currentSong = player?.currentMediaItem?.toSong()
-        songIsPlaying = player?.isPlaying
-        songIsLoading = player?.playbackState == Player.STATE_BUFFERING
-
-        val listener = object : Player.Listener {
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                currentSong = mediaItem?.toSong()
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                songIsPlaying = isPlaying
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                when (playbackState) {
-                    Player.STATE_BUFFERING -> {
-                        songIsLoading = true
-                    }
-
-                    Player.STATE_READY -> {
-                        songIsLoading = false
-                    }
-
-                    Player.STATE_IDLE,
-                    Player.STATE_ENDED -> {
-                        songIsLoading = false
-                    }
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                songIsLoading = false
-                songIsPlaying = false
-            }
-        }
-        player?.addListener(listener)
-        onDispose { player?.removeListener(listener) }
-    }
-
     // A lightweight ticker keeps Jelyvo's signature pulse accurate without involving the
     // full-player ViewModel. It stops whenever playback pauses or the dock is hidden.
-    LaunchedEffect(player, currentSong?.youtubeId, songIsPlaying, showMiniPlayer) {
+    LaunchedEffect(playbackEngine, currentTrack?.id, isPlaying, showMiniPlayer) {
         while (true) {
-            val duration = player?.duration ?: 0L
-            progressFraction = if (duration > 0L) {
-                ((player?.currentPosition ?: 0L).toFloat() / duration.toFloat())
-                    .coerceIn(0f, 1f)
-            } else {
-                0f
-            }
+            progressFraction = playbackEngine.progress()?.fraction ?: 0f
 
-            if (songIsPlaying != true || !showMiniPlayer) break
+            if (!isPlaying || !showMiniPlayer) break
             delay(500)
         }
     }
 
     AnimatedVisibility(
-        visible = currentSong != null && showMiniPlayer,
+        visible = currentTrack != null && showMiniPlayer,
         enter = slideInVertically(initialOffsetY = { it + bottomInsetPx }),
         exit = slideOutVertically(targetOffsetY = { it + bottomInsetPx }),
         modifier = modifier
@@ -142,36 +86,36 @@ fun MiniPlayerWrapper(
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .height(Constants.Ui.MiniPlayer.HEIGHT)
     ) {
-        val song = currentSong ?: return@AnimatedVisibility
+        val track = currentTrack ?: return@AnimatedVisibility
         ArtworkPlayerTheme(
-            artworkUri = song.thumbnailPath ?: song.thumbnailHref,
+            artworkUri = track.artworkUrl.orEmpty(),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .songDragAndDropTarget(
                         onSongDropped = { droppedSong ->
-                            PlayerManager.addToQueue(droppedSong, context)
+                            playbackEngine.enqueue(droppedSong.toTrack())
                             true
                         },
                         onHoverChanged = { isQueueDropHovered = it },
                     ),
             ) {
                 MiniPlayer(
-                    currentSong = song,
+                    currentTrack = track,
                     artworkModifier = artworkModifier,
                     onClick = onMiniPlayerPressed,
                     onPlayPause = {
-                        if (player?.isPlaying == true) {
-                            player?.pause()
+                        if (isPlaying) {
+                            playbackEngine.pause()
                         } else {
-                            player?.play()
+                            playbackEngine.play()
                         }
                     },
-                    onSkipNext = { player?.seekToNext() },
-                    onSkipPrevious = { player?.seekToPrevious() },
-                    isPlaying = songIsPlaying == true,
-                    isLoading = songIsLoading,
+                    onSkipNext = playbackEngine::skipNext,
+                    onSkipPrevious = playbackEngine::skipPrevious,
+                    isPlaying = isPlaying,
+                    isLoading = isLoading,
                     progressFraction = progressFraction,
                 )
 

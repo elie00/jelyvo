@@ -10,6 +10,7 @@ import ca.ilianokokoro.umihi.music.core.domain.PlaybackState
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
 import ca.ilianokokoro.umihi.music.core.domain.QueueEntry
 import ca.ilianokokoro.umihi.music.core.domain.RepeatMode
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.adapters.toSong
@@ -103,6 +104,10 @@ object Media3PlaybackEngine : PlaybackEngine {
                 startIndex = startIndex,
             )
         }
+    }
+
+    override fun enqueue(track: Track) {
+        PlayerManager.addToQueue(track.toSong())
     }
 
     override fun play() {

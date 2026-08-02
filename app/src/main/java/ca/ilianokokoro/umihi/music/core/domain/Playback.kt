@@ -14,6 +14,7 @@ interface PlaybackEngine {
     val queue: StateFlow<PlaybackQueue>
 
     suspend fun load(queue: PlaybackQueue, startIndex: Int)
+    fun enqueue(track: Track)
     fun play()
     fun pause()
     fun seekTo(positionMs: Long)

@@ -25,11 +25,12 @@
   enregistrées et relues via `Track` grâce à un adaptateur `PlayHistoryEntry ↔ Track` testé, sans
   changement de schéma Room.
 - Seam de lecture ouvert : l'interface `PlaybackEngine` (état, file à identité d'emplacement,
-  commandes de transport) vit dans le domaine pur, avec `Media3PlaybackEngine` comme premier
-  adapter Android. Le volet de lecture permanent des grandes fenêtres est le premier écran qui
-  n'importe plus Media3 : il observe l'état neutre et émet des commandes via l'interface.
-- Chantier actif : migrer les autres consommateurs de `PlayerManager` vers `PlaybackEngine`
-  (mini-lecteur, widget, commandes clavier), puis extraire `MusicCatalog`.
+  commandes de transport et ajout à la file) vit dans le domaine pur, avec
+  `Media3PlaybackEngine` comme premier adapter Android. Le volet permanent et le mini-lecteur
+  observent désormais l'état neutre et émettent leurs commandes via l'interface ; le mini-lecteur
+  ne possède plus ses propres listeners Media3.
+- Chantier actif : migrer les commandes clavier puis le widget de `PlayerManager` vers
+  `PlaybackEngine`, puis extraire `MusicCatalog`.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

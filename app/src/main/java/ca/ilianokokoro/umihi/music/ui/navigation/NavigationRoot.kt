@@ -61,6 +61,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.playback.Media3PlaybackEngine
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.ui.components.library.PermanentLibraryPane
 import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayerWrapper
@@ -529,6 +530,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     .padding(bottom = dockBottomPadding)
             ) {
                 MiniPlayerWrapper(
+                    playbackEngine = Media3PlaybackEngine,
                     showMiniPlayer =
                         screenConfig.showMiniPlayer && !showPermanentPlaybackPane,
                     onMiniPlayerPressed = { showFullPlayer = true },

@@ -45,15 +45,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
-import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 
 @Composable
 fun MiniPlayer(
     modifier: Modifier = Modifier,
     artworkModifier: Modifier = Modifier,
-    currentSong: Song,
+    currentTrack: Track,
     onClick: () -> Unit,
     onPlayPause: () -> Unit,
     onSkipNext: () -> Unit,
@@ -95,8 +95,8 @@ fun MiniPlayer(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AnimatedContent(
-                targetState = currentSong,
-                contentKey = { it.youtubeId },
+                targetState = currentTrack,
+                contentKey = { it.id },
                 transitionSpec = {
                     (
                         fadeIn(tween(180)) +
@@ -106,7 +106,7 @@ fun MiniPlayer(
                 label = "miniPlayerTrack",
                 modifier = Modifier
                     .weight(1f)
-                    .pointerInput(currentSong.youtubeId) {
+                    .pointerInput(currentTrack.id) {
                         var dragTotal = 0f
                         val threshold = size.width * 0.18f
                         detectHorizontalDragGestures(
@@ -137,7 +137,7 @@ fun MiniPlayer(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SquareImage(
-                        uri = it.thumbnailPath ?: it.thumbnailHref,
+                        uri = it.artworkUrl.orEmpty(),
                         modifier = artworkModifier.size(50.dp),
                         cornerRadius = 16.dp,
                     )
@@ -156,7 +156,7 @@ fun MiniPlayer(
                             modifier = Modifier.basicMarquee()
                         )
                         Text(
-                            text = it.artist,
+                            text = it.artist.name,
                             style = MaterialTheme.typography.bodyMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
