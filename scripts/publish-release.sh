@@ -69,10 +69,14 @@ if [[ -z "$notes" ]]; then
 fi
 
 echo "== Publication de $tag sur $RELEASES_REPO =="
-gh release create "$tag" "$APK" "$WATCH_APK" \
+gh release create "$tag" "$APK" \
     --repo "$RELEASES_REPO" \
     --title "Jelyvo $tag" \
     --notes "$notes"
+
+# Upload separately: gh sorts multiple paths before uploading them. Keeping Jelyvo.apk as the
+# first asset protects phone versions released before 2.4.1, which selected the first APK.
+gh release upload "$tag" "$WATCH_APK" --repo "$RELEASES_REPO"
 
 echo "Publié : https://github.com/$RELEASES_REPO/releases/tag/$tag"
 echo "Les applications installées proposeront la mise à jour au prochain lancement."

@@ -18,6 +18,7 @@ class GithubReleaseResponseTest {
                 "target_commitish": "main",
                 "body": "Notes:\n- Nouveau widget\n- Correctifs",
                 "assets": [
+                    {"browser_download_url": "https://github.com/elie00/jelyvo-releases/releases/download/v2.1.0/Jelyvo-Watch.apk", "name": "Jelyvo-Watch.apk"},
                     {"browser_download_url": "https://github.com/elie00/jelyvo-releases/releases/download/v2.1.0/Jelyvo.apk", "name": "Jelyvo.apk"}
                 ]
             }
@@ -31,6 +32,20 @@ class GithubReleaseResponseTest {
             release.downloadUrl
         )
         assertEquals("• Nouveau widget\n• Correctifs", release.cleanBody)
+    }
+
+    @Test
+    fun `watch apk is never selected as the phone update`() {
+        val release = json.decodeFromString<GithubReleaseResponse>(
+            """{
+                "tag_name": "v2.4.0",
+                "assets": [
+                    {"browser_download_url": "https://example.test/Jelyvo-Watch.apk"}
+                ]
+            }""".trimIndent()
+        )
+
+        assertEquals(Constants.Url.Github.Release.DOWNLOAD, release.downloadUrl)
     }
 
     @Test

@@ -27,8 +27,14 @@ data class GithubReleaseResponse(
 
     /** L'asset APK reel de la release, ou l'URL stable `latest/download` en secours. */
     val downloadUrl: String
-        get() = assets.firstOrNull { it.url.endsWith(".apk") }?.url
+        get() = assets.firstOrNull {
+            it.url.substringAfterLast('/').equals(PHONE_APK_NAME, ignoreCase = true)
+        }?.url
             ?: Constants.Url.Github.Release.DOWNLOAD
+
+    private companion object {
+        const val PHONE_APK_NAME = "Jelyvo.apk"
+    }
 }
 
 @Serializable
