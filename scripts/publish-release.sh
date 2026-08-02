@@ -15,6 +15,7 @@ cd "$(dirname "$0")/.."
 RELEASES_REPO="elie00/jelyvo-releases"
 APK="app/build/outputs/apk/standalone/release/Jelyvo.apk"
 WATCH_APK="wear/build/outputs/apk/release/Jelyvo-Watch.apk"
+WATCH_ARCHIVE="wear/build/outputs/apk/release/Jelyvo-Watch.zip"
 EXPECTED_CERT_SHA256="b47ac9b86845664530b6e1a77465f210fa7b4913e77b1d44fde6a4f28fbe081d"
 
 version=$(grep -E 'val\s+appVersionName\s*=' app/build.gradle.kts | sed -E 's/.*"([^"]+)".*/\1/')
@@ -60,6 +61,10 @@ if [[ "$watch_actual" != "$EXPECTED_CERT_SHA256" ]]; then
 fi
 echo "Signature Watch OK ($watch_actual)"
 
+# Keep the Watch binary out of the phone updater's generic `.apk` asset scan used by versions
+# released before 2.4.1. The archive remains a one-step manual download for Wear OS installation.
+zip -j -FS "$WATCH_ARCHIVE" "$WATCH_APK" >/dev/null
+
 notes="${1:-}"
 if [[ -z "$notes" ]]; then
     notes_file=$(mktemp /tmp/jelyvo-notes.XXXXXX.md)
@@ -74,9 +79,9 @@ gh release create "$tag" "$APK" \
     --title "Jelyvo $tag" \
     --notes "$notes"
 
-# Upload separately: gh sorts multiple paths before uploading them. Keeping Jelyvo.apk as the
-# first asset protects phone versions released before 2.4.1, which selected the first APK.
-gh release upload "$tag" "$WATCH_APK" --repo "$RELEASES_REPO"
+# Upload the Watch archive separately. Old phone builds only consider assets ending in `.apk`, so
+# they cannot accidentally install the Wear OS package when both applications share a release.
+gh release upload "$tag" "$WATCH_ARCHIVE" --repo "$RELEASES_REPO"
 
 echo "Publié : https://github.com/$RELEASES_REPO/releases/tag/$tag"
 echo "Les applications installées proposeront la mise à jour au prochain lancement."
