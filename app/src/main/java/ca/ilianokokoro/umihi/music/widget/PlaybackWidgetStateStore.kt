@@ -2,7 +2,7 @@ package ca.ilianokokoro.umihi.music.widget
 
 import android.content.Context
 import android.graphics.BitmapFactory
-import androidx.media3.common.MediaItem
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import java.io.File
 
 data class PlaybackWidgetState(
@@ -38,26 +38,42 @@ object PlaybackWidgetStateStore {
 
     fun write(
         context: Context,
-        mediaItem: MediaItem?,
+        track: Track?,
         isPlaying: Boolean,
         artworkBytes: ByteArray? = null,
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val previousId = prefs.getString(KEY_MEDIA_ID, "").orEmpty()
-        val mediaId = mediaItem?.mediaId.orEmpty()
         val artworkFile = File(context.filesDir, ARTWORK_FILE)
+        val state = playbackWidgetState(
+            track = track,
+            isPlaying = isPlaying,
+            artworkFile = artworkFile,
+        )
 
         if (artworkBytes != null) {
             runCatching { artworkFile.writeBytes(artworkBytes) }
-        } else if (mediaId != previousId && artworkFile.exists()) {
+        } else if (state.mediaId != previousId && artworkFile.exists()) {
             runCatching { artworkFile.delete() }
         }
 
         prefs.edit()
-            .putString(KEY_MEDIA_ID, mediaId)
-            .putString(KEY_TITLE, mediaItem?.mediaMetadata?.title?.toString().orEmpty())
-            .putString(KEY_ARTIST, mediaItem?.mediaMetadata?.artist?.toString().orEmpty())
-            .putBoolean(KEY_IS_PLAYING, isPlaying)
+            .putString(KEY_MEDIA_ID, state.mediaId)
+            .putString(KEY_TITLE, state.title)
+            .putString(KEY_ARTIST, state.artist)
+            .putBoolean(KEY_IS_PLAYING, state.isPlaying)
             .apply()
     }
 }
+
+internal fun playbackWidgetState(
+    track: Track?,
+    isPlaying: Boolean,
+    artworkFile: File? = null,
+): PlaybackWidgetState = PlaybackWidgetState(
+    mediaId = track?.id.orEmpty(),
+    title = track?.title.orEmpty(),
+    artist = track?.artist?.name.orEmpty(),
+    isPlaying = isPlaying,
+    artworkFile = artworkFile,
+)

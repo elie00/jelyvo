@@ -520,7 +520,7 @@ class PlaybackService : MediaLibraryService() {
             runBlocking(Dispatchers.IO) {
                 PlaybackWidgetStateStore.write(
                     context = applicationContext,
-                    mediaItem = currentItem,
+                    track = currentItem?.toSong()?.toTrack(),
                     isPlaying = false,
                     artworkBytes = currentItem?.mediaMetadata?.artworkData?.cappedTo(),
                 )
@@ -1150,7 +1150,7 @@ class PlaybackService : MediaLibraryService() {
             val isPlaying = withContext(Dispatchers.Main) { activePlayer.isPlaying }
             PlaybackWidgetStateStore.write(
                 context = applicationContext,
-                mediaItem = mediaItem,
+                track = mediaItem?.toSong()?.toTrack(),
                 isPlaying = isPlaying,
                 artworkBytes = artworkBytes,
             )

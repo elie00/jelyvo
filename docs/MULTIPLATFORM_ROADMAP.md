@@ -29,9 +29,11 @@
   `Media3PlaybackEngine` comme premier adapter Android. Le volet permanent et le mini-lecteur
   observent désormais l'état neutre et émettent leurs commandes via l'interface ; le mini-lecteur
   ne possède plus ses propres listeners Media3. Les raccourcis clavier du lecteur passent aussi
-  par cette frontière, avec un calcul pur et testé pour les sauts relatifs de ±10 secondes.
-- Chantier actif : migrer le widget de `PlayerManager` vers `PlaybackEngine`, puis extraire
-  `MusicCatalog`.
+  par cette frontière, avec un calcul pur et testé pour les sauts relatifs de ±10 secondes. Le
+  widget persiste désormais les métadonnées d'un `Track` neutre, sans importer Media3 ; ses actions
+  restent volontairement des commandes Android vers `PlaybackService` afin de fonctionner lorsque
+  l'interface de l'application n'est pas lancée.
+- Chantier actif : extraire `MusicCatalog` devant les appels YouTube.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

@@ -43,7 +43,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   identité d'emplacement séparée de `Track`), son ajout et les commandes de transport ;
   `Media3PlaybackEngine` l'implémente sur Android. Le volet permanent, le mini-lecteur et les
   commandes clavier sont migrés sur cette frontière ; le mini-lecteur ne maintient plus de
-  listeners Media3 parallèles et les sauts relatifs sont calculés par une règle pure testée.
+  listeners Media3 parallèles et les sauts relatifs sont calculés par une règle pure testée. L'état
+  persistant des widgets consomme aussi `Track` plutôt que `MediaItem`; leurs actions restent
+  routées par `PlaybackService` pour pouvoir réveiller la lecture sans interface active.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
