@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.services
 
 import android.net.Uri
+import android.os.Bundle
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -10,10 +11,13 @@ import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService.LibraryParams
 import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
+import androidx.media3.session.SessionResult
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
@@ -22,14 +26,18 @@ import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SearchFilter
+import ca.ilianokokoro.umihi.music.extensions.toSong
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackContract
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.concurrent.ConcurrentHashMap
 
@@ -55,10 +63,69 @@ class UmihiMediaLibraryCallback(
             MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS.buildUpon()
                 .add(Player.COMMAND_GET_TIMELINE)
                 .build()
+        val sessionCommandsBuilder =
+            MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon()
+        if (controller.packageName == service.packageName) {
+            sessionCommandsBuilder
+                .add(SessionCommand(WearPlaybackContract.SESSION_COMMAND_TOGGLE_LIKE, Bundle.EMPTY))
+                .add(SessionCommand(WearPlaybackContract.SESSION_COMMAND_PUBLISH_STATE, Bundle.EMPTY))
+        }
 
         return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            .setAvailableSessionCommands(sessionCommandsBuilder.build())
             .setAvailablePlayerCommands(commands)
             .build()
+    }
+
+    override fun onCustomCommand(
+        session: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        customCommand: SessionCommand,
+        args: Bundle,
+    ): ListenableFuture<SessionResult> {
+        if (controller.packageName != service.packageName) {
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_PERMISSION_DENIED))
+        }
+        if (customCommand.customAction == WearPlaybackContract.SESSION_COMMAND_PUBLISH_STATE) {
+            service.publishWearPlaybackState()
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+        }
+        if (customCommand.customAction != WearPlaybackContract.SESSION_COMMAND_TOGGLE_LIKE) {
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED))
+        }
+
+        // Capture Media3 state on its application thread. Only the network mutation runs on IO.
+        val song = session.player.currentMediaItem.toSong()
+        if (song.youtubeId.isBlank()) {
+            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_INVALID_STATE))
+        }
+        val currentStatus = LikeManager.isLiked(song)
+        val future = SettableFuture.create<SessionResult>()
+        serviceScope.launch {
+            val success = runCatching {
+                LikeManager.setLikedAndWait(
+                    song = song,
+                    liked = !currentStatus,
+                    context = service.applicationContext,
+                    currentStatus = currentStatus,
+                )
+            }.getOrDefault(false)
+            runCatching {
+                withContext(Dispatchers.Main) {
+                    service.publishWearPlaybackState()
+                }
+            }
+            future.set(
+                SessionResult(
+                    if (success) {
+                        SessionResult.RESULT_SUCCESS
+                    } else {
+                        SessionResult.RESULT_ERROR_SESSION_AUTHENTICATION_EXPIRED
+                    }
+                )
+            )
+        }
+        return future
     }
 
     override fun onGetLibraryRoot(

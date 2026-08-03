@@ -1,6 +1,9 @@
 package ca.ilianokokoro.umihi.music
 
+import android.app.ActivityManager
 import android.app.Application
+import android.os.Build
+import android.os.Process
 import androidx.work.Configuration
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
@@ -31,10 +34,25 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
     override fun onCreate() {
         super.onCreate()
 
+        // The Data Layer listener lives in a small disposable process. Avoid starting account
+        // prefetch, caches and other phone UI work when Wear OS merely delivers a command.
+        if (!isMainAppProcess(currentProcessName(), packageName)) return
+
         // Account screens are product data, not disposable artwork. Keep their last snapshot in
         // filesDir so Android cache cleanup cannot bring skeletons back on every cold launch.
         ResponseCache.init(storageDir = filesDir, legacyStorageDir = cacheDir)
         prewarmAccountLibrary()
+    }
+
+    private fun currentProcessName(): String? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            return getProcessName()
+        }
+        val pid = Process.myPid()
+        return (getSystemService(ACTIVITY_SERVICE) as? ActivityManager)
+            ?.runningAppProcesses
+            ?.firstOrNull { it.pid == pid }
+            ?.processName
     }
 
     private fun prewarmAccountLibrary() {
@@ -113,3 +131,7 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
         private const val MEMORY_CACHE_PERCENT = 0.25
     }
 }
+
+/** Defaults to main-process initialization if an old Android version cannot resolve its process. */
+internal fun isMainAppProcess(processName: String?, packageName: String): Boolean =
+    processName == null || processName == packageName

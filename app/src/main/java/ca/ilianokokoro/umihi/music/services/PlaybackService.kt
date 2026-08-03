@@ -140,6 +140,10 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var sessionListener: Player.Listener
     private lateinit var wearPlaybackStatePublisher: WearPlaybackStatePublisher
 
+    internal fun publishWearPlaybackState() {
+        wearPlaybackStatePublisher.publish(activePlayer)
+    }
+
 
     override fun onCreate() {
         super.onCreate()

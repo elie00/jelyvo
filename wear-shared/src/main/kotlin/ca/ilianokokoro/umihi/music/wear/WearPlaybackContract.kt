@@ -14,6 +14,11 @@ object WearPlaybackContract {
     const val COMMAND_SEEK_BACK = "seek_back_10"
     const val COMMAND_SEEK_FORWARD = "seek_forward_10"
     const val COMMAND_TOGGLE_LIKE = "toggle_like"
+    /** Runs account mutations in the phone playback process when the Wear bridge is remote. */
+    const val SESSION_COMMAND_TOGGLE_LIKE =
+        "ca.ilianokokoro.umihi.music.command.TOGGLE_LIKE"
+    const val SESSION_COMMAND_PUBLISH_STATE =
+        "ca.ilianokokoro.umihi.music.command.PUBLISH_WEAR_STATE"
     const val COMMAND_TOGGLE_SHUFFLE = "toggle_shuffle"
     const val COMMAND_CYCLE_REPEAT = "cycle_repeat"
     const val COMMAND_VOLUME_UP = "volume_up"

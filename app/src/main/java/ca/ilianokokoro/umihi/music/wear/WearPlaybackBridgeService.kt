@@ -1,32 +1,40 @@
 package ca.ilianokokoro.umihi.music.wear
 
 import android.content.ComponentName
+import android.os.Bundle
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import androidx.media3.session.SessionToken
-import ca.ilianokokoro.umihi.music.core.managers.LikeManager
-import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.services.PlaybackService
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import com.google.android.gms.wearable.WearableListenerService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 /** Receives playback commands and acknowledges them to the paired Jelyvo Wear OS application. */
 class WearPlaybackBridgeService : WearableListenerService() {
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     override fun onMessageReceived(messageEvent: MessageEvent) {
         if (messageEvent.path != WearPlaybackContract.COMMAND_PATH) return
         val command = messageEvent.data.toString(Charsets.UTF_8)
         if (command == WearPlaybackContract.COMMAND_TOGGLE_LIKE) {
-            toggleLike(messageEvent.sourceNodeId, command)
+            sendSessionCommand(
+                nodeId = messageEvent.sourceNodeId,
+                command = command,
+                sessionAction = WearPlaybackContract.SESSION_COMMAND_TOGGLE_LIKE,
+                failureReason = "login_required",
+            )
+            return
+        }
+        if (command == WearPlaybackContract.COMMAND_REQUEST_STATE) {
+            sendSessionCommand(
+                nodeId = messageEvent.sourceNodeId,
+                command = command,
+                sessionAction = WearPlaybackContract.SESSION_COMMAND_PUBLISH_STATE,
+                failureReason = "phone_unavailable",
+            )
             return
         }
 
@@ -34,7 +42,6 @@ class WearPlaybackBridgeService : WearableListenerService() {
             onError = { sendResult(messageEvent.sourceNodeId, command, false, "phone_unavailable") },
         ) { controller ->
             val success = handlePlaybackCommand(controller, command)
-            WearPlaybackStatePublisher(applicationContext).publish(controller)
             sendResult(
                 nodeId = messageEvent.sourceNodeId,
                 command = command,
@@ -42,11 +49,6 @@ class WearPlaybackBridgeService : WearableListenerService() {
                 reason = if (success) "" else "unsupported_command",
             )
         }
-    }
-
-    override fun onDestroy() {
-        serviceScope.cancel()
-        super.onDestroy()
     }
 
     private fun handlePlaybackCommand(controller: MediaController, command: String): Boolean {
@@ -92,41 +94,70 @@ class WearPlaybackBridgeService : WearableListenerService() {
             }
             WearPlaybackContract.COMMAND_VOLUME_UP -> controller.increaseDeviceVolume()
             WearPlaybackContract.COMMAND_VOLUME_DOWN -> controller.decreaseDeviceVolume()
-            WearPlaybackContract.COMMAND_REQUEST_STATE -> Unit
             else -> return false
         }
         return true
     }
 
-    private fun toggleLike(nodeId: String, command: String) {
-        withController(
+    private fun sendSessionCommand(
+        nodeId: String,
+        command: String,
+        sessionAction: String,
+        failureReason: String,
+    ) {
+        openController(
             onError = { sendResult(nodeId, command, false, "phone_unavailable") },
         ) { controller ->
-            val song = controller.currentMediaItem.toSong()
-            if (song.youtubeId.isBlank()) {
-                sendResult(nodeId, command, false, "no_media")
-                return@withController
-            }
-
-            val currentStatus = LikeManager.isLiked(song)
-            serviceScope.launch {
-                val success = LikeManager.setLikedAndWait(
-                    song = song,
-                    liked = !currentStatus,
-                    context = applicationContext,
-                    currentStatus = currentStatus,
+            val resultFuture = runCatching {
+                controller.sendCustomCommand(
+                    SessionCommand(
+                        sessionAction,
+                        Bundle.EMPTY,
+                    ),
+                    Bundle.EMPTY,
                 )
-                withController(
-                    onError = { sendResult(nodeId, command, success, if (success) "" else "login_required") },
-                ) { updatedController ->
-                    WearPlaybackStatePublisher(applicationContext).publish(updatedController)
-                    sendResult(nodeId, command, success, if (success) "" else "login_required")
-                }
+            }.getOrElse { error ->
+                Log.e(TAG, "Unable to send Wear OS like command", error)
+                controller.release()
+                sendResult(nodeId, command, false, "phone_unavailable")
+                return@openController
             }
+            val mainExecutor = ContextCompat.getMainExecutor(this)
+            resultFuture.addListener(
+                {
+                    val resultCode = runCatching { resultFuture.get().resultCode }
+                        .getOrDefault(SessionResult.RESULT_ERROR_UNKNOWN)
+                    controller.release()
+                    val success = resultCode == SessionResult.RESULT_SUCCESS
+                    sendResult(
+                        nodeId,
+                        command,
+                        success,
+                        if (success) "" else failureReason,
+                    )
+                },
+                mainExecutor,
+            )
         }
     }
 
     private fun withController(
+        onError: () -> Unit,
+        action: (MediaController) -> Unit,
+    ) {
+        openController(onError) { controller ->
+            try {
+                action(controller)
+            } catch (error: RuntimeException) {
+                Log.e(TAG, "Wear OS playback command failed", error)
+                onError()
+            } finally {
+                controller.release()
+            }
+        }
+    }
+
+    private fun openController(
         onError: () -> Unit,
         action: (MediaController) -> Unit,
     ) {
@@ -157,14 +188,7 @@ class WearPlaybackBridgeService : WearableListenerService() {
                     if (controller == null) {
                         onError()
                     } else {
-                        try {
-                            action(controller)
-                        } catch (error: RuntimeException) {
-                            Log.e(TAG, "Wear OS playback command failed", error)
-                            onError()
-                        } finally {
-                            controller.release()
-                        }
+                        action(controller)
                     }
                 },
                 mainExecutor,

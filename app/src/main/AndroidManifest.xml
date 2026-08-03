@@ -123,7 +123,8 @@
 
         <service
             android:name=".wear.WearPlaybackBridgeService"
-            android:exported="true">
+            android:exported="true"
+            android:process=":wear_bridge">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
                 <data

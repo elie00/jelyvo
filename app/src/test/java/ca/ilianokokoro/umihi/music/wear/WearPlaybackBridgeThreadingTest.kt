@@ -16,7 +16,7 @@ class WearPlaybackBridgeThreadingTest {
     @Test
     fun `controller is built and consumed inside the main executor`() {
         val method = sourceFile().readText()
-            .substringAfter("private fun withController(")
+            .substringAfter("private fun openController(")
             .substringBefore("private fun sendResult(")
 
         val executorBoundary = method.indexOf("mainExecutor.execute")
@@ -29,10 +29,12 @@ class WearPlaybackBridgeThreadingTest {
     }
 
     @Test
-    fun `controller release is centralized in withController`() {
+    fun `synchronous controller release is centralized in withController`() {
         val source = sourceFile().readText()
+        val method = source.substringAfter("private fun withController(")
+            .substringBefore("private fun openController(")
 
-        assertEquals(1, Regex("controller\\.release\\(\\)").findAll(source).count())
-        assertTrue(source.contains("finally {\n                            controller.release()"))
+        assertEquals(1, Regex("controller\\.release\\(\\)").findAll(method).count())
+        assertTrue(method.contains("finally {\n                controller.release()"))
     }
 }
