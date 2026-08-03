@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.services
 
 import androidx.media3.common.MediaItem
+import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.models.Song
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,5 +28,29 @@ class UmihiMediaLibraryCallbackTest {
         assertTrue(paginateMediaItems(items, page = -1, pageSize = 3).isEmpty())
         assertTrue(paginateMediaItems(items, page = 0, pageSize = 0).isEmpty())
         assertTrue(paginateMediaItems(items, page = Int.MAX_VALUE, pageSize = Int.MAX_VALUE).isEmpty())
+    }
+
+    @Test
+    fun `voice collection intents understand French accents and English`() {
+        assertEquals(
+            Constants.ExoPlayer.Library.LIKED_ROOT,
+            voiceCollectionFromQuery("Joue mes titres aimés"),
+        )
+        assertEquals(
+            Constants.ExoPlayer.Library.DOWNLOADS_ROOT,
+            voiceCollectionFromQuery("Play my offline downloads"),
+        )
+        assertEquals(
+            Constants.ExoPlayer.Library.TOP_TRACKS_ROOT,
+            voiceCollectionFromQuery("Mes titres les plus écoutés"),
+        )
+    }
+
+    @Test
+    fun `offline voice search matches title and artist tokens`() {
+        val song = Song(youtubeId = "id", title = "Tout oublier", artist = "Angèle")
+
+        assertTrue(song.matchesVoiceQuery("angele oublier"))
+        assertTrue(!song.matchesVoiceQuery("Daft Punk"))
     }
 }

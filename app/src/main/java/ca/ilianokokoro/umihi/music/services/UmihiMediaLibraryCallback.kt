@@ -39,6 +39,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import java.text.Normalizer
 import java.util.concurrent.ConcurrentHashMap
 
 @UnstableApi
@@ -167,6 +168,11 @@ class UmihiMediaLibraryCallback(
                     parentId == Constants.ExoPlayer.Library.ROOT_ID -> {
                         listOf(
                             browsableFolder(
+                                Constants.ExoPlayer.Library.LIKED_ROOT,
+                                service.getString(R.string.liked_songs),
+                                MediaMetadata.MEDIA_TYPE_FOLDER_MIXED,
+                            ),
+                            browsableFolder(
                                 Constants.ExoPlayer.Library.RECENT_ROOT,
                                 service.getString(R.string.recently_played),
                                 MediaMetadata.MEDIA_TYPE_FOLDER_MIXED,
@@ -251,7 +257,7 @@ class UmihiMediaLibraryCallback(
 
                 future.set(
                     LibraryResult.ofItemList(
-                        result,
+                        paginateMediaItems(result, page, pageSize),
                         params
                     )
                 )
@@ -408,12 +414,21 @@ class UmihiMediaLibraryCallback(
                 .map { it.mediaItem }
         }
 
-        val result = songRepository.search(query, SearchFilter.Songs)
-            .first { it !is ApiResult.Loading }
-        return (result as? ApiResult.Success)
-            ?.data
-            ?.songs
-            .orEmpty()
+        voiceCollectionFromQuery(query)?.let { collectionId ->
+            return collectionSongs(collectionId)
+                .take(VOICE_PLAY_QUEUE_SIZE)
+                .map { it.mediaItem }
+        }
+
+        val localMatches = localSongs.getDownloadedSongs()
+            .filter { song -> song.matchesVoiceQuery(query) }
+        val remoteMatches = runCatching {
+            val result = songRepository.search(query, SearchFilter.Songs)
+                .first { it !is ApiResult.Loading }
+            (result as? ApiResult.Success)?.data?.songs.orEmpty()
+        }.getOrDefault(emptyList())
+        return (localMatches + remoteMatches)
+            .distinctBy { it.youtubeId }
             .map { it.mediaItem }
     }
 
@@ -496,6 +511,14 @@ class UmihiMediaLibraryCallback(
 
     private suspend fun collectionSongs(collectionId: String) = when (collectionId) {
         Constants.ExoPlayer.Library.RECENT_ROOT -> historyRepository.recentSongs(50).first()
+        Constants.ExoPlayer.Library.LIKED_ROOT -> {
+            val info = PlaylistInfo(id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID)
+            val result = playlistRepository.retrieveOne(
+                Playlist(info),
+                datastoreRepository.settings.first(),
+            ).firstOrNull { it !is ApiResult.Loading }
+            (result as? ApiResult.Success)?.data?.songs.orEmpty()
+        }
         Constants.ExoPlayer.Library.DOWNLOADS_ROOT -> localSongs.getDownloadedSongs()
         Constants.ExoPlayer.Library.TOP_TRACKS_ROOT -> {
             val monthStart = Calendar.getInstance().apply {
@@ -593,6 +616,7 @@ class UmihiMediaLibraryCallback(
 
         val collectionRootIds = setOf(
             Constants.ExoPlayer.Library.RECENT_ROOT,
+            Constants.ExoPlayer.Library.LIKED_ROOT,
             Constants.ExoPlayer.Library.DOWNLOADS_ROOT,
             Constants.ExoPlayer.Library.TOP_TRACKS_ROOT,
         )
@@ -615,4 +639,30 @@ internal fun paginateMediaItems(
     return items.subList(fromIndex, toIndex)
 }
 
-private fun String.normalizedSearchKey(): String = trim().lowercase()
+internal fun String.normalizedSearchKey(): String =
+    Normalizer.normalize(trim().lowercase(), Normalizer.Form.NFD)
+        .replace(Regex("""\p{Mn}+"""), "")
+        .replace(Regex("""[^a-z0-9]+"""), " ")
+        .trim()
+
+internal fun ca.ilianokokoro.umihi.music.models.Song.matchesVoiceQuery(query: String): Boolean {
+    val wantedTokens = query.normalizedSearchKey().split(' ').filter(String::isNotBlank)
+    if (wantedTokens.isEmpty()) return false
+    val searchable = "$title $artist".normalizedSearchKey()
+    return wantedTokens.all(searchable::contains)
+}
+
+internal fun voiceCollectionFromQuery(query: String): String? {
+    val normalized = query.normalizedSearchKey()
+    return when {
+        listOf("j aime", "titres aimes", "liked songs", "favorites", "favoris")
+            .any(normalized::contains) -> Constants.ExoPlayer.Library.LIKED_ROOT
+        listOf("telechargements", "titres telecharges", "downloads", "offline", "hors ligne")
+            .any(normalized::contains) -> Constants.ExoPlayer.Library.DOWNLOADS_ROOT
+        listOf("titres recents", "ecoutes recentes", "recently played", "recent songs")
+            .any(normalized::contains) -> Constants.ExoPlayer.Library.RECENT_ROOT
+        listOf("plus ecoutes", "top titres", "top tracks", "most played")
+            .any(normalized::contains) -> Constants.ExoPlayer.Library.TOP_TRACKS_ROOT
+        else -> null
+    }
+}

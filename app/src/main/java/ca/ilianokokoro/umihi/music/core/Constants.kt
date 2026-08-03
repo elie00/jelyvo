@@ -216,6 +216,7 @@ object Constants {
             const val ROOT_ID = "root"
             const val PLAYLIST_ROOT = "root_playlist"
             const val RECENT_ROOT = "root_recent"
+            const val LIKED_ROOT = "root_liked"
             const val DOWNLOADS_ROOT = "root_downloads"
             const val TOP_TRACKS_ROOT = "root_top_tracks"
             const val PLAYLIST_PREFIX = "playlist:"
