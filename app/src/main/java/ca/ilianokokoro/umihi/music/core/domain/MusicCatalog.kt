@@ -18,7 +18,24 @@ interface MusicCatalog {
     suspend fun suggestions(query: String): List<String>
 
     fun album(id: String, title: String): Flow<CatalogResult<CatalogAlbumPage>>
+
+    fun artist(id: String, name: String): Flow<CatalogResult<CatalogArtistPage>>
 }
+
+/** Artist browse page: profile header, popularity-ranked tracks and discography shelves. */
+data class CatalogArtistPage(
+    val name: String,
+    val artworkUrl: String,
+    val channelId: String,
+    val description: String?,
+    /** Localized follower/subscriber label as the provider formats it, e.g. "12M subscribers". */
+    val followerCountLabel: String?,
+    /** The provider's most-streamed ranking, with [Track.playCountLabel] populated. */
+    val topTracks: List<Track>,
+    /** Full track listing reachable from the page, ordered by the provider's discography. */
+    val allTracks: List<Track>,
+    val shelves: List<CatalogShelf>,
+)
 
 /** Album browse page: header metadata, ordered tracks and the shelves rendered below them. */
 data class CatalogAlbumPage(

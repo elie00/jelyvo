@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.models.adapters
 import ca.ilianokokoro.umihi.music.models.AlbumPage
 import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
+import ca.ilianokokoro.umihi.music.models.ArtistPage
 import ca.ilianokokoro.umihi.music.models.ArtistSection
 import ca.ilianokokoro.umihi.music.models.Song
 import org.junit.Assert.assertEquals
@@ -71,6 +72,34 @@ class CollectionCatalogAdapterTest {
         assertEquals("UCrelated", section.artists.single().channelUrl)
         assertEquals("MORE", section.moreBrowseId)
         assertEquals("PARAMS", section.moreParams)
+    }
+
+    @Test
+    fun `round trips an artist page with its popularity ranking`() {
+        val original = ArtistPage(
+            artist = Artist(
+                name = "Artist",
+                thumbnailHref = "https://face",
+                channelUrl = "UCartist",
+                description = "Bio",
+                subscriberCount = "12M subscribers",
+            ),
+            songs = listOf(Song(youtubeId = "all1", title = "Deep cut", artist = "Artist")),
+            topSongs = listOf(
+                Song(youtubeId = "top1", title = "Hit", artist = "Artist").also {
+                    it.playCount = "369 M plays"
+                },
+            ),
+            sections = listOf(ArtistSection(title = "Albums")),
+        )
+
+        val restored = original.toCatalogArtistPage().toArtistPage()
+
+        assertEquals(original.artist, restored.artist)
+        assertEquals(listOf("all1"), restored.songs.map(Song::youtubeId))
+        assertEquals(listOf("top1"), restored.topSongs.map(Song::youtubeId))
+        assertEquals("369 M plays", restored.topSongs.single().playCount)
+        assertEquals("Albums", restored.sections.single().title)
     }
 
     @Test

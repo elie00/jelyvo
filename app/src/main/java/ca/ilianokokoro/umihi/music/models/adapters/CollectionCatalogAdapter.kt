@@ -1,12 +1,14 @@
 package ca.ilianokokoro.umihi.music.models.adapters
 
 import ca.ilianokokoro.umihi.music.core.domain.CatalogAlbumPage
+import ca.ilianokokoro.umihi.music.core.domain.CatalogArtistPage
 import ca.ilianokokoro.umihi.music.core.domain.CatalogSearchItem
 import ca.ilianokokoro.umihi.music.core.domain.CatalogShelf
 import ca.ilianokokoro.umihi.music.core.domain.CatalogShelfToken
 import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.models.AlbumPage
 import ca.ilianokokoro.umihi.music.models.Artist
+import ca.ilianokokoro.umihi.music.models.ArtistPage
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistSection
 import ca.ilianokokoro.umihi.music.models.Song
@@ -37,6 +39,30 @@ fun CatalogAlbumPage.toAlbumPage(): AlbumPage = AlbumPage(
     sections = shelves.map(CatalogShelf::toArtistSection),
     playlistId = audioPlaylistId,
     isSavedToLibrary = savedToLibrary,
+)
+
+fun ArtistPage.toCatalogArtistPage(): CatalogArtistPage = CatalogArtistPage(
+    name = artist.name,
+    artworkUrl = artist.thumbnailHref,
+    channelId = artist.channelUrl,
+    description = artist.description,
+    followerCountLabel = artist.subscriberCount,
+    topTracks = topSongs.map(Song::toTrack),
+    allTracks = songs.map(Song::toTrack),
+    shelves = sections.map(ArtistSection::toCatalogShelf),
+)
+
+fun CatalogArtistPage.toArtistPage(): ArtistPage = ArtistPage(
+    artist = Artist(
+        name = name,
+        thumbnailHref = artworkUrl,
+        channelUrl = channelId,
+        description = description,
+        subscriberCount = followerCountLabel,
+    ),
+    songs = allTracks.map(Track::toSong),
+    topSongs = topTracks.map(Track::toSong),
+    sections = shelves.map(CatalogShelf::toArtistSection),
 )
 
 fun ArtistSection.toCatalogShelf(): CatalogShelf = CatalogShelf(
