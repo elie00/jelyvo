@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.core.workers
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.DownloadHelper
@@ -42,12 +43,25 @@ class PlaylistDownloadWorker(
 
         return try {
             val totalSongs = playlist.songs.size
-            val downloadedSongs = AtomicInt(0)
+            val downloadedIds = localSongRepository.getDownloadedSongs()
+                .mapTo(mutableSetOf()) { it.youtubeId }
+            val pendingSongs = playlist.songs.filterNot { it.youtubeId in downloadedIds }
+            val downloadedSongs = AtomicInt(totalSongs - pendingSongs.size)
+            val failedSongs = AtomicInt(0)
+
+            setProgress(
+                workDataOf(
+                    DownloadWorkContract.KEY_COMPLETED to downloadedSongs.load(),
+                    DownloadWorkContract.KEY_TOTAL to totalSongs,
+                    DownloadWorkContract.KEY_FAILED to 0,
+                    DownloadWorkContract.KEY_TITLE to playlist.info.title,
+                ),
+            )
 
             NotificationManager.showPlaylistDownloadProgress(
                 appContext,
                 playlist,
-                0,
+                downloadedSongs.load(),
                 totalSongs
             )
 
@@ -66,7 +80,7 @@ class PlaylistDownloadWorker(
             val semaphore = Semaphore(Constants.Downloads.MAX_CONCURRENT_DOWNLOADS)
 
             coroutineScope {
-                playlist.songs.map { song ->
+                pendingSongs.map { song ->
                     async {
                         semaphore.withPermit {
                             try {
@@ -97,6 +111,14 @@ class PlaylistDownloadWorker(
                                 localSongRepository.create(updatedSong)
 
                                 val downloaded = downloadedSongs.incrementAndFetch()
+                                setProgress(
+                                    workDataOf(
+                                        DownloadWorkContract.KEY_COMPLETED to downloaded,
+                                        DownloadWorkContract.KEY_TOTAL to totalSongs,
+                                        DownloadWorkContract.KEY_FAILED to failedSongs.load(),
+                                        DownloadWorkContract.KEY_TITLE to playlist.info.title,
+                                    ),
+                                )
                                 if (downloaded < totalSongs) {
                                     NotificationManager.showPlaylistDownloadProgress(
                                         appContext,
@@ -109,6 +131,15 @@ class PlaylistDownloadWorker(
                                 printd("Song download canceled ${song.title}")
                                 throw e
                             } catch (e: Exception) {
+                                val failed = failedSongs.incrementAndFetch()
+                                setProgress(
+                                    workDataOf(
+                                        DownloadWorkContract.KEY_COMPLETED to downloadedSongs.load(),
+                                        DownloadWorkContract.KEY_TOTAL to totalSongs,
+                                        DownloadWorkContract.KEY_FAILED to failed,
+                                        DownloadWorkContract.KEY_TITLE to playlist.info.title,
+                                    ),
+                                )
                                 NotificationManager.showSongDownloadFailed(
                                     appContext,
                                     song
@@ -124,10 +155,21 @@ class PlaylistDownloadWorker(
                 }.awaitAll()
             }
 
-            NotificationManager.showPlaylistDownloadSuccess(appContext, playlist)
-            printd("Playlist download complete")
+            if (failedSongs.load() == 0) {
+                NotificationManager.showPlaylistDownloadSuccess(appContext, playlist)
+                printd("Playlist download complete")
+            } else {
+                NotificationManager.showPlaylistDownloadFailure(appContext, playlist)
+                printd("Playlist download partial: ${failedSongs.load()} failure(s)")
+            }
 
-            Result.success()
+            Result.success(
+                workDataOf(
+                    DownloadWorkContract.KEY_COMPLETED to downloadedSongs.load(),
+                    DownloadWorkContract.KEY_TOTAL to totalSongs,
+                    DownloadWorkContract.KEY_FAILED to failedSongs.load(),
+                ),
+            )
         } catch (_: CancellationException) {
             NotificationManager.showPlaylistDownloadCanceled(appContext, playlist)
             printd("Playlist download canceled ${playlist.info.title}")

@@ -16,6 +16,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.NotificationManager
 import ca.ilianokokoro.umihi.music.core.workers.PlaylistDownloadWorker
 import ca.ilianokokoro.umihi.music.core.workers.SongDownloadWorker
+import ca.ilianokokoro.umihi.music.core.workers.DownloadWorkContract
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.Song
@@ -37,14 +38,18 @@ class DownloadRepository(appContext: Context) {
         localPlaylistRepository.insertPlaylistWithSongs(playlist)
         val request = OneTimeWorkRequestBuilder<PlaylistDownloadWorker>().setInputData(
             workDataOf(
-                PlaylistDownloadWorker.PLAYLIST_KEY to playlist.info.id
+                PlaylistDownloadWorker.PLAYLIST_KEY to playlist.info.id,
+                DownloadWorkContract.KEY_KIND to DownloadWorkContract.KIND_PLAYLIST,
+                DownloadWorkContract.KEY_TITLE to playlist.info.title,
             )
         ).setConstraints(
             Constraints(
                 requiredNetworkType = if (useMetered) NetworkType.CONNECTED else NetworkType.UNMETERED,
                 requiresStorageNotLow = true
             )
-        ).build()
+        ).addTag(DownloadWorkContract.TAG_ALL)
+            .addTag("${DownloadWorkContract.TAG_PLAYLIST_PREFIX}${playlist.info.id}")
+            .build()
 
 
         workManager.enqueueUniqueWork(playlist.info.id, ExistingWorkPolicy.KEEP, request)
@@ -101,14 +106,19 @@ class DownloadRepository(appContext: Context) {
         val request = OneTimeWorkRequestBuilder<SongDownloadWorker>().setInputData(
             workDataOf(
                 SongDownloadWorker.PLAYLIST_KEY to playlist.info.id,
-                SongDownloadWorker.SONG_KEY to song.youtubeId
+                SongDownloadWorker.SONG_KEY to song.youtubeId,
+                DownloadWorkContract.KEY_KIND to DownloadWorkContract.KIND_SONG,
+                DownloadWorkContract.KEY_TITLE to song.title,
             )
         ).setConstraints(
             Constraints(
                 requiredNetworkType = if (useMetered) NetworkType.CONNECTED else NetworkType.UNMETERED,
                 requiresStorageNotLow = true
             )
-        ).build()
+        ).addTag(DownloadWorkContract.TAG_ALL)
+            .addTag("${DownloadWorkContract.TAG_SONG_PREFIX}${song.youtubeId}")
+            .addTag("${DownloadWorkContract.TAG_PARENT_PLAYLIST_PREFIX}${playlist.info.id}")
+            .build()
 
 
         workManager.enqueueUniqueWork(
@@ -128,7 +138,26 @@ class DownloadRepository(appContext: Context) {
     }
 
     fun cancelAllWorks() {
-        workManager.cancelAllWork()
+        workManager.cancelAllWorkByTag(DownloadWorkContract.TAG_ALL)
+    }
+
+    fun cancelWork(id: java.util.UUID) = workManager.cancelWorkById(id)
+
+    fun getAllDownloadWorkFlow(): Flow<List<WorkInfo>> =
+        workManager.getWorkInfosByTagFlow(DownloadWorkContract.TAG_ALL)
+
+    suspend fun retryWork(workInfo: WorkInfo, useMetered: Boolean = false): Boolean {
+        val playlistId = DownloadWorkContract.playlistId(workInfo.tags) ?: return false
+        val playlist = localPlaylistRepository.getPlaylistById(playlistId) ?: return false
+        val songId = DownloadWorkContract.songId(workInfo.tags)
+        return if (songId != null) {
+            val song = localSongRepository.getSong(songId) ?: return false
+            downloadSong(playlist, song, useMetered)
+            true
+        } else {
+            downloadPlaylist(playlist, useMetered)
+            true
+        }
     }
 
     fun getExistingJobFlow(playlist: Playlist): Flow<List<WorkInfo>> {

@@ -72,6 +72,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
 import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistReleasesScreen
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
 import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
+import ca.ilianokokoro.umihi.music.ui.screens.downloads.DownloadManagerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
 import ca.ilianokokoro.umihi.music.ui.screens.library.LibraryScreen
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.LocalPlaylistScreen
@@ -358,6 +359,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 openMusicImport = { backStack.add(MusicImportScreenKey) },
                                 openListeningStats = { backStack.add(ListeningStatsScreenKey) },
                                 openRecoDebug = { backStack.add(RecoDebugScreenKey) },
+                                openDownloadManager = { backStack.add(DownloadManagerScreenKey) },
                                 application = app
                             )
                         }
@@ -381,6 +383,13 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             EqualizerScreen(
                                 onBack = backStack::safePop,
                                 application = app
+                            )
+                        }
+
+                        is DownloadManagerScreenKey -> NavEntry(key) {
+                            DownloadManagerScreen(
+                                application = app,
+                                onBack = backStack::safePop,
                             )
                         }
 

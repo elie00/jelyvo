@@ -43,6 +43,9 @@ data object SpotifyImportScreenKey : NavKey
 data object MusicImportScreenKey : NavKey
 
 @Serializable
+data object DownloadManagerScreenKey : NavKey
+
+@Serializable
 data class ArtistScreenKey(val artistId: String, val artistName: String) : NavKey
 
 @Serializable
@@ -118,6 +121,8 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
                 showBottomBar = false,
                 showMiniPlayer = false
             )
+
+            DownloadManagerScreenKey -> ScreenUiConfig(showBottomBar = false)
 
             is ArtistScreenKey -> ScreenUiConfig(
                 showBottomBar = false

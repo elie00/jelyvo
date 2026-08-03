@@ -124,6 +124,7 @@ fun SettingsScreen(
     openMusicImport: () -> Unit,
     openListeningStats: () -> Unit,
     openRecoDebug: () -> Unit,
+    openDownloadManager: () -> Unit,
     application: Application,
     settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory(application))
 ) {
@@ -347,6 +348,13 @@ fun SettingsScreen(
                                 subtitle = stringResource(R.string.listening_stats_subtitle),
                                 leadingIcon = Icons.Outlined.Leaderboard,
                                 onClick = openListeningStats,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.download_manager_title),
+                                subtitle = stringResource(R.string.download_manager_subtitle),
+                                leadingIcon = Icons.Outlined.CloudDownload,
+                                onClick = openDownloadManager,
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             SettingsItem(

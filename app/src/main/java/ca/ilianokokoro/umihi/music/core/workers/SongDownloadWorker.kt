@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.core.workers
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.helpers.DownloadHelper
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
@@ -34,6 +35,15 @@ class SongDownloadWorker(
 
         val song = localSongRepository.getSong(songId)
             ?: return Result.failure()
+
+        setProgress(
+            workDataOf(
+                DownloadWorkContract.KEY_COMPLETED to 0,
+                DownloadWorkContract.KEY_TOTAL to 1,
+                DownloadWorkContract.KEY_FAILED to 0,
+                DownloadWorkContract.KEY_TITLE to song.title,
+            ),
+        )
 
         return try {
             val playlistImage = DownloadHelper.downloadImage(
@@ -74,10 +84,22 @@ class SongDownloadWorker(
 
             NotificationManager.showSongDownloadSuccess(appContext, song)
 
-            Result.success()
+            Result.success(
+                workDataOf(
+                    DownloadWorkContract.KEY_COMPLETED to 1,
+                    DownloadWorkContract.KEY_TOTAL to 1,
+                    DownloadWorkContract.KEY_FAILED to 0,
+                ),
+            )
         } catch (_: CancellationException) {
             printd("Song download canceled ${song.title}")
-            Result.failure()
+            Result.failure(
+                workDataOf(
+                    DownloadWorkContract.KEY_COMPLETED to 0,
+                    DownloadWorkContract.KEY_TOTAL to 1,
+                    DownloadWorkContract.KEY_FAILED to 1,
+                ),
+            )
         } catch (e: Exception) {
             NotificationManager.showSongDownloadFailed(appContext, song)
 
@@ -86,7 +108,13 @@ class SongDownloadWorker(
                 exception = e
             )
 
-            Result.failure()
+            Result.failure(
+                workDataOf(
+                    DownloadWorkContract.KEY_COMPLETED to 0,
+                    DownloadWorkContract.KEY_TOTAL to 1,
+                    DownloadWorkContract.KEY_FAILED to 1,
+                ),
+            )
         }
     }
 
