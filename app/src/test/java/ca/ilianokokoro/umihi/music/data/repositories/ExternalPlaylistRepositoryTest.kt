@@ -1,8 +1,11 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.models.importing.MusicImportService
+import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ExternalPlaylistRepositoryTest {
@@ -133,5 +136,20 @@ class ExternalPlaylistRepositoryTest {
         assertEquals("Sport", playlist.name)
         assertEquals("Kanye West", playlist.tracks.single().artist)
         assertEquals(311_000L, playlist.tracks.single().durationMs)
+    }
+
+    @Test
+    fun `Deezer track pages expose their safe pagination cursor`() {
+        val page = repository.parseDeezerTrackPage(
+            kotlinx.serialization.json.Json.parseToJsonElement(
+                """{"data":[{"title":"One","duration":120,"artist":{"name":"U2"}}],"next":"https://api.deezer.com/playlist/1/tracks?index=100"}""",
+            ).jsonObject,
+        )
+
+        assertEquals("One", page.tracks.single().title)
+        assertEquals("https://api.deezer.com/playlist/1/tracks?index=100", page.nextUrl)
+        assertTrue(isTrustedDeezerApiUrl(page.nextUrl!!))
+        assertFalse(isTrustedDeezerApiUrl("https://example.com/playlist/1/tracks"))
+        assertFalse(isTrustedDeezerApiUrl("http://api.deezer.com/playlist/1/tracks"))
     }
 }

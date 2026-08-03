@@ -96,6 +96,7 @@ fun MusicImportScreen(
                 is MusicImportScreenState.Complete -> CompleteContent(
                     progress = state.progress,
                     onOpenPlaylist = onOpenPlaylist,
+                    onRetryFailures = musicImportViewModel::retryFailures,
                     onImportAnother = musicImportViewModel::editLink,
                 )
 
@@ -306,6 +307,7 @@ private fun ImportingContent(progress: MusicImportProgress) {
 private fun CompleteContent(
     progress: MusicImportProgress,
     onOpenPlaylist: (String) -> Unit,
+    onRetryFailures: () -> Unit,
     onImportAnother: () -> Unit,
 ) {
     Column(
@@ -346,6 +348,13 @@ private fun CompleteContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(modifier = Modifier.height(12.dp))
+            FilledTonalButton(
+                onClick = onRetryFailures,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.music_import_retry_failures))
+            }
         }
         Spacer(modifier = Modifier.height(28.dp))
         progress.createdPlaylistId?.let { playlistId ->

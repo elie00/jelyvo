@@ -214,6 +214,7 @@
     <string name="music_import_complete">Playlist imported</string>
     <string name="music_import_complete_summary">%1$d of %2$d tracks were added to your local playlist.</string>
     <string name="music_import_failed_summary">%1$d tracks could not be found.</string>
+    <string name="music_import_retry_failures">Retry missing tracks</string>
     <string name="music_import_view_playlist">View playlist</string>
     <string name="music_import_another">Import another playlist</string>
     <string name="music_import_error">Unable to read this playlist</string>

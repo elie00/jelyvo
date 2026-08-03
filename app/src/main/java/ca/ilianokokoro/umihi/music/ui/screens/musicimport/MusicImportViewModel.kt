@@ -87,6 +87,32 @@ class MusicImportViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    fun retryFailures() {
+        val progress = (_uiState.value.screenState as? MusicImportScreenState.Complete)
+            ?.progress
+            ?.takeIf { it.failures.isNotEmpty() }
+            ?: return
+        viewModelScope.launch {
+            try {
+                importRepository.retryFailures(progress).collect { retryProgress ->
+                    _uiState.update {
+                        it.copy(
+                            screenState = if (retryProgress.isComplete) {
+                                MusicImportScreenState.Complete(retryProgress)
+                            } else {
+                                MusicImportScreenState.Importing(retryProgress)
+                            },
+                        )
+                    }
+                }
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                _uiState.update { it.copy(screenState = MusicImportScreenState.Error(exception)) }
+            }
+        }
+    }
+
     fun editLink() {
         _uiState.update { it.copy(playlist = null, screenState = MusicImportScreenState.Ready) }
     }

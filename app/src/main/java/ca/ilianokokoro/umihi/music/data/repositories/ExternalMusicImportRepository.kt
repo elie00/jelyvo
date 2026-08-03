@@ -21,29 +21,66 @@ class ExternalMusicImportRepository(
 ) {
     private val localPlaylistRepository = LocalPlaylistRepository(application)
 
-    fun importPlaylist(playlist: ExternalMusicPlaylist): Flow<MusicImportProgress> = flow {
-        emit(MusicImportProgress(playlistName = playlist.name, total = playlist.tracks.size))
+    fun importPlaylist(playlist: ExternalMusicPlaylist): Flow<MusicImportProgress> = importTracks(
+        playlistName = playlist.name,
+        tracks = playlist.tracks,
+        total = playlist.tracks.size,
+    )
 
-        val matched = mutableListOf<Song>()
+    fun retryFailures(previous: MusicImportProgress): Flow<MusicImportProgress> = importTracks(
+        playlistName = previous.playlistName,
+        tracks = previous.failures,
+        total = previous.total,
+        processedBefore = previous.total - previous.failures.size,
+        initialMatched = previous.matched,
+        targetPlaylistId = previous.createdPlaylistId,
+        isRetry = true,
+    )
+
+    private fun importTracks(
+        playlistName: String,
+        tracks: List<MusicImportTrack>,
+        total: Int,
+        processedBefore: Int = 0,
+        initialMatched: List<Song> = emptyList(),
+        targetPlaylistId: String? = null,
+        isRetry: Boolean = false,
+    ): Flow<MusicImportProgress> = flow {
+        emit(
+            MusicImportProgress(
+                playlistName = playlistName,
+                total = total,
+                processed = processedBefore,
+                matched = initialMatched,
+                createdPlaylistId = targetPlaylistId,
+            ),
+        )
+
+        val matched = initialMatched.toMutableList()
         val failures = mutableListOf<MusicImportTrack>()
-        playlist.tracks.forEachIndexed { index, track ->
-            val match = matchTrack(track)
-            if (match != null) matched += match else failures += track
-
-            val complete = index == playlist.tracks.lastIndex
-            val playlistId = if (complete && matched.isNotEmpty()) {
-                localPlaylistRepository.createFromTracks(
-                    name = playlist.name,
-                    tracks = matched.map { it.toTrack() },
-                )
+        var playlistId = targetPlaylistId
+        tracks.forEachIndexed { index, track ->
+            val match = matchTrack(track, isRetry)
+            if (match != null) {
+                matched += match
+                if (playlistId == null) {
+                    playlistId = localPlaylistRepository.createFromTracks(
+                        name = playlistName,
+                        tracks = listOf(match.toTrack()),
+                    )
+                } else {
+                    localPlaylistRepository.addTrack(playlistId, match.toTrack())
+                }
             } else {
-                null
+                failures += track
             }
+
+            val complete = index == tracks.lastIndex
             emit(
                 MusicImportProgress(
-                    playlistName = playlist.name,
-                    total = playlist.tracks.size,
-                    processed = index + 1,
+                    playlistName = playlistName,
+                    total = total,
+                    processed = processedBefore + index + 1,
                     matched = matched.toList(),
                     failures = failures.toList(),
                     createdPlaylistId = playlistId,
@@ -53,12 +90,17 @@ class ExternalMusicImportRepository(
         }
     }.flowOn(Dispatchers.IO)
 
-    private suspend fun matchTrack(track: MusicImportTrack): Song? {
+    private suspend fun matchTrack(track: MusicImportTrack, retry: Boolean): Song? {
         if (track.searchQuery.isBlank()) return null
         return try {
-            val result = songRepository.search(track.searchQuery)
-                .first { it !is ApiResult.Loading }
-            val candidates = (result as? ApiResult.Success)?.data?.songs.orEmpty()
+            val queries = buildList {
+                add(track.searchQuery)
+                if (retry && track.artist.isNotBlank()) add(track.title)
+            }
+            val candidates = queries.flatMap { query ->
+                val result = songRepository.search(query).first { it !is ApiResult.Loading }
+                (result as? ApiResult.Success)?.data?.songs.orEmpty()
+            }.distinctBy(Song::youtubeId)
             chooseBestImportMatch(track, candidates)
         } catch (exception: CancellationException) {
             throw exception

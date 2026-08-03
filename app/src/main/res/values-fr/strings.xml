@@ -209,6 +209,7 @@
     <string name="music_import_complete">Playlist importée</string>
     <string name="music_import_complete_summary">%1$d titres sur %2$d ont été ajoutés à votre playlist locale.</string>
     <string name="music_import_failed_summary">%1$d titres n’ont pas été retrouvés.</string>
+    <string name="music_import_retry_failures">Réessayer les titres introuvables</string>
     <string name="music_import_view_playlist">Voir la playlist</string>
     <string name="music_import_another">Importer une autre playlist</string>
     <string name="music_import_error">Impossible de lire cette playlist</string>

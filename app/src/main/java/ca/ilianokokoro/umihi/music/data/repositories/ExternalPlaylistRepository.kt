@@ -56,7 +56,7 @@ class ExternalPlaylistRepository(
             MusicImportService.DEEZER -> {
                 val id = extractDeezerPlaylistId(landing.finalUrl)
                     ?: throw IllegalArgumentException("Invalid Deezer playlist URL")
-                parseDeezerPlaylist(fetch("https://api.deezer.com/playlist/$id").body)
+                resolveDeezerPlaylist(id)
             }
         }
 
@@ -150,16 +150,44 @@ class ExternalPlaylistRepository(
     internal fun parseDeezerPlaylist(body: String): ExternalMusicPlaylist {
         val root = json.parseToJsonElement(body).jsonObject
         root["error"]?.let { throw IllegalArgumentException("Deezer playlist is unavailable") }
-        val tracks = root["tracks"]
-            ?.asObject()
-            ?.get("data")
-            ?.jsonArray
-            .orEmpty()
-            .mapNotNull(::parseDeezerTrack)
+        val tracks = parseDeezerTrackPage(root["tracks"]?.asObject())
         return ExternalMusicPlaylist(
             name = root.string("title").cleanProviderText().ifBlank { defaultPlaylistName },
             service = MusicImportService.DEEZER,
-            tracks = tracks,
+            tracks = tracks.tracks,
+        )
+    }
+
+    private fun resolveDeezerPlaylist(id: String): ExternalMusicPlaylist {
+        val firstBody = fetch("https://api.deezer.com/playlist/$id").body
+        val root = json.parseToJsonElement(firstBody).jsonObject
+        root["error"]?.let { throw IllegalArgumentException("Deezer playlist is unavailable") }
+        var page = parseDeezerTrackPage(root["tracks"]?.asObject())
+        val tracks = page.tracks.toMutableList()
+        val visitedUrls = mutableSetOf<String>()
+        while (page.nextUrl != null && tracks.size < MAX_DEEZER_TRACKS) {
+            val nextUrl = page.nextUrl
+                .takeIf(::isTrustedDeezerApiUrl)
+                ?.takeIf(visitedUrls::add)
+                ?: break
+            page = parseDeezerTrackPage(
+                json.parseToJsonElement(fetch(nextUrl).body).jsonObject,
+            )
+            tracks += page.tracks
+        }
+        return ExternalMusicPlaylist(
+            name = root.string("title").cleanProviderText().ifBlank { defaultPlaylistName },
+            service = MusicImportService.DEEZER,
+            tracks = tracks.distinctBy(MusicImportTrack::stableImportKey).take(MAX_DEEZER_TRACKS),
+        )
+    }
+
+    internal fun parseDeezerTrackPage(root: JsonObject?): DeezerTrackPage {
+        if (root == null) return DeezerTrackPage(emptyList(), null)
+        root["error"]?.let { throw IllegalArgumentException("Deezer track page is unavailable") }
+        return DeezerTrackPage(
+            tracks = root["data"]?.jsonArray.orEmpty().mapNotNull(::parseDeezerTrack),
+            nextUrl = root.string("next").takeIf(String::isNotBlank),
         )
     }
 
@@ -179,8 +207,14 @@ class ExternalPlaylistRepository(
     private companion object {
         const val DESKTOP_USER_AGENT =
             "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36"
+        const val MAX_DEEZER_TRACKS = 5_000
     }
 }
+
+internal data class DeezerTrackPage(
+    val tracks: List<MusicImportTrack>,
+    val nextUrl: String?,
+)
 
 internal fun extractSharedPlaylistUrl(input: String): String? =
     Regex("""https?://[^\s<>"']+""", RegexOption.IGNORE_CASE)
@@ -207,6 +241,11 @@ internal fun extractSpotifyPlaylistId(url: String): String? =
 internal fun extractDeezerPlaylistId(url: String): String? =
     Regex("""/playlist/(\d+)""").find(url)?.groupValues?.getOrNull(1)
 
+internal fun isTrustedDeezerApiUrl(url: String): Boolean = runCatching {
+    val uri = URI(url)
+    uri.scheme == "https" && uri.host.equals("api.deezer.com", ignoreCase = true)
+}.getOrDefault(false)
+
 private fun extractScript(html: String, id: String): String? =
     Regex(
         """<script\b[^>]*\bid=["']${Regex.escape(id)}["'][^>]*>([\s\S]*?)</script>""",
@@ -231,6 +270,9 @@ private fun JsonObject.string(key: String): String =
 
 private fun String.cleanProviderText(): String =
     replace('\u00a0', ' ').replace(Regex("""\s+"""), " ").trim()
+
+private fun MusicImportTrack.stableImportKey(): String =
+    listOf(title, artist, durationMs.toString()).joinToString("|") { it.lowercase().trim() }
 
 private fun parseDisplayDurationMs(value: String): Long {
     val parts = value.split(':').mapNotNull(String::toLongOrNull)
