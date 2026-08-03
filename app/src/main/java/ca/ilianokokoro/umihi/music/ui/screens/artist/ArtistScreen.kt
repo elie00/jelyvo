@@ -522,6 +522,7 @@ private fun SectionTitle(
     Text(
         text = text,
         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(start = padStart, top = 12.dp, bottom = 4.dp),
     )
 }
