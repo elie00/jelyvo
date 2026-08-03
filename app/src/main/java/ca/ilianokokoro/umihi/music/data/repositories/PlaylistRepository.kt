@@ -13,6 +13,7 @@ import ca.ilianokokoro.umihi.music.extensions.toException
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -134,13 +135,17 @@ class PlaylistRepository(application: Application) {
             return localizedCacheKey("playlist:${settings.dataSyncId.orEmpty()}:$id")
         }
 
-        fun invalidateLikedCache(settings: UmihiSettings) {
-            ResponseCache.remove(
-                oneCacheKey(
-                    settings,
-                    PlaylistInfo(id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID),
-                )
+        fun updateLikedSnapshot(settings: UmihiSettings, song: Song, liked: Boolean) {
+            val info = PlaylistInfo(id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID)
+            val key = oneCacheKey(settings, info)
+            val current = ResponseCache.get<Playlist>(key)
+                ?: ResponseCache.getFromDisk(key, Playlist.serializer())
+                ?: return
+            val updated = current.copy(
+                songs = updateLikedSongsSnapshot(current.songs, song, liked)
             )
+            ResponseCache.put(key, updated)
+            ResponseCache.putToDisk(key, updated, Playlist.serializer())
         }
     }
 }

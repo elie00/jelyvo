@@ -4,7 +4,6 @@ import android.content.Context
 import android.widget.Toast
 import androidx.annotation.StringRes
 import ca.ilianokokoro.umihi.music.R
-import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
@@ -130,8 +129,8 @@ object LikeManager {
 
         return try {
             YoutubeApiClient.setLike(song.youtubeId, liked = liked, settings)
-            ResponseCache.remove(LibraryRepository.cacheKey(settings))
-            PlaylistRepository.invalidateLikedCache(settings)
+            LibraryRepository.updateLikedSnapshot(settings, song, liked)
+            PlaylistRepository.updateLikedSnapshot(settings, song, liked)
             if (showConfirmation) {
                 showToast(
                     appContext,

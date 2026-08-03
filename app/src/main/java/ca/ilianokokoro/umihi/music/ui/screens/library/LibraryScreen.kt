@@ -43,6 +43,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -321,11 +322,48 @@ fun LibraryScreen(
                         )
                     }
 
-                    ScreenState.Loading -> Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        MusicSkeleton(MusicSkeletonLayout.Library)
+                    ScreenState.Loading -> {
+                        val hasLocalSnapshot = uiState.playlists.isNotEmpty() ||
+                            uiState.localPlaylists.isNotEmpty() || uiState.localSongs.isNotEmpty()
+                        if (hasLocalSnapshot) {
+                            // Never cover useful on-device or persisted playlist data with a
+                            // full-screen skeleton while account sections refresh.
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LibraryContent(
+                                library = Library(),
+                                playlists = uiState.playlists,
+                                localPlaylists = uiState.localPlaylists,
+                                localPlaylistCovers = uiState.localPlaylistCovers,
+                                localSongs = uiState.localSongs,
+                                localSongsLoaded = uiState.localSongsLoaded,
+                                onLoadLocalSongs = libraryViewModel::loadLocalSongs,
+                                selectedTab = null,
+                                onSelectTab = { selectedTabOrdinal = it.ordinal },
+                                onOpenPlayer = onOpenPlayer,
+                                onPlaylistPressed = onPlaylistPressed,
+                                onLocalPlaylistPressed = onLocalPlaylistPressed,
+                                onSongDroppedOnLocalPlaylist =
+                                    libraryViewModel::addDroppedSongToLocalPlaylist,
+                                onCreatePlaylist = { createPlaylistOpen = true },
+                                onImportPlaylist = {
+                                    importLauncher.launch(arrayOf("application/json", "text/plain"))
+                                },
+                                onOpenAlbum = onOpenAlbum,
+                                onOpenArtist = onOpenArtist,
+                                likedSongsSearchQuery = uiState.likedSongsSearchQuery,
+                                debouncedLikedSongsSearchQuery =
+                                    uiState.debouncedLikedSongsSearchQuery,
+                                onLikedSongsSearchQueryChange =
+                                    libraryViewModel::onLikedSongsSearchQueryChange,
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                MusicSkeleton(MusicSkeletonLayout.Library)
+                            }
+                        }
                     }
 
                     is ScreenState.Error -> ErrorMessage(

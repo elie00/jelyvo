@@ -8,6 +8,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.datasources.LibraryDataSource
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.Library
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -146,7 +147,29 @@ class LibraryRepository {
             return ResponseCache.get<Library>(key)
                 ?: ResponseCache.getFromDisk(key, Library.serializer())
         }
+
+        /** Keeps the cold-start snapshot exact after a successful like mutation. */
+        fun updateLikedSnapshot(settings: UmihiSettings, song: Song, liked: Boolean) {
+            val current = cachedLibrary(settings) ?: return
+            val updated = current.copy(
+                likedSongs = updateLikedSongsSnapshot(current.likedSongs, song, liked)
+            )
+            val key = cacheKey(settings)
+            ResponseCache.put(key, updated)
+            ResponseCache.putToDisk(key, updated, Library.serializer())
+        }
     }
+}
+
+internal fun updateLikedSongsSnapshot(
+    songs: List<Song>,
+    changedSong: Song,
+    liked: Boolean,
+): List<Song> = if (liked) {
+    listOf(changedSong.withLikeStatus(true)) + songs
+        .filterNot { it.youtubeId == changedSong.youtubeId }
+} else {
+    songs.filterNot { it.youtubeId == changedSong.youtubeId }
 }
 
 internal fun newReleaseSubtitle(
