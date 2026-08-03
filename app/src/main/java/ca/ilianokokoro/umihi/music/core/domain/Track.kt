@@ -22,6 +22,10 @@ data class Track(
     val source: TrackSource = TrackSource.YOUTUBE,
     val sourceUri: String? = null,
     val kind: TrackKind = TrackKind.SONG,
+    /** 1-based position inside the collection (album, playlist) the track was loaded from. */
+    val positionInCollection: Int? = null,
+    /** Localized play-count label ("45 M plays") when the source ranks tracks by popularity. */
+    val playCountLabel: String? = null,
 )
 
 @Serializable

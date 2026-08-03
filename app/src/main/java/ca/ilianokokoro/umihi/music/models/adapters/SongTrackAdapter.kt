@@ -22,11 +22,12 @@ fun Song.toTrack(): Track = Track(
     source = if (isLocal) TrackSource.LOCAL_DEVICE else TrackSource.YOUTUBE,
     sourceUri = localUri.takeIf { isLocal },
     kind = if (isVideo) TrackKind.VIDEO else TrackKind.SONG,
+    positionInCollection = trackNumber,
+    playCountLabel = playCount,
 )
 
 /**
  * Temporary Android adapter used while screens, persistence and Media3 still consume [Song].
- * Screen-only values such as play counts and disc positions cannot be reconstructed by design.
  */
 fun Track.toSong(): Song = Song(
     youtubeId = id,
@@ -43,5 +44,7 @@ fun Track.toSong(): Song = Song(
     song.isLocal = source == TrackSource.LOCAL_DEVICE
     song.localUri = sourceUri.takeIf { song.isLocal }
     song.isVideo = kind == TrackKind.VIDEO
+    song.trackNumber = positionInCollection
+    song.playCount = playCountLabel
 }
 

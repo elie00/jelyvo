@@ -62,4 +62,24 @@ class SongTrackAdapterTest {
         assertEquals("content://audio", restored.localUri)
         assertFalse(restored.isVideo)
     }
+
+    @Test
+    fun `round trips collection position and play count`() {
+        val original = Song(
+            youtubeId = "album-track",
+            title = "Track 7",
+            artist = "Artist",
+        ).also {
+            it.trackNumber = 7
+            it.playCount = "45 M plays"
+        }
+
+        val track = original.toTrack()
+        assertEquals(7, track.positionInCollection)
+        assertEquals("45 M plays", track.playCountLabel)
+
+        val restored = track.toSong()
+        assertEquals(7, restored.trackNumber)
+        assertEquals("45 M plays", restored.playCount)
+    }
 }
