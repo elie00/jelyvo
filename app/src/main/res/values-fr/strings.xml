@@ -183,6 +183,8 @@
     <string name="home_mix_morning">Mix du matin</string>
     <string name="home_mix_evening">Mix du soir</string>
     <string name="home_mix_replay">Rejouer</string>
+    <string name="home_mix_essentials">Vos essentiels</string>
+    <string name="home_mix_recent_discoveries">Découvertes récentes</string>
     <string name="home_mix_rediscover">Redécouvertes</string>
     <string name="lyrics_unavailable">Paroles indisponibles</string>
     <string name="album_unavailable">Album indisponible pour ce titre</string>

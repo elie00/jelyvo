@@ -188,6 +188,8 @@
     <string name="home_mix_morning">Morning mix</string>
     <string name="home_mix_evening">Evening mix</string>
     <string name="home_mix_replay">Replay</string>
+    <string name="home_mix_essentials">Your essentials</string>
+    <string name="home_mix_recent_discoveries">Recent discoveries</string>
     <string name="home_mix_rediscover">Rediscoveries</string>
     <string name="lyrics_unavailable">Lyrics unavailable</string>
     <string name="album_unavailable">Album unavailable for this track</string>

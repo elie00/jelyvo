@@ -23,6 +23,12 @@ enum class HomeMixKind {
     /** The most played tracks of the recent period. */
     REPLAY,
 
+    /** All-time essentials, diversified so one artist cannot monopolize the queue. */
+    ESSENTIALS,
+
+    /** One-off tracks discovered during the last two weeks. */
+    RECENT_DISCOVERIES,
+
     /** Tracks that used to be on repeat but have not been played for a while. */
     REDISCOVER,
 }
@@ -41,6 +47,12 @@ const val HOME_MIX_MAX_SONGS = 25
 
 /** A track qualifies for rediscovery after this much silence (30 days). */
 const val HOME_MIX_REDISCOVER_GAP_MS = 30L * 24 * 60 * 60 * 1000
+
+/** A recent discovery remains in the mix for two weeks. */
+const val HOME_MIX_DISCOVERY_WINDOW_MS = 14L * 24 * 60 * 60 * 1000
+
+/** Essentials need a deeper history than the smaller contextual mixes. */
+const val HOME_MIX_ESSENTIALS_MIN_SONGS = 10
 
 /**
  * Builds the "For you" mixes from listening stats.
@@ -63,6 +75,35 @@ fun buildForYouMixes(
         mixes += HomeMix(HomeMixKind.REPLAY, replay)
     }
 
+    val artistsInEssentials = mutableMapOf<String, Int>()
+    val essentials = allTimeTopTracks
+        .filter { stat ->
+            val artistKey = stat.artist.lowercase().trim()
+            val count = artistsInEssentials.getOrDefault(artistKey, 0)
+            if (count >= MAX_ESSENTIALS_PER_ARTIST) {
+                false
+            } else {
+                artistsInEssentials[artistKey] = count + 1
+                true
+            }
+        }
+        .take(HOME_MIX_MAX_SONGS)
+        .map { it.toSong() }
+    if (essentials.size >= HOME_MIX_ESSENTIALS_MIN_SONGS) {
+        mixes += HomeMix(HomeMixKind.ESSENTIALS, essentials)
+    }
+
+    val recentDiscoveries = allTimeTopTracks
+        .filter {
+            it.playCount == 1 && it.lastPlayedAt >= nowMs - HOME_MIX_DISCOVERY_WINDOW_MS
+        }
+        .sortedByDescending(TrackListeningStat::lastPlayedAt)
+        .take(HOME_MIX_MAX_SONGS)
+        .map { it.toSong() }
+    if (recentDiscoveries.size >= HOME_MIX_MIN_SONGS) {
+        mixes += HomeMix(HomeMixKind.RECENT_DISCOVERIES, recentDiscoveries)
+    }
+
     // Rediscoveries: tracks played more than once historically but silent for a month.
     val rediscover = allTimeTopTracks
         .filter { it.playCount >= 2 && it.lastPlayedAt < nowMs - HOME_MIX_REDISCOVER_GAP_MS }
@@ -74,6 +115,8 @@ fun buildForYouMixes(
 
     return mixes
 }
+
+private const val MAX_ESSENTIALS_PER_ARTIST = 2
 
 /**
  * Prepends the daily mix card to the history-derived mixes. The daily mix always takes the

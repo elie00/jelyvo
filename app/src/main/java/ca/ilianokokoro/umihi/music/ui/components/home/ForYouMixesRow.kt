@@ -30,6 +30,8 @@ fun homeMixTitle(kind: HomeMixKind): String = stringResource(
         HomeMixKind.CONTEXT_MORNING -> R.string.home_mix_morning
         HomeMixKind.CONTEXT_EVENING -> R.string.home_mix_evening
         HomeMixKind.REPLAY -> R.string.home_mix_replay
+        HomeMixKind.ESSENTIALS -> R.string.home_mix_essentials
+        HomeMixKind.RECENT_DISCOVERIES -> R.string.home_mix_recent_discoveries
         HomeMixKind.REDISCOVER -> R.string.home_mix_rediscover
     }
 )

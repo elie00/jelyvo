@@ -87,6 +87,38 @@ class HomeMixesTest {
     }
 
     @Test
+    fun `essentials diversify all time favorites by artist`() {
+        val allTime = (1..8).map { stat("a$it").copy(artist = "Same artist") } +
+            (1..12).map { stat("b$it").copy(artist = "Artist $it") }
+
+        val essentials = buildForYouMixes(emptyList(), allTime, now)
+            .single { it.kind == HomeMixKind.ESSENTIALS }
+
+        assertEquals(2, essentials.songs.count { it.artist == "Same artist" })
+        assertTrue(essentials.songs.size >= HOME_MIX_ESSENTIALS_MIN_SONGS)
+    }
+
+    @Test
+    fun `recent discoveries keep one off plays ordered by freshness`() {
+        val discoveries = (1..6).map { index ->
+            stat(
+                id = "new$index",
+                playCount = 1,
+                lastPlayedAt = now - index * 1_000L,
+            )
+        } + stat(
+            id = "too-old",
+            playCount = 1,
+            lastPlayedAt = now - HOME_MIX_DISCOVERY_WINDOW_MS - 1,
+        )
+
+        val mix = buildForYouMixes(emptyList(), discoveries, now)
+            .single { it.kind == HomeMixKind.RECENT_DISCOVERIES }
+
+        assertEquals((1..6).map { "new$it" }, mix.songs.map { it.youtubeId })
+    }
+
+    @Test
     fun `the daily mix takes the first slot of the row`() {
         val history = buildForYouMixes((1..5).map { stat("r$it") }, emptyList(), now)
         val daily = (1..5).map { stat("d$it").toSong() }
