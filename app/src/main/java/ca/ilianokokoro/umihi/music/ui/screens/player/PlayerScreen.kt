@@ -93,6 +93,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -213,6 +217,9 @@ fun PlayerScreen(
 
     BackHandler(enabled = isFullscreenVideo) {
         playerViewModel.setVideoFullscreen(false)
+    }
+    BackHandler(enabled = uiState.areLyricsShown && !isFullscreenVideo) {
+        playerViewModel.toggleLyricsVisibility()
     }
 
     // Immersive fullscreen: hide the system bars while the video fills the screen.
@@ -651,6 +658,7 @@ private fun ArtworkOrLyrics(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val showCoverLabel = stringResource(R.string.show_cover)
     Box(modifier = modifier) {
         if (uiState.areLyricsShown) {
             LyricsPanel(
@@ -663,6 +671,14 @@ private fun ArtworkOrLyrics(
                 },
                 modifier = Modifier
                     .fillMaxSize()
+                    .semantics {
+                        customActions = listOf(
+                            CustomAccessibilityAction(showCoverLabel) {
+                                onToggle()
+                                true
+                            },
+                        )
+                    }
             )
         } else if (currentSong?.forceVideo == true && !isCasting) {
             VideoSurface(
@@ -677,6 +693,9 @@ private fun ArtworkOrLyrics(
         } else {
             Thumbnail(
                 href = (currentSong?.thumbnailPath ?: currentSong?.thumbnailHref).toString(),
+                contentDescription = currentSong?.title?.let {
+                    stringResource(R.string.player_artwork_description, it)
+                },
                 onToggle = onToggle,
                 onSkipNext = onSkipNext,
                 onSkipPrevious = onSkipPrevious,
@@ -693,6 +712,7 @@ private fun ArtworkOrLyrics(
 @Composable
 fun Thumbnail(
     href: String,
+    contentDescription: String? = null,
     onToggle: () -> Unit = {},
     onSkipNext: () -> Unit = {},
     onSkipPrevious: () -> Unit = {},
@@ -701,6 +721,7 @@ fun Thumbnail(
     artworkModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
+    val showLyricsLabel = stringResource(R.string.show_lyrics)
     BoxWithConstraints(
         modifier = modifier.padding(20.dp),
         contentAlignment = Alignment.Center
@@ -721,8 +742,15 @@ fun Thumbnail(
         ) { targetState ->
             SquareImage(
                 uri = targetState,
+                contentDescription = contentDescription,
                 modifier = artworkModifier
                     .size(artSize)
+                    .semantics {
+                        onClick(label = showLyricsLabel) {
+                            onToggle()
+                            true
+                        }
+                    }
                     // Tap toggles lyrics; double-tap on the right/left half seeks ±10s.
                     .pointerInput(Unit) {
                         detectTapGestures(

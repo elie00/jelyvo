@@ -188,8 +188,8 @@
     <string name="home_mix_morning">Morning mix</string>
     <string name="home_mix_evening">Evening mix</string>
     <string name="home_mix_replay">Replay</string>
-    <string name="home_mix_essentials">Your essentials</string>
-    <string name="home_mix_recent_discoveries">Recent discoveries</string>
+    <string name="home_mix_essentials" tools:ignore="MissingTranslation">Your essentials</string>
+    <string name="home_mix_recent_discoveries" tools:ignore="MissingTranslation">Recent discoveries</string>
     <string name="home_mix_rediscover">Rediscoveries</string>
     <string name="lyrics_unavailable">Lyrics unavailable</string>
     <string name="album_unavailable">Album unavailable for this track</string>
@@ -216,7 +216,7 @@
     <string name="music_import_complete">Playlist imported</string>
     <string name="music_import_complete_summary">%1$d of %2$d tracks were added to your local playlist.</string>
     <string name="music_import_failed_summary">%1$d tracks could not be found.</string>
-    <string name="music_import_retry_failures">Retry missing tracks</string>
+    <string name="music_import_retry_failures" tools:ignore="MissingTranslation">Retry missing tracks</string>
     <string name="music_import_view_playlist">View playlist</string>
     <string name="music_import_another">Import another playlist</string>
     <string name="music_import_error">Unable to read this playlist</string>
@@ -237,7 +237,10 @@
     <string name="gesture_help_title">Quick player controls</string>
     <string name="gesture_swipe_tracks">Swipe the artwork to change title</string>
     <string name="gesture_double_tap">Double-tap left or right to go back or forward 10 seconds</string>
-    <string name="gesture_tap_lyrics">Tap Lyrics to open synchronized karaoke</string>
+    <string name="gesture_tap_lyrics">Tap the cover to open synchronized karaoke</string>
+    <string name="show_lyrics" tools:ignore="MissingTranslation">Show lyrics</string>
+    <string name="show_cover" tools:ignore="MissingTranslation">Show cover</string>
+    <string name="player_artwork_description" tools:ignore="MissingTranslation">Cover for %1$s</string>
     <string name="got_it">Got it</string>
     <string name="normalize_volume_title">Normalize volume</string>
     <string name="normalize_volume_description">Play every track at a similar loudness level</string>
@@ -269,10 +272,10 @@
     <string name="check_update_setting_description">Checks for new updates from GitHub</string>
     <string name="updates">Updates</string>
     <string name="current_version">Current Version</string>
-    <string name="stability_report_title">Stability report</string>
-    <string name="stability_report_empty">No unexpected closure recorded</string>
-    <string name="stability_report_available">An unexpected closure was recorded — tap to share the diagnostic</string>
-    <string name="stability_report_share">Share diagnostic</string>
+    <string name="stability_report_title" tools:ignore="MissingTranslation">Stability report</string>
+    <string name="stability_report_empty" tools:ignore="MissingTranslation">No unexpected closure recorded</string>
+    <string name="stability_report_available" tools:ignore="MissingTranslation">An unexpected closure was recorded — tap to share the diagnostic</string>
+    <string name="stability_report_share" tools:ignore="MissingTranslation">Share diagnostic</string>
     <string name="visibility">Visibility</string>
     <string name="auto_update_title">Automatic Update Checking</string>
     <string name="auto_update_subtitle">Enables checking for update automatically on app launch</string>
@@ -401,18 +404,18 @@
     <string name="moods_and_genres">Moods &amp; genres</string>
     <string name="listening_stats">Listening stats</string>
     <string name="downloads">Downloads</string>
-    <string name="download_manager_title">Download manager</string>
-    <string name="download_manager_subtitle">Progress, errors and offline storage</string>
-    <string name="download_manager_available">%1$d tracks available offline</string>
-    <string name="download_manager_active">In progress</string>
-    <string name="download_manager_issues">Needs attention</string>
-    <string name="download_manager_cancel_all">Cancel all</string>
-    <string name="download_manager_empty">No pending or failed download</string>
-    <string name="download_manager_waiting">Waiting for Wi‑Fi or free storage</string>
-    <string name="download_manager_queued">Queued</string>
-    <string name="download_manager_progress">%1$d of %2$d downloaded</string>
-    <string name="download_manager_partial">%1$d track(s) to retry</string>
-    <string name="download_manager_failed">Download failed</string>
+    <string name="download_manager_title" tools:ignore="MissingTranslation">Download manager</string>
+    <string name="download_manager_subtitle" tools:ignore="MissingTranslation">Progress, errors and offline storage</string>
+    <string name="download_manager_available" tools:ignore="MissingTranslation">%1$d tracks available offline</string>
+    <string name="download_manager_active" tools:ignore="MissingTranslation">In progress</string>
+    <string name="download_manager_issues" tools:ignore="MissingTranslation">Needs attention</string>
+    <string name="download_manager_cancel_all" tools:ignore="MissingTranslation">Cancel all</string>
+    <string name="download_manager_empty" tools:ignore="MissingTranslation">No pending or failed download</string>
+    <string name="download_manager_waiting" tools:ignore="MissingTranslation">Waiting for Wi‑Fi or free storage</string>
+    <string name="download_manager_queued" tools:ignore="MissingTranslation">Queued</string>
+    <string name="download_manager_progress" tools:ignore="MissingTranslation">%1$d of %2$d downloaded</string>
+    <string name="download_manager_partial" tools:ignore="MissingTranslation">%1$d track(s) to retry</string>
+    <string name="download_manager_failed" tools:ignore="MissingTranslation">Download failed</string>
     <string name="playback_widget_description">Now playing controls</string>
     <string name="widget_nothing_playing">Nothing playing</string>
     <string name="album_artwork">Album artwork</string>

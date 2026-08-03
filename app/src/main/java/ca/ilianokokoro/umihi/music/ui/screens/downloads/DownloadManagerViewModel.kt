@@ -102,7 +102,9 @@ class DownloadManagerViewModel(application: Application) : AndroidViewModel(appl
         val title = source.getString(DownloadWorkContract.KEY_TITLE)
             ?: song?.title
             ?: playlist?.info?.title
-            ?: "Téléchargement"
+            ?: getApplication<Application>().getString(
+                ca.ilianokokoro.umihi.music.R.string.download_manager_title,
+            )
         val total = source.getInt(DownloadWorkContract.KEY_TOTAL, 0)
             .takeIf { it > 0 }
             ?: playlist?.songs?.size

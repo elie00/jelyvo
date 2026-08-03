@@ -231,7 +231,10 @@
     <string name="gesture_help_title">Raccourcis du lecteur</string>
     <string name="gesture_swipe_tracks">Fais glisser la pochette pour changer de titre</string>
     <string name="gesture_double_tap">Appuie deux fois à gauche ou à droite pour reculer ou avancer de 10 secondes</string>
-    <string name="gesture_tap_lyrics">Appuie sur Paroles pour ouvrir le karaoké synchronisé</string>
+    <string name="gesture_tap_lyrics">Appuie sur la pochette pour ouvrir le karaoké synchronisé</string>
+    <string name="show_lyrics">Afficher les paroles</string>
+    <string name="show_cover">Afficher la pochette</string>
+    <string name="player_artwork_description">Pochette de %1$s</string>
     <string name="got_it">J’ai compris</string>
     <string name="normalize_volume_title">Normaliser le volume</string>
     <string name="normalize_volume_description">Lit tous les titres à un niveau sonore similaire</string>

@@ -85,20 +85,20 @@ class UmihiMediaLibraryCallback(
         args: Bundle,
     ): ListenableFuture<SessionResult> {
         if (controller.packageName != service.packageName) {
-            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_PERMISSION_DENIED))
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
         }
         if (customCommand.customAction == WearPlaybackContract.SESSION_COMMAND_PUBLISH_STATE) {
             service.publishWearPlaybackState()
             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
         }
         if (customCommand.customAction != WearPlaybackContract.SESSION_COMMAND_TOGGLE_LIKE) {
-            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED))
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
         }
 
         // Capture Media3 state on its application thread. Only the network mutation runs on IO.
         val song = session.player.currentMediaItem.toSong()
         if (song.youtubeId.isBlank()) {
-            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_INVALID_STATE))
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_INVALID_STATE))
         }
         val currentStatus = LikeManager.isLiked(song)
         val future = SettableFuture.create<SessionResult>()
@@ -121,7 +121,7 @@ class UmihiMediaLibraryCallback(
                     if (success) {
                         SessionResult.RESULT_SUCCESS
                     } else {
-                        SessionResult.RESULT_ERROR_SESSION_AUTHENTICATION_EXPIRED
+                        SessionError.ERROR_SESSION_AUTHENTICATION_EXPIRED
                     }
                 )
             )
