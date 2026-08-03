@@ -38,6 +38,9 @@ data class ArtistSection(
     val videos: List<Song> = emptyList(),
     /** Related artists — the "Fans might also like" shelf. Their channel id is [Artist.channelUrl]. */
     val artists: List<Artist> = emptyList(),
+    /** Optional page behind the shelf header's "More" button. */
+    val moreBrowseId: String = "",
+    val moreParams: String = "",
 )
 
 @Serializable

@@ -46,6 +46,13 @@ data object MusicImportScreenKey : NavKey
 data class ArtistScreenKey(val artistId: String, val artistName: String) : NavKey
 
 @Serializable
+data class ArtistReleasesScreenKey(
+    val title: String,
+    val browseId: String,
+    val params: String = "",
+) : NavKey
+
+@Serializable
 data class AlbumScreenKey(
     val albumId: String,
     val albumName: String,
@@ -113,6 +120,10 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
             )
 
             is ArtistScreenKey -> ScreenUiConfig(
+                showBottomBar = false
+            )
+
+            is ArtistReleasesScreenKey -> ScreenUiConfig(
                 showBottomBar = false
             )
 

@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.data.datasources
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.Artist
+import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistPage
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,19 @@ import kotlinx.coroutines.withContext
  * unlike the auto-generated "… - Topic" channels.
  */
 class ArtistDataSource {
+    suspend fun getArtistReleases(
+        browseId: String,
+        params: String,
+        settings: UmihiSettings,
+    ): List<ArtistAlbum> = withContext(Dispatchers.IO) {
+        val response = if (params.isBlank()) {
+            YoutubeApiClient.browse(browseId, settings)
+        } else {
+            YoutubeApiClient.browse(browseId, params, settings)
+        }
+        YoutubeDataExtractor.extractArtistAlbums(response)
+    }
+
     suspend fun getArtistPage(
         artistId: String,
         fallbackName: String,

@@ -74,6 +74,7 @@ fun ArtistScreen(
     onOpenPlayer: () -> Unit,
     onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
     onOpenArtist: (String, String) -> Unit = { _, _ -> },
+    onOpenReleases: (title: String, browseId: String, params: String) -> Unit = { _, _, _ -> },
     application: Application,
     artistViewModel: ArtistViewModel = viewModel(
         factory = ArtistViewModel.Factory(application, artistId, artistName)
@@ -220,11 +221,33 @@ fun ArtistScreen(
 
                         page.sections.forEachIndexed { index, section ->
                             item(key = "section-title-$index", contentType = "section-title") {
-                                Text(
-                                    text = localizedApiSectionTitle(section.title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 4.dp)
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 8.dp, top = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        text = localizedApiSectionTitle(section.title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    if (section.albums.isNotEmpty() &&
+                                        section.moreBrowseId.isNotBlank()
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                onOpenReleases(
+                                                    section.title,
+                                                    section.moreBrowseId,
+                                                    section.moreParams,
+                                                )
+                                            },
+                                        ) {
+                                            Text(stringResource(R.string.show_all))
+                                        }
+                                    }
+                                }
                             }
                             item(key = "section-row-$index", contentType = "section-row") {
                                 LazyRow(
@@ -235,6 +258,7 @@ fun ArtistScreen(
                                         AlbumCard(
                                             thumbnail = album.thumbnail,
                                             title = album.title,
+                                            subtitle = album.subtitle,
                                             onClick = {
                                                 onOpenAlbum(album.browseId, album.title, album.thumbnail)
                                             }
@@ -478,6 +502,7 @@ private fun RelatedArtistCard(
 private fun AlbumCard(
     thumbnail: String,
     title: String,
+    subtitle: String = "",
     onClick: () -> Unit,
 ) {
     Column(
@@ -496,5 +521,14 @@ private fun AlbumCard(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
+        if (subtitle.isNotBlank()) {
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }

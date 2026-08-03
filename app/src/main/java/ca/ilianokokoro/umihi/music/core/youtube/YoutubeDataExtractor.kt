@@ -1068,6 +1068,26 @@ object YoutubeDataExtractor {
             .filter { it.albums.isNotEmpty() || it.videos.isNotEmpty() || it.artists.isNotEmpty() }
     }
 
+    /** Extracts every album/EP/single card from a shelf's dedicated "More" browse response. */
+    fun extractArtistAlbums(jsonString: String): List<ArtistAlbum> {
+        val albums = mutableListOf<ArtistAlbum>()
+
+        fun walk(element: JsonElement) {
+            when (element) {
+                is JsonObject -> {
+                    element.toArtistAlbum()?.let(albums::add)
+                    element.values.forEach(::walk)
+                }
+
+                is JsonArray -> element.forEach(::walk)
+                else -> Unit
+            }
+        }
+
+        walk(Json.parseToJsonElement(jsonString))
+        return albums.distinctBy(ArtistAlbum::browseId)
+    }
+
     private fun collectCarouselShelves(element: JsonElement, out: MutableList<JsonObject>) {
         when (element) {
             is JsonObject -> {
@@ -1084,11 +1104,17 @@ object YoutubeDataExtractor {
 
     private fun JsonObject.toArtistSection(): ArtistSection? {
         val shelf = this["musicCarouselShelfRenderer"]?.safeObject() ?: return null
-        val title = shelf["header"]?.safeObject()
+        val header = shelf["header"]?.safeObject()
             ?.get("musicCarouselShelfBasicHeaderRenderer")?.safeObject()
+        val title = header
             ?.get("title")?.safeObject()
             ?.get("runs")?.safeArray()?.firstOrNull()
             ?.safeObject()?.get("text")?.jsonPrimitive?.contentOrNull ?: ""
+        val moreEndpoint = header
+            ?.get("moreContentButton")?.safeObject()
+            ?.get("buttonRenderer")?.safeObject()
+            ?.get("navigationEndpoint")?.safeObject()
+            ?.get("browseEndpoint")?.safeObject()
         val contents = shelf["contents"]?.safeArray() ?: return null
 
         val albums = mutableListOf<ArtistAlbum>()
@@ -1105,6 +1131,10 @@ object YoutubeDataExtractor {
             albums = albums.distinctBy { it.browseId },
             videos = videos.distinctBy { it.youtubeId },
             artists = artists.distinctBy { it.channelUrl },
+            moreBrowseId = moreEndpoint
+                ?.get("browseId")?.jsonPrimitive?.contentOrNull.orEmpty(),
+            moreParams = moreEndpoint
+                ?.get("params")?.jsonPrimitive?.contentOrNull.orEmpty(),
         )
     }
 

@@ -562,6 +562,77 @@ class YoutubeDataExtractorTest {
     }
 
     @Test
+    fun `extractArtistSections keeps the full releases endpoint`() {
+        val response = """
+            {
+              "contents": {
+                "musicCarouselShelfRenderer": {
+                  "header": {
+                    "musicCarouselShelfBasicHeaderRenderer": {
+                      "title": { "runs": [ { "text": "Singles & EPs" } ] },
+                      "moreContentButton": {
+                        "buttonRenderer": {
+                          "navigationEndpoint": {
+                            "browseEndpoint": {
+                              "browseId": "UC_ARTIST_RELEASES",
+                              "params": "SINGLES_PARAMS"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "contents": [
+                    {
+                      "musicTwoRowItemRenderer": {
+                        "title": { "runs": [ { "text": "First EP" } ] },
+                        "subtitle": { "runs": [ { "text": "EP • 2026" } ] },
+                        "navigationEndpoint": { "browseEndpoint": { "browseId": "MPRE_FIRST" } }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+        """
+
+        val section = YoutubeDataExtractor.extractArtistSections(response).single()
+
+        assertEquals("UC_ARTIST_RELEASES", section.moreBrowseId)
+        assertEquals("SINGLES_PARAMS", section.moreParams)
+        assertEquals(listOf("First EP"), section.albums.map { it.title })
+    }
+
+    @Test
+    fun `extractArtistAlbums reads a complete releases browse page`() {
+        val response = """
+            {
+              "contents": [
+                {
+                  "musicTwoRowItemRenderer": {
+                    "title": { "runs": [ { "text": "Album One" } ] },
+                    "subtitle": { "runs": [ { "text": "Album • 2025" } ] },
+                    "navigationEndpoint": { "browseEndpoint": { "browseId": "MPRE_ONE" } }
+                  }
+                },
+                {
+                  "musicTwoRowItemRenderer": {
+                    "title": { "runs": [ { "text": "Album Two" } ] },
+                    "subtitle": { "runs": [ { "text": "Single • 2026" } ] },
+                    "navigationEndpoint": { "browseEndpoint": { "browseId": "MPRE_TWO" } }
+                  }
+                }
+              ]
+            }
+        """
+
+        val albums = YoutubeDataExtractor.extractArtistAlbums(response)
+
+        assertEquals(listOf("MPRE_ONE", "MPRE_TWO"), albums.map { it.browseId })
+        assertEquals(listOf("Album • 2025", "Single • 2026"), albums.map { it.subtitle })
+    }
+
+    @Test
     fun `extractArtistDescription and subscriber count read the header`() {
         val response = """
             {

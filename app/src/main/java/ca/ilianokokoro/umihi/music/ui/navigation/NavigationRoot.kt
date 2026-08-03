@@ -69,6 +69,7 @@ import ca.ilianokokoro.umihi.music.ui.components.miniplayer.PermanentPlaybackPan
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.album.AlbumScreen
 import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistScreen
+import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistReleasesScreen
 import ca.ilianokokoro.umihi.music.ui.screens.auth.AuthScreen
 import ca.ilianokokoro.umihi.music.ui.screens.equalizer.EqualizerScreen
 import ca.ilianokokoro.umihi.music.ui.screens.home.HomeScreen
@@ -472,7 +473,25 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onOpenArtist = { id, name ->
                                     backStack.add(ArtistScreenKey(id, name))
                                 },
+                                onOpenReleases = { title, browseId, params ->
+                                    backStack.add(
+                                        ArtistReleasesScreenKey(title, browseId, params)
+                                    )
+                                },
                                 application = app
+                            )
+                        }
+
+                        is ArtistReleasesScreenKey -> NavEntry(key) {
+                            ArtistReleasesScreen(
+                                title = key.title,
+                                browseId = key.browseId,
+                                params = key.params,
+                                onBack = backStack::safePop,
+                                onOpenAlbum = { id, name, cover ->
+                                    backStack.add(AlbumScreenKey(id, name, cover))
+                                },
+                                application = app,
                             )
                         }
 
