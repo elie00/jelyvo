@@ -266,6 +266,10 @@
     <string name="check_update_setting_description">Checks for new updates from GitHub</string>
     <string name="updates">Updates</string>
     <string name="current_version">Current Version</string>
+    <string name="stability_report_title">Stability report</string>
+    <string name="stability_report_empty">No unexpected closure recorded</string>
+    <string name="stability_report_available">An unexpected closure was recorded — tap to share the diagnostic</string>
+    <string name="stability_report_share">Share diagnostic</string>
     <string name="visibility">Visibility</string>
     <string name="auto_update_title">Automatic Update Checking</string>
     <string name="auto_update_subtitle">Enables checking for update automatically on app launch</string>

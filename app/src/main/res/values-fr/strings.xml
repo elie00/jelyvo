@@ -258,6 +258,10 @@
     <string name="check_update_setting_description">Vérifie les nouvelles mises à jour de GitHub</string>
     <string name="updates">Mises à jour</string>
     <string name="current_version">Version actuelle</string>
+    <string name="stability_report_title">Rapport de stabilité</string>
+    <string name="stability_report_empty">Aucune fermeture inattendue enregistrée</string>
+    <string name="stability_report_available">Une fermeture inattendue a été enregistrée — touchez pour partager le diagnostic</string>
+    <string name="stability_report_share">Partager le diagnostic</string>
     <string name="visibility">Visibilité</string>
     <string name="auto_update_title">Vérification automatique des mises à jour</string>
     <string name="auto_update_subtitle">Active la vérification des mises à jour automatiquement au lancement de l\'application</string>

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Brush
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.DataSaverOn
@@ -657,6 +658,19 @@ fun SettingsScreen(
                                 subtitle = VersionManager.getVersionName(),
                                 leadingIcon = Icons.Outlined.Info,
                                 onClick = { }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.stability_report_title),
+                                subtitle = stringResource(
+                                    if (uiState.stabilityReport == null) {
+                                        R.string.stability_report_empty
+                                    } else {
+                                        R.string.stability_report_available
+                                    }
+                                ),
+                                leadingIcon = Icons.Outlined.BugReport,
+                                onClick = settingsViewModel::shareStabilityReport,
                             )
                         }
 

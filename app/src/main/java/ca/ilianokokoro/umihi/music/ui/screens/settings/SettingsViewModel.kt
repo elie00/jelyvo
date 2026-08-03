@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.settings
 
 import android.app.Application
+import android.content.Intent
 import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.WebStorage
@@ -19,6 +20,7 @@ import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.StorageCategory
 import ca.ilianokokoro.umihi.music.core.StorageInspector
 import ca.ilianokokoro.umihi.music.core.backup.BackupManager
+import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityDiagnostics
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
@@ -63,9 +65,29 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 _uiState.value.copy(
                     screenState = ScreenState.Success(settings = settings),
                     notInterestedCount = notInterestedCount,
+                    stabilityReport = StabilityDiagnostics.latest(_application),
                 )
             }
         }
+    }
+
+    fun shareStabilityReport() {
+        val report = _uiState.value.stabilityReport
+            ?: StabilityDiagnostics.latest(_application)
+        if (report == null) {
+            showToast(R.string.stability_report_empty)
+            return
+        }
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, _application.getString(R.string.stability_report_title))
+            putExtra(Intent.EXTRA_TEXT, report.asShareText())
+        }
+        val chooser = Intent.createChooser(
+            sendIntent,
+            _application.getString(R.string.stability_report_share),
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        _application.startActivity(chooser)
     }
 
     fun clearLogins() {

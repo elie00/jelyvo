@@ -9,6 +9,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
+import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityDiagnostics
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
@@ -41,6 +42,9 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
         // Account screens are product data, not disposable artwork. Keep their last snapshot in
         // filesDir so Android cache cleanup cannot bring skeletons back on every cold launch.
         ResponseCache.init(storageDir = filesDir, legacyStorageDir = cacheDir)
+        startupScope.launch {
+            StabilityDiagnostics.captureLatestUnexpectedExit(this@Umihi)
+        }
         prewarmAccountLibrary()
     }
 

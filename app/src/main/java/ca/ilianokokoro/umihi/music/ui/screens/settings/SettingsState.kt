@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.ui.screens.settings
 import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.StorageCategory
 import ca.ilianokokoro.umihi.music.core.StorageUsage
+import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityReport
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 
 @Immutable
@@ -23,6 +24,7 @@ data class SettingsState(
     val storageUsage: StorageUsage? = null,
     // Category awaiting the purge confirmation dialog.
     val pendingStoragePurge: StorageCategory? = null,
+    val stabilityReport: StabilityReport? = null,
 )
 
 @Immutable
