@@ -42,7 +42,14 @@
   pistes ordonnées et carrousels ; `Track` transporte désormais la position dans la collection et
   le libellé de compteur d'écoutes, ce qui rend l'aller-retour `Song ↔ Track` sans perte pour ces
   écrans. Les endpoints authentifiés reçoivent leurs cookies via un `settingsProvider` explicite.
-- Chantier actif : étendre `MusicCatalog` aux playlists distantes, puis à la résolution de flux.
+- Les playlists distantes passent par `MusicCatalog` (`CatalogPlaylistPage`) ; la pseudo-playlist
+  « Téléchargées », locale, reste volontairement hors du contrat distant. `PlaylistRepository`
+  exige une `Application`, donc l'adaptateur le reçoit par injection explicite.
+- Premier seam de résolution de flux : `StreamResolver` retourne une URL jouable pour un `Track`
+  neutre ; `YoutubeStreamResolver` encapsule `getSongPlayerUrl` et `PlayerManager.prewarmStream`
+  est le premier consommateur migré.
+- Chantier actif : migrer les autres consommateurs de résolution (lecture, Cast) vers
+  `StreamResolver`, puis extraire `MusicCatalog`/`Track`/`PlaybackEngine` dans un module commun.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

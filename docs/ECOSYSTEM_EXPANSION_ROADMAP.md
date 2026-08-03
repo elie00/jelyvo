@@ -51,8 +51,10 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   consomme désormais l'interface injectable, sans envoyer la recherche locale au réseau.
 - seam catalogue étendu aux pages album et artiste : `AlbumViewModel` et `ArtistViewModel`
   consomment `CatalogAlbumPage`/`CatalogArtistPage` avec des shelves neutres, et `Track` conserve
-  numéro de piste et compteur d'écoutes à travers la frontière. Prochaine étape : playlists
-  distantes puis résolution de flux.
+  numéro de piste et compteur d'écoutes à travers la frontière.
+- playlists distantes et résolution de flux : `PlaylistViewModel` route les playlists du compte par
+  `CatalogPlaylistPage` (les téléchargements locaux restent hors contrat), et `StreamResolver` /
+  `YoutubeStreamResolver` isolent la résolution d'URL, avec `prewarmStream` migré en premier.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
