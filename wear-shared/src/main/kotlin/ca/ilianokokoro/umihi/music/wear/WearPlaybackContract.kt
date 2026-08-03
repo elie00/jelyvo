@@ -1,10 +1,16 @@
 package ca.ilianokokoro.umihi.music.wear
 
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+
 /** Stable Data Layer contract shared by the phone and Wear OS applications. */
 object WearPlaybackContract {
     const val STATE_PATH = "/jelyvo/playback/state"
     const val COMMAND_PATH = "/jelyvo/playback/command"
     const val RESULT_PATH = "/jelyvo/playback/result"
+    const val HANDOFF_TO_PHONE_PATH = "/jelyvo/playback/handoff-to-phone"
 
     const val COMMAND_PLAY = "play"
     const val COMMAND_PAUSE = "pause"
@@ -25,6 +31,7 @@ object WearPlaybackContract {
     const val COMMAND_VOLUME_DOWN = "volume_down"
     const val COMMAND_REQUEST_STATE = "request_state"
     const val COMMAND_PLAY_QUEUE_PREFIX = "play_queue:"
+    const val COMMAND_HANDOFF_TO_PHONE = "handoff_to_phone"
 
     const val RESULT_OK = "ok"
     const val RESULT_ERROR = "error"
@@ -75,12 +82,72 @@ object WearPlaybackContract {
     }
 }
 
+data class WearPlaybackHandoff(
+    val queue: List<WearQueueItem>,
+    val currentIndex: Int,
+    val positionMs: Long,
+    val playWhenReady: Boolean = true,
+)
+
+fun WearPlaybackHandoff.encode(): ByteArray {
+    require(queue.isNotEmpty()) { "A playback handoff requires at least one queue item" }
+    require(currentIndex in queue.indices) { "The current index must belong to the queue" }
+    val safeQueueStart = (currentIndex - HANDOFF_ITEMS_BEFORE_CURRENT).coerceAtLeast(0)
+    val safeQueue = queue.drop(safeQueueStart).take(MAX_HANDOFF_QUEUE_SIZE)
+    val safeCurrentIndex = currentIndex - safeQueueStart
+    return ByteArrayOutputStream().use { bytes ->
+        DataOutputStream(bytes).use { output ->
+            output.writeInt(HANDOFF_FORMAT_VERSION)
+            output.writeInt(safeQueue.size)
+            safeQueue.forEach { item ->
+                output.writeUTF(item.mediaId.take(MAX_HANDOFF_FIELD_LENGTH))
+                output.writeUTF(item.title.take(MAX_HANDOFF_FIELD_LENGTH))
+                output.writeUTF(item.artist.take(MAX_HANDOFF_FIELD_LENGTH))
+                output.writeUTF(item.artworkUri.take(MAX_HANDOFF_FIELD_LENGTH))
+            }
+            output.writeInt(safeCurrentIndex)
+            output.writeLong(positionMs.coerceAtLeast(0L))
+            output.writeBoolean(playWhenReady)
+        }
+        bytes.toByteArray()
+    }
+}
+
+fun decodeWearPlaybackHandoff(payload: ByteArray): WearPlaybackHandoff? = runCatching {
+    DataInputStream(ByteArrayInputStream(payload)).use { input ->
+        if (input.readInt() != HANDOFF_FORMAT_VERSION) return@runCatching null
+        val queueSize = input.readInt()
+        if (queueSize !in 1..MAX_HANDOFF_QUEUE_SIZE) return@runCatching null
+        val queue = List(queueSize) {
+            WearQueueItem(
+                mediaId = input.readUTF(),
+                title = input.readUTF(),
+                artist = input.readUTF(),
+                artworkUri = input.readUTF(),
+            )
+        }
+        val index = input.readInt()
+        if (index !in queue.indices || queue.any { it.mediaId.isBlank() }) return@runCatching null
+        WearPlaybackHandoff(
+            queue = queue,
+            currentIndex = index,
+            positionMs = input.readLong().coerceAtLeast(0L),
+            playWhenReady = input.readBoolean(),
+        )
+    }
+}.getOrNull()
+
 data class WearQueueItem(
     val mediaId: String,
     val title: String,
     val artist: String,
     val artworkUri: String,
 )
+
+private const val HANDOFF_FORMAT_VERSION = 1
+private const val MAX_HANDOFF_QUEUE_SIZE = 50
+private const val MAX_HANDOFF_FIELD_LENGTH = 4_000
+private const val HANDOFF_ITEMS_BEFORE_CURRENT = 3
 
 data class WearCommandResult(
     val success: Boolean,

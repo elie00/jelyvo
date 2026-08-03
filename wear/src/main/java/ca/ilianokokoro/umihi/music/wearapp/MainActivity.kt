@@ -64,6 +64,17 @@ class MainActivity : ComponentActivity() {
                             toggleWifiOnly = standaloneViewModel::toggleWifiOnly,
                             toggleRestrictedMode = standaloneViewModel::toggleRestrictedMode,
                             clearError = standaloneViewModel::clearError,
+                            resumeFromPhone = { snapshot ->
+                                standaloneViewModel.resumeFromPhone(snapshot, viewModel::pause)
+                            },
+                            continueOnPhone = {
+                                standaloneViewModel.handoffToPhone()?.let { handoff ->
+                                    viewModel.continueOnPhone(
+                                        handoff,
+                                        standaloneViewModel::pausePlayback,
+                                    )
+                                }
+                            },
                         ),
                     )
                 }

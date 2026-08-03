@@ -27,6 +27,8 @@ class WearBridgeProcessIsolationTest {
         ).readText()
 
         assertTrue(bridge.contains("SESSION_COMMAND_TOGGLE_LIKE"))
+        assertTrue(bridge.contains("HANDOFF_TO_PHONE_PATH"))
+        assertTrue(bridge.contains("decodeWearPlaybackHandoff"))
         assertFalse(bridge.contains("LikeManager"))
         assertFalse(bridge.contains("WearPlaybackStatePublisher"))
     }

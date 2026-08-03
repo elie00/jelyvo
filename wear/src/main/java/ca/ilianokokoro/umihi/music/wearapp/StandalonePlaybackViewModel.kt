@@ -11,6 +11,7 @@ import androidx.media3.session.SessionToken
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import ca.ilianokokoro.umihi.music.wear.WearPlaybackSnapshot
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackHandoff
 import ca.ilianokokoro.umihi.music.wear.WearQueueItem
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
@@ -73,6 +74,7 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     )
     val state: StateFlow<StandaloneUiState> = _state.asStateFlow()
     private var controller: MediaController? = null
+    private var pendingPhoneHandoff: Pair<WearPlaybackSnapshot, () -> Unit>? = null
     private val controllerFuture: ListenableFuture<MediaController>
 
     private val listener = object : Player.Listener {
@@ -94,6 +96,10 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
                     controller = result
                     result.addListener(listener)
                     updatePlayerState(result)
+                    pendingPhoneHandoff?.let { (snapshot, onStarted) ->
+                        pendingPhoneHandoff = null
+                        applyPhoneHandoff(result, snapshot, onStarted)
+                    }
                 }
 
                 override fun onFailure(t: Throwable) {
@@ -187,6 +193,28 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
+    fun resumeFromPhone(snapshot: WearPlaybackSnapshot, onStarted: () -> Unit) {
+        val player = controller
+        if (player == null) {
+            pendingPhoneHandoff = snapshot to onStarted
+        } else {
+            applyPhoneHandoff(player, snapshot, onStarted)
+        }
+    }
+
+    fun handoffToPhone(): WearPlaybackHandoff? {
+        val state = _state.value
+        if (state.queue.isEmpty() || state.currentIndex !in state.queue.indices) return null
+        return WearPlaybackHandoff(
+            queue = state.queue.map { WearQueueItem(it.videoId, it.title, it.artist, it.artworkUrl) },
+            currentIndex = state.currentIndex,
+            positionMs = state.positionMs,
+            playWhenReady = true,
+        )
+    }
+
+    fun pausePlayback() = controller?.pause()
+
     fun togglePlayback() = controller?.let { if (it.isPlaying) it.pause() else it.play() }
     fun previous() = controller?.seekToPreviousMediaItem()
     fun next() = controller?.seekToNextMediaItem()
@@ -259,6 +287,25 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun clearError() = _state.update { it.copy(error = null) }
+
+    private fun applyPhoneHandoff(
+        player: MediaController,
+        snapshot: WearPlaybackSnapshot,
+        onStarted: () -> Unit,
+    ) {
+        if (snapshot.queue.isEmpty()) return
+        val queue = snapshot.queue.map {
+            WatchSong(it.mediaId, it.title, it.artist, it.artworkUri)
+        }
+        val index = snapshot.queueIndex.coerceIn(queue.indices)
+        val position = snapshot.estimatedPositionMs(System.currentTimeMillis())
+        player.setMediaItems(queue.map(WatchSong::toMediaItem), index, position)
+        player.prepare()
+        player.play()
+        library.addRecent(queue[index])
+        _state.update { it.copy(recents = library.recents(), error = null) }
+        onStarted()
+    }
 
     private fun updatePlayerState(player: Player) {
         val item = player.currentMediaItem

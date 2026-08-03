@@ -4,6 +4,9 @@ import android.content.ComponentName
 import android.os.Bundle
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionCommand
@@ -17,6 +20,10 @@ import com.google.android.gms.wearable.WearableListenerService
 /** Receives playback commands and acknowledges them to the paired Jelyvo Wear OS application. */
 class WearPlaybackBridgeService : WearableListenerService() {
     override fun onMessageReceived(messageEvent: MessageEvent) {
+        if (messageEvent.path == WearPlaybackContract.HANDOFF_TO_PHONE_PATH) {
+            handlePlaybackHandoff(messageEvent)
+            return
+        }
         if (messageEvent.path != WearPlaybackContract.COMMAND_PATH) return
         val command = messageEvent.data.toString(Charsets.UTF_8)
         if (command == WearPlaybackContract.COMMAND_TOGGLE_LIKE) {
@@ -47,6 +54,54 @@ class WearPlaybackBridgeService : WearableListenerService() {
                 command = command,
                 success = success,
                 reason = if (success) "" else "unsupported_command",
+            )
+        }
+    }
+
+    private fun handlePlaybackHandoff(messageEvent: MessageEvent) {
+        val handoff = decodeWearPlaybackHandoff(messageEvent.data)
+        if (handoff == null) {
+            sendResult(
+                messageEvent.sourceNodeId,
+                WearPlaybackContract.COMMAND_HANDOFF_TO_PHONE,
+                false,
+                "invalid_handoff",
+            )
+            return
+        }
+        withController(
+            onError = {
+                sendResult(
+                    messageEvent.sourceNodeId,
+                    WearPlaybackContract.COMMAND_HANDOFF_TO_PHONE,
+                    false,
+                    "phone_unavailable",
+                )
+            },
+        ) { controller ->
+            val items = handoff.queue.map { item ->
+                MediaItem.Builder()
+                    .setMediaId(item.mediaId)
+                    .setUri("https://music.youtube.com/watch?v=${item.mediaId}")
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(item.title)
+                            .setArtist(item.artist)
+                            .setArtworkUri(item.artworkUri.takeIf(String::isNotBlank)?.toUri())
+                            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                            .setIsPlayable(true)
+                            .build(),
+                    )
+                    .build()
+            }
+            controller.setMediaItems(items, handoff.currentIndex, handoff.positionMs)
+            controller.prepare()
+            if (handoff.playWhenReady) controller.play() else controller.pause()
+            sendResult(
+                messageEvent.sourceNodeId,
+                WearPlaybackContract.COMMAND_HANDOFF_TO_PHONE,
+                true,
+                "",
             )
         }
     }

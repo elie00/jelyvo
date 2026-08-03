@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.wear
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class WearPlaybackSnapshotTest {
@@ -40,5 +42,41 @@ class WearPlaybackSnapshotTest {
             WearCommandResult(false, WearPlaybackContract.COMMAND_TOGGLE_LIKE, "login|required"),
             WearPlaybackContract.parseResult(payload),
         )
+    }
+
+    @Test
+    fun playbackHandoff_roundTripsQueuePositionAndPlaybackIntent() {
+        val handoff = WearPlaybackHandoff(
+            queue = listOf(
+                WearQueueItem("first", "Premier", "Artiste A", "https://img/first"),
+                WearQueueItem("second", "Deuxième", "Artiste B", "https://img/second"),
+            ),
+            currentIndex = 1,
+            positionMs = 42_500,
+            playWhenReady = true,
+        )
+
+        assertEquals(handoff, decodeWearPlaybackHandoff(handoff.encode()))
+    }
+
+    @Test
+    fun playbackHandoff_rejectsEmptyQueueAndCorruptPayload() {
+        assertThrows(IllegalArgumentException::class.java) {
+            WearPlaybackHandoff(emptyList(), 0, 0).encode()
+        }
+        assertNull(decodeWearPlaybackHandoff(byteArrayOf(1, 2, 3)))
+    }
+
+    @Test
+    fun playbackHandoff_keepsCurrentItemInsideLargeQueues() {
+        val queue = List(80) { index -> WearQueueItem("id-$index", "Titre $index", "", "") }
+
+        val decoded = decodeWearPlaybackHandoff(
+            WearPlaybackHandoff(queue, currentIndex = 65, positionMs = 1_000).encode(),
+        )!!
+
+        assertEquals(18, decoded.queue.size)
+        assertEquals(3, decoded.currentIndex)
+        assertEquals("id-65", decoded.queue[decoded.currentIndex].mediaId)
     }
 }

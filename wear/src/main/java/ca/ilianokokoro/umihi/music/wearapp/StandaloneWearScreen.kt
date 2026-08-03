@@ -87,6 +87,7 @@ import androidx.wear.compose.foundation.pager.rememberPagerState
 import androidx.wear.compose.material3.CircularProgressIndicator
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.Text
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackSnapshot
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -114,6 +115,8 @@ data class StandaloneActions(
     val toggleWifiOnly: () -> Unit,
     val toggleRestrictedMode: () -> Unit,
     val clearError: () -> Unit,
+    val resumeFromPhone: (WearPlaybackSnapshot) -> Unit,
+    val continueOnPhone: () -> Unit,
 )
 
 @Composable
@@ -129,6 +132,13 @@ fun JelyvoWatchRoot(
     when (mode) {
         RootMode.CHOOSER -> ModeChooser(
             hasLocalPlayback = standaloneState.currentSong != null,
+            phonePlayback = remoteState.playback.takeIf {
+                remoteState.phoneConnected && it.hasMedia && it.queue.isNotEmpty()
+            },
+            onContinueOnWatch = { snapshot ->
+                standaloneActions.resumeFromPhone(snapshot)
+                mode = RootMode.WATCH
+            },
             onWatch = { mode = RootMode.WATCH },
             onPhone = { mode = RootMode.PHONE },
         )
@@ -138,7 +148,13 @@ fun JelyvoWatchRoot(
 }
 
 @Composable
-private fun ModeChooser(hasLocalPlayback: Boolean, onWatch: () -> Unit, onPhone: () -> Unit) {
+private fun ModeChooser(
+    hasLocalPlayback: Boolean,
+    phonePlayback: WearPlaybackSnapshot?,
+    onContinueOnWatch: (WearPlaybackSnapshot) -> Unit,
+    onWatch: () -> Unit,
+    onPhone: () -> Unit,
+) {
     WearList(verticalPadding = 19) {
         item {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
@@ -152,12 +168,23 @@ private fun ModeChooser(hasLocalPlayback: Boolean, onWatch: () -> Unit, onPhone:
                 Spacer(Modifier.height(5.dp))
             }
         }
+        phonePlayback?.let { playback ->
+            item {
+                NavigationCard(
+                    Icons.Filled.Devices,
+                    "Continuer sur la montre",
+                    playback.title,
+                    emphasized = true,
+                    onClick = { onContinueOnWatch(playback) },
+                )
+            }
+        }
         item {
             NavigationCard(
-                Icons.Filled.Devices,
-                if (hasLocalPlayback) "Reprendre sur la montre" else "Écouter sur la montre",
+                Icons.Filled.MusicNote,
+                if (hasLocalPlayback) "Reprendre la montre" else "Écouter sur la montre",
                 "Wi‑Fi, LTE ou hors connexion",
-                emphasized = true,
+                emphasized = phonePlayback == null,
                 onClick = onWatch,
             )
         }
@@ -429,16 +456,17 @@ private fun SongListScreen(
 @Composable
 private fun LocalPlayer(state: StandaloneUiState, actions: StandaloneActions, onBrowse: () -> Unit) {
     val song = state.currentSong ?: return
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
     Box(Modifier.fillMaxSize()) {
         HorizontalPager(pagerState, Modifier.fillMaxSize()) { page ->
             when (page) {
                 0 -> LocalPlayerMain(state, song, actions, onBrowse)
                 1 -> LocalPlayerControls(state, song, actions)
-                else -> LocalQueue(state, actions)
+                2 -> LocalQueue(state, actions)
+                else -> ContinuityPage(state, song, actions)
             }
         }
-        PagerDots(3, pagerState.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp))
+        PagerDots(4, pagerState.currentPage, Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp))
     }
 }
 
@@ -513,6 +541,35 @@ private fun LocalQueue(state: StandaloneUiState, actions: StandaloneActions) {
         item { ScreenTitle("File d’attente", "${state.queue.size} titre(s)") }
         itemsIndexed(state.queue, key = { index, song -> "$index:${song.videoId}" }) { index, song ->
             SongRow(song, if (index == state.currentIndex) "●" else "") { actions.playQueueIndex(index) }
+        }
+    }
+}
+
+@Composable
+private fun ContinuityPage(
+    state: StandaloneUiState,
+    song: WatchSong,
+    actions: StandaloneActions,
+) {
+    WearList(verticalPadding = 29) {
+        item { ScreenTitle("Continuité", song.title) }
+        item {
+            NavigationCard(
+                Icons.Filled.PhoneAndroid,
+                "Continuer sur le téléphone",
+                "Reprendre à ${formatTime(state.positionMs)}",
+                emphasized = true,
+                onClick = actions.continueOnPhone,
+            )
+        }
+        item {
+            Text(
+                "La file et la position sont conservées.",
+                color = WatchMuted,
+                fontSize = 9.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+            )
         }
     }
 }

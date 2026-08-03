@@ -1,6 +1,8 @@
 package ca.ilianokokoro.umihi.music.wearapp
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import com.google.android.gms.wearable.DataClient
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
@@ -10,8 +12,10 @@ import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.Wearable
 import ca.ilianokokoro.umihi.music.wear.WearPlaybackContract
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackHandoff
 import ca.ilianokokoro.umihi.music.wear.WearQueueItem
 import ca.ilianokokoro.umihi.music.wear.WearPlaybackSnapshot
+import ca.ilianokokoro.umihi.music.wear.encode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +35,8 @@ class WearPlaybackClient(context: Context) :
     private val messageClient = Wearable.getMessageClient(context.applicationContext)
     private val nodeClient = Wearable.getNodeClient(context.applicationContext)
     private val playbackCache = WearPlaybackCache(context.applicationContext)
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var handoffAccepted: (() -> Unit)? = null
     private val _state = MutableStateFlow(WearUiState())
     val state: StateFlow<WearUiState> = _state.asStateFlow()
 
@@ -87,6 +93,27 @@ class WearPlaybackClient(context: Context) :
         }
     }
 
+    fun sendHandoff(handoff: WearPlaybackHandoff, onAccepted: () -> Unit) {
+        _state.value = _state.value.copy(commandPending = true, commandError = null)
+        handoffAccepted = onAccepted
+        nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+            _state.value = _state.value.copy(phoneConnected = nodes.isNotEmpty(), loading = false)
+            val phone = nodes.firstOrNull()
+            if (phone == null) {
+                failHandoff("phone_unavailable")
+                return@addOnSuccessListener
+            }
+            messageClient.sendMessage(
+                phone.id,
+                WearPlaybackContract.HANDOFF_TO_PHONE_PATH,
+                handoff.encode(),
+            ).addOnFailureListener { failHandoff("send_failed") }
+        }.addOnFailureListener {
+            _state.value = _state.value.copy(phoneConnected = false, loading = false)
+            failHandoff("phone_unavailable")
+        }
+    }
+
     fun clearError() {
         _state.value = _state.value.copy(commandError = null)
     }
@@ -108,6 +135,11 @@ class WearPlaybackClient(context: Context) :
             commandPending = false,
             commandError = result.reason.takeUnless { result.success },
         )
+        if (result.command == WearPlaybackContract.COMMAND_HANDOFF_TO_PHONE) {
+            val callback = handoffAccepted
+            handoffAccepted = null
+            if (result.success && callback != null) mainHandler.post(callback)
+        }
     }
 
     private fun readSnapshot(item: com.google.android.gms.wearable.DataItem) {
@@ -139,6 +171,11 @@ class WearPlaybackClient(context: Context) :
         }.addOnFailureListener {
             _state.value = _state.value.copy(phoneConnected = false, loading = false)
         }
+    }
+
+    private fun failHandoff(reason: String) {
+        handoffAccepted = null
+        _state.value = _state.value.copy(commandPending = false, commandError = reason)
     }
 }
 

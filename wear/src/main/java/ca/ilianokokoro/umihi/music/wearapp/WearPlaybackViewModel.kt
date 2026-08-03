@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.wearapp
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import ca.ilianokokoro.umihi.music.wear.WearPlaybackContract
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackHandoff
 
 class WearPlaybackViewModel(application: Application) : AndroidViewModel(application) {
     private val client = WearPlaybackClient(application)
@@ -13,6 +14,7 @@ class WearPlaybackViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun previous() = client.send(WearPlaybackContract.COMMAND_PREVIOUS)
+    fun pause() = client.send(WearPlaybackContract.COMMAND_PAUSE)
     fun togglePlayback() = client.send(WearPlaybackContract.COMMAND_TOGGLE)
     fun next() = client.send(WearPlaybackContract.COMMAND_NEXT)
     fun seekBack() = client.send(WearPlaybackContract.COMMAND_SEEK_BACK)
@@ -23,6 +25,8 @@ class WearPlaybackViewModel(application: Application) : AndroidViewModel(applica
     fun volumeUp() = client.send(WearPlaybackContract.COMMAND_VOLUME_UP)
     fun volumeDown() = client.send(WearPlaybackContract.COMMAND_VOLUME_DOWN)
     fun playQueueIndex(index: Int) = client.send(WearPlaybackContract.playQueueCommand(index))
+    fun continueOnPhone(handoff: WearPlaybackHandoff, onAccepted: () -> Unit) =
+        client.sendHandoff(handoff, onAccepted)
     fun clearError() = client.clearError()
 
     override fun onCleared() {
