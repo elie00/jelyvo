@@ -41,7 +41,6 @@ class WearPlaybackBridgeService : WearableListenerService() {
                 success = success,
                 reason = if (success) "" else "unsupported_command",
             )
-            controller.release()
         }
     }
 
@@ -104,7 +103,6 @@ class WearPlaybackBridgeService : WearableListenerService() {
             onError = { sendResult(nodeId, command, false, "phone_unavailable") },
         ) { controller ->
             val song = controller.currentMediaItem.toSong()
-            controller.release()
             if (song.youtubeId.isBlank()) {
                 sendResult(nodeId, command, false, "no_media")
                 return@withController
@@ -122,7 +120,6 @@ class WearPlaybackBridgeService : WearableListenerService() {
                     onError = { sendResult(nodeId, command, success, if (success) "" else "login_required") },
                 ) { updatedController ->
                     WearPlaybackStatePublisher(applicationContext).publish(updatedController)
-                    updatedController.release()
                     sendResult(nodeId, command, success, if (success) "" else "login_required")
                 }
             }
@@ -133,17 +130,46 @@ class WearPlaybackBridgeService : WearableListenerService() {
         onError: () -> Unit,
         action: (MediaController) -> Unit,
     ) {
-        val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
-        val future = MediaController.Builder(this, token).buildAsync()
-        future.addListener(
-            {
-                val controller = runCatching { future.get() }
-                    .onFailure { Log.w(TAG, "Unable to connect to phone playback session", it) }
-                    .getOrNull()
-                if (controller == null) onError() else action(controller)
-            },
-            ContextCompat.getMainExecutor(this),
-        )
+        val mainExecutor = ContextCompat.getMainExecutor(this)
+
+        // MediaController binds itself to the Looper used by its Builder. WearableListenerService
+        // invokes us from a Google Play services thread, so both construction and every access must
+        // be moved to the main executor. Building on the callback thread and merely completing the
+        // future on main crashes the phone with "MediaController method ... wrong thread".
+        mainExecutor.execute controllerSetup@{
+            val token = SessionToken(this, ComponentName(this, PlaybackService::class.java))
+            val future = runCatching {
+                MediaController.Builder(this, token).buildAsync()
+            }.onFailure {
+                Log.w(TAG, "Unable to start phone playback controller", it)
+            }.getOrNull() ?: run {
+                onError()
+                return@controllerSetup
+            }
+
+            future.addListener(
+                {
+                    val controller = runCatching { future.get() }
+                        .onFailure {
+                            Log.w(TAG, "Unable to connect to phone playback session", it)
+                        }
+                        .getOrNull()
+                    if (controller == null) {
+                        onError()
+                    } else {
+                        try {
+                            action(controller)
+                        } catch (error: RuntimeException) {
+                            Log.e(TAG, "Wear OS playback command failed", error)
+                            onError()
+                        } finally {
+                            controller.release()
+                        }
+                    }
+                },
+                mainExecutor,
+            )
+        }
     }
 
     private fun sendResult(
