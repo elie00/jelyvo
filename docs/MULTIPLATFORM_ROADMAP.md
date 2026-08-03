@@ -37,8 +37,12 @@
   `SearchViewModel` passent par `MusicCatalog`. `YoutubeMusicCatalog` adapte le dépôt Android et
   transporte des `Track`, albums et artistes neutres ; l'onglet Bibliothèque reste explicitement
   local et ne traverse jamais ce contrat.
-- Chantier actif : étendre `MusicCatalog` aux pages album, artiste et playlist, puis à la résolution
-  de flux.
+- Les pages album et artiste passent aussi par `MusicCatalog` : `CatalogAlbumPage`,
+  `CatalogArtistPage` et le vocabulaire de shelves neutre (`CatalogShelf`) couvrent en-têtes,
+  pistes ordonnées et carrousels ; `Track` transporte désormais la position dans la collection et
+  le libellé de compteur d'écoutes, ce qui rend l'aller-retour `Song ↔ Track` sans perte pour ces
+  écrans. Les endpoints authentifiés reçoivent leurs cookies via un `settingsProvider` explicite.
+- Chantier actif : étendre `MusicCatalog` aux playlists distantes, puis à la résolution de flux.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
