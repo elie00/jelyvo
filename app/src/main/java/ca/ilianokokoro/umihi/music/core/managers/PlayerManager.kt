@@ -15,10 +15,13 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
+import ca.ilianokokoro.umihi.music.core.domain.StreamResolver
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.extensions.toSong
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.services.PlaybackService
@@ -432,19 +435,18 @@ object PlayerManager {
      * in-memory signed URL path instead of waiting for the YouTube player endpoint. Concurrency is
      * deliberately low so this never starves artwork or the active stream.
      */
+    private var streamResolver: StreamResolver? = null
+
     fun prewarmStream(context: Context, song: Song) {
         if (song.isLocal || song.youtubeId.isBlank() || !streamPrewarmIds.add(song.youtubeId)) {
             return
         }
-        val applicationContext = context.applicationContext
+        val resolver = streamResolver
+            ?: YoutubeStreamResolver(context.applicationContext).also { streamResolver = it }
         scope.launch {
             streamPrewarmGate.withPermit {
                 try {
-                    YoutubeDataExtractor.getSongPlayerUrl(
-                        context = applicationContext,
-                        song = song,
-                        allowLocal = true,
-                    )
+                    resolver.resolve(song.toTrack(), allowLocal = true)
                 } catch (e: CancellationException) {
                     streamPrewarmIds.remove(song.youtubeId)
                     throw e
