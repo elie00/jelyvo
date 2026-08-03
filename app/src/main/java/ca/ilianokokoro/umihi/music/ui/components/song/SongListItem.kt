@@ -10,9 +10,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Album
@@ -99,6 +101,9 @@ fun SongListItem(
     onViewAlbum: (() -> Unit)? = null,
     download: (() -> Unit)? = null,
     trackNumber: Int? = null,
+    // Popularity ranking on an artist page: the number is shown *next to* the artwork (rows span
+    // different albums), unlike [trackNumber] which replaces it.
+    rank: Int? = null,
     hideArtist: Boolean = false,
     // Overrides [Song.downloaded] when non-null: rows built from a network response (album,
     // remote playlist) carry no local file paths, so the screen resolves the offline state
@@ -231,6 +236,25 @@ fun SongListItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                }
+            } else if (rank != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier.width(28.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (isCurrentSong) {
+                            NowPlayingIndicator(isPlaying = isPlaying)
+                        } else {
+                            Text(
+                                text = rank.toString(),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    SongThumbnail(song = song)
                 }
             } else {
                 SongThumbnail(song = song)
@@ -389,7 +413,7 @@ fun SongListItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Numbered rows already show the indicator in place of the number.
-                if (isCurrentSong && trackNumber == null) {
+                if (isCurrentSong && trackNumber == null && rank == null) {
                     NowPlayingIndicator(isPlaying = isPlaying)
                 }
                 Text(

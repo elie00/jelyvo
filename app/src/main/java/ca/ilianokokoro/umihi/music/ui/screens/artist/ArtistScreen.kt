@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.artist
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,10 +10,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -20,14 +23,19 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,8 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -63,6 +75,7 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
 import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
+import coil3.compose.AsyncImage
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -123,6 +136,7 @@ fun ArtistScreen(
                     // is ordered differently and has no counts — so it is a choice, not a
                     // silent upgrade.
                     val hasMore = page.songs.size > page.topSongs.size
+                    val ranked = !showAllSongs && page.topSongs.isNotEmpty()
                     val shownSongs = if (showAllSongs || page.topSongs.isEmpty()) {
                         page.songs
                     } else {
@@ -130,6 +144,24 @@ fun ArtistScreen(
                     }
                     val selectedSongs = shownSongs.filter {
                         it.youtubeId in selectedSongIds
+                    }
+                    val playAll = {
+                        onOpenPlayer()
+                        PlayerManager.playQueue(
+                            page.songs.map { it.mediaItem },
+                            sourceName = page.artist.name,
+                            sourceId = artistId,
+                            sourceType = QueueSourceType.Artist,
+                        )
+                    }
+                    val shuffleAll = {
+                        onOpenPlayer()
+                        PlayerManager.playQueue(
+                            page.songs.shuffled().map { it.mediaItem },
+                            sourceName = page.artist.name,
+                            sourceId = artistId,
+                            sourceType = QueueSourceType.Artist,
+                        )
                     }
                     Row(modifier = Modifier.fillMaxSize()) {
                     if (showContextPane) {
@@ -145,24 +177,8 @@ fun ArtistScreen(
                                 collapsedBioLines = 8,
                                 onToggleBio = { bioExpanded = !bioExpanded },
                                 hasSongs = page.songs.isNotEmpty(),
-                                onPlay = {
-                                    onOpenPlayer()
-                                    PlayerManager.playQueue(
-                                        page.songs.map { it.mediaItem },
-                                        sourceName = page.artist.name,
-                                        sourceId = artistId,
-                                        sourceType = QueueSourceType.Artist,
-                                    )
-                                },
-                                onShuffle = {
-                                    onOpenPlayer()
-                                    PlayerManager.playQueue(
-                                        page.songs.shuffled().map { it.mediaItem },
-                                        sourceName = page.artist.name,
-                                        sourceId = artistId,
-                                        sourceType = QueueSourceType.Artist,
-                                    )
-                                },
+                                onPlay = playAll,
+                                onShuffle = shuffleAll,
                             )
                         }
                     }
@@ -172,126 +188,59 @@ fun ArtistScreen(
                             .weight(1f)
                             .fillMaxHeight(),
                         contentPadding = PaddingValues(
-                            top = 8.dp,
+                            top = if (showContextPane) 8.dp else 0.dp,
                             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-                            start = 8.dp,
-                            end = 8.dp
                         )
                     ) {
                         if (!showContextPane) {
-                            item {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    ArtistContextHeader(
-                                        onBack = onBack,
-                                        thumbnail = page.artist.thumbnailHref,
-                                        name = page.artist.name,
-                                        subscriberCount = page.artist.subscriberCount,
-                                        description = page.artist.description,
-                                        artworkSize = 140.dp,
-                                        bioExpanded = bioExpanded,
-                                        collapsedBioLines = 3,
-                                        onToggleBio = { bioExpanded = !bioExpanded },
-                                        hasSongs = page.songs.isNotEmpty(),
-                                        onPlay = {
-                                            onOpenPlayer()
-                                            PlayerManager.playQueue(
-                                                page.songs.map { it.mediaItem },
-                                                sourceName = page.artist.name,
-                                                sourceId = artistId,
-                                                sourceType = QueueSourceType.Artist,
-                                            )
-                                        },
-                                        onShuffle = {
-                                            onOpenPlayer()
-                                            PlayerManager.playQueue(
-                                                page.songs.shuffled().map { it.mediaItem },
-                                                sourceName = page.artist.name,
-                                                sourceId = artistId,
-                                                sourceType = QueueSourceType.Artist,
-                                            )
-                                        },
-                                    )
-                                }
+                            // Spotify/YT Music-style hero: full-bleed photo with the name
+                            // overlaid on a gradient, actions right below.
+                            item(key = "hero", contentType = "hero") {
+                                ArtistHero(
+                                    onBack = onBack,
+                                    thumbnail = page.artist.thumbnailHref,
+                                    name = page.artist.name,
+                                    subscriberCount = page.artist.subscriberCount,
+                                )
                             }
-                        }
-
-                        page.sections.forEachIndexed { index, section ->
-                            item(key = "section-title-$index", contentType = "section-title") {
+                            item(key = "hero-actions", contentType = "hero-actions") {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(start = 8.dp, top = 4.dp),
+                                        .padding(horizontal = 16.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = localizedApiSectionTitle(section.title),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    if (section.albums.isNotEmpty() &&
-                                        section.moreBrowseId.isNotBlank()
-                                    ) {
-                                        TextButton(
-                                            onClick = {
-                                                onOpenReleases(
-                                                    section.title,
-                                                    section.moreBrowseId,
-                                                    section.moreParams,
-                                                )
-                                            },
+                                    Spacer(modifier = Modifier.weight(1f))
+                                    if (page.songs.isNotEmpty()) {
+                                        FilledTonalIconButton(
+                                            onClick = shuffleAll,
+                                            modifier = Modifier.size(48.dp),
                                         ) {
-                                            Text(stringResource(R.string.show_all))
+                                            Icon(
+                                                imageVector = Icons.Rounded.Shuffle,
+                                                contentDescription = stringResource(R.string.shuffle),
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        FilledIconButton(
+                                            onClick = playAll,
+                                            modifier = Modifier.size(64.dp),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.PlayArrow,
+                                                contentDescription = stringResource(R.string.play),
+                                                modifier = Modifier.size(32.dp),
+                                            )
                                         }
                                     }
                                 }
                             }
-                            item(key = "section-row-$index", contentType = "section-row") {
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    items(items = section.albums, key = { it.browseId }) { album ->
-                                        AlbumCard(
-                                            thumbnail = album.thumbnail,
-                                            title = album.title,
-                                            subtitle = album.subtitle,
-                                            onClick = {
-                                                onOpenAlbum(album.browseId, album.title, album.thumbnail)
-                                            }
-                                        )
-                                    }
-                                    items(items = section.videos, key = { it.youtubeId }) { video ->
-                                        AlbumCard(
-                                            thumbnail = video.thumbnailHref,
-                                            title = video.title,
-                                            onClick = {
-                                                onOpenPlayer()
-                                                PlayerManager.playSong(video)
-                                            }
-                                        )
-                                    }
-                                    items(
-                                        items = section.artists,
-                                        key = { it.channelUrl }) { related ->
-                                        RelatedArtistCard(
-                                            thumbnail = related.thumbnailHref,
-                                            name = related.name,
-                                            onClick = {
-                                                onOpenArtist(related.channelUrl, related.name)
-                                            }
-                                        )
-                                    }
-                                }
-                            }
                         }
 
+                        // "Popular" first, like both references: it is what most visitors came for.
                         if (shownSongs.isNotEmpty()) {
                             item(key = "songs-title", contentType = "section-title") {
-                                Text(
+                                SectionTitle(
                                     text = stringResource(
                                         if (showAllSongs || page.topSongs.isEmpty()) {
                                             R.string.all_songs
@@ -299,22 +248,17 @@ fun ArtistScreen(
                                             R.string.popular
                                         }
                                     ),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(
-                                        start = 8.dp,
-                                        top = 8.dp,
-                                        bottom = 4.dp
-                                    )
                                 )
                             }
                         }
 
-                        items(
+                        itemsIndexed(
                             items = shownSongs,
-                            key = { it.youtubeId },
-                            contentType = { "song" }) { song ->
+                            key = { _, song -> song.youtubeId },
+                            contentType = { _, _ -> "song" }) { index, song ->
                             SongListItem(
                                 song = song,
+                                rank = if (ranked) index + 1 else null,
                                 onPress = {
                                     // Queue what is on screen, starting at the tapped one.
                                     onOpenPlayer()
@@ -351,7 +295,7 @@ fun ArtistScreen(
                                         selectedSongIds = emptySet()
                                         selectionAnchorId = null
                                     },
-                                    modifier = Modifier.padding(start = 8.dp)
+                                    modifier = Modifier.padding(start = 16.dp)
                                 ) {
                                     Text(
                                         stringResource(
@@ -362,6 +306,105 @@ fun ArtistScreen(
                                             }
                                         )
                                     )
+                                }
+                            }
+                        }
+
+                        page.sections.forEachIndexed { index, section ->
+                            item(key = "section-title-$index", contentType = "section-title") {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(end = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    SectionTitle(
+                                        text = localizedApiSectionTitle(section.title),
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    if (section.albums.isNotEmpty() &&
+                                        section.moreBrowseId.isNotBlank()
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                onOpenReleases(
+                                                    section.title,
+                                                    section.moreBrowseId,
+                                                    section.moreParams,
+                                                )
+                                            },
+                                        ) {
+                                            Text(stringResource(R.string.show_all))
+                                        }
+                                    }
+                                }
+                            }
+                            item(key = "section-row-$index", contentType = "section-row") {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
+                                ) {
+                                    items(items = section.albums, key = { it.browseId }) { album ->
+                                        AlbumCard(
+                                            thumbnail = album.thumbnail,
+                                            title = album.title,
+                                            subtitle = album.subtitle,
+                                            onClick = {
+                                                onOpenAlbum(album.browseId, album.title, album.thumbnail)
+                                            }
+                                        )
+                                    }
+                                    items(items = section.videos, key = { it.youtubeId }) { video ->
+                                        AlbumCard(
+                                            thumbnail = video.thumbnailHref,
+                                            title = video.title,
+                                            onClick = {
+                                                onOpenPlayer()
+                                                PlayerManager.playSong(video)
+                                            }
+                                        )
+                                    }
+                                    items(
+                                        items = section.artists,
+                                        key = { it.channelUrl }) { related ->
+                                        RelatedArtistCard(
+                                            thumbnail = related.thumbnailHref,
+                                            name = related.name,
+                                            onClick = {
+                                                onOpenArtist(related.channelUrl, related.name)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // The biography closes the page, as Spotify's "About" card does; the
+                        // context pane already shows it on wide layouts.
+                        if (!showContextPane) {
+                            page.artist.description?.takeIf { it.isNotBlank() }?.let { bio ->
+                                item(key = "about", contentType = "about") {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        SectionTitle(
+                                            text = stringResource(R.string.artist_about),
+                                            padStart = 0.dp,
+                                        )
+                                        Text(
+                                            text = bio,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = if (bioExpanded) Int.MAX_VALUE else 4,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable { bioExpanded = !bioExpanded },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -406,6 +449,83 @@ fun ArtistScreen(
     }
 }
 
+/**
+ * Full-width artist photo with the name overlaid on a bottom gradient, the way Spotify and
+ * YT Music open an artist page. The gradient fades into the surface color so the photo blends
+ * into the scrolling content below it.
+ */
+@Composable
+private fun ArtistHero(
+    onBack: () -> Unit,
+    thumbnail: String,
+    name: String,
+    subscriberCount: String?,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(320.dp)
+    ) {
+        AsyncImage(
+            model = thumbnail,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0.35f to Color.Transparent,
+                        1f to MaterialTheme.colorScheme.surface,
+                    )
+                )
+        )
+        BackButton(
+            onBack = onBack,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp),
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(horizontal = 16.dp),
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontFamily = nunitoFontFamily,
+                    fontWeight = FontWeight.Bold,
+                ),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            subscriberCount?.takeIf { it.isNotBlank() }?.let { count ->
+                Text(
+                    text = count,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(
+    text: String,
+    modifier: Modifier = Modifier,
+    padStart: Dp = 16.dp,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+        modifier = modifier.padding(start = padStart, top = 12.dp, bottom = 4.dp),
+    )
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ColumnScope.ArtistContextHeader(
@@ -430,7 +550,7 @@ private fun ColumnScope.ArtistContextHeader(
         cornerRadius = 0.dp,
         modifier = Modifier
             .size(artworkSize)
-            .clip(MaterialShapes.Cookie12Sided.toShape()),
+            .clip(CircleShape),
     )
     Text(
         text = name,
@@ -476,7 +596,7 @@ private fun RelatedArtistCard(
 ) {
     Column(
         modifier = Modifier
-            .width(140.dp)
+            .width(150.dp)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -485,7 +605,7 @@ private fun RelatedArtistCard(
             uri = thumbnail,
             cornerRadius = 0.dp,
             modifier = Modifier
-                .size(120.dp)
+                .size(130.dp)
                 .clip(CircleShape)
         )
         Text(
@@ -507,7 +627,7 @@ private fun AlbumCard(
 ) {
     Column(
         modifier = Modifier
-            .width(140.dp)
+            .width(150.dp)
             .clickable(onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -517,7 +637,7 @@ private fun AlbumCard(
         )
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )

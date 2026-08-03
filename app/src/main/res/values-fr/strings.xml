@@ -225,6 +225,7 @@
     <string name="smart_transitions_title">Transitions intelligentes</string>
     <string name="smart_transitions_description">Préserve les albums sans blanc et adapte les fondus aux playlists et radios</string>
     <string name="about_this_song">À propos de ce titre</string>
+    <string name="artist_about">À propos</string>
     <string name="source">Source</string>
     <string name="credits_availability_note">Les auteurs, compositeurs et producteurs détaillés apparaissent lorsque le fournisseur musical les rend disponibles.</string>
     <string name="player_gestures">Gestes du lecteur</string>
