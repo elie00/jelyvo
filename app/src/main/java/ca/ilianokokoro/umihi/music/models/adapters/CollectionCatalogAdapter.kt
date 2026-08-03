@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.models.adapters
 
 import ca.ilianokokoro.umihi.music.core.domain.CatalogAlbumPage
 import ca.ilianokokoro.umihi.music.core.domain.CatalogArtistPage
+import ca.ilianokokoro.umihi.music.core.domain.CatalogPlaylistPage
 import ca.ilianokokoro.umihi.music.core.domain.CatalogSearchItem
 import ca.ilianokokoro.umihi.music.core.domain.CatalogShelf
 import ca.ilianokokoro.umihi.music.core.domain.CatalogShelfToken
@@ -11,6 +12,8 @@ import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistPage
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistSection
+import ca.ilianokokoro.umihi.music.models.Playlist
+import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 
 fun AlbumPage.toCatalogAlbumPage(): CatalogAlbumPage = CatalogAlbumPage(
@@ -39,6 +42,19 @@ fun CatalogAlbumPage.toAlbumPage(): AlbumPage = AlbumPage(
     sections = shelves.map(CatalogShelf::toArtistSection),
     playlistId = audioPlaylistId,
     isSavedToLibrary = savedToLibrary,
+)
+
+fun Playlist.toCatalogPlaylistPage(): CatalogPlaylistPage = CatalogPlaylistPage(
+    id = info.id,
+    title = info.title,
+    artworkUrl = info.coverHref,
+    tracks = songs.map(Song::toTrack),
+)
+
+/** Local-only fields such as [PlaylistInfo.coverPath] are absent from remote responses. */
+fun CatalogPlaylistPage.toPlaylist(): Playlist = Playlist(
+    info = PlaylistInfo(id = id, title = title, coverHref = artworkUrl),
+    songs = tracks.map(Track::toSong),
 )
 
 fun ArtistPage.toCatalogArtistPage(): CatalogArtistPage = CatalogArtistPage(

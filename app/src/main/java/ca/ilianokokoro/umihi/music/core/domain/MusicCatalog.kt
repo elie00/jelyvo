@@ -20,7 +20,22 @@ interface MusicCatalog {
     fun album(id: String, title: String): Flow<CatalogResult<CatalogAlbumPage>>
 
     fun artist(id: String, name: String): Flow<CatalogResult<CatalogArtistPage>>
+
+    fun playlist(
+        id: String,
+        title: String = "",
+        artworkUrl: String = "",
+        allowCached: Boolean = true,
+    ): Flow<CatalogResult<CatalogPlaylistPage>>
 }
+
+/** Remote playlist page: account-side identity plus its ordered tracks. */
+data class CatalogPlaylistPage(
+    val id: String,
+    val title: String,
+    val artworkUrl: String,
+    val tracks: List<Track>,
+)
 
 /** Artist browse page: profile header, popularity-ranked tracks and discography shelves. */
 data class CatalogArtistPage(

@@ -5,6 +5,8 @@ import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.ArtistPage
 import ca.ilianokokoro.umihi.music.models.ArtistSection
+import ca.ilianokokoro.umihi.music.models.Playlist
+import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -100,6 +102,25 @@ class CollectionCatalogAdapterTest {
         assertEquals(listOf("top1"), restored.topSongs.map(Song::youtubeId))
         assertEquals("369 M plays", restored.topSongs.single().playCount)
         assertEquals("Albums", restored.sections.single().title)
+    }
+
+    @Test
+    fun `round trips a remote playlist through the catalog boundary`() {
+        val original = Playlist(
+            info = PlaylistInfo(id = "PL123", title = "Route", coverHref = "https://cover"),
+            songs = listOf(
+                Song(youtubeId = "s1", title = "One", artist = "Artist", duration = "3:05"),
+                Song(youtubeId = "s2", title = "Two", artist = "Artist", duration = "2:45"),
+            ),
+        )
+
+        val restored = original.toCatalogPlaylistPage().toPlaylist()
+
+        assertEquals(original.info.id, restored.info.id)
+        assertEquals(original.info.title, restored.info.title)
+        assertEquals(original.info.coverHref, restored.info.coverHref)
+        assertEquals(listOf("s1", "s2"), restored.songs.map(Song::youtubeId))
+        assertEquals(listOf("3:05", "2:45"), restored.songs.map(Song::duration))
     }
 
     @Test

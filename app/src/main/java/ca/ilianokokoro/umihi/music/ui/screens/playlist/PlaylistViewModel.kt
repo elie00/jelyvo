@@ -11,10 +11,13 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.work.WorkInfo
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.domain.CatalogResult
+import ca.ilianokokoro.umihi.music.core.domain.MusicCatalog
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
+import ca.ilianokokoro.umihi.music.data.catalog.YoutubeMusicCatalog
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
@@ -23,12 +26,15 @@ import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
+import ca.ilianokokoro.umihi.music.models.adapters.toPlaylist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SongSort
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.uuid.Uuid
@@ -60,6 +66,10 @@ class PlaylistViewModel(
     }
 
     private val playlistRepository = PlaylistRepository(application)
+    private val catalog: MusicCatalog = YoutubeMusicCatalog(
+        playlistRepository = playlistRepository,
+        settingsProvider = { datastoreRepository.getSettings() },
+    )
     private val localPlaylistRepository = AppDatabase.getInstance(application).playlistRepository()
     private val localUserPlaylistRepository = LocalPlaylistRepository(application)
     private val datastoreRepository = DatastoreRepository(application)
@@ -333,7 +343,26 @@ class PlaylistViewModel(
                     }
             }
 
-            playlistRepository.retrieveOne(Playlist(playlistInfo), settings, useCache)
+            // The downloaded pseudo-playlist is device-local; only real account playlists go
+            // through the remote catalog seam.
+            val playlistFlow: Flow<ApiResult<Playlist>> =
+                if (playlistInfo.isDownloadedPlaylist) {
+                    playlistRepository.retrieveOne(Playlist(playlistInfo), settings, useCache)
+                } else {
+                    catalog.playlist(
+                        id = playlistInfo.id,
+                        title = playlistInfo.title,
+                        artworkUrl = playlistInfo.coverHref,
+                        allowCached = useCache,
+                    ).map { result ->
+                        when (result) {
+                            is CatalogResult.Loading -> ApiResult.Loading
+                            is CatalogResult.Success -> ApiResult.Success(result.data.toPlaylist())
+                            is CatalogResult.Error -> ApiResult.Error(result.exception)
+                        }
+                    }
+                }
+            playlistFlow
                 .collect { apiResult ->
                     _uiState.update { currentState ->
                         currentState.copy(
