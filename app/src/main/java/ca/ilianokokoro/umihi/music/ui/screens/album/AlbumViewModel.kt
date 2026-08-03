@@ -9,11 +9,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import ca.ilianokokoro.umihi.music.R
-import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.domain.CatalogResult
+import ca.ilianokokoro.umihi.music.core.domain.MusicCatalog
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.data.catalog.YoutubeMusicCatalog
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
-import ca.ilianokokoro.umihi.music.data.repositories.AlbumRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
@@ -21,6 +22,7 @@ import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toAlbumPage
 import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,8 +37,10 @@ class AlbumViewModel(
     private val albumId: String,
     private val albumName: String,
 ) : AndroidViewModel(application) {
-    private val albumRepository = AlbumRepository()
     private val datastoreRepository = DatastoreRepository(application)
+    private val catalog: MusicCatalog = YoutubeMusicCatalog(
+        settingsProvider = { datastoreRepository.getSettings() },
+    )
     private val downloadRepository = DownloadRepository(application)
     private val localPlaylistRepository = LocalPlaylistRepository(application)
 
@@ -72,17 +76,17 @@ class AlbumViewModel(
 
     fun load() {
         viewModelScope.launch {
-            val settings = datastoreRepository.getSettings()
-            albumRepository.getAlbum(albumId, albumName, settings).collect { result ->
+            catalog.album(albumId, albumName).collect { result ->
                 _uiState.update {
                     when (result) {
-                        is ApiResult.Loading -> AlbumState.Loading
-                        is ApiResult.Success -> {
-                            _isAlbumSaved.value = result.data.isSavedToLibrary ?: false
-                            AlbumState.Success(result.data)
+                        is CatalogResult.Loading -> AlbumState.Loading
+                        is CatalogResult.Success -> {
+                            val page = result.data.toAlbumPage()
+                            _isAlbumSaved.value = page.isSavedToLibrary ?: false
+                            AlbumState.Success(page)
                         }
 
-                        is ApiResult.Error -> {
+                        is CatalogResult.Error -> {
                             printe(message = "Failed to load album", exception = result.exception)
                             AlbumState.Error(result.exception)
                         }

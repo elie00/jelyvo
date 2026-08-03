@@ -1,0 +1,82 @@
+package ca.ilianokokoro.umihi.music.models.adapters
+
+import ca.ilianokokoro.umihi.music.models.AlbumPage
+import ca.ilianokokoro.umihi.music.models.Artist
+import ca.ilianokokoro.umihi.music.models.ArtistAlbum
+import ca.ilianokokoro.umihi.music.models.ArtistSection
+import ca.ilianokokoro.umihi.music.models.Song
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+class CollectionCatalogAdapterTest {
+    @Test
+    fun `round trips an album page through the catalog boundary`() {
+        val original = AlbumPage(
+            name = "Album",
+            songs = listOf(
+                Song(youtubeId = "t1", title = "One", artist = "Artist").also {
+                    it.trackNumber = 1
+                },
+                Song(youtubeId = "t2", title = "Two", artist = "Artist").also {
+                    it.trackNumber = 2
+                },
+            ),
+            cover = "https://cover",
+            artist = "Artist",
+            artistId = "UCartist",
+            subtitle = "Album • 2023",
+            secondSubtitle = "2 songs • 7 minutes",
+            description = "Editorial notes",
+            sections = listOf(
+                ArtistSection(
+                    title = "Other versions",
+                    albums = listOf(
+                        ArtistAlbum(
+                            browseId = "MPRE1",
+                            title = "Deluxe",
+                            thumbnail = "https://deluxe",
+                            subtitle = "Album • 2024",
+                        )
+                    ),
+                    artists = listOf(
+                        Artist(name = "Related", thumbnailHref = "https://face", channelUrl = "UCrelated")
+                    ),
+                    moreBrowseId = "MORE",
+                    moreParams = "PARAMS",
+                )
+            ),
+            playlistId = "OLAK5uy",
+            isSavedToLibrary = true,
+        )
+
+        val restored = original.toCatalogAlbumPage().toAlbumPage()
+
+        assertEquals(original.name, restored.name)
+        assertEquals(original.cover, restored.cover)
+        assertEquals(original.artist, restored.artist)
+        assertEquals(original.artistId, restored.artistId)
+        assertEquals(original.subtitle, restored.subtitle)
+        assertEquals(original.secondSubtitle, restored.secondSubtitle)
+        assertEquals(original.description, restored.description)
+        assertEquals(original.playlistId, restored.playlistId)
+        assertEquals(original.isSavedToLibrary, restored.isSavedToLibrary)
+        assertEquals(listOf("t1", "t2"), restored.songs.map(Song::youtubeId))
+        assertEquals(listOf(1, 2), restored.songs.map(Song::trackNumber))
+
+        val section = restored.sections.single()
+        assertEquals("Other versions", section.title)
+        assertEquals("MPRE1", section.albums.single().browseId)
+        assertEquals("Album • 2024", section.albums.single().subtitle)
+        assertEquals("UCrelated", section.artists.single().channelUrl)
+        assertEquals("MORE", section.moreBrowseId)
+        assertEquals("PARAMS", section.moreParams)
+    }
+
+    @Test
+    fun `blank shelf more id maps to an absent token`() {
+        val shelf = ArtistSection(title = "Videos").toCatalogShelf()
+        assertNull(shelf.moreToken)
+        assertEquals("", shelf.toArtistSection().moreBrowseId)
+    }
+}
