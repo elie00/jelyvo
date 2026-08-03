@@ -1,15 +1,11 @@
 package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
+import ca.ilianokokoro.umihi.music.core.cachedApiFlow
 import ca.ilianokokoro.umihi.music.data.datasources.LyricsDataSource
-import ca.ilianokokoro.umihi.music.extensions.toException
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.Song
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 
 class LyricsRepository {
     private val lyricsDataSource = LyricsDataSource()
@@ -20,19 +16,19 @@ class LyricsRepository {
      * (the UI treats this as "lyrics unavailable"). Network/parse failures are
      * surfaced through `.catch` as [ApiResult.Error].
      */
-    fun getLyrics(song: Song): Flow<ApiResult<Lyrics>> {
-        return flow {
-            emit(ApiResult.Loading)
-            val lyrics = lyricsDataSource.getLyrics(
+    fun getLyrics(song: Song, useCache: Boolean = true): Flow<ApiResult<Lyrics>> =
+        cachedApiFlow(
+            key = "lyrics:${song.youtubeId}",
+            useCache = useCache,
+            // Lyrics remain useful indefinitely and make the karaoke available offline.
+            diskSerializer = Lyrics.serializer(),
+        ) {
+            lyricsDataSource.getLyrics(
                 title = song.title,
                 artist = song.artist,
                 durationSeconds = durationToSeconds(song.duration),
             ) ?: throw Exception("Lyrics not available")
-            emit(ApiResult.Success(lyrics))
-        }.catch { e ->
-            emit(ApiResult.Error(e.toException()))
-        }.flowOn(Dispatchers.IO)
-    }
+        }
 
     /**
      * Converts a display duration string ("m:ss" or "h:mm:ss") into whole

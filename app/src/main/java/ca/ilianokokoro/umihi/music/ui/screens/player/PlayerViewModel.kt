@@ -706,11 +706,11 @@ class PlayerViewModel(application: Application) :
         updateVideoVariant(current)
     }
 
-    private fun loadLyrics(song: Song) {
+    private fun loadLyrics(song: Song, useCache: Boolean = true) {
         lyricsJob?.cancel()
         _uiState.update { it.copy(lyrics = ApiResult.Loading) }
         lyricsJob = viewModelScope.launch {
-            lyricsRepository.getLyrics(song).collect { result ->
+            lyricsRepository.getLyrics(song, useCache).collect { result ->
                 _uiState.update { it.copy(lyrics = result) }
             }
         }
@@ -722,7 +722,7 @@ class PlayerViewModel(application: Application) :
 
     fun retryLyrics() {
         val currentSong = _uiState.value.queue.getOrNull(_uiState.value.currentIndex) ?: return
-        loadLyrics(currentSong)
+        loadLyrics(currentSong, useCache = false)
     }
 
     private fun updateQueue() {

@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.models.dto.LrclibResponse
+import kotlinx.serialization.Serializable
 
 /**
  * A single line of lyrics.
@@ -11,6 +12,7 @@ import ca.ilianokokoro.umihi.music.models.dto.LrclibResponse
  * @param text The lyric text for this line (may be empty for musical interludes).
  */
 @Immutable
+@Serializable
 data class LyricLine(
     val timeMs: Long?,
     val text: String,
@@ -24,6 +26,7 @@ data class LyricLine(
  *  false when they are plain text.
  */
 @Immutable
+@Serializable
 data class Lyrics(
     val lines: List<LyricLine>,
     val isSynced: Boolean,

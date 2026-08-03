@@ -9,6 +9,9 @@ import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
 import java.io.IOException
+import java.text.Normalizer
+import java.util.Locale
+import kotlin.math.abs
 
 /**
  * Fetches lyrics from the free LRCLIB API (no authentication required).
@@ -38,7 +41,7 @@ class LyricsDataSource {
         durationSeconds: Int?,
     ): Lyrics? = withContext(Dispatchers.IO) {
         exactMatch(title, artist, durationSeconds)?.let { return@withContext it }
-        searchFallback(title, artist)
+        searchFallback(title, artist, durationSeconds)
     }
 
     private fun exactMatch(title: String, artist: String, durationSeconds: Int?): Lyrics? {
@@ -55,7 +58,11 @@ class LyricsDataSource {
         return response?.let { Lyrics.fromResponse(it) }
     }
 
-    private fun searchFallback(title: String, artist: String): Lyrics? {
+    private fun searchFallback(
+        title: String,
+        artist: String,
+        durationSeconds: Int?,
+    ): Lyrics? {
         val url = BASE_URL.toHttpUrl().newBuilder()
             .addPathSegment("api")
             .addPathSegment("search")
@@ -68,11 +75,12 @@ class LyricsDataSource {
             json.decodeFromString<List<LrclibResponse>>(body)
         }.getOrNull().orEmpty()
 
-        return results
-            .asSequence()
-            .filter { it.hasLyrics }
-            .mapNotNull { Lyrics.fromResponse(it) }
-            .firstOrNull()
+        return selectBestLyricsCandidate(
+            results = results,
+            title = title,
+            artist = artist,
+            durationSeconds = durationSeconds,
+        )?.let(Lyrics::fromResponse)
     }
 
     /**
@@ -104,3 +112,56 @@ class LyricsDataSource {
             "Jelyvo (https://github.com/elie00/umihi-music)"
     }
 }
+
+/** Picks the closest LRCLIB row instead of trusting the API's first fuzzy-search result. */
+internal fun selectBestLyricsCandidate(
+    results: List<LrclibResponse>,
+    title: String,
+    artist: String,
+    durationSeconds: Int?,
+): LrclibResponse? {
+    val wantedTitle = normalizeLyricsIdentity(title)
+    val wantedArtist = normalizeLyricsIdentity(artist)
+    return results
+        .asSequence()
+        .filter(LrclibResponse::hasLyrics)
+        .map { candidate ->
+            val candidateTitle = normalizeLyricsIdentity(candidate.trackName.orEmpty())
+            val candidateArtist = normalizeLyricsIdentity(candidate.artistName.orEmpty())
+            var score = when {
+                candidateTitle.isNotBlank() && candidateTitle == wantedTitle -> 8
+                candidateTitle.isNotBlank() && wantedTitle.isNotBlank() &&
+                    (candidateTitle.contains(wantedTitle) || wantedTitle.contains(candidateTitle)) -> 4
+                else -> 0
+            }
+            score += when {
+                candidateArtist.isNotBlank() && candidateArtist == wantedArtist -> 6
+                candidateArtist.isNotBlank() && wantedArtist.isNotBlank() &&
+                    (candidateArtist.contains(wantedArtist) ||
+                        wantedArtist.contains(candidateArtist)) -> 3
+                else -> 0
+            }
+            if (durationSeconds != null && candidate.duration != null) {
+                score += when (abs(candidate.duration - durationSeconds)) {
+                    in 0.0..2.5 -> 4
+                    in 2.5..8.0 -> 2
+                    else -> -2
+                }
+            }
+            if (!candidate.syncedLyrics.isNullOrBlank()) score += 1
+            candidate to score
+        }
+        .maxByOrNull { it.second }
+        ?.takeIf { it.second >= MIN_LYRICS_MATCH_SCORE }
+        ?.first
+}
+
+internal fun normalizeLyricsIdentity(value: String): String = Normalizer
+    .normalize(value, Normalizer.Form.NFD)
+    .replace(Regex("\\p{M}+"), "")
+    .lowercase(Locale.ROOT)
+    .replace(Regex("""\([^)]*(official|audio|video|lyrics?|remaster(?:ed)?)[^)]*\)"""), " ")
+    .replace(Regex("[^a-z0-9]+"), " ")
+    .trim()
+
+private const val MIN_LYRICS_MATCH_SCORE = 4
