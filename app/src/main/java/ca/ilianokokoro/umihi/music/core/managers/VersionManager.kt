@@ -2,6 +2,8 @@ package ca.ilianokokoro.umihi.music.core.managers
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
@@ -31,7 +33,9 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
+import java.security.MessageDigest
 
 /**
  * Verification et installation des mises a jour depuis le depot public jelyvo-releases.
@@ -147,21 +151,46 @@ object VersionManager {
 
         val apkFile = File(updateDir, Constants.Downloads.UPDATE_APK)
         val partialFile = File(updateDir, "${Constants.Downloads.UPDATE_APK}.part")
-        partialFile.delete()
 
-        val request = Request.Builder().url(release.downloadUrl).build()
+        if (apkFile.exists() && isExpectedUpdateApk(context, apkFile, release.versionName)) {
+            withContext(Dispatchers.Main) { onProgress(1f) }
+            return@withContext apkFile
+        }
+        apkFile.delete()
+        // The process may have stopped after receiving the last byte but before the atomic rename.
+        if (partialFile.exists() && isExpectedUpdateApk(context, partialFile, release.versionName)) {
+            if (!partialFile.renameTo(apkFile)) {
+                throw IOException("APK download failed: unable to restore completed file")
+            }
+            withContext(Dispatchers.Main) { onProgress(1f) }
+            return@withContext apkFile
+        }
+
+        val existingBytes = partialFile.length().coerceAtLeast(0L)
+        val request = Request.Builder()
+            .url(release.downloadUrl)
+            .apply {
+                if (existingBytes > 0L) header("Range", "bytes=$existingBytes-")
+            }
+            .build()
         try {
             UmihiHttpClient.downloadClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw IOException("APK download failed: HTTP ${response.code}")
                 }
                 val body = response.body ?: throw IOException("APK download failed: empty body")
-                val totalBytes = body.contentLength()
+                val resumePlan = updateResumePlan(existingBytes, response.code)
+                val responseBytes = body.contentLength()
+                val totalBytes = if (responseBytes > 0L) {
+                    resumePlan.retainedBytes + responseBytes
+                } else {
+                    -1L
+                }
 
                 body.byteStream().use { input ->
-                    partialFile.outputStream().use { output ->
+                    FileOutputStream(partialFile, resumePlan.append).use { output ->
                         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                        var downloadedBytes = 0L
+                        var downloadedBytes = resumePlan.retainedBytes
 
                         while (true) {
                             val read = input.read(buffer)
@@ -179,12 +208,16 @@ object VersionManager {
                     }
                 }
             }
+            if (!isExpectedUpdateApk(context, partialFile, release.versionName)) {
+                partialFile.delete()
+                throw IOException("APK download failed: package, version or signature mismatch")
+            }
             apkFile.delete()
             if (!partialFile.renameTo(apkFile)) {
                 throw IOException("APK download failed: unable to finalize file")
             }
         } catch (exception: Exception) {
-            partialFile.delete()
+            // Keep a valid partial transfer so the next tap resumes with an HTTP Range request.
             throw exception
         }
 
@@ -255,6 +288,39 @@ object VersionManager {
                 || context.packageManager.canRequestPackageInstalls()
     }
 
+    @Suppress("DEPRECATION")
+    private fun isExpectedUpdateApk(
+        context: Context,
+        file: File,
+        expectedVersion: String,
+    ): Boolean = runCatching {
+        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            PackageManager.GET_SIGNING_CERTIFICATES
+        } else {
+            PackageManager.GET_SIGNATURES
+        }
+        val archive = context.packageManager.getPackageArchiveInfo(file.absolutePath, flags)
+            ?: return@runCatching false
+        val installed = context.packageManager.getPackageInfo(context.packageName, flags)
+        archive.packageName == context.packageName &&
+            archive.versionName == expectedVersion &&
+            certificateDigests(archive) == certificateDigests(installed)
+    }.getOrDefault(false)
+
+    @Suppress("DEPRECATION")
+    private fun certificateDigests(info: PackageInfo): Set<String> {
+        val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            info.signingInfo?.apkContentsSigners.orEmpty()
+        } else {
+            info.signatures.orEmpty()
+        }
+        return signatures.mapTo(mutableSetOf()) { signature ->
+            MessageDigest.getInstance("SHA-256")
+                .digest(signature.toByteArray())
+                .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        }
+    }
+
     private suspend fun handleUpdateResult(
         context: Context,
         manualCheck: Boolean,
@@ -310,3 +376,16 @@ object VersionManager {
             ScreenEvent()
     }
 }
+
+internal data class UpdateResumePlan(
+    val retainedBytes: Long,
+    val append: Boolean,
+)
+
+/** A server that ignores Range returns 200, so the old partial file must be overwritten. */
+internal fun updateResumePlan(existingBytes: Long, responseCode: Int): UpdateResumePlan =
+    if (existingBytes > 0L && responseCode == 206) {
+        UpdateResumePlan(retainedBytes = existingBytes, append = true)
+    } else {
+        UpdateResumePlan(retainedBytes = 0L, append = false)
+    }
