@@ -3,11 +3,14 @@ package ca.ilianokokoro.umihi.music.ui.screens.localplaylist
 import android.app.Application
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
@@ -118,12 +121,19 @@ class LocalPlaylistViewModel(
         }
     }
 
+    private fun showToast(@StringRes messageRes: Int) {
+        val app = getApplication<Application>()
+        Toast.makeText(app, app.getString(messageRes), Toast.LENGTH_SHORT).show()
+    }
+
     fun export(context: Context, uri: Uri) {
         viewModelScope.launch {
             try {
                 repository.exportToUri(context, uri, _uiState.value.name, _uiState.value.songs)
+                showToast(R.string.playlist_exported_toast)
             } catch (ex: Exception) {
                 printe(message = "Failed to export playlist", exception = ex)
+                showToast(R.string.playlist_export_failed_toast)
             }
         }
     }

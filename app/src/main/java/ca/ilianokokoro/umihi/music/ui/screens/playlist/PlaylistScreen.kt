@@ -200,9 +200,12 @@ fun PlaylistScreen(
             ) {
 
                 if (uiState.screenState is ScreenState.Error) {
+                    // The success branches consume paddingValues themselves; without it here the
+                    // full-size error message starts under the top bar and gets clipped.
                     ErrorMessage(
                         ex = uiState.screenState.exception,
-                        onRetry = playlistViewModel::getPlaylistInfo
+                        onRetry = playlistViewModel::getPlaylistInfo,
+                        modifier = Modifier.padding(paddingValues),
                     )
                 } else {
                     val playlistInfo: Playlist = when (uiState.screenState) {

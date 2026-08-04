@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="playlists">Playlists</string>
+    <string name="playlist_exported_toast">Playlist exportée</string>
+    <string name="playlist_export_failed_toast">Impossible d\'exporter cette playlist</string>
     <string name="settings">Paramètres</string>
     <string name="back_description">Écran précédent</string>
     <string name="no_playlists">Aucune playlist trouvée</string>

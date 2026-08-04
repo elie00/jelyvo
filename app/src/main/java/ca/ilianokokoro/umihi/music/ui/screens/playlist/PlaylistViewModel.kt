@@ -309,8 +309,10 @@ class PlaylistViewModel(
                     name = playlist.info.title,
                     songs = playlist.songs.map { LocalPlaylistSong.fromSong(it) },
                 )
+                showToast(R.string.playlist_exported_toast)
             } catch (ex: Exception) {
                 printe(message = "Failed to export playlist", exception = ex)
+                showToast(R.string.playlist_export_failed_toast)
             }
         }
     }
