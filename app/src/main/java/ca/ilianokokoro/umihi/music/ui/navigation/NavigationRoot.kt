@@ -393,7 +393,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                             )
                         }
 
-                        is MusicImportScreenKey, is SpotifyImportScreenKey -> NavEntry(key) {
+                        is MusicImportScreenKey -> NavEntry(key) {
                             MusicImportScreen(
                                 application = app,
                                 onBack = backStack::safePop,

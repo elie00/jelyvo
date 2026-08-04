@@ -199,7 +199,6 @@
     <string name="album_unavailable">Album indisponible pour ce titre</string>
     <string name="equalizer_title">Égaliseur</string>
     <string name="equalizer_subtitle">Ajustez les bandes, les préréglages et l\'amplification des basses</string>
-    <string name="import_from_spotify_title">Importer depuis Spotify</string>
     <string name="import_from_spotify_subtitle">Associez vos titres Spotify à YouTube</string>
     <string name="music_import_title">Importer votre musique</string>
     <string name="music_import_settings_subtitle">Depuis Apple Music, Spotify ou Deezer</string>
@@ -463,7 +462,6 @@
     <string name="remove_from_playlist">Retirer de la playlist</string>
     <string name="remove_from_queue">Retirer de la file d\'attente</string>
     <string name="downloaded">Téléchargés</string>
-    <string name="done">Terminé</string>
     <string name="equalizer_unavailable">L\'égaliseur n\'est pas disponible sur cet appareil, ou aucun titre n\'est encore en lecture. Lancez la lecture d\'un titre puis revenez pour ajuster le son.</string>
     <string name="equalizer_enable">Activer l\'égaliseur</string>
     <string name="equalizer_presets">Préréglages</string>
@@ -475,17 +473,6 @@
     <string name="equalizer_output_bluetooth">Bluetooth</string>
     <string name="equalizer_output_wired">Écouteurs filaires</string>
     <string name="equalizer_output_speaker">Haut-parleur</string>
-    <string name="spotify_connect_description">Connectez votre compte Spotify pour importer vos playlists et vos titres aimés.</string>
-    <string name="spotify_connect_button">Connecter Spotify</string>
-    <string name="spotify_choose_what_to_import">Choisissez ce que vous voulez importer</string>
-    <string name="spotify_liked_songs_subtitle">Vos titres enregistrés</string>
-    <string name="spotify_playlist_tracks">%1$d titres</string>
-    <string name="spotify_matching_tracks">Association des titres sur YouTube…</string>
-    <string name="spotify_progress_processed">%1$d / %2$d traités</string>
-    <string name="spotify_progress_matched_failed">%1$d associés · %2$d échoués</string>
-    <string name="spotify_import_complete">Importation terminée</string>
-    <string name="spotify_import_matched_summary">%1$d des %2$d titres associés sur YouTube.</string>
-    <string name="spotify_import_failed_summary">%1$d n\'ont pas pu être associés.</string>
     <string name="backup_restore_section">Sauvegarde et restauration</string>
     <string name="backup_data_title">Sauvegarder les données</string>
     <string name="backup_data_subtitle">Exporter l\'historique d\'écoute, les playlists locales et les réglages dans un fichier</string>
@@ -555,7 +542,6 @@
     <string name="show_less">Afficher moins</string>
     <string name="edit_description">Modifier la description</string>
     <string name="playlist_description">Description</string>
-    <string name="spotify_import_unavailable">L\'import Spotify n\'est pas disponible dans cette version.</string>
     <string name="singles">Singles</string>
     <string name="fans_might_also_like">Les fans aiment aussi</string>
     <string name="related_artists">Artistes similaires</string>

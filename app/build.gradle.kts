@@ -19,19 +19,6 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-// Spotify import stays off unless a real client id is supplied out of band:
-//   -PspotifyClientId=<id>  or  a `spotifyClientId=<id>` line in the gitignored local.properties.
-// Defaults to empty so a plain clone never ships a fake id nor an entry point that cannot work.
-val localPropertiesFile: File = rootProject.file("local.properties")
-val localProperties = Properties()
-if (localPropertiesFile.exists()) {
-    localProperties.load(FileInputStream(localPropertiesFile))
-}
-val spotifyClientId: String = (project.findProperty("spotifyClientId") as String?)
-    ?: localProperties.getProperty("spotifyClientId")
-    ?: ""
-
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -60,7 +47,6 @@ android {
         versionName = "${appVersionName}${if (beta) "-beta" else ""}"
 
         buildConfigField("boolean", "IS_BETA", "$beta")
-        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"$spotifyClientId\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         if (targetAbi != null) {

@@ -37,9 +37,6 @@ data object AuthScreenKey : NavKey
 data object EqualizerScreenKey : NavKey
 
 @Serializable
-data object SpotifyImportScreenKey : NavKey
-
-@Serializable
 data object MusicImportScreenKey : NavKey
 
 @Serializable
@@ -117,7 +114,7 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
                 showBottomBar = false
             )
 
-            SpotifyImportScreenKey, MusicImportScreenKey -> ScreenUiConfig(
+            MusicImportScreenKey -> ScreenUiConfig(
                 showBottomBar = false,
                 showMiniPlayer = false
             )

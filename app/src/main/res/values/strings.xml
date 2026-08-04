@@ -204,7 +204,6 @@
     <string name="album_unavailable">Album unavailable for this track</string>
     <string name="equalizer_title">Equalizer</string>
     <string name="equalizer_subtitle">Adjust bands, presets and bass boost</string>
-    <string name="import_from_spotify_title">Import from Spotify</string>
     <string name="import_from_spotify_subtitle">Match your Spotify tracks to YouTube</string>
     <string name="music_import_title">Import your music</string>
     <string name="music_import_settings_subtitle">From Apple Music, Spotify or Deezer</string>
@@ -482,7 +481,6 @@
     <string name="remove_from_playlist">Remove from playlist</string>
     <string name="remove_from_queue">Remove from queue</string>
     <string name="downloaded">Downloaded</string>
-    <string name="done">Done</string>
     <string name="equalizer_unavailable">The equalizer is not available on this device, or no audio is playing yet. Start playing a song and come back to adjust the sound.</string>
     <string name="equalizer_enable">Enable equalizer</string>
     <string name="equalizer_presets">Presets</string>
@@ -494,18 +492,6 @@
     <string name="equalizer_output_bluetooth">Bluetooth</string>
     <string name="equalizer_output_wired">Wired headphones</string>
     <string name="equalizer_output_speaker">Speaker</string>
-    <string name="spotify_connect_description">Connect your Spotify account to import your playlists and liked songs.</string>
-    <string name="spotify_connect_button">Connect Spotify</string>
-    <string name="spotify_import_unavailable">Spotify import isn\'t available in this build.</string>
-    <string name="spotify_choose_what_to_import">Choose what to import</string>
-    <string name="spotify_liked_songs_subtitle">Your saved tracks</string>
-    <string name="spotify_playlist_tracks">%1$d tracks</string>
-    <string name="spotify_matching_tracks">Matching tracks on YouTube…</string>
-    <string name="spotify_progress_processed">%1$d / %2$d processed</string>
-    <string name="spotify_progress_matched_failed">%1$d matched · %2$d failed</string>
-    <string name="spotify_import_complete">Import complete</string>
-    <string name="spotify_import_matched_summary">%1$d of %2$d tracks matched on YouTube.</string>
-    <string name="spotify_import_failed_summary">%1$d could not be matched.</string>
     <string name="backup_restore_section">Backup and restore</string>
     <string name="backup_data_title">Back up data</string>
     <string name="backup_data_subtitle">Export listening history, local playlists and settings to a file</string>
