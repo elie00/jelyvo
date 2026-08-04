@@ -54,7 +54,8 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   numéro de piste et compteur d'écoutes à travers la frontière.
 - playlists distantes et résolution de flux : `PlaylistViewModel` route les playlists du compte par
   `CatalogPlaylistPage` (les téléchargements locaux restent hors contrat), et `StreamResolver` /
-  `YoutubeStreamResolver` isolent la résolution d'URL, avec `prewarmStream` migré en premier.
+  `YoutubeStreamResolver` isolent la résolution d'URL. Les cinq consommateurs (lecture,
+  préchargement, préparation opportuniste, téléchargement, Cast) passent par ce seul contrat.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque

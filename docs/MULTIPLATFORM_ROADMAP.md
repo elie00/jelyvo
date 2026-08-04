@@ -48,8 +48,12 @@
 - Premier seam de résolution de flux : `StreamResolver` retourne une URL jouable pour un `Track`
   neutre ; `YoutubeStreamResolver` encapsule `getSongPlayerUrl` et `PlayerManager.prewarmStream`
   est le premier consommateur migré.
-- Chantier actif : migrer les autres consommateurs de résolution (lecture, Cast) vers
-  `StreamResolver`, puis extraire `MusicCatalog`/`Track`/`PlaybackEngine` dans un module commun.
+- Toute la résolution de flux passe désormais par `StreamResolver` : lecture (`ResolvingDataSource`),
+  préchargement de la piste suivante, téléchargement hors ligne et Cash/Chromecast via
+  `resolveRemote`. La couche Cast construit ses `MediaItem` depuis `ResolvedRemoteStream`, un type
+  neutre, et ne connaît plus `CastableStream` propre à l'extracteur YouTube.
+- Chantier actif : extraire `Track`, `MusicCatalog`, `PlaybackEngine` et `StreamResolver` dans un
+  module Kotlin commun — dernier prérequis avant un premier client macOS.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
