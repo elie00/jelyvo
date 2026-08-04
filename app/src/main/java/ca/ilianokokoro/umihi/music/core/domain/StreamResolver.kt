@@ -12,8 +12,19 @@ interface StreamResolver {
      * on-device file when the track is already downloaded.
      */
     suspend fun resolve(track: Track, allowLocal: Boolean = false): ResolvedStream
+
+    /**
+     * Resolves a stream reachable by a remote receiver (e.g. Cast): never a local file, with the
+     * provider's longer freshness margin and an explicit content type.
+     */
+    suspend fun resolveRemote(track: Track): ResolvedRemoteStream
 }
 
 data class ResolvedStream(
     val url: String,
+)
+
+data class ResolvedRemoteStream(
+    val url: String,
+    val contentType: String,
 )

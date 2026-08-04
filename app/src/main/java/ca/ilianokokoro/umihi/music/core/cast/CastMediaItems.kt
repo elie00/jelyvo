@@ -3,10 +3,10 @@ package ca.ilianokokoro.umihi.music.core.cast
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import ca.ilianokokoro.umihi.music.core.youtube.CastableStream
+import ca.ilianokokoro.umihi.music.core.domain.ResolvedRemoteStream
 import ca.ilianokokoro.umihi.music.models.Song
 
-fun CastableStream.toCastMediaItem(song: Song): MediaItem {
+fun ResolvedRemoteStream.toCastMediaItem(song: Song): MediaItem {
     val metadata = MediaMetadata.Builder()
         .setTitle(song.title)
         .setArtist(song.artist)

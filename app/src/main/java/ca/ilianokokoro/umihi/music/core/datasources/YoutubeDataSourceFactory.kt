@@ -7,8 +7,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.ResolvingDataSource
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
+import ca.ilianokokoro.umihi.music.core.domain.StreamResolver
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -16,7 +18,8 @@ import java.io.File
 @UnstableApi
 class YoutubeDataSourceFactory(
     private val application: Application,
-    private val cacheDataSourceFactory: DataSource.Factory
+    private val cacheDataSourceFactory: DataSource.Factory,
+    private val streamResolver: StreamResolver = YoutubeStreamResolver(application),
 ) : DataSource.Factory {
 
     override fun createDataSource(): DataSource {
@@ -33,11 +36,10 @@ class YoutubeDataSourceFactory(
         }
 
         val streamUri = runBlocking(Dispatchers.IO) {
-            YoutubeDataExtractor.getSongPlayerUrl(
-                context = application,
-                song = Song.createFromYoutubeUrl(uri.toString()),
-                allowLocal = true
-            )
+            streamResolver.resolve(
+                track = Song.createFromYoutubeUrl(uri.toString()).toTrack(),
+                allowLocal = true,
+            ).url
         }
 
         return if (streamUri.startsWith("/")) {

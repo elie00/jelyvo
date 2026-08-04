@@ -11,9 +11,11 @@ import androidx.media3.common.util.UnstableApi
 import ca.ilianokokoro.umihi.music.core.youtube.CAST_URL_MIN_LIFETIME_SECONDS
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.ConnectivityHelper
-import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
+import ca.ilianokokoro.umihi.music.core.domain.StreamResolver
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.core.youtube.isPlaybackUrlFresh
 import ca.ilianokokoro.umihi.music.extensions.toSong
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +32,7 @@ internal class CastResolvingPlayer(
     private val context: Context,
     private val castPlayer: CastPlayer,
     private val scope: CoroutineScope,
+    private val streamResolver: StreamResolver = YoutubeStreamResolver(context),
 ) : ForwardingPlayer(castPlayer) {
     private val resolvingMediaIds = ConcurrentHashMap.newKeySet<String>()
     private val resumeAfterResolutionIds = ConcurrentHashMap.newKeySet<String>()
@@ -152,7 +155,7 @@ internal class CastResolvingPlayer(
 
         scope.launch {
             try {
-                val stream = YoutubeDataExtractor.getCastableStream(context, song)
+                val stream = streamResolver.resolveRemote(song.toTrack())
                 val resolved = stream.toCastMediaItem(song)
                 withContext(Dispatchers.Main.immediate) {
                     if (index !in 0 until castPlayer.mediaItemCount) return@withContext

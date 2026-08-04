@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.youtube
 
 import android.content.Context
+import ca.ilianokokoro.umihi.music.core.domain.ResolvedRemoteStream
 import ca.ilianokokoro.umihi.music.core.domain.ResolvedStream
 import ca.ilianokokoro.umihi.music.core.domain.StreamResolver
 import ca.ilianokokoro.umihi.music.core.domain.Track
@@ -18,4 +19,9 @@ class YoutubeStreamResolver(context: Context) : StreamResolver {
                 allowLocal = allowLocal,
             ),
         )
+
+    override suspend fun resolveRemote(track: Track): ResolvedRemoteStream {
+        val stream = YoutubeDataExtractor.getCastableStream(applicationContext, track.toSong())
+        return ResolvedRemoteStream(url = stream.url, contentType = stream.contentType)
+    }
 }

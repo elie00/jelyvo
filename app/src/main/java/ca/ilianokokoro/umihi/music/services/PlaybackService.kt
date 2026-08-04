@@ -49,6 +49,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
@@ -997,7 +998,7 @@ class PlaybackService : MediaLibraryService() {
         val context = applicationContext
         serviceScope.launch {
             try {
-                YoutubeDataExtractor.getSongPlayerUrl(context, nextSong)
+                YoutubeStreamResolver(context).resolve(nextSong.toTrack())
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

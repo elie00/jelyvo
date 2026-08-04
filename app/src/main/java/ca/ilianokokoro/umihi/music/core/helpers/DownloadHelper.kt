@@ -5,8 +5,9 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
-import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -96,7 +97,7 @@ object DownloadHelper {
             return@withContext outputFile.absolutePath
         }
 
-        val url = YoutubeDataExtractor.getSongPlayerUrl(context, song)
+        val url = YoutubeStreamResolver(context).resolve(song.toTrack()).url
 
         var lastException: Exception? = null
 

@@ -23,8 +23,8 @@ internal const val DEFAULT_CAST_CONTENT_TYPE = "audio/mp4"
  * filesDir download (the FileProvider that could have exposed one was removed in 026e614).
  *
  * `downloaded` is intentionally NOT part of this test. A downloaded track still has a real
- * youtubeId, and getSongPlayerUrl(allowLocal = false) resolves it to a network stream — it is the
- * FILE that cannot cast, not the track.
+ * youtubeId, and StreamResolver.resolveRemote resolves it to a network stream — it is the FILE
+ * that cannot cast, not the track.
  *
  * [Song.isLocal] is @Ignore/transient and can be lost across a Bundle round-trip, so the MediaStore
  * id prefix is checked too.
