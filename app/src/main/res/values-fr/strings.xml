@@ -51,6 +51,7 @@
     <string name="retry">Réessayer</string>
     <string name="play_next_toast">Lecture de ce titre suivant</string>
     <string name="added_queue_toast">Ajout du titre à la file d\'attente</string>
+    <string name="queue_needs_playback_toast">Lancez d\'abord un titre pour utiliser la file</string>
     <string name="drop_to_queue">Relâcher pour ajouter à la file d\'attente</string>
     <string name="drop_to_playlist">Relâcher pour ajouter à la playlist</string>
     <string name="playing_now">En cours de lecture</string>
@@ -262,6 +263,7 @@
     <string name="privacy_private">Privé</string>
     <string name="delete_playlist">Supprimer la playlist</string>
     <string name="delete_playlist_text">Êtes-vous sûr de vouloir supprimer cette playlist de votre compte YouTube ? Cette action est irréversible.</string>
+    <string name="delete_playlist_failed_toast">Impossible de supprimer cette playlist</string>
     <string name="check_update_setting_description">Vérifie les nouvelles mises à jour de GitHub</string>
     <string name="updates">Mises à jour</string>
     <string name="current_version">Version actuelle</string>

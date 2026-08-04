@@ -554,8 +554,27 @@ object PlayerManager {
         }
     }
 
+    /**
+     * The queue actions below are no-ops until a playback session exists (typically right after a
+     * cold start, before anything has been played). Failing silently there reads as a broken app,
+     * so tell the user what to do instead.
+     */
+    private fun requireController(context: Context?): MediaController? {
+        val controller = currentController
+        if (controller == null) {
+            context?.let {
+                Toast.makeText(
+                    it,
+                    it.getString(R.string.queue_needs_playback_toast),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+        return controller
+    }
+
     fun addNext(song: Song, context: Context? = null) {
-        val controller = currentController ?: return
+        val controller = requireController(context) ?: return
 
         val insertIndex = if (controller.mediaItemCount == 0) {
             0
@@ -578,7 +597,7 @@ object PlayerManager {
     }
 
     fun addToQueue(song: Song, context: Context? = null) {
-        val controller = currentController ?: return
+        val controller = requireController(context) ?: return
 
         controller.addMediaItem(controller.mediaItemCount, song.mediaItem)
 
@@ -596,7 +615,7 @@ object PlayerManager {
     /** Appends a desktop multi-selection as one ordered queue operation and one user message. */
     fun addToQueue(songs: List<Song>, context: Context? = null) {
         if (songs.isEmpty()) return
-        val controller = currentController ?: return
+        val controller = requireController(context) ?: return
 
         controller.addMediaItems(
             controller.mediaItemCount,

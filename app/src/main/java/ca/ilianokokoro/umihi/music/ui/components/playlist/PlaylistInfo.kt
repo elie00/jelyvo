@@ -244,23 +244,29 @@ fun PlaylistInfo(
                                     )
                                 }
 
-                                MaterialUDropdownItem(
-                                    leadingIcon = Icons.Rounded.FileDownloadOff,
-                                    text = stringResource(R.string.remove_download),
-                                    onClick = {
-                                        showDeleteDownloadDialog.value = true
-                                        optionsExtended = false
-                                    }
-                                )
+                                // Nothing to remove when no track is stored locally, and the
+                                // account playlists we do not own reject deletion outright.
+                                if (playlist.songs.any { it.downloaded }) {
+                                    MaterialUDropdownItem(
+                                        leadingIcon = Icons.Rounded.FileDownloadOff,
+                                        text = stringResource(R.string.remove_download),
+                                        onClick = {
+                                            showDeleteDownloadDialog.value = true
+                                            optionsExtended = false
+                                        }
+                                    )
+                                }
 
-                                MaterialUDropdownItem(
-                                    leadingIcon = Icons.Rounded.Delete,
-                                    text = stringResource(R.string.delete_playlist),
-                                    onClick = {
-                                        showDeleteDialog.value = true
-                                        optionsExtended = false
-                                    }
-                                )
+                                if (playlist.info.isEditable) {
+                                    MaterialUDropdownItem(
+                                        leadingIcon = Icons.Rounded.Delete,
+                                        text = stringResource(R.string.delete_playlist),
+                                        onClick = {
+                                            showDeleteDialog.value = true
+                                            optionsExtended = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

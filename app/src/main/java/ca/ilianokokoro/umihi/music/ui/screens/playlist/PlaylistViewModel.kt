@@ -2,14 +2,17 @@ package ca.ilianokokoro.umihi.music.ui.screens.playlist
 
 
 import android.app.Application
+import android.widget.Toast
 import android.content.Context
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.work.WorkInfo
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.domain.CatalogResult
 import ca.ilianokokoro.umihi.music.core.domain.MusicCatalog
@@ -231,6 +234,11 @@ class PlaylistViewModel(
         }
     }
 
+    private fun showToast(@StringRes messageRes: Int, vararg formatArgs: Any) {
+        val app = getApplication<Application>()
+        Toast.makeText(app, app.getString(messageRes, *formatArgs), Toast.LENGTH_SHORT).show()
+    }
+
     fun deletePlaylist(onBack: () -> Unit) {
         viewModelScope.launch {
             try {
@@ -241,33 +249,21 @@ class PlaylistViewModel(
 
                 playlistRepository.delete(playlistInfo, settings)
                     .collect { apiResult ->
-                        _uiState.update { _ ->
-                            _uiState.value.copy(
-                                screenState = when (apiResult) {
-                                    is ApiResult.Error -> {
-                                        ScreenState.Error(Exception("Failed to delete the playlist"))
-                                    }
-
-                                    ApiResult.Loading -> ScreenState.Loading(playlistInfo)
-                                    is ApiResult.Success -> {
-                                        onBack()
-                                        sharedViewModel.markPlaylistDeleted(
-                                            playlistInfo
-                                        )
-                                        ScreenState.Success(Playlist(PlaylistInfo()))
-                                    }
-                                }
-                            )
+                        when (apiResult) {
+                            // A failed deletion must not cost the user the playlist they were
+                            // looking at: keep the loaded screen and just report the failure.
+                            is ApiResult.Error -> showToast(R.string.delete_playlist_failed_toast)
+                            ApiResult.Loading -> Unit
+                            is ApiResult.Success -> {
+                                onBack()
+                                sharedViewModel.markPlaylistDeleted(playlistInfo)
+                            }
                         }
                     }
 
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
-                _uiState.update {
-                    _uiState.value.copy(
-                        screenState = ScreenState.Error(ex)
-                    )
-                }
+                showToast(R.string.delete_playlist_failed_toast)
             }
         }
     }
