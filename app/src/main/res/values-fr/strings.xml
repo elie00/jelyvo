@@ -197,6 +197,7 @@
     <string name="home_mix_rediscover">Redécouvertes</string>
     <string name="lyrics_unavailable">Paroles indisponibles</string>
     <string name="album_unavailable">Album indisponible pour ce titre</string>
+    <string name="artist_unavailable">Page artiste indisponible pour ce titre</string>
     <string name="equalizer_title">Égaliseur</string>
     <string name="equalizer_subtitle">Ajustez les bandes, les préréglages et l\'amplification des basses</string>
     <string name="import_from_spotify_subtitle">Associez vos titres Spotify à YouTube</string>

@@ -20,6 +20,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -669,8 +670,15 @@ private fun ArtworkOrLyrics(
                 onShareLine = { line ->
                     currentSong?.let { ShareHelper.shareLyrics(context, it, line) }
                 },
+                // Only the lyric lines consume taps (they seek); the surrounding area closes the
+                // panel, mirroring the artwork. Without it the system back was the only way out.
                 modifier = Modifier
                     .fillMaxSize()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = onToggle,
+                    )
                     .semantics {
                         customActions = listOf(
                             CustomAccessibilityAction(showCoverLabel) {

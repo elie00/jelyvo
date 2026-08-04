@@ -65,10 +65,12 @@ fun MoodCategoryScreen(
                     ) {
                         MusicSkeleton(MusicSkeletonLayout.SongList)
                     }
+                    BackButton(onBack = onBack, modifier = Modifier.padding(8.dp))
                 }
 
                 is MoodCategoryState.Error -> {
                     ErrorMessage(ex = state.exception, onRetry = moodCategoryViewModel::load)
+                    BackButton(onBack = onBack, modifier = Modifier.padding(8.dp))
                 }
 
                 is MoodCategoryState.Success -> {

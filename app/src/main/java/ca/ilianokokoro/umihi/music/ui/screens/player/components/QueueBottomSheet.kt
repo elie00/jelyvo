@@ -245,8 +245,9 @@ fun QueuePanel(
                         Text(
                             stringResource(R.string.queue_empty),
                             textAlign = TextAlign.Center,
-                            modifier = modifier
-                                .fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp)
                         )
                     }
                 } else {

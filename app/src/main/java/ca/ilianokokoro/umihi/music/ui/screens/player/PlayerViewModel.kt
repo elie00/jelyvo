@@ -245,10 +245,16 @@ class PlayerViewModel(application: Application) :
                     YoutubeApiClient.next(currentSong.youtubeId),
                     currentSong.youtubeId,
                 )
-                if (artistId != null) {
-                    currentSong.artistId = artistId
-                    onOpenArtist(currentSong)
+                if (artistId == null) {
+                    Toast.makeText(
+                        getApplication(),
+                        R.string.artist_unavailable,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                    return@launch
                 }
+                currentSong.artistId = artistId
+                onOpenArtist(currentSong)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {

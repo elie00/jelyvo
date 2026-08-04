@@ -7,6 +7,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.platform.LocalContext
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackEngine
@@ -60,6 +62,7 @@ fun MiniPlayerWrapper(
     val isLoading = playbackState.status == PlaybackStatus.BUFFERING
     var progressFraction by remember { mutableFloatStateOf(0f) }
     var isQueueDropHovered by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val bottomInsetPx: Int = with(LocalDensity.current) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().roundToPx()
@@ -96,6 +99,11 @@ fun MiniPlayerWrapper(
                     .songDragAndDropTarget(
                         onSongDropped = { droppedSong ->
                             playbackEngine.enqueue(droppedSong.toTrack())
+                            Toast.makeText(
+                                context,
+                                context.getString(R.string.added_queue_toast),
+                                Toast.LENGTH_SHORT,
+                            ).show()
                             true
                         },
                         onHoverChanged = { isQueueDropHovered = it },

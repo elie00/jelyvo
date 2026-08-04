@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -85,13 +86,15 @@ fun MusicImportScreen(
                     title = stringResource(R.string.music_import_resolving),
                 )
 
+                // Preview without a playlist would render nothing at all: fall back to the link
+                // form rather than leaving a blank screen with no way forward.
                 MusicImportScreenState.Preview -> uiState.playlist?.let { playlist ->
                     PreviewContent(
                         playlist = playlist,
                         onImport = musicImportViewModel::startImport,
                         onEdit = musicImportViewModel::editLink,
                     )
-                }
+                } ?: LaunchedEffect(Unit) { musicImportViewModel.editLink() }
 
                 is MusicImportScreenState.Importing -> ImportingContent(state.progress)
 

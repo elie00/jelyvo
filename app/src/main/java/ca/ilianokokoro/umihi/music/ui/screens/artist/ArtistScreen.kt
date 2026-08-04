@@ -103,14 +103,18 @@ fun ArtistScreen(
                 .padding(paddingValues)
         ) {
             when (state) {
+                // The immersive hero owns the back button in Success; without these the user is
+                // stranded on a failed load with no way out but the system gesture.
                 is ArtistState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         MusicSkeleton(MusicSkeletonLayout.SongList)
                     }
+                    BackButton(onBack = onBack, modifier = Modifier.padding(8.dp))
                 }
 
                 is ArtistState.Error -> {
                     ErrorMessage(ex = state.exception, onRetry = artistViewModel::load)
+                    BackButton(onBack = onBack, modifier = Modifier.padding(8.dp))
                 }
 
                 is ArtistState.Success -> {
