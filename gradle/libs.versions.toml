@@ -26,6 +26,7 @@ workRuntimeKtx = "2.11.2"
 reorderable = "3.1.0"
 newpipeextractor = "v0.26.3"
 junit = "4.13.2"
+kotlinxCoroutines = "1.10.2"
 benchmarkMacro = "1.5.0-alpha07"
 baselineprofile = "1.5.0-alpha07"
 profileinstaller = "1.4.1"
@@ -61,6 +62,7 @@ nav3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3C
 androidx-lifecycle-viewmodel-nav3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "nav3Lifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationCore" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
