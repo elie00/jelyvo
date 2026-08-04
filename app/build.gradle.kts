@@ -141,6 +141,14 @@ android {
     androidResources {
         @Suppress("UnstableApiUsage")
         generateLocaleConfig = true
+
+        // Only ship the locales this fork actually maintains. The ~30 locales inherited from
+        // upstream are frozen at 130/565 strings (23%), so picking one produced a mixed
+        // 23%-translated / 77%-English interface — and generateLocaleConfig offered every one of
+        // them in Android's per-app language picker. The files stay in the repo: re-listing a
+        // locale here is all it takes once its translation is complete again.
+        @Suppress("UnstableApiUsage")
+        localeFilters += listOf("en", "fr")
     }
 
     sourceSets {
