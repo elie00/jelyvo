@@ -48,6 +48,8 @@ fun ListeningStatsScreen(
     application: Application,
     onBack: () -> Unit,
     onOpenPlayer: () -> Unit,
+    // Stats only record artist names, never ids: a search is the honest way to reach the page.
+    onSearchArtist: (String) -> Unit = {},
     viewModel: ListeningStatsViewModel = viewModel(
         factory = ListeningStatsViewModel.Factory(application),
     ),
@@ -195,6 +197,7 @@ fun ListeningStatsScreen(
                     key = { _, stat -> stat.artist },
                 ) { index, stat ->
                     ListItem(
+                        modifier = Modifier.clickable { onSearchArtist(stat.artist) },
                         headlineContent = { Text(stat.artist, maxLines = 1) },
                         leadingContent = {
                             Text(

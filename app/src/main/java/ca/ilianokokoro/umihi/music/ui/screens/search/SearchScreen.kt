@@ -85,6 +85,7 @@ import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
 @Composable
 fun SearchScreen(
     application: Application,
+    initialQuery: String? = null,
     onOpenArtist: (Song) -> Unit = {},
     onOpenAlbum: (String, String, String) -> Unit = { _, _, _ -> },
     onOpenMoodCategory: (MoodCategory) -> Unit = {},
@@ -95,6 +96,10 @@ fun SearchScreen(
 
 ) {
     val uiState = searchViewModel.uiState.collectAsStateWithLifecycle().value
+
+    LaunchedEffect(initialQuery) {
+        initialQuery?.takeIf(String::isNotBlank)?.let(searchViewModel::selectSuggestion)
+    }
 
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current

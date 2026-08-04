@@ -37,7 +37,7 @@ import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 /** Les trois onglets racine, dans l'ordre visuel — l'ordre sert aussi au swipe. */
 internal val NAV_TABS: List<Triple<NavKey, ImageVector, Int>> = listOf(
     Triple(HomeScreenKey, Icons.Rounded.Home, R.string.home),
-    Triple(SearchScreenKey, Icons.Rounded.Search, R.string.search),
+    Triple(SearchScreenKey(), Icons.Rounded.Search, R.string.search),
     Triple(LibraryScreenKey, Icons.Rounded.LibraryMusic, R.string.library),
 )
 

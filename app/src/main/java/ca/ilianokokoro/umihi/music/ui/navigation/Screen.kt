@@ -9,8 +9,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object HomeScreenKey : NavKey
 
+/**
+ * [initialQuery] seeds the field and runs the search on arrival, so other screens can hand off a
+ * term. The bottom bar and the shortcut always push the query-less instance, which is what makes
+ * tab identity stable: a seeded search is a distinct entry stacked on top of the tab.
+ */
 @Serializable
-data object SearchScreenKey : NavKey
+data class SearchScreenKey(val initialQuery: String? = null) : NavKey
 
 @Serializable
 data object LibraryScreenKey : NavKey
@@ -81,8 +86,8 @@ fun rememberScreenUiConfig(current: NavKey): ScreenUiConfig {
                 selectedTab = HomeScreenKey
             )
 
-            SearchScreenKey -> ScreenUiConfig(
-                selectedTab = SearchScreenKey
+            is SearchScreenKey -> ScreenUiConfig(
+                selectedTab = SearchScreenKey()
             )
 
             LibraryScreenKey -> ScreenUiConfig(

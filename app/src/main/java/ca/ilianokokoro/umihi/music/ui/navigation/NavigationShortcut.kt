@@ -16,7 +16,7 @@ internal fun navigationShortcutDestination(
 
     return when (key) {
         Key.One -> HomeScreenKey
-        Key.Two -> SearchScreenKey
+        Key.Two -> SearchScreenKey()
         Key.Three -> LibraryScreenKey
         Key.Four, Key.Comma -> SettingsScreenKey
         else -> null

@@ -347,7 +347,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 onOpenArtist = { id, name ->
                                     backStack.add(ArtistScreenKey(id, name))
                                 },
-                                onExplorePress = { backStack.add(SearchScreenKey) },
+                                onExplorePress = { backStack.add(SearchScreenKey()) },
                                 application = app
                             )
                         }
@@ -369,6 +369,9 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                                 application = app,
                                 onBack = backStack::safePop,
                                 onOpenPlayer = { showFullPlayer = true },
+                                onSearchArtist = { artist ->
+                                    backStack.add(SearchScreenKey(artist))
+                                },
                             )
                         }
 
@@ -456,6 +459,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                         is SearchScreenKey -> NavEntry(key) {
                             SearchScreen(
                                 application = app,
+                                initialQuery = key.initialQuery,
                                 onOpenArtist = { song -> song.artistId?.let { id -> backStack.add(ArtistScreenKey(id, song.artist)) } },
                                 onOpenAlbum = { id, name, cover -> backStack.add(AlbumScreenKey(id, name, cover)) },
                                 onOpenMoodCategory = { category ->

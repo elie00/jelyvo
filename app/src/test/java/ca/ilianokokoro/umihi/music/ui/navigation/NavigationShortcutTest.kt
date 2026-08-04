@@ -9,7 +9,7 @@ class NavigationShortcutTest {
     @Test
     fun `command number shortcuts select primary destinations`() {
         assertEquals(HomeScreenKey, navigationShortcutDestination(Key.One, true))
-        assertEquals(SearchScreenKey, navigationShortcutDestination(Key.Two, true))
+        assertEquals(SearchScreenKey(), navigationShortcutDestination(Key.Two, true))
         assertEquals(LibraryScreenKey, navigationShortcutDestination(Key.Three, true))
     }
 
