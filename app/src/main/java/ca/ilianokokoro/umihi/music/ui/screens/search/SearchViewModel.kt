@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.ui.screens.search
 
 
 import android.app.Application
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -11,6 +12,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.domain.CatalogResult
 import ca.ilianokokoro.umihi.music.core.domain.MusicCatalog
+import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.data.catalog.YoutubeMusicCatalog
@@ -321,8 +323,16 @@ class SearchViewModel(
                     )
                 }
             } catch (e: Exception) {
+                // The continuation token is kept, so scrolling back down retries; without a
+                // message the spinner just vanishes and the list looks silently truncated.
                 printe(message = "search loadMore failed", exception = e)
                 _uiState.update { it.copy(isLoadingMore = false) }
+                val app = getApplication<Application>()
+                Toast.makeText(
+                    app,
+                    app.getString(R.string.search_load_more_failed),
+                    Toast.LENGTH_SHORT,
+                ).show()
             }
         }
     }

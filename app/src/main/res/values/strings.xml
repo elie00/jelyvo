@@ -119,6 +119,7 @@
     <string name="voice_search_unavailable">Voice search is not available</string>
     <string name="no_results">No Results</string>
     <string name="search_idle_prompt">Search for a song, an album or an artist.</string>
+    <string name="search_load_more_failed">Couldn\'t load more results. Scroll down to retry.</string>
     <string name="get_song_failed">Failed to get Song Information</string>
     <string name="playback_failed">Playback stopped. Check your connection and try again.</string>
     <string name="queue_empty">No songs in the queue</string>

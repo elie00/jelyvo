@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,10 +30,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
@@ -54,6 +57,7 @@ fun QueueSongListItem(
     isDraggable: Boolean = true,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
     val innerHeight = 60.dp
     val containerColor by animateColorAsState(
         targetValue = if (isCurrentSong) {
@@ -94,6 +98,15 @@ fun QueueSongListItem(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                     ) {
+
+                        MaterialUDropdownItem(
+                            leadingIcon = Icons.Rounded.Radio,
+                            text = stringResource(R.string.start_radio),
+                            onClick = {
+                                PlayerManager.startRadio(song, context)
+                                expanded = false
+                            }
+                        )
 
                         MaterialUDropdownItem(
                             leadingIcon = Icons.Rounded.Remove,
