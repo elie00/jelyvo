@@ -54,6 +54,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -149,6 +150,50 @@ fun SearchScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
+            // The field and filters must survive a failed request: otherwise the only way out
+            // of an error is retrying the exact same query.
+            SearchBar(
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                    .fillMaxWidth(),
+                value = uiState.search,
+                onValueChange = searchViewModel::onSearchFieldChange,
+                onSearch = searchViewModel::search,
+                onVoiceSearch = startVoiceSearch,
+                focusManager = focusManager,
+                focusRequester = focusRequester,
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SearchFilter.entries.forEach { filter ->
+                    FilterChip(
+                        selected = uiState.filter == filter,
+                        onClick = { searchViewModel.selectFilter(filter) },
+                        label = {
+                            Text(
+                                stringResource(
+                                    when (filter) {
+                                        SearchFilter.All -> R.string.search_all
+                                        SearchFilter.Songs -> R.string.search_songs
+                                        SearchFilter.Videos -> R.string.search_videos
+                                        SearchFilter.Albums -> R.string.search_albums
+                                        SearchFilter.Artists -> R.string.search_artists
+                                        SearchFilter.Library -> R.string.search_library
+                                    }
+                                )
+                            )
+                        },
+                    )
+                }
+            }
+
             if (uiState.screenState is ScreenState.Error) {
                 ErrorMessage(
                     ex = uiState.screenState.exception,
@@ -156,48 +201,6 @@ fun SearchScreen(
                     onRetry = searchViewModel::search
                 )
             } else {
-                SearchBar(
-                    modifier = Modifier
-                        .focusRequester(focusRequester)
-                        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
-                        .fillMaxWidth(),
-                    value = uiState.search,
-                    onValueChange = searchViewModel::onSearchFieldChange,
-                    onSearch = searchViewModel::search,
-                    onVoiceSearch = startVoiceSearch,
-                    focusManager = focusManager,
-                    focusRequester = focusRequester,
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    SearchFilter.entries.forEach { filter ->
-                        FilterChip(
-                            selected = uiState.filter == filter,
-                            onClick = { searchViewModel.selectFilter(filter) },
-                            label = {
-                                Text(
-                                    stringResource(
-                                        when (filter) {
-                                            SearchFilter.All -> R.string.search_all
-                                            SearchFilter.Songs -> R.string.search_songs
-                                            SearchFilter.Videos -> R.string.search_videos
-                                            SearchFilter.Albums -> R.string.search_albums
-                                            SearchFilter.Artists -> R.string.search_artists
-                                            SearchFilter.Library -> R.string.search_library
-                                        }
-                                    )
-                                )
-                            },
-                        )
-                    }
-                }
-
                 if (uiState.showSuggestions && uiState.suggestions.isNotEmpty()) {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(uiState.suggestions, key = { it }) { suggestion ->
@@ -211,9 +214,10 @@ fun SearchScreen(
                             HorizontalDivider()
                         }
                     }
-                } else if (uiState.search.isBlank() &&
-                    (uiState.recentSearches.isNotEmpty() || uiState.moodSections.isNotEmpty())
-                ) {
+                    // An empty query never means "no results": on a fresh install both shelves are
+                    // empty (and the moods fetch may simply have failed), which used to fall
+                    // through to the no-results branch before the user had searched anything.
+                } else if (uiState.search.isBlank()) {
                     val browseListState = rememberLazyListState()
                     DockScrollToTopEffect(browseListState)
 
@@ -222,6 +226,19 @@ fun SearchScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
                     ) {
+                        if (uiState.recentSearches.isEmpty() && uiState.moodSections.isEmpty()) {
+                            item(key = "search_idle_prompt") {
+                                Text(
+                                    text = stringResource(R.string.search_idle_prompt),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                )
+                            }
+                        }
                         if (uiState.recentSearches.isNotEmpty()) {
                             item(key = "recent_searches_header") {
                                 Row(

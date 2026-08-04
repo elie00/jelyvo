@@ -109,6 +109,7 @@
     <string name="voice_search_prompt">Parlez maintenant</string>
     <string name="voice_search_unavailable">La recherche vocale n\'est pas disponible</string>
     <string name="no_results">Aucun résultat</string>
+    <string name="search_idle_prompt">Recherchez un titre, un album ou un artiste.</string>
     <string name="get_song_failed">Impossible d\'obtenir les informations du titre</string>
     <string name="playback_failed">La lecture s\'est arrêtée. Vérifiez votre connexion et réessayez.</string>
     <string name="queue_empty">Aucun titre dans la file d\'attente</string>
