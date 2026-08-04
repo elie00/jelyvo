@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -62,7 +63,7 @@ fun MiniPlayer(
     isLoading: Boolean,
     progressFraction: Float,
 ) {
-    val controlsInteractionSources = List(2) { ComposeHelper.rememberInteractionSource() }
+    val controlsInteractionSources = List(3) { ComposeHelper.rememberInteractionSource() }
     val haptic = LocalHapticFeedback.current
 
     Card(
@@ -171,6 +172,25 @@ fun MiniPlayer(
                 overflowIndicator = {},
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                customItem(
+                    {
+                        FilledIconButton(
+                            onClick = onSkipPrevious,
+                            shapes = IconButtonDefaults.shapes(),
+                            interactionSource = controlsInteractionSources[2],
+                            modifier = Modifier.animateWidth(
+                                interactionSource = controlsInteractionSources[2]
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.SkipPrevious,
+                                contentDescription = stringResource(R.string.previous)
+                            )
+                        }
+                    },
+                    {}
+                )
+
                 customItem(
                     {
                         FilledIconToggleButton(

@@ -70,15 +70,27 @@ private fun ShortcutTile(
                 modifier = Modifier.size(56.dp),
                 cornerRadius = 0.dp,
             )
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 10.dp),
-            )
+            ) {
+                Text(
+                    text = song.title,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = if (song.artist.isBlank()) 2 else 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (song.artist.isNotBlank()) {
+                    Text(
+                        text = song.artist,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }

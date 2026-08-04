@@ -127,6 +127,7 @@ private fun ResumeCard(
                 menuExpanded = false
                 onRemoveFromHistory()
             },
+            song = song,
         )
     }
 }

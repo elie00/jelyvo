@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
+import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -121,6 +123,7 @@ private fun RecentlyPlayedCard(
                 menuExpanded = false
                 onRemoveFromHistory()
             },
+            song = song,
         )
     }
 }
@@ -131,11 +134,38 @@ internal fun HistoryCardMenu(
     expanded: Boolean,
     onDismiss: () -> Unit,
     onRemoveFromHistory: () -> Unit,
+    song: Song? = null,
 ) {
+    val context = LocalContext.current
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
     ) {
+        song?.let { historySong ->
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.play_next)) },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Rounded.PlayCircleOutline, contentDescription = null)
+                },
+                onClick = {
+                    PlayerManager.addNext(historySong, context)
+                    onDismiss()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.add_to_queue)) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.PlaylistPlay,
+                        contentDescription = null,
+                    )
+                },
+                onClick = {
+                    PlayerManager.addToQueue(historySong, context)
+                    onDismiss()
+                },
+            )
+        }
         DropdownMenuItem(
             text = { Text(stringResource(R.string.remove_from_history)) },
             leadingIcon = {

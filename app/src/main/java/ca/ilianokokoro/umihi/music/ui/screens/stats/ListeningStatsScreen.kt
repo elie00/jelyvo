@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -78,16 +79,23 @@ fun ListeningStatsScreen(
                 actions = {
                     if (hasStats) {
                         IconButton(
+                            enabled = !state.exportInProgress,
                             onClick = {
-                                if (!state.exportInProgress) {
-                                    exportLauncher.launch(StatsExporter.SUGGESTED_FILE_NAME)
-                                }
+                                exportLauncher.launch(StatsExporter.SUGGESTED_FILE_NAME)
                             },
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.FileDownload,
-                                contentDescription = stringResource(R.string.stats_export_title),
-                            )
+                            // Exporting is silent otherwise: the icon stayed put and the button
+                            // simply stopped responding.
+                            if (state.exportInProgress) {
+                                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Outlined.FileDownload,
+                                    contentDescription = stringResource(
+                                        R.string.stats_export_title
+                                    ),
+                                )
+                            }
                         }
                     }
                 },
