@@ -84,6 +84,10 @@ class DownloadManagerViewModel(application: Application) : AndroidViewModel(appl
 
     fun cancelAll() = repository.cancelAllWorks()
 
+    fun retryAll() {
+        _state.value.issues.forEach { retry(it.id) }
+    }
+
     fun retry(id: UUID) {
         val work = workById[id] ?: return
         viewModelScope.launch(Dispatchers.IO) {

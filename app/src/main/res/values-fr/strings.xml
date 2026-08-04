@@ -352,6 +352,7 @@
     <string name="device_connected">Connecté</string>
     <string name="device_available">Disponible</string>
     <string name="cast_devices">Appareils Cast</string>
+    <string name="cast_searching">Recherche d\'appareils…</string>
     <string name="bluetooth_device">Appareil Bluetooth</string>
     <string name="wired_audio_device">Casque filaire</string>
     <string name="usb_audio_device">Appareil audio USB</string>
@@ -406,6 +407,7 @@
     <string name="download_manager_active">En cours</string>
     <string name="download_manager_issues">À vérifier</string>
     <string name="download_manager_cancel_all">Tout annuler</string>
+    <string name="download_manager_retry_all">Tout relancer</string>
     <string name="download_manager_empty">Aucun téléchargement en attente ou en échec</string>
     <string name="download_manager_waiting">En attente du Wi‑Fi ou d’espace libre</string>
     <string name="download_manager_queued">Dans la file d’attente</string>

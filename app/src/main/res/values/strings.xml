@@ -364,6 +364,7 @@
     <string name="device_connected">Connected</string>
     <string name="device_available">Available</string>
     <string name="cast_devices">Cast devices</string>
+    <string name="cast_searching">Looking for devices…</string>
     <string name="android_auto" translatable="false">Android Auto</string>
     <string name="android_automotive" translatable="false">Android Automotive</string>
     <string name="bluetooth_device">Bluetooth device</string>
@@ -420,6 +421,7 @@
     <string name="download_manager_active" tools:ignore="MissingTranslation">In progress</string>
     <string name="download_manager_issues" tools:ignore="MissingTranslation">Needs attention</string>
     <string name="download_manager_cancel_all" tools:ignore="MissingTranslation">Cancel all</string>
+    <string name="download_manager_retry_all">Retry all</string>
     <string name="download_manager_empty" tools:ignore="MissingTranslation">No pending or failed download</string>
     <string name="download_manager_waiting" tools:ignore="MissingTranslation">Waiting for Wi‑Fi or free storage</string>
     <string name="download_manager_queued" tools:ignore="MissingTranslation">Queued</string>

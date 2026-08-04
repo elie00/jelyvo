@@ -85,7 +85,16 @@ fun DownloadManagerScreen(
                 }
             }
             if (state.issues.isNotEmpty()) {
-                item { SectionTitle(stringResource(R.string.download_manager_issues)) }
+                item {
+                    SectionTitle(
+                        stringResource(R.string.download_manager_issues),
+                        action = {
+                            TextButton(onClick = viewModel::retryAll) {
+                                Text(stringResource(R.string.download_manager_retry_all))
+                            }
+                        },
+                    )
+                }
                 items(state.issues, key = { it.id }) { task ->
                     DownloadTaskCard(task, onRetry = { viewModel.retry(task.id) })
                 }
@@ -123,7 +132,11 @@ private fun DownloadSummary(state: DownloadManagerState) {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    Formatter.formatShortFileSize(context, state.storageBytes),
+                    if (state.loading) {
+                        stringResource(R.string.storage_computing)
+                    } else {
+                        Formatter.formatShortFileSize(context, state.storageBytes)
+                    },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

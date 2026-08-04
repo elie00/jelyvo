@@ -241,9 +241,18 @@ fun AvailableDevicesSheet(
                     )
                 }
 
-            if (routes.isNotEmpty() || isCasting) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                DeviceSectionLabel(stringResource(R.string.cast_devices))
+            // Discovery is asynchronous: without a heading the whole section simply vanished,
+            // leaving no clue whether the app was searching or had found nothing.
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            DeviceSectionLabel(stringResource(R.string.cast_devices))
+
+            if (routes.isEmpty() && !isCasting) {
+                Text(
+                    text = stringResource(R.string.cast_searching),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
             }
 
             routes.forEach { route ->
