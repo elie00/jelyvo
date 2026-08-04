@@ -10,6 +10,7 @@
     <string name="playlist_cover">Playlist cover</string>
     <string name="log_in">Log In</string>
     <string name="empty_playlist">No songs in the playlist</string>
+    <string name="local_playlist_not_found">This playlist no longer exists</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
     <string name="shuffle">Shuffle</string>

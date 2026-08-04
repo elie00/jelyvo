@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
@@ -170,7 +172,9 @@ fun LocalPlaylistScreen(
                 }
             )
         }) { paddingValues ->
-            if (items.isEmpty()) {
+            // "Empty" is only true once the store has answered: until then the same message would
+            // describe a playlist that is merely still loading, or one deleted from another screen.
+            if (uiState.loading || uiState.notFound || items.isEmpty()) {
                 Column(
                     modifier = modifier
                         .fillMaxSize()
@@ -178,10 +182,20 @@ fun LocalPlaylistScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        stringResource(R.string.empty_playlist),
-                        textAlign = TextAlign.Center,
-                    )
+                    if (uiState.loading) {
+                        MusicSkeleton(MusicSkeletonLayout.SongList)
+                    } else {
+                        Text(
+                            stringResource(
+                                if (uiState.notFound) {
+                                    R.string.local_playlist_not_found
+                                } else {
+                                    R.string.empty_playlist
+                                }
+                            ),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             } else {
                 LazyColumn(
@@ -329,6 +343,9 @@ fun LocalPlaylistScreen(
             },
             confirmButton = {
                 TextButton(
+                    // rename() drops a blank name, so confirming one would close the dialog and
+                    // silently change nothing.
+                    enabled = newName.isNotBlank(),
                     onClick = {
                         viewModel.rename(newName)
                         showRenameDialog = false

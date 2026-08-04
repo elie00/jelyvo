@@ -10,6 +10,7 @@
     <string name="playlist_cover">Couverture de la playlist</string>
     <string name="log_in">Connexion</string>
     <string name="empty_playlist">Aucun titre dans la playlist</string>
+    <string name="local_playlist_not_found">Cette playlist n\'existe plus</string>
     <string name="play">Lecture</string>
     <string name="pause">Pause</string>
     <string name="shuffle">Aléatoire</string>
