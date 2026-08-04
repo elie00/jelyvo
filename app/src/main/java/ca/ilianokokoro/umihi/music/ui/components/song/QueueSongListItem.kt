@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
@@ -35,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
@@ -107,6 +109,19 @@ fun QueueSongListItem(
                                 expanded = false
                             }
                         )
+
+                        // Rejecting a track is only actionable where it was actually suggested:
+                        // hide() drops it from the queue's autoplay tail and from later mixes.
+                        if (song.isSuggestion) {
+                            MaterialUDropdownItem(
+                                leadingIcon = Icons.Rounded.NotInterested,
+                                text = stringResource(R.string.not_interested),
+                                onClick = {
+                                    NotInterestedStore.hide(song, context)
+                                    expanded = false
+                                }
+                            )
+                        }
 
                         MaterialUDropdownItem(
                             leadingIcon = Icons.Rounded.Remove,
