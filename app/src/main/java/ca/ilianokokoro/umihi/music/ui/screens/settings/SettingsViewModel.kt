@@ -50,10 +50,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val datastoreRepository = DatastoreRepository(application)
     private val downloadRepository = DownloadRepository(application)
 
+    fun updateShowLogOutConfirm(value: Boolean) {
+        viewModelScope.launch {
+            _uiState.update {
+                _uiState.value.copy(showLogOutConfirm = value)
+            }
+        }
+    }
+
     fun logOut() {
         viewModelScope.launch {
             datastoreRepository.logOut()
             getSettings()
+            _uiState.update { _uiState.value.copy(showLogOutConfirm = false) }
         }
     }
 

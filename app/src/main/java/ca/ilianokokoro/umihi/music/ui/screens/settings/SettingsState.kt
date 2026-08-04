@@ -10,6 +10,7 @@ import ca.ilianokokoro.umihi.music.models.UmihiSettings
 data class SettingsState(
     val screenState: ScreenState = ScreenState.Loading,
     val showDownloadDeleteConfirm: Boolean = false,
+    val showLogOutConfirm: Boolean = false,
     val showThemeColorDialog: Boolean = false,
     val showThemePresetDialog: Boolean = false,
     val showProfileDialog: Boolean = false,

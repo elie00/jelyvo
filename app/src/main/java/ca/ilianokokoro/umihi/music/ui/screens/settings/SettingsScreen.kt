@@ -237,7 +237,9 @@ fun SettingsScreen(
                                     title = stringResource(R.string.log_out),
                                     subtitle = stringResource(R.string.logged_in_message),
                                     leadingIcon = Icons.AutoMirrored.Outlined.Logout,
-                                    onClick = settingsViewModel::logOut
+                                    onClick = {
+                                        settingsViewModel.updateShowLogOutConfirm(true)
+                                    }
                                 )
                             } else {
                                 SettingsItem(
@@ -779,6 +781,15 @@ fun SettingsScreen(
                                 onClose = {
                                     settingsViewModel.updateShowStorageDialog(false)
                                 },
+                            )
+                        } else if (uiState.showLogOutConfirm) {
+                            ConfirmDialog(
+                                title = stringResource(R.string.log_out_confirm_title),
+                                text = stringResource(R.string.log_out_confirm_text),
+                                onConfirm = settingsViewModel::logOut,
+                                onDismiss = {
+                                    settingsViewModel.updateShowLogOutConfirm(false)
+                                }
                             )
                         } else if (uiState.showDownloadDeleteConfirm) {
                             ConfirmDialog(

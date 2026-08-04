@@ -72,6 +72,8 @@
     <string name="update_available">Update Available</string>
     <string name="new_version_body">A new version is available. (%1$s)</string>
     <string name="log_out">Log Out</string>
+    <string name="log_out_confirm_title">Log out?</string>
+    <string name="log_out_confirm_text">Your liked songs, playlists and recommendations will no longer be available until you log in again.</string>
     <string name="data_and_storage"><![CDATA[Data & Storage]]></string>
     <string name="app_info">App Info</string>
     <string name="check_for_updates">Check for updates</string>

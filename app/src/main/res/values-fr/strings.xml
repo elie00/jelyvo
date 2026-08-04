@@ -71,6 +71,8 @@
     <string name="update_available">Mise à jour disponible</string>
     <string name="new_version_body">Une nouvelle version est disponible. (%1$s)</string>
     <string name="log_out">Déconnexion</string>
+    <string name="log_out_confirm_title">Se déconnecter ?</string>
+    <string name="log_out_confirm_text">Vos titres aimés, playlists et recommandations ne seront plus disponibles tant que vous ne vous reconnecterez pas.</string>
     <string name="data_and_storage"><![CDATA[Données et Stockage]]></string>
     <string name="app_info">Informations sur l\'application</string>
     <string name="check_for_updates">Vérifier les mises à jour</string>
