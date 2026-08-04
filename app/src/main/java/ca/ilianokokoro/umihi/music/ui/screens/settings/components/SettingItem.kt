@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,8 @@ fun SettingsItem(
     subtitle: String,
     leadingIcon: ImageVector,
     trailingIcon: ImageVector? = null,
+    // A disabled row keeps its place but stops pretending to be actionable: no ripple, dimmed.
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
 
@@ -34,7 +37,10 @@ fun SettingsItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
+            .alpha(if (enabled) 1f else 0.5f)
+            .then(
+                if (enabled) Modifier.clickable(onClick = onClick) else Modifier
+            )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,

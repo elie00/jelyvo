@@ -391,10 +391,9 @@ fun SettingsScreen(
                                     )
                                 },
                                 leadingIcon = Icons.Outlined.NotInterested,
+                                enabled = uiState.notInterestedCount > 0,
                                 onClick = {
-                                    if (uiState.notInterestedCount > 0) {
-                                        settingsViewModel.updateShowNotInterestedClearConfirm(true)
-                                    }
+                                    settingsViewModel.updateShowNotInterestedClearConfirm(true)
                                 },
                             )
                             Spacer(modifier = Modifier.height(4.dp))
@@ -559,23 +558,29 @@ fun SettingsScreen(
                         ) {
                             SettingsItem(
                                 title = stringResource(R.string.backup_data_title),
-                                subtitle = stringResource(R.string.backup_data_subtitle),
+                                subtitle = if (uiState.backupInProgress) {
+                                    stringResource(R.string.backup_in_progress)
+                                } else {
+                                    stringResource(R.string.backup_data_subtitle)
+                                },
                                 leadingIcon = Icons.Outlined.Backup,
+                                enabled = !uiState.backupInProgress,
                                 onClick = {
-                                    if (!uiState.backupInProgress) {
-                                        backupLauncher.launch(BackupManager.SUGGESTED_FILE_NAME)
-                                    }
+                                    backupLauncher.launch(BackupManager.SUGGESTED_FILE_NAME)
                                 }
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             SettingsItem(
                                 title = stringResource(R.string.restore_data_title),
-                                subtitle = stringResource(R.string.restore_data_subtitle),
+                                subtitle = if (uiState.backupInProgress) {
+                                    stringResource(R.string.backup_in_progress)
+                                } else {
+                                    stringResource(R.string.restore_data_subtitle)
+                                },
                                 leadingIcon = Icons.Outlined.SettingsBackupRestore,
+                                enabled = !uiState.backupInProgress,
                                 onClick = {
-                                    if (!uiState.backupInProgress) {
-                                        restoreLauncher.launch(arrayOf("application/json"))
-                                    }
+                                    restoreLauncher.launch(arrayOf("application/json"))
                                 }
                             )
                         }
@@ -667,6 +672,7 @@ fun SettingsScreen(
                                 title = stringResource(R.string.current_version),
                                 subtitle = VersionManager.getVersionName(),
                                 leadingIcon = Icons.Outlined.Info,
+                                enabled = false,
                                 onClick = { }
                             )
                             Spacer(modifier = Modifier.height(4.dp))

@@ -15,13 +15,19 @@ import android.widget.Toast
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -57,6 +63,8 @@ fun AuthScreen(
             }
         }
     }
+
+    var isLoading by remember { mutableStateOf(true) }
 
     val webView = remember {
         val themedContext = ContextThemeWrapper(
@@ -96,8 +104,18 @@ fun AuthScreen(
                     request: WebResourceRequest,
                 ): Boolean = handleAuthNavigation(context, view, request.url.toString())
 
+                override fun onPageStarted(
+                    view: WebView?,
+                    url: String?,
+                    favicon: android.graphics.Bitmap?,
+                ) {
+                    super.onPageStarted(view, url, favicon)
+                    isLoading = true
+                }
+
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    isLoading = false
 
                     evaluateJavascript(
                         "window.yt?.config_?.DATASYNC_ID"
@@ -113,6 +131,12 @@ fun AuthScreen(
         }
     }
 
+    // Google's sign-in spans several pages: the system back must walk that history first,
+    // otherwise one mistyped step throws the user out of the whole flow.
+    BackHandler {
+        if (webView.canGoBack()) webView.goBack() else onBack()
+    }
+
     Scaffold(topBar = {
         TopAppBar(
             title = {
@@ -124,6 +148,9 @@ fun AuthScreen(
         )
     }) { paddingValues ->
         Column(modifier = Modifier.padding(top = paddingValues.calculateTopPadding())) {
+            if (isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
             AndroidView(
                 modifier = Modifier
                     .fillMaxSize(),

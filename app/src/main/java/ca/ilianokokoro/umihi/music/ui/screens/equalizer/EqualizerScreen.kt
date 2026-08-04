@@ -160,11 +160,11 @@ fun EqualizerScreen(
                             )
                         }
                         if (state.selectedPreset < 0) {
-                            FilterChip(
-                                selected = true,
-                                onClick = { },
-                                label = { Text(stringResource(R.string.equalizer_preset_custom)) },
-                                enabled = state.enabled
+                            Text(
+                                text = stringResource(R.string.equalizer_preset_custom),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.CenterVertically),
                             )
                         }
                     }
@@ -200,11 +200,24 @@ fun EqualizerScreen(
 
             // Bass boost
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.equalizer_bass_boost),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        text = stringResource(R.string.equalizer_bass_boost),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.equalizer_bass_boost_value,
+                            state.bassBoost / 10,
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Slider(
                     value = state.bassBoost.toFloat(),
                     onValueChange = { equalizerViewModel.setBassBoost(it.roundToInt()) },

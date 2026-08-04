@@ -468,6 +468,7 @@
     <string name="equalizer_preset_custom">Personnalisé</string>
     <string name="equalizer_bands">Bandes</string>
     <string name="equalizer_bass_boost">Amplification des basses</string>
+    <string name="equalizer_bass_boost_value">%1$d %%</string>
     <string name="equalizer_reset">Réinitialiser par défaut</string>
     <string name="equalizer_active_output">Profil pour la sortie active : %1$s</string>
     <string name="equalizer_output_bluetooth">Bluetooth</string>
@@ -476,6 +477,7 @@
     <string name="backup_restore_section">Sauvegarde et restauration</string>
     <string name="backup_data_title">Sauvegarder les données</string>
     <string name="backup_data_subtitle">Exporter l\'historique d\'écoute, les playlists locales et les réglages dans un fichier</string>
+    <string name="backup_in_progress">En cours…</string>
     <string name="restore_data_title">Restaurer les données</string>
     <string name="restore_data_subtitle">Remplacer les données actuelles par un fichier de sauvegarde</string>
     <string name="restore_confirm_title">Restaurer cette sauvegarde ?</string>
