@@ -379,6 +379,18 @@ fun AlbumScreen(
                                     playNext = { PlayerManager.addNext(song, context) },
                                     addToQueue = { PlayerManager.addToQueue(song, context) },
                                     startRadio = { PlayerManager.startRadio(song, context) },
+                                    // Featured artists differ from the album artist, so the row
+                                    // needs its own link; the album entry would just point here.
+                                    onViewArtist = song.artistId?.let { artistId ->
+                                        { onOpenArtist(artistId, song.artist) }
+                                    },
+                                    download = {
+                                        albumViewModel.downloadSong(
+                                            song,
+                                            playableSongs,
+                                            page.cover,
+                                        )
+                                    },
                                     // Numerotation propre a chaque disque : la position dans le
                                     // groupe fait foi, le numero fourni par YouTube servant surtout
                                     // a decouper les disques.

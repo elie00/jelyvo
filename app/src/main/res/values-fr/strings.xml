@@ -43,6 +43,7 @@
     <string name="error_log">Journal des erreurs</string>
     <string name="login_success">Connexion réussie</string>
     <string name="download">Télécharger</string>
+    <string name="download_started_toast">Téléchargement lancé</string>
     <string name="explicit">Explicite</string>
     <string name="open_settings">Ouvrir les paramètres</string>
     <string name="more">plus</string>

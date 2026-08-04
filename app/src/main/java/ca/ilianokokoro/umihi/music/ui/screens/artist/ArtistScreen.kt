@@ -271,6 +271,17 @@ fun ArtistScreen(
                                 playNext = { PlayerManager.addNext(song, context) },
                                 addToQueue = { PlayerManager.addToQueue(song, context) },
                                 startRadio = { PlayerManager.startRadio(song, context) },
+                                // The artist entry would just point back to this page; the album
+                                // of a popular track is the link that is actually missing here.
+                                onViewAlbum = song.albumId?.let { albumId ->
+                                    {
+                                        onOpenAlbum(
+                                            albumId,
+                                            song.albumName.orEmpty(),
+                                            song.thumbnailHref,
+                                        )
+                                    }
+                                },
                                 isSelected = song.youtubeId in selectedSongIds,
                                 selectionActive = selectedSongIds.isNotEmpty(),
                                 onSelectionClick = { modifiers ->

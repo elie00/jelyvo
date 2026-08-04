@@ -151,21 +151,33 @@ class AlbumViewModel(
         ).show()
     }
 
+    private fun albumAsPlaylist(songs: List<Song>, cover: String) = Playlist(
+        info = PlaylistInfo(id = "album:$albumId", title = albumName, coverHref = cover),
+        songs = songs,
+    )
+
     fun downloadAlbum(songs: List<Song>, cover: String) {
         if (songs.isEmpty()) return
         viewModelScope.launch {
             val settings = datastoreRepository.getSettings()
             downloadRepository.downloadPlaylist(
-                playlist = Playlist(
-                    info = PlaylistInfo(
-                        id = "album:$albumId",
-                        title = albumName,
-                        coverHref = cover,
-                    ),
-                    songs = songs,
-                ),
+                playlist = albumAsPlaylist(songs, cover),
                 useMetered = settings.downloadOnMetered,
             )
+            showToast(R.string.download_started_toast)
+        }
+    }
+
+    fun downloadSong(song: Song, songs: List<Song>, cover: String) {
+        if (song.downloaded) return
+        viewModelScope.launch {
+            val settings = datastoreRepository.getSettings()
+            downloadRepository.downloadSong(
+                albumAsPlaylist(songs, cover),
+                song,
+                settings.downloadOnMetered,
+            )
+            showToast(R.string.download_started_toast)
         }
     }
 

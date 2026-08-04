@@ -43,6 +43,7 @@
     <string name="error_log">Error Log</string>
     <string name="login_success">Login success</string>
     <string name="download">Download</string>
+    <string name="download_started_toast">Download started</string>
     <string name="dot" translatable="false">•</string>
     <string name="explicit">Explicit</string>
     <string name="open_settings">Open Settings</string>
