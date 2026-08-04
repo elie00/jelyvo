@@ -52,8 +52,17 @@
   préchargement de la piste suivante, téléchargement hors ligne et Cash/Chromecast via
   `resolveRemote`. La couche Cast construit ses `MediaItem` depuis `ResolvedRemoteStream`, un type
   neutre, et ne connaît plus `CastableStream` propre à l'extracteur YouTube.
-- Chantier actif : extraire `Track`, `MusicCatalog`, `PlaybackEngine` et `StreamResolver` dans un
-  module Kotlin commun — dernier prérequis avant un premier client macOS.
+- Le module commun existe : `:music-core`, module Kotlin/JVM pur (ni Android, ni Media3, ni Room,
+  ni Compose), calqué sur `:wear-shared`. Il porte `Track`, `MusicCatalog`, `PlaybackEngine`,
+  `StreamResolver` et leurs tests. Le package est resté `ca.ilianokokoro.umihi.music.core.domain`,
+  donc l'extraction n'a modifié aucun import de l'application. `kotlinx-coroutines-core` y est
+  épinglé à la version que l'app résolvait déjà (`1.10.2`), sans changement de comportement.
+- Chantier actif : premier client macOS consommant `:music-core`. Il lui faudra ses propres
+  adaptateurs (`MusicCatalog`, `StreamResolver`, `PlaybackEngine`) ; aucun code Android ne doit
+  remonter dans le module commun.
+- Limite connue : `:music-core` est un module JVM, pas KMP. Un client iOS/natif imposerait de le
+  convertir en `kotlin("multiplatform")` ; le contenu étant déjà pur, la conversion resterait
+  mécanique.
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 

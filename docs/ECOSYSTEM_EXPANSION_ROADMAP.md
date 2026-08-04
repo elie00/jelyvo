@@ -56,6 +56,9 @@ La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments so
   `CatalogPlaylistPage` (les téléchargements locaux restent hors contrat), et `StreamResolver` /
   `YoutubeStreamResolver` isolent la résolution d'URL. Les cinq consommateurs (lecture,
   préchargement, préparation opportuniste, téléchargement, Cast) passent par ce seul contrat.
+- cœur commun extrait : le module `:music-core` (Kotlin/JVM pur) contient désormais `Track`,
+  `MusicCatalog`, `PlaybackEngine` et `StreamResolver`. L'application Android n'en est plus qu'un
+  consommateur parmi d'autres à venir.
 
 Les phases desktop, synchronisation et nouvelles plateformes restent volontairement en attente de
 l'extraction du cœur. Cet ordre évite de dupliquer Media3, Room et les modèles Android dans chaque
