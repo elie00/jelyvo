@@ -138,7 +138,7 @@ fun MiniPlayer(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     SquareImage(
-                        uri = it.artworkUrl.orEmpty(),
+                        uri = it.displayArtwork.orEmpty(),
                         modifier = artworkModifier.size(50.dp),
                         cornerRadius = 16.dp,
                     )

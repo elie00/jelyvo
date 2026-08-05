@@ -92,7 +92,7 @@ fun MiniPlayerWrapper(
     ) {
         val track = currentTrack ?: return@AnimatedVisibility
         ArtworkPlayerTheme(
-            artworkUri = track.artworkUrl.orEmpty(),
+            artworkUri = track.displayArtwork.orEmpty(),
         ) {
             Box(
                 modifier = Modifier

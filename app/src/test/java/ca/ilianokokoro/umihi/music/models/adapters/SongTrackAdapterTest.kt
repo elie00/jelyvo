@@ -9,6 +9,61 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SongTrackAdapterTest {
+    /**
+     * Every field the UI reads back after a page has crossed the catalog seam. Album, artist and
+     * playlist pages are converted to the neutral model and straight back, so anything missing
+     * here is silently dropped for a whole screen — that is how video playback, the disc split
+     * and the offline markers each broke in turn.
+     */
+    @Test
+    fun `a full round trip keeps everything the screens depend on`() {
+        val original = Song(
+            youtubeId = "id",
+            title = "Title",
+            artist = "Artist",
+            duration = "3:07",
+            thumbnailHref = "https://art",
+            thumbnailPath = "/data/art.jpg",
+            audioFilePath = "/data/audio.webm",
+            isExplicit = true,
+            isLiked = true,
+        ).also {
+            it.artistId = "UCartist"
+            it.albumId = "MPREalbum"
+            it.albumName = "Album"
+            it.trackNumber = 4
+            it.discNumber = 2
+            it.playCount = "45 M plays"
+            it.viewCount = "1,2 M views"
+            it.isVideo = true
+            it.forceVideo = true
+        }
+
+        val restored = original.toTrack().toSong()
+
+        assertEquals(original.youtubeId, restored.youtubeId)
+        assertEquals(original.title, restored.title)
+        assertEquals(original.artist, restored.artist)
+        assertEquals(original.duration, restored.duration)
+        assertEquals(original.thumbnailHref, restored.thumbnailHref)
+        assertEquals(original.thumbnailPath, restored.thumbnailPath)
+        assertEquals(original.audioFilePath, restored.audioFilePath)
+        assertEquals(original.isExplicit, restored.isExplicit)
+        assertEquals(original.isLiked, restored.isLiked)
+        assertEquals(original.artistId, restored.artistId)
+        assertEquals(original.albumId, restored.albumId)
+        assertEquals(original.albumName, restored.albumName)
+        assertEquals(original.trackNumber, restored.trackNumber)
+        assertEquals(original.discNumber, restored.discNumber)
+        assertEquals(original.playCount, restored.playCount)
+        assertEquals(original.viewCount, restored.viewCount)
+        assertEquals(original.isVideo, restored.isVideo)
+        assertEquals(original.forceVideo, restored.forceVideo)
+        // Derived from audioFilePath + thumbnailPath: the playlist download indicators read it.
+        assertTrue(original.downloaded)
+        assertTrue(restored.downloaded)
+    }
+
     @Test
     fun `maps canonical YouTube metadata into the shared model`() {
         val song = Song(

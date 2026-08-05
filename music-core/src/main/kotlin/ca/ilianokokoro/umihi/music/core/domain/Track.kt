@@ -16,7 +16,12 @@ data class Track(
     val artist: ArtistRef = ArtistRef(),
     val album: AlbumRef? = null,
     val durationMs: Long? = null,
+    /** Remote artwork. Prefer [displayArtwork], which favours a cached copy when there is one. */
     val artworkUrl: String? = null,
+    /** Locally cached artwork, present once the track has been downloaded. */
+    val offlineArtworkPath: String? = null,
+    /** Local audio file, present once the track has been downloaded. */
+    val offlineAudioPath: String? = null,
     val explicit: Boolean = false,
     val liked: Boolean? = null,
     val source: TrackSource = TrackSource.YOUTUBE,
@@ -29,9 +34,19 @@ data class Track(
     val preferVideoStream: Boolean = false,
     /** 1-based position inside the collection (album, playlist) the track was loaded from. */
     val positionInCollection: Int? = null,
+    /** 1-based disc the track belongs to; drives the disc split on multi-disc albums. */
+    val discNumber: Int? = null,
+    /** Localized view-count label, the video counterpart of [playCountLabel]. */
+    val viewCountLabel: String? = null,
     /** Localized play-count label ("45 M plays") when the source ranks tracks by popularity. */
     val playCountLabel: String? = null,
-)
+) {
+    /** What a UI should show: the cached copy when it exists, the remote URL otherwise. */
+    val displayArtwork: String? get() = offlineArtworkPath ?: artworkUrl
+
+    /** True once both the audio and its artwork are stored on the device. */
+    val isDownloaded: Boolean get() = offlineAudioPath != null && offlineArtworkPath != null
+}
 
 @Serializable
 data class ArtistRef(

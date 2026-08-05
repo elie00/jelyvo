@@ -16,7 +16,9 @@ fun Song.toTrack(): Track = Track(
     artist = ArtistRef(id = artistId, name = artist),
     album = albumId?.let { id -> AlbumRef(id = id, name = albumName.orEmpty()) },
     durationMs = parseTrackDurationMillis(duration),
-    artworkUrl = (thumbnailPath ?: thumbnailHref).takeIf(String::isNotBlank),
+    artworkUrl = thumbnailHref.takeIf(String::isNotBlank),
+    offlineArtworkPath = thumbnailPath,
+    offlineAudioPath = audioFilePath,
     explicit = isExplicit,
     liked = isLiked,
     source = if (isLocal) TrackSource.LOCAL_DEVICE else TrackSource.YOUTUBE,
@@ -24,6 +26,8 @@ fun Song.toTrack(): Track = Track(
     kind = if (isVideo) TrackKind.VIDEO else TrackKind.SONG,
     preferVideoStream = forceVideo,
     positionInCollection = trackNumber,
+    discNumber = discNumber,
+    viewCountLabel = viewCount,
     playCountLabel = playCount,
 )
 
@@ -36,6 +40,8 @@ fun Track.toSong(): Song = Song(
     artist = artist.name,
     duration = formatTrackDuration(durationMs),
     thumbnailHref = artworkUrl.orEmpty(),
+    thumbnailPath = offlineArtworkPath,
+    audioFilePath = offlineAudioPath,
     isExplicit = explicit,
     isLiked = liked,
 ).also { song ->
@@ -47,6 +53,8 @@ fun Track.toSong(): Song = Song(
     song.isVideo = kind == TrackKind.VIDEO
     song.forceVideo = preferVideoStream
     song.trackNumber = positionInCollection
+    song.discNumber = discNumber
+    song.viewCount = viewCountLabel
     song.playCount = playCountLabel
 }
 
