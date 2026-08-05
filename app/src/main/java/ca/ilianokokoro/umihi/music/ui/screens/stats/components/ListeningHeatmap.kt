@@ -12,13 +12,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
-import java.util.Locale
 
 private const val WEEK_COLUMNS = 26
 private const val DAY_ROWS = 7
@@ -39,7 +39,10 @@ fun ListeningHeatmap(
     val textMeasurer = rememberTextMeasurer()
 
     val today = LocalDate.now()
-    val firstDayOfWeek: DayOfWeek = WeekFields.of(Locale.getDefault()).firstDayOfWeek
+    // Locale.getDefault() is the system locale and is not observed by Compose: with a per-app
+    // language set, the week start and the month names could both be wrong and never update.
+    val locale = LocalConfiguration.current.locales[0]
+    val firstDayOfWeek: DayOfWeek = WeekFields.of(locale).firstDayOfWeek
     val currentWeekStart = today.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
     val firstWeekStart = currentWeekStart.minusWeeks((WEEK_COLUMNS - 1).toLong())
     val maxCount = dailyCounts.values.maxOrNull()?.coerceAtLeast(1) ?: 1
@@ -72,7 +75,7 @@ fun ListeningHeatmap(
                     lastLabeledMonth = weekStart.monthValue
                     val label = weekStart.month.getDisplayName(
                         java.time.format.TextStyle.SHORT,
-                        Locale.getDefault(),
+                        locale,
                     )
                     val measured = textMeasurer.measure(label, labelStyle)
                     if (x > lastLabelEndX + gapPx) {

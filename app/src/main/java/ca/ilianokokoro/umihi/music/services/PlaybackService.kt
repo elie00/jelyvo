@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.services
 
+import androidx.annotation.OptIn
 import android.app.PendingIntent
 import android.content.Intent
 import android.media.AudioDeviceCallback
@@ -18,6 +19,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Timeline
+import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
 import androidx.media3.datasource.DataSourceBitmapLoader
@@ -146,6 +148,7 @@ class PlaybackService : MediaLibraryService() {
     }
 
 
+    @OptIn(UnstableApi::class, ExperimentalApi::class)
     override fun onCreate() {
         super.onCreate()
 

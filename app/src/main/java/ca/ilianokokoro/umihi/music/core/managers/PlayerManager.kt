@@ -209,6 +209,7 @@ object PlayerManager {
     }
 
     @Synchronized
+    @OptIn(UnstableApi::class)
     fun connectController(context: Context) {
         if (isConnected) {
             _controllerState.value = controller

@@ -56,6 +56,7 @@ fun SongSelectionActionBar(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val alreadyInPlaylistMessage = stringResource(R.string.selection_already_in_playlist)
     val application = context.applicationContext as Application
     val repository = remember(application) { LocalPlaylistRepository(application) }
     val scope = rememberCoroutineScope()
@@ -148,7 +149,7 @@ fun SongSelectionActionBar(
                     Toast.makeText(
                         context,
                         if (added == 0) {
-                            context.getString(R.string.selection_already_in_playlist)
+                            alreadyInPlaylistMessage
                         } else {
                             context.resources.getQuantityString(
                                 R.plurals.selected_added_to_playlist,

@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.wear
 
+import androidx.media3.common.util.UnstableApi
+import androidx.annotation.OptIn
 import android.content.ComponentName
 import android.os.Bundle
 import android.util.Log
@@ -212,6 +214,7 @@ class WearPlaybackBridgeService : WearableListenerService() {
         }
     }
 
+    @OptIn(UnstableApi::class)
     private fun openController(
         onError: () -> Unit,
         action: (MediaController) -> Unit,

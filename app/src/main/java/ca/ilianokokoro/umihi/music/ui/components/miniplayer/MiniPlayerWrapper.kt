@@ -63,6 +63,7 @@ fun MiniPlayerWrapper(
     var progressFraction by remember { mutableFloatStateOf(0f) }
     var isQueueDropHovered by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val queuedMessage = stringResource(R.string.added_queue_toast)
 
     val bottomInsetPx: Int = with(LocalDensity.current) {
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding().roundToPx()
@@ -99,11 +100,7 @@ fun MiniPlayerWrapper(
                     .songDragAndDropTarget(
                         onSongDropped = { droppedSong ->
                             playbackEngine.enqueue(droppedSong.toTrack())
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.added_queue_toast),
-                                Toast.LENGTH_SHORT,
-                            ).show()
+                            Toast.makeText(context, queuedMessage, Toast.LENGTH_SHORT).show()
                             true
                         },
                         onHoverChanged = { isQueueDropHovered = it },

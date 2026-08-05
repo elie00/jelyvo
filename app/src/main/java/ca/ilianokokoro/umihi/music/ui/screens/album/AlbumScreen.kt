@@ -105,6 +105,7 @@ fun AlbumScreen(
 ) {
     val state = albumViewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
+    val albumShareTemplate = stringResource(R.string.album_share_text)
     val isLoggedIn by albumViewModel.isLoggedIn.collectAsStateWithLifecycle()
     val isAlbumSaved by albumViewModel.isAlbumSaved.collectAsStateWithLifecycle()
     val downloadedIds by albumViewModel.downloadedIds.collectAsStateWithLifecycle()
@@ -520,8 +521,7 @@ fun AlbumScreen(
                                 val sendIntent = Intent(Intent.ACTION_SEND).apply {
                                     putExtra(
                                         Intent.EXTRA_TEXT,
-                                        context.getString(
-                                            R.string.album_share_text,
+                                        albumShareTemplate.format(
                                             header,
                                             "${Constants.YoutubeApi.ORIGIN}/browse/$albumId"
                                         )

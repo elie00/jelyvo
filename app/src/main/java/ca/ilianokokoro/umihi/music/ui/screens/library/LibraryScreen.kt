@@ -142,14 +142,16 @@ fun LibraryScreen(
     }
 
     uiState.importMessage?.let { messageRes ->
+        val message = stringResource(messageRes)
         LaunchedEffect(messageRes) {
-            Toast.makeText(context, context.getString(messageRes), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             libraryViewModel.consumeImportMessage()
         }
     }
     uiState.playlistDropMessage?.let { messageRes ->
+        val message = stringResource(messageRes)
         LaunchedEffect(messageRes) {
-            Toast.makeText(context, context.getString(messageRes), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
             libraryViewModel.consumePlaylistDropMessage()
         }
     }

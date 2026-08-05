@@ -120,6 +120,7 @@ fun SearchScreen(
         }
     }
 
+    val voiceSearchPrompt = stringResource(R.string.voice_search_prompt)
     val startVoiceSearch = {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(
@@ -128,7 +129,7 @@ fun SearchScreen(
             )
             putExtra(
                 RecognizerIntent.EXTRA_PROMPT,
-                context.getString(R.string.voice_search_prompt)
+                voiceSearchPrompt
             )
         }
         try {

@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.widget
 
+import androidx.media3.common.util.UnstableApi
+import androidx.annotation.OptIn
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -58,6 +60,7 @@ class SquarePlaybackWidgetReceiver : GlanceAppWidgetReceiver() {
 }
 
 @Composable
+@OptIn(UnstableApi::class)
 private fun SquarePlaybackWidgetContent(state: PlaybackWidgetState) {
     val context = LocalContext.current
     val openApp = androidx.glance.action.actionStartActivity<MainActivity>()
@@ -145,6 +148,7 @@ private fun SquarePlaybackWidgetContent(state: PlaybackWidgetState) {
 }
 
 @Composable
+@OptIn(UnstableApi::class)
 private fun SquareControl(
     context: Context,
     action: String,
