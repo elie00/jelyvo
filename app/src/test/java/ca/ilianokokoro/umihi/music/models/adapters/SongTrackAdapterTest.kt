@@ -64,6 +64,21 @@ class SongTrackAdapterTest {
     }
 
     @Test
+    fun `round trips the play-the-clip choice`() {
+        // Losing this flag silently resolved the audio stream for a video request, which played
+        // as a black screen. The data source rebuilds its Song through Track, so it must survive.
+        val clip = Song(youtubeId = "clip", title = "Clip").also { it.forceVideo = true }
+
+        val track = clip.toTrack()
+        assertTrue(track.preferVideoStream)
+        assertTrue(track.toSong().forceVideo)
+
+        val audio = Song(youtubeId = "audio", title = "Audio")
+        assertFalse(audio.toTrack().preferVideoStream)
+        assertFalse(audio.toTrack().toSong().forceVideo)
+    }
+
+    @Test
     fun `round trips collection position and play count`() {
         val original = Song(
             youtubeId = "album-track",

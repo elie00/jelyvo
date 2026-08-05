@@ -22,6 +22,11 @@ data class Track(
     val source: TrackSource = TrackSource.YOUTUBE,
     val sourceUri: String? = null,
     val kind: TrackKind = TrackKind.SONG,
+    /**
+     * Play the music video itself rather than the official-audio counterpart. Distinct from
+     * [kind], which describes what the track *is*: a plain song can still be played as its clip.
+     */
+    val preferVideoStream: Boolean = false,
     /** 1-based position inside the collection (album, playlist) the track was loaded from. */
     val positionInCollection: Int? = null,
     /** Localized play-count label ("45 M plays") when the source ranks tracks by popularity. */

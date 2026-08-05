@@ -22,6 +22,7 @@ fun Song.toTrack(): Track = Track(
     source = if (isLocal) TrackSource.LOCAL_DEVICE else TrackSource.YOUTUBE,
     sourceUri = localUri.takeIf { isLocal },
     kind = if (isVideo) TrackKind.VIDEO else TrackKind.SONG,
+    preferVideoStream = forceVideo,
     positionInCollection = trackNumber,
     playCountLabel = playCount,
 )
@@ -44,6 +45,7 @@ fun Track.toSong(): Song = Song(
     song.isLocal = source == TrackSource.LOCAL_DEVICE
     song.localUri = sourceUri.takeIf { song.isLocal }
     song.isVideo = kind == TrackKind.VIDEO
+    song.forceVideo = preferVideoStream
     song.trackNumber = positionInCollection
     song.playCount = playCountLabel
 }
