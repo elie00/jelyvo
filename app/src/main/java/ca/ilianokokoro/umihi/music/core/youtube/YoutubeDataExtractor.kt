@@ -423,6 +423,32 @@ object YoutubeDataExtractor {
         return searchResponseParser.extractItems(jsonString, filter)
     }
 
+    /** Channel name, avatar and subscriber label from a YouTube channel response. */
+    fun extractYoutubeChannelHeader(jsonString: String): Triple<String?, String?, String?> {
+        val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
+            ?.get("pageHeaderRenderer")?.safeObject()
+        val name = header?.get("pageTitle")?.jsonPrimitive?.contentOrNull
+        val model = header?.get("content")?.safeObject()
+            ?.get("pageHeaderViewModel")?.safeObject()
+        val avatar = model?.get("image")?.safeObject()
+            ?.get("decoratedAvatarViewModel")?.safeObject()
+            ?.get("avatar")?.safeObject()
+            ?.get("avatarViewModel")?.safeObject()
+            ?.get("image")?.safeObject()
+            ?.get("sources")?.safeArray()
+            ?.lastOrNull()?.safeObject()
+            ?.get("url")?.jsonPrimitive?.contentOrNull
+        val subscribers = model?.get("metadata")?.safeObject()
+            ?.get("contentMetadataViewModel")?.safeObject()
+            ?.get("metadataRows")?.safeArray()
+            ?.firstOrNull()?.safeObject()
+            ?.get("metadataParts")?.safeArray()
+            ?.firstOrNull()?.safeObject()
+            ?.get("text")?.safeObject()
+            ?.get("content")?.jsonPrimitive?.contentOrNull
+        return Triple(name, avatar, subscribers)
+    }
+
     /** Rows of a YouTube (not YouTube Music) search response. */
     fun extractYoutubeVideos(jsonString: String): List<SearchItem> {
         return searchResponseParser.extractYoutubeVideos(jsonString)
