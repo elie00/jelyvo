@@ -236,16 +236,6 @@ class PlaybackService : MediaLibraryService() {
                         )
                     )
                 }
-
-                override fun onVideoInputFormatChanged(
-                    eventTime: AnalyticsListener.EventTime,
-                    format: Format,
-                    decoderReuseEvaluation: DecoderReuseEvaluation?
-                ) {
-                    PlayerManager.updateVideoHeight(
-                        format.height.takeIf { it != Format.NO_VALUE }
-                    )
-                }
             }
         )
 
@@ -298,7 +288,7 @@ class PlaybackService : MediaLibraryService() {
                     )
                 )
                 scheduleQueuePersistence()
-                PlayerManager.resetPlaybackInfo()
+                PlayerManager.updatePlaybackInfo(PlaybackAudioInfo())
                 updatePlaybackWidget(
                     mediaItem,
                     mediaItem?.mediaMetadata?.artworkData?.cappedTo(),
