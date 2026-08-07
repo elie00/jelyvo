@@ -235,6 +235,11 @@
     <string name="smart_transitions_description">Préserve les albums sans blanc et adapte les fondus aux playlists et radios</string>
     <string name="about_this_song">À propos de ce titre</string>
     <string name="artist_about">À propos</string>
+    <string name="artist_follow">Suivre</string>
+    <string name="artist_following">Suivi</string>
+    <string name="artist_followed_toast">Artiste suivi</string>
+    <string name="artist_unfollowed_toast">Abonnement retiré</string>
+    <string name="artist_follow_failed_toast">Impossible de modifier cet abonnement</string>
     <string name="source">Source</string>
     <string name="credits_availability_note">Les auteurs, compositeurs et producteurs détaillés apparaissent lorsque le fournisseur musical les rend disponibles.</string>
     <string name="player_gestures">Gestes du lecteur</string>

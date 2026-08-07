@@ -30,9 +30,11 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -94,6 +96,8 @@ fun ArtistScreen(
     ),
 ) {
     val state = artistViewModel.uiState.collectAsStateWithLifecycle().value
+    val isSubscribed by artistViewModel.isSubscribed.collectAsStateWithLifecycle()
+    val subscriptionChannelId by artistViewModel.subscriptionChannelId.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     Scaffold(contentWindowInsets = WindowInsets.systemBars) { paddingValues ->
@@ -214,6 +218,17 @@ fun ArtistScreen(
                                         .padding(horizontal = 16.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
+                                    subscriptionChannelId?.let {
+                                        if (isSubscribed) {
+                                            FilledTonalButton(onClick = artistViewModel::toggleSubscribed) {
+                                                Text(stringResource(R.string.artist_following))
+                                            }
+                                        } else {
+                                            OutlinedButton(onClick = artistViewModel::toggleSubscribed) {
+                                                Text(stringResource(R.string.artist_follow))
+                                            }
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.weight(1f))
                                     if (page.songs.isNotEmpty()) {
                                         FilledTonalIconButton(

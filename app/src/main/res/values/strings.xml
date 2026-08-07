@@ -240,6 +240,11 @@
     <string name="smart_transitions_description">Preserves gapless albums and adapts fades for playlists and radio</string>
     <string name="about_this_song">About this song</string>
     <string name="artist_about">About</string>
+    <string name="artist_follow">Follow</string>
+    <string name="artist_following">Following</string>
+    <string name="artist_followed_toast">Artist followed</string>
+    <string name="artist_unfollowed_toast">Artist unfollowed</string>
+    <string name="artist_follow_failed_toast">Couldn\'t update this subscription</string>
     <string name="source">Source</string>
     <string name="youtube_music" translatable="false">YouTube Music</string>
     <string name="credits_availability_note">Detailed writer and producer credits appear when the music provider makes them available.</string>
