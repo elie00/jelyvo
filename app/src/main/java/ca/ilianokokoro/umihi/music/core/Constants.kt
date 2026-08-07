@@ -398,6 +398,13 @@ object Constants {
         object Like {
             const val LIKE_URL = "${ORIGIN}/youtubei/v1/like/like?prettyPrint=false"
             const val REMOVE_LIKE_URL = "${ORIGIN}/youtubei/v1/like/removelike?prettyPrint=false"
+
+            // Following an artist is a channel subscription: the target is the artist's channel
+            // id ("UC…"), not a playlist like the album/like endpoints above.
+            const val SUBSCRIBE_URL =
+                "${ORIGIN}/youtubei/v1/subscription/subscribe?prettyPrint=false"
+            const val UNSUBSCRIBE_URL =
+                "${ORIGIN}/youtubei/v1/subscription/unsubscribe?prettyPrint=false"
         }
 
         object Search {

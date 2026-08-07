@@ -209,6 +209,34 @@ object YoutubeApiClient {
      * [setLike], but the target is the album's audio playlist ("OLAK5uy…") instead of a video —
      * which is how YT Music itself toggles the header's "Save to library" button.
      */
+    /** Follows or unfollows an artist through its channel id. */
+    suspend fun setArtistSubscribed(
+        channelId: String,
+        subscribed: Boolean,
+        settings: UmihiSettings,
+    ): String {
+        val baseBody = YoutubeAuthHelper.buildContextBody(
+            idName = null,
+            id = null,
+            settings = settings,
+        )
+
+        val body = buildJsonObject {
+            baseBody.forEach { (key, value) -> put(key, value) }
+            put("channelIds", buildJsonArray { add(JsonPrimitive(channelId)) })
+        }
+
+        return requestWithBody(
+            url = if (subscribed) {
+                Constants.YoutubeApi.Like.SUBSCRIBE_URL
+            } else {
+                Constants.YoutubeApi.Like.UNSUBSCRIBE_URL
+            },
+            body = body,
+            settings = settings,
+        )
+    }
+
     suspend fun setAlbumSaved(
         playlistId: String,
         saved: Boolean,
