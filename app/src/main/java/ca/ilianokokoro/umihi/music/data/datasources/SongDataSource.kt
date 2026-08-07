@@ -27,6 +27,14 @@ class SongDataSource {
     }
 
     suspend fun search(query: String, filter: SearchFilter, paramsOverride: String? = null): SearchResult {
+        // The Videos tab queries YouTube itself; the music client only knows official clips.
+        if (filter == SearchFilter.Videos && paramsOverride == null) {
+            val videoJson = YoutubeApiClient.searchYoutubeVideos(query)
+            return SearchResult(
+                items = YoutubeDataExtractor.extractYoutubeVideos(videoJson),
+                continuation = YoutubeDataExtractor.extractContinuationToken(videoJson),
+            )
+        }
         val json = YoutubeApiClient.search(query, filter, paramsOverride)
         // Only the unscoped tab carries a top-result card; keep its entity out of the list rows
         // so it is not shown twice.
@@ -45,6 +53,13 @@ class SongDataSource {
     }
 
     suspend fun searchMore(continuationToken: String, filter: SearchFilter): SearchResult {
+        if (filter == SearchFilter.Videos) {
+            val videoJson = YoutubeApiClient.searchYoutubeVideos("", continuationToken)
+            return SearchResult(
+                items = YoutubeDataExtractor.extractYoutubeVideos(videoJson),
+                continuation = YoutubeDataExtractor.extractContinuationToken(videoJson),
+            )
+        }
         val json = YoutubeApiClient.searchContinuation(continuationToken)
         return SearchResult(
             items = YoutubeDataExtractor.extractSearchItems(json, filter),

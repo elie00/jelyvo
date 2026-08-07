@@ -299,6 +299,58 @@ internal class SearchResponseParser(
         }
     }
 
+    /**
+     * YouTube's own search rows. Their grammar differs from YouTube Music's: plain `videoRenderer`
+     * objects carrying `videoId`, `title.runs`, `ownerText.runs`, a duration overlay and a view
+     * count, instead of `musicResponsiveListItemRenderer` column flexes.
+     */
+    fun extractYoutubeVideos(jsonString: String): List<SearchItem> {
+        val root = Json.parseToJsonElement(jsonString)
+        return collectVideoRenderers(root).mapNotNull { renderer ->
+            val videoId = renderer["videoId"]?.jsonPrimitive?.contentOrNull
+                ?.takeIf(String::isNotBlank) ?: return@mapNotNull null
+            val title = renderer["title"].runsText().takeIf(String::isNotBlank)
+                ?: renderer["title"]?.safeObject()?.get("simpleText")
+                    ?.jsonPrimitive?.contentOrNull.orEmpty()
+            if (title.isBlank()) return@mapNotNull null
+
+            val duration = renderer["lengthText"]?.safeObject()?.get("simpleText")
+                ?.jsonPrimitive?.contentOrNull.orEmpty()
+            val views = renderer["shortViewCountText"]?.safeObject()?.get("simpleText")
+                ?.jsonPrimitive?.contentOrNull
+                ?: renderer["viewCountText"]?.safeObject()?.get("simpleText")
+                    ?.jsonPrimitive?.contentOrNull
+
+            SearchItem.Track(
+                Song(
+                    youtubeId = videoId,
+                    title = title,
+                    artist = renderer["ownerText"].runsText(),
+                    duration = duration,
+                    thumbnailHref = thumbnailExtractor(renderer),
+                ).also { song ->
+                    song.isVideo = true
+                    song.viewCount = views
+                }
+            )
+        }
+    }
+
+    private fun collectVideoRenderers(root: JsonElement): List<JsonObject> =
+        buildList { collectVideoRenderers(root, this) }
+
+    private fun collectVideoRenderers(element: JsonElement, output: MutableList<JsonObject>) {
+        when (element) {
+            is JsonObject -> {
+                element["videoRenderer"]?.safeObject()?.let { output += it }
+                element.values.forEach { collectVideoRenderers(it, output) }
+            }
+
+            is JsonArray -> element.forEach { collectVideoRenderers(it, output) }
+            else -> Unit
+        }
+    }
+
     private fun collectResponsiveListItems(root: JsonElement): List<JsonObject> =
         buildList { collectResponsiveListItems(root, this) }
 

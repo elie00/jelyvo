@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -270,6 +271,29 @@ object YoutubeApiClient {
             url = Constants.YoutubeApi.Search.URL,
             body = body,
         )
+    }
+
+    /**
+     * Searches YouTube itself rather than YouTube Music. Used by the Videos tab so it reaches the
+     * whole catalogue; [continuation] pages through it.
+     */
+    suspend fun searchYoutubeVideos(query: String, continuation: String? = null): String {
+        val base = YoutubeAuthHelper.buildContextBody(
+            idName = if (continuation == null) "query" else null,
+            id = if (continuation == null) query else null,
+            settings = null,
+            client = Constants.YoutubeApi.Client.WEB_YOUTUBE,
+        )
+        val body = buildJsonObject {
+            base.forEach { (key, value) -> put(key, value) }
+            if (continuation != null) {
+                put("continuation", JsonPrimitive(continuation))
+            } else {
+                // Scope the search to videos, YouTube's own filter token.
+                put("params", JsonPrimitive("EgIQAQ%3D%3D"))
+            }
+        }
+        return requestWithBody(url = Constants.YoutubeApi.Search.YOUTUBE_URL, body = body)
     }
 
     suspend fun searchSuggestions(input: String): String = requestWithContext(

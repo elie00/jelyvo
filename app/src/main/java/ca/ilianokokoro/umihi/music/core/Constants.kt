@@ -332,6 +332,13 @@ object Constants {
                     put("xClientName", JsonPrimitive("67"))
                 }
 
+            val WEB_YOUTUBE = buildJsonObject {
+                put("clientName", JsonPrimitive("WEB"))
+                put("clientVersion", JsonPrimitive("2.20250212.01.00"))
+                put("userAgent", JsonPrimitive(USER_AGENT))
+                put("xClientName", JsonPrimitive("1"))
+            }
+
             val ANDROID_VR = buildJsonObject {
                 put("clientName", JsonPrimitive("ANDROID_VR"))
                 put("clientVersion", JsonPrimitive("1.61.48"))
@@ -395,6 +402,11 @@ object Constants {
 
         object Search {
             const val URL = "https://music.youtube.com/youtubei/v1/search?prettyPrint=false"
+
+            // YouTube proper, not YouTube Music: WEB_REMIX only indexes the music catalogue, so
+            // the Videos tab could never surface anything beyond official clips.
+            const val YOUTUBE_URL =
+                "https://www.youtube.com/youtubei/v1/search?prettyPrint=false"
             const val SUGGESTIONS_URL =
                 "https://music.youtube.com/youtubei/v1/music/get_search_suggestions?prettyPrint=false"
         }

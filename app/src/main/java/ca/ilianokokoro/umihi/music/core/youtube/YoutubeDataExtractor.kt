@@ -423,6 +423,11 @@ object YoutubeDataExtractor {
         return searchResponseParser.extractItems(jsonString, filter)
     }
 
+    /** Rows of a YouTube (not YouTube Music) search response. */
+    fun extractYoutubeVideos(jsonString: String): List<SearchItem> {
+        return searchResponseParser.extractYoutubeVideos(jsonString)
+    }
+
     /**
      * Extracts the saved albums of the account's library (`FEmusic_liked_albums`): a grid of
      * `musicTwoRowItemRenderer` tiles whose browseIds start with "MPRE".
