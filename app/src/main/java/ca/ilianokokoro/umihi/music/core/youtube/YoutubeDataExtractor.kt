@@ -1851,18 +1851,47 @@ object YoutubeDataExtractor {
      * exposed audio for this id. The resolved URL is kept in [videoStreamCache] so the playback
      * data source reuses it instead of resolving again. Throws when resolution fails entirely.
      */
-    suspend fun probeVideoStream(song: Song): Boolean {
-        videoStreamCache[song.youtubeId]?.let { cached ->
+    suspend fun probeVideoStream(context: Context, song: Song): Boolean {
+        val videoQuality = effectiveVideoQuality(context)
+        val track = videoTrackFor(videoQuality)
+        val key = videoCacheKey(song.youtubeId, track, videoQuality)
+
+        videoStreamCache[key]?.let { cached ->
             if (isPlaybackUrlFresh(cached.url)) {
                 return cached.isVideo
             }
-            videoStreamCache.remove(song.youtubeId)
+            videoStreamCache.remove(key)
         }
 
-        val resolved = getSongUrlFromYoutube(song, forceVideo = true)
-        videoStreamCache[song.youtubeId] = resolved
+        val resolved = getSongUrlFromYoutube(
+            song = song,
+            forceVideo = true,
+            track = track,
+            videoQuality = videoQuality,
+        )
+        videoStreamCache[key] = resolved
         return resolved.isVideo
     }
+
+    /** Which half of the ladder a video request needs at [videoQuality]. */
+    private fun videoTrackFor(videoQuality: VideoQuality): StreamTrack =
+        if (VideoQualitySelector.needsSeparateAudio(videoQuality)) {
+            StreamTrack.VideoOnly
+        } else {
+            StreamTrack.Muxed
+        }
+
+    /**
+     * One id yields several different streams — the muxed one, the video-only rung at each
+     * ceiling, and the separate audio track — so the cache has to tell them apart. Keying on the
+     * id alone served the probe's muxed 720p URL to both halves of a merged HD item, which played
+     * as an ordinary 720p stream with its AAC soundtrack.
+     */
+    private fun videoCacheKey(
+        songId: String,
+        track: StreamTrack,
+        videoQuality: VideoQuality,
+    ): String = "$songId:${track.name}:${videoQuality.name}"
 
     internal suspend fun getSongPlayerUrl(
         context: Context,
@@ -1911,7 +1940,12 @@ object YoutubeDataExtractor {
         invalidateStreamsIfQualityChanged(context, quality)
 
         val sessionCache = if (song.forceVideo) videoStreamCache else audioStreamCache
-        sessionCache[song.youtubeId]?.let { cached ->
+        val sessionKey = if (song.forceVideo) {
+            videoCacheKey(song.youtubeId, track, videoQuality)
+        } else {
+            song.youtubeId
+        }
+        sessionCache[sessionKey]?.let { cached ->
             if (
                 isPlaybackUrlFresh(
                     url = cached.url,
@@ -1924,7 +1958,7 @@ object YoutubeDataExtractor {
             }
             // A stricter Cast lookup may evict a URL local playback would still have reused. The
             // replacement is resolved and cached immediately with enough lifetime for the queue.
-            sessionCache.remove(song.youtubeId)
+            sessionCache.remove(sessionKey)
         }
 
         val localSongRepository = AppDatabase.getInstance(context).songRepository()
@@ -1996,7 +2030,7 @@ object YoutubeDataExtractor {
                     loudnessDb = resolved.loudnessDb,
                 )
             } else {
-                videoStreamCache[song.youtubeId] = resolved
+                videoStreamCache[sessionKey] = resolved
             }
             PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
             printd("${song.youtubeId} : Got url from YouTube and saved song")

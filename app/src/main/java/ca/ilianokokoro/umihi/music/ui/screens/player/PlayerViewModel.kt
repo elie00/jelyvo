@@ -386,7 +386,7 @@ class PlayerViewModel(application: Application) :
         val variant = videoVariantCache[current.youtubeId] ?: current
 
         val hasVideoStream = try {
-            YoutubeDataExtractor.probeVideoStream(variant)
+            YoutubeDataExtractor.probeVideoStream(getApplication(), variant)
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -560,7 +560,7 @@ class PlayerViewModel(application: Application) :
                 // Do not make speculative video resolution compete with the title the user just
                 // asked to hear. Audio reaches PLAYING first; video then warms during playback.
                 delay(VIDEO_PREWARM_START_DELAY_MS)
-                YoutubeDataExtractor.probeVideoStream(video)
+                YoutubeDataExtractor.probeVideoStream(getApplication(), video)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (_: Exception) {
