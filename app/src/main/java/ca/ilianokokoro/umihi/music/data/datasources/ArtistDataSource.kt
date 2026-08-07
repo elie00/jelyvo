@@ -61,6 +61,14 @@ class ArtistDataSource {
 
         val subscription = YoutubeDataExtractor.extractArtistSubscription(response)
 
+        // A plain YouTube channel has no music artist page: the browse comes back without songs
+        // and without a name. Fall back to the channel itself rather than showing an empty page.
+        if (songs.isEmpty() && sections.isEmpty()) {
+            runCatching { youtubeChannelPage(artistId, fallbackName, settings) }
+                .getOrNull()
+                ?.let { return@withContext it }
+        }
+
         ArtistPage(
             artist = Artist(
                 name = name,
@@ -74,6 +82,34 @@ class ArtistDataSource {
             songs = songs,
             topSongs = topSongs,
             sections = sections,
+        )
+    }
+
+    /** The channel's own page: header plus its uploads, presented like an artist. */
+    private suspend fun youtubeChannelPage(
+        channelId: String,
+        fallbackName: String,
+        settings: UmihiSettings,
+    ): ArtistPage? {
+        val response = YoutubeApiClient.browseYoutubeChannel(channelId, settings)
+        val videos = YoutubeDataExtractor.extractYoutubeVideos(response)
+            .filterIsInstance<ca.ilianokokoro.umihi.music.models.SearchItem.Track>()
+            .map { it.song }
+        if (videos.isEmpty()) return null
+
+        val (name, avatar, subscribers) = YoutubeDataExtractor.extractYoutubeChannelHeader(response)
+        return ArtistPage(
+            artist = Artist(
+                name = name?.takeIf(String::isNotBlank) ?: fallbackName,
+                thumbnailHref = avatar ?: videos.first().thumbnailHref,
+                channelUrl = channelId,
+                subscriberCount = subscribers,
+                subscriptionChannelId = channelId,
+                subscribed = null,
+            ),
+            songs = videos,
+            topSongs = emptyList(),
+            sections = emptyList(),
         )
     }
 }
