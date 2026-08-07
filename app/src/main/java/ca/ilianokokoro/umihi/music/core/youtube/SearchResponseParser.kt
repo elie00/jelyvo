@@ -336,6 +336,15 @@ internal class SearchResponseParser(
                 ).also { song ->
                     song.isVideo = true
                     song.viewCount = views
+                    // The owning channel, so a video row can reach its channel the way a music
+                    // row reaches its artist. Same "UC…" shape the subscribe endpoints take.
+                    song.artistId = renderer["ownerText"]?.safeObject()
+                        ?.get("runs")?.safeArray()
+                        ?.firstOrNull()?.safeObject()
+                        ?.get("navigationEndpoint")?.safeObject()
+                        ?.get("browseEndpoint")?.safeObject()
+                        ?.get("browseId")?.jsonPrimitive?.contentOrNull
+                        ?.takeIf(String::isNotBlank)
                 }
             )
         }
