@@ -204,8 +204,18 @@ object PlayerManager {
         setQueueProvenance(sourceName, isRadio, sourceId)
     }
 
+    // Audio and video formats reach the service on separate callbacks, in no fixed order, so
+    // neither may erase what the other reported for the same item.
     fun updatePlaybackInfo(info: PlaybackAudioInfo) {
-        _audioInfo.value = info
+        _audioInfo.value = info.copy(videoHeight = _audioInfo.value.videoHeight)
+    }
+
+    fun updateVideoHeight(height: Int?) {
+        _audioInfo.value = _audioInfo.value.copy(videoHeight = height)
+    }
+
+    fun resetPlaybackInfo() {
+        _audioInfo.value = PlaybackAudioInfo()
     }
 
     @Synchronized

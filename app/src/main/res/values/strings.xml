@@ -309,6 +309,7 @@
     <string name="ab_loop_active">A-B Loop active</string>
     <string name="kbps" translatable="false">%d kbps</string>
     <string name="khz" translatable="false">%.1f kHz</string>
+    <string name="video_height_p" translatable="false">%dp</string>
     <string name="unlike">Unlike</string>
     <string name="like">Like</string>
     <string name="add_to_liked">Add to liked songs</string>
