@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.datasources.local
 
 import android.content.ContentUris
 import android.content.Context
+import android.os.Build
 import android.provider.MediaStore
 import androidx.core.net.toUri
 import ca.ilianokokoro.umihi.music.models.Song
@@ -16,17 +17,29 @@ import kotlinx.coroutines.withContext
 class LocalAudioDataSource(private val context: Context) {
 
     suspend fun getSongs(): List<Song> = withContext(Dispatchers.IO) {
-        val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        // VOLUME_EXTERNAL spans every mounted volume; EXTERNAL_CONTENT_URI only covers the
+        // primary one, so anything on an SD card was invisible.
+        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        }
 
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
             MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.DISPLAY_NAME,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.DURATION,
             MediaStore.Audio.Media.ALBUM_ID,
         )
 
-        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        // IS_MUSIC is a scanner heuristic driven mostly by where the file sits: a track dropped in
+        // Download/ is commonly flagged podcast, audiobook, or nothing at all, and filtering on it
+        // hid perfectly playable files. Excluding the system sounds instead keeps every real track.
+        val selection = "${MediaStore.Audio.Media.IS_RINGTONE} = 0" +
+            " AND ${MediaStore.Audio.Media.IS_NOTIFICATION} = 0" +
+            " AND ${MediaStore.Audio.Media.IS_ALARM} = 0"
         val sortOrder =
             "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC"
 
@@ -41,6 +54,8 @@ class LocalAudioDataSource(private val context: Context) {
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val titleColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val displayNameColumn =
+                cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
             val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
             val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
             val albumIdColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
@@ -54,7 +69,11 @@ class LocalAudioDataSource(private val context: Context) {
                 songs.add(
                     Song(
                         youtubeId = "$LOCAL_ID_PREFIX$id",
-                        title = cursor.getString(titleColumn) ?: "",
+                        // Untagged files (a common case for imported tracks) have no TITLE;
+                        // the file name beats showing an empty row.
+                        title = cursor.getString(titleColumn)?.takeIf(String::isNotBlank)
+                            ?: cursor.getString(displayNameColumn)?.substringBeforeLast('.')
+                            ?: "",
                         artist = cursor.getString(artistColumn)
                             ?.takeUnless { it == MediaStore.UNKNOWN_STRING }
                             ?: "",
