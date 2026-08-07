@@ -1456,6 +1456,26 @@ object YoutubeDataExtractor {
         return null
     }
 
+    /**
+     * The header's follow state and the channel id the subscribe endpoints target. Returns null
+     * when the response carries no subscribe button, e.g. while signed out.
+     */
+    fun extractArtistSubscription(jsonString: String): Pair<String, Boolean>? {
+        val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
+            ?: return null
+        for (key in HEADER_RENDERER_KEYS) {
+            val button = header[key]?.safeObject()
+                ?.get("subscriptionButton")?.safeObject()
+                ?.get("subscribeButtonRenderer")?.safeObject()
+                ?: continue
+            val channelId = button["channelId"]?.jsonPrimitive?.contentOrNull
+                ?.takeIf(String::isNotBlank) ?: continue
+            val subscribed = button["subscribed"]?.jsonPrimitive?.contentOrNull?.toBoolean() == true
+            return channelId to subscribed
+        }
+        return null
+    }
+
     fun extractArtistThumbnail(jsonString: String): String? {
         val header = Json.parseToJsonElement(jsonString).jsonObject["header"]?.safeObject()
             ?: return null

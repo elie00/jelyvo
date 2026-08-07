@@ -13,6 +13,10 @@ data class Artist(
     val description: String? = null,
     /** Human-readable subscriber count, e.g. "12M subscribers". Localized by the API. */
     val subscriberCount: String? = null,
+    /** Channel id the follow endpoints target; null when the page exposes no subscribe button. */
+    val subscriptionChannelId: String? = null,
+    /** Whether the account already follows this artist. Null = unknown (signed out). */
+    val subscribed: Boolean? = null,
 )
 
 @Serializable

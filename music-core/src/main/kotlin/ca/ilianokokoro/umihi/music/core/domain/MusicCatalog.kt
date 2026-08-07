@@ -45,6 +45,9 @@ data class CatalogArtistPage(
     val description: String?,
     /** Localized follower/subscriber label as the provider formats it, e.g. "12M subscribers". */
     val followerCountLabel: String?,
+    /** Channel id the follow endpoints target, and whether the account already follows it. */
+    val subscriptionChannelId: String?,
+    val subscribed: Boolean?,
     /** The provider's most-streamed ranking, with [Track.playCountLabel] populated. */
     val topTracks: List<Track>,
     /** Full track listing reachable from the page, ordered by the provider's discography. */

@@ -85,6 +85,8 @@ class CollectionCatalogAdapterTest {
                 channelUrl = "UCartist",
                 description = "Bio",
                 subscriberCount = "12M subscribers",
+                subscriptionChannelId = "UCchannel",
+                subscribed = true,
             ),
             songs = listOf(Song(youtubeId = "all1", title = "Deep cut", artist = "Artist")),
             topSongs = listOf(
@@ -97,6 +99,7 @@ class CollectionCatalogAdapterTest {
 
         val restored = original.toCatalogArtistPage().toArtistPage()
 
+        // Equality covers the follow state too: dropping it would silently reset the button.
         assertEquals(original.artist, restored.artist)
         assertEquals(listOf("all1"), restored.songs.map(Song::youtubeId))
         assertEquals(listOf("top1"), restored.topSongs.map(Song::youtubeId))
