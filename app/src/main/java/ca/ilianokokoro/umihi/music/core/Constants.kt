@@ -287,6 +287,11 @@ object Constants {
         const val FORCE_VIDEO_PARAM = "umihiForceVideo"
         // Lets the resolver skip the watch-next counterpart request for ordinary audio tracks.
         const val SOURCE_VIDEO_PARAM = "umihiSourceVideo"
+
+        // Marks which half of a merged HD stream a URI stands for. Above 720p YouTube only ships
+        // video-only tracks, so the player opens two sources and merges them.
+        const val VIDEO_ONLY_PARAM = "umihiVideoOnly"
+        const val AUDIO_TRACK_PARAM = "umihiAudioTrack"
         const val ORIGIN = "https://music.youtube.com"
         const val API_KEY = "AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30"
         const val USER_AGENT =

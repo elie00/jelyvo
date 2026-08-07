@@ -45,11 +45,13 @@ import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.cast.planCastHandover
+import ca.ilianokokoro.umihi.music.core.datasources.HdVideoMediaSourceFactory
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
+import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
@@ -200,7 +202,19 @@ class PlaybackService : MediaLibraryService() {
             .setHandleAudioBecomingNoisy(true)
             .setDeviceVolumeControlEnabled(true)
             .setLoadControl(loadControl)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(resolvingFactory))
+            .setMediaSourceFactory(
+                HdVideoMediaSourceFactory(
+                    delegate = DefaultMediaSourceFactory(resolvingFactory),
+                    // Read per item: the preference can change between two tracks of a queue.
+                    wantsMergedVideo = {
+                        runBlocking {
+                            VideoQualitySelector.needsSeparateAudio(
+                                DatastoreRepository(applicationContext).settings.first().videoQuality
+                            )
+                        }
+                    },
+                )
+            )
             .build()
         player.addAnalyticsListener(
             object : AnalyticsListener {

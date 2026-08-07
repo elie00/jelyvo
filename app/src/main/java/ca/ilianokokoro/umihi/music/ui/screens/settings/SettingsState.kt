@@ -15,6 +15,7 @@ data class SettingsState(
     val showThemePresetDialog: Boolean = false,
     val showProfileDialog: Boolean = false,
     val showAudioQualityDialog: Boolean = false,
+    val showVideoQualityDialog: Boolean = false,
     val showSleepTimerDefaultDialog: Boolean = false,
     val showRestoreConfirm: Boolean = false,
     val backupInProgress: Boolean = false,

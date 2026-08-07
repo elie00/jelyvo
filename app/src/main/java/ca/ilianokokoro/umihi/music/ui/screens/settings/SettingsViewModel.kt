@@ -163,6 +163,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun updateShowVideoQualityDialog(value: Boolean) {
+        _uiState.update {
+            it.copy(showVideoQualityDialog = value)
+        }
+    }
+
     fun updateShowAudioQualityDialog(value: Boolean) {
         _uiState.update {
             it.copy(showAudioQualityDialog = value)

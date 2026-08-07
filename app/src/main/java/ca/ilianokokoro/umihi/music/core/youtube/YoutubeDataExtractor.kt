@@ -1864,15 +1864,17 @@ object YoutubeDataExtractor {
         return resolved.isVideo
     }
 
-    suspend fun getSongPlayerUrl(
+    internal suspend fun getSongPlayerUrl(
         context: Context,
         song: Song,
-        allowLocal: Boolean = false
+        allowLocal: Boolean = false,
+        track: StreamTrack = StreamTrack.Muxed,
     ): String = resolvePlayback(
         context = context,
         song = song,
         allowLocal = allowLocal,
         minRemainingSeconds = STREAM_EXPIRY_SAFETY_SECONDS,
+        track = track,
     ).url
 
     /**
@@ -1902,7 +1904,9 @@ object YoutubeDataExtractor {
         song: Song,
         allowLocal: Boolean,
         minRemainingSeconds: Long,
+        track: StreamTrack = StreamTrack.Muxed,
     ): ResolvedAudioStream {
+        val videoQuality = effectiveVideoQuality(context)
         val quality = effectiveAudioQuality(context)
         invalidateStreamsIfQualityChanged(context, quality)
 
@@ -1971,15 +1975,18 @@ object YoutubeDataExtractor {
             }
         }
 
-        val resolutionKey = "${song.youtubeId}:${song.forceVideo}:${quality.name}"
+        val resolutionKey =
+            "${song.youtubeId}:${song.forceVideo}:${quality.name}:${track.name}:${videoQuality.name}"
         return streamResolutionSingleFlight.execute(resolutionKey) {
             // Prefetch and an immediate user skip can arrive together. Only the owner resolves the
             // signed URL; every waiter receives the same stream instead of issuing a second player
             // request (and a second NewPipe fallback on failure).
             val resolved = getSongUrlFromYoutube(
-                song,
+                song = song,
                 forceVideo = song.forceVideo,
                 quality = quality,
+                track = track,
+                videoQuality = videoQuality,
             )
             if (!song.forceVideo) {
                 audioStreamCache[song.youtubeId] = resolved
@@ -1994,6 +2001,18 @@ object YoutubeDataExtractor {
             PlaybackLoudnessStore.update(song.youtubeId, resolved.loudnessDb)
             printd("${song.youtubeId} : Got url from YouTube and saved song")
             resolved
+        }
+    }
+
+    /** Data saver caps video the same way it caps audio: a metered network drops to 480p. */
+    private suspend fun effectiveVideoQuality(context: Context): VideoQuality {
+        val repository = DatastoreRepository(context.applicationContext)
+        val preferred = repository.settings.first().videoQuality
+        if (!repository.dataSaverOnMetered.first()) return preferred
+        return if (ConnectivityHelper.isMeteredNetwork(context)) {
+            VideoQuality.P480
+        } else {
+            preferred
         }
     }
 
@@ -2079,6 +2098,8 @@ object YoutubeDataExtractor {
         retries: Int = Constants.YoutubeApi.RETRY_COUNT,
         forceVideo: Boolean = false,
         quality: AudioQuality = AudioQuality.High,
+        track: StreamTrack = StreamTrack.Muxed,
+        videoQuality: VideoQuality = VideoQuality.P1080,
     ): ResolvedAudioStream {
         var lastError: Throwable? = null
 
@@ -2094,6 +2115,8 @@ object YoutubeDataExtractor {
             playbackSong.youtubeId,
             preferVideo = forceVideo,
             quality = quality,
+            track = track,
+            videoQuality = videoQuality,
         )
 
         if (fastUrl != null) {

@@ -99,10 +99,12 @@ import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.VideoQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.AudioQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.SleepTimerDefaultDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemePresetDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.videoQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.audioQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themePresetLabel
@@ -498,6 +500,18 @@ fun SettingsScreen(
                                 },
                             )
                             Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.video_quality_title),
+                                subtitle = stringResource(
+                                    R.string.video_quality_subtitle,
+                                    videoQualityLabel(screenState.settings.videoQuality),
+                                ),
+                                leadingIcon = Icons.Outlined.HighQuality,
+                                onClick = {
+                                    settingsViewModel.updateShowVideoQualityDialog(true)
+                                },
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
                             BooleanSettingItem(
                                 title = stringResource(R.string.data_saver_title),
                                 subtitle = stringResource(R.string.data_saver_description),
@@ -743,6 +757,19 @@ fun SettingsScreen(
                                 onClose = {
                                     settingsViewModel.updateShowThemeColorDialog(false)
                                 }
+                            )
+                        } else if (uiState.showVideoQualityDialog) {
+                            VideoQualityDialog(
+                                selectedOption = screenState.settings.videoQuality,
+                                onChange = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.VIDEO_QUALITY,
+                                        it.toString(),
+                                    )
+                                },
+                                onClose = {
+                                    settingsViewModel.updateShowVideoQualityDialog(false)
+                                },
                             )
                         } else if (uiState.showAudioQualityDialog) {
                             AudioQualityDialog(

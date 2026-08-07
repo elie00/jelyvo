@@ -340,6 +340,13 @@
     <string name="playlist_update_failed">Impossible de mettre à jour cette playlist</string>
     <string name="download_on_metered_title">Télécharger via les données mobiles</string>
     <string name="audio_quality_title">Qualité audio</string>
+    <string name="video_quality_title">Qualité vidéo</string>
+    <string name="video_quality_subtitle">Actuellement : %1$s</string>
+    <string name="video_quality_480">480p — économie de données</string>
+    <string name="video_quality_720">720p</string>
+    <string name="video_quality_1080">1080p — HD</string>
+    <string name="video_quality_1440">1440p — QHD</string>
+    <string name="video_quality_2160">2160p — 4K</string>
     <string name="audio_quality_subtitle">Streaming et téléchargements : %1$s</string>
     <string name="audio_quality_low">Faible</string>
     <string name="audio_quality_normal">Normale</string>

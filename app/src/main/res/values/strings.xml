@@ -352,6 +352,13 @@
     <string name="album_share_text" translatable="false">%1$s\n%2$s</string>
     <string name="download_on_metered_title">Download on Mobile Data</string>
     <string name="audio_quality_title">Audio quality</string>
+    <string name="video_quality_title">Video quality</string>
+    <string name="video_quality_subtitle">Currently: %1$s</string>
+    <string name="video_quality_480">480p — data saver</string>
+    <string name="video_quality_720">720p</string>
+    <string name="video_quality_1080">1080p — HD</string>
+    <string name="video_quality_1440">1440p — QHD</string>
+    <string name="video_quality_2160">2160p — 4K</string>
     <string name="audio_quality_subtitle">Streaming and downloads: %1$s</string>
     <string name="audio_quality_low">Low</string>
     <string name="audio_quality_normal">Normal</string>

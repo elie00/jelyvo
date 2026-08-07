@@ -11,7 +11,11 @@ interface StreamResolver {
      * Returns a playable URL for [track]. [allowLocal] lets an implementation short-circuit to an
      * on-device file when the track is already downloaded.
      */
-    suspend fun resolve(track: Track, allowLocal: Boolean = false): ResolvedStream
+    suspend fun resolve(
+        track: Track,
+        allowLocal: Boolean = false,
+        kind: StreamKind = StreamKind.Combined,
+    ): ResolvedStream
 
     /**
      * Resolves a stream reachable by a remote receiver (e.g. Cast): never a local file, with the
@@ -19,6 +23,13 @@ interface StreamResolver {
      */
     suspend fun resolveRemote(track: Track): ResolvedRemoteStream
 }
+
+/**
+ * Which part of a stream is wanted. Providers cap their combined audio+video rendition (YouTube
+ * stops at 720p), so anything sharper must be fetched as [VideoOnly] plus [Audio] and merged by
+ * the player.
+ */
+enum class StreamKind { Combined, VideoOnly, Audio }
 
 data class ResolvedStream(
     val url: String,
