@@ -90,6 +90,7 @@ object Constants {
         const val SEND_PLAYBACK_DATA = "send-playback-data"
         const val DOWNLOAD_ON_METERED = "download-on-metered"
         const val AUDIO_QUALITY = "audio-quality"
+        const val VIDEO_QUALITY = "video-quality"
         const val DATA_SAVER_ON_METERED = "data-saver-on-metered"
         const val LAST_STREAM_QUALITY = "last-stream-quality"
         const val AUTOPLAY = "autoplay"

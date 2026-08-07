@@ -14,6 +14,7 @@ import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUDIO_QUALITY
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_LIKED
@@ -72,6 +73,7 @@ class DatastoreRepository(private val context: Context) {
         val SEND_PLAYBACK_DATA = booleanPreferencesKey(Constants.Datastore.SEND_PLAYBACK_DATA)
         val DOWNLOAD_ON_METERED = booleanPreferencesKey(Constants.Datastore.DOWNLOAD_ON_METERED)
         val AUDIO_QUALITY = stringPreferencesKey(Constants.Datastore.AUDIO_QUALITY)
+        val VIDEO_QUALITY = stringPreferencesKey(Constants.Datastore.VIDEO_QUALITY)
         val DATA_SAVER_ON_METERED =
             booleanPreferencesKey(Constants.Datastore.DATA_SAVER_ON_METERED)
         val LAST_STREAM_QUALITY = stringPreferencesKey(Constants.Datastore.LAST_STREAM_QUALITY)
@@ -124,6 +126,9 @@ class DatastoreRepository(private val context: Context) {
         val audioQuality = it[AUDIO_QUALITY]?.let { value ->
             runCatching { AudioQuality.valueOf(value) }.getOrNull()
         } ?: AudioQuality.High
+        val videoQuality = it[VIDEO_QUALITY]?.let { value ->
+            runCatching { VideoQuality.valueOf(value) }.getOrNull()
+        } ?: VideoQuality.P1080
         val dataSaverOnMetered = it[DATA_SAVER_ON_METERED] ?: false
         val autoplay = it[AUTOPLAY] ?: true
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
@@ -170,6 +175,7 @@ class DatastoreRepository(private val context: Context) {
             sendPlaybackData = sendPlaybackData,
             downloadOnMetered = downloadOnMetered,
             audioQuality = audioQuality,
+            videoQuality = videoQuality,
             dataSaverOnMetered = dataSaverOnMetered,
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
@@ -454,6 +460,18 @@ class DatastoreRepository(private val context: Context) {
         Low,
         Normal,
         High,
+    }
+
+    /**
+     * Ceiling for the video stream. Anything above [P720] leaves YouTube's muxed ladder, which
+     * stops at 720p, and must be played as a video-only track merged with a separate audio one.
+     */
+    enum class VideoQuality(val maxHeight: Int) {
+        P480(480),
+        P720(720),
+        P1080(1080),
+        P1440(1440),
+        P2160(2160),
     }
 
 }

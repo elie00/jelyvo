@@ -3,6 +3,7 @@ package ca.ilianokokoro.umihi.music.models
 import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.VideoQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 
@@ -18,6 +19,7 @@ data class UmihiSettings(
     val sendPlaybackData: Boolean = false,
     val downloadOnMetered: Boolean = false,
     val audioQuality: AudioQuality = AudioQuality.High,
+    val videoQuality: VideoQuality = VideoQuality.P1080,
     val dataSaverOnMetered: Boolean = false,
     val autoplay: Boolean = true,
     val crossfadeSeconds: Int = 0,
