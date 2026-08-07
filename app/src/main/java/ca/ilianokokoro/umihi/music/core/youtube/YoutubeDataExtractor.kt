@@ -16,6 +16,7 @@ import ca.ilianokokoro.umihi.music.core.cast.castContentType
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.VideoQuality
 import ca.ilianokokoro.umihi.music.models.AlbumHeaderInfo
 import ca.ilianokokoro.umihi.music.models.Artist
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
@@ -2156,6 +2157,8 @@ object YoutubeDataExtractor {
         retries: Int = Constants.YoutubeApi.RETRY_COUNT,
         preferVideo: Boolean = false,
         quality: AudioQuality = AudioQuality.High,
+        track: StreamTrack = StreamTrack.Muxed,
+        videoQuality: VideoQuality = VideoQuality.P1080,
     ): ResolvedAudioStream? = withContext(Dispatchers.IO) {
         suspend fun executeRequest(): ResolvedAudioStream? {
             val response = YoutubeApiClient.getPlayerInfo(
@@ -2165,7 +2168,9 @@ object YoutubeDataExtractor {
                 //   fields = Constants.YoutubeApi.PlayerInfo.Fields.STREAM,
             )
 
-            return extractStreamFromAndroidVrResponse(response, preferVideo, quality)
+            return extractStreamFromAndroidVrResponse(
+                response, preferVideo, quality, track, videoQuality,
+            )
         }
 
         repeat(retries) { attempt ->
@@ -2241,6 +2246,8 @@ object YoutubeDataExtractor {
         text: String,
         preferVideo: Boolean = false,
         quality: AudioQuality = AudioQuality.High,
+        track: StreamTrack = StreamTrack.Muxed,
+        videoQuality: VideoQuality = VideoQuality.P1080,
     ): ResolvedAudioStream? {
         val root = Json.parseToJsonElement(text).jsonObject
 
@@ -2270,27 +2277,20 @@ object YoutubeDataExtractor {
         // Video mode: prefer a muxed (progressive audio+video) entry from `streamingData.formats`
         // — a single URL playable by ProgressiveMediaSource, unlike video-only adaptive formats.
         // When none is exposed, fall through to the audio-only branch below (safe fallback).
-        val muxedFormat = if (preferVideo) {
-            root["streamingData"]
-                ?.safeObject()
-                ?.get("formats")
-                ?.safeArray()
-                ?.asSequence()
-                ?.mapNotNull { it.safeObject() }
-                ?.filter {
-                    it["url"]?.jsonPrimitive?.contentOrNull?.isNotBlank() == true
-                }
-                ?.filter {
-                    it["mimeType"]
-                        ?.jsonPrimitive
-                        ?.contentOrNull
-                        ?.startsWith("video/", ignoreCase = true) == true
-                }
-                ?.maxByOrNull {
-                    it["bitrate"]?.jsonPrimitive?.intOrNull ?: 0
-                }
-        } else {
-            null
+        val streamingData = root["streamingData"]?.safeObject()
+
+        val muxedFormat = when {
+            track == StreamTrack.VideoOnly -> VideoQualitySelector.selectVideoOnly(
+                adaptiveFormats = streamingData?.get("adaptiveFormats")?.safeArray(),
+                quality = videoQuality,
+            )
+
+            preferVideo && track == StreamTrack.Muxed -> VideoQualitySelector.selectMuxed(
+                formats = streamingData?.get("formats")?.safeArray(),
+                quality = videoQuality,
+            )
+
+            else -> null
         }
 
         val audioFormat = selectAudioFormat(
@@ -2332,6 +2332,14 @@ object YoutubeDataExtractor {
     }
 
 }
+
+/**
+ * Which track a caller wants out of a YouTube response.
+ *
+ * [Muxed] is the single progressive stream YouTube caps at 720p. Above that the ladder is split,
+ * so an HD request asks for [VideoOnly] and [Audio] separately and merges them at playback.
+ */
+internal enum class StreamTrack { Muxed, VideoOnly, Audio }
 
 private data class ResolvedAudioStream(
     val url: String,
