@@ -327,7 +327,12 @@ internal class SearchResponseParser(
                     title = title,
                     artist = renderer["ownerText"].runsText(),
                     duration = duration,
-                    thumbnailHref = thumbnailExtractor(renderer),
+                    // YouTube nests its art under thumbnail.thumbnails[], not the music
+                    // grammar the shared extractor knows; take the widest entry.
+                    thumbnailHref = renderer["thumbnail"]?.safeObject()
+                        ?.get("thumbnails")?.safeArray()
+                        ?.lastOrNull()?.safeObject()
+                        ?.get("url")?.jsonPrimitive?.contentOrNull.orEmpty(),
                 ).also { song ->
                     song.isVideo = true
                     song.viewCount = views
