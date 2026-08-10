@@ -9,6 +9,7 @@ import androidx.media3.datasource.ResolvingDataSource
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.domain.StreamKind
 import ca.ilianokokoro.umihi.music.core.domain.StreamResolver
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.adapters.toTrack
@@ -31,7 +32,7 @@ class YoutubeDataSourceFactory(
 
     private fun resolveUri(uri: Uri): Uri {
         if (!uri.toString()
-                .startsWith(Constants.YoutubeApi.YOUTUBE_URL_PREFIX) && uri.scheme != null
+                .startsWith(YoutubeApiConstants.YOUTUBE_URL_PREFIX) && uri.scheme != null
         ) {
             return uri
         }
@@ -39,8 +40,8 @@ class YoutubeDataSourceFactory(
         val raw = uri.toString()
         // Each half of a merged HD stream resolves independently through this same path.
         val kind = when {
-            raw.contains("${Constants.YoutubeApi.VIDEO_ONLY_PARAM}=1") -> StreamKind.VideoOnly
-            raw.contains("${Constants.YoutubeApi.AUDIO_TRACK_PARAM}=1") -> StreamKind.Audio
+            raw.contains("${YoutubeApiConstants.VIDEO_ONLY_PARAM}=1") -> StreamKind.VideoOnly
+            raw.contains("${YoutubeApiConstants.AUDIO_TRACK_PARAM}=1") -> StreamKind.Audio
             else -> StreamKind.Combined
         }
 

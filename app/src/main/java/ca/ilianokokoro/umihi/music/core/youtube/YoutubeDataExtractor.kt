@@ -133,7 +133,7 @@ object YoutubeDataExtractor {
                 val continuationJson = YoutubeApiClient.requestContinuation(
                     continuationToken = continuationToken,
                     settings = settings,
-                    //   fields = Constants.YoutubeApi.Browse.Fields.PLAYLISTS_CONTINUATION,
+                    //   fields = YoutubeApiConstants.Browse.Fields.PLAYLISTS_CONTINUATION,
                 )
                 playlistInfos.addAll(
                     extractPlaylists(
@@ -167,7 +167,7 @@ object YoutubeDataExtractor {
                 val continuationJson = YoutubeApiClient.requestContinuation(
                     continuationToken = continuationToken,
                     settings = settings,
-                    //  fields = Constants.YoutubeApi.Browse.Fields.PLAYLISTS_CONTINUATION,
+                    //  fields = YoutubeApiConstants.Browse.Fields.PLAYLISTS_CONTINUATION,
                 )
                 playlistInfos.addAll(
                     extractPlaylists(
@@ -1597,7 +1597,7 @@ object YoutubeDataExtractor {
                     YoutubeApiClient.requestContinuation(
                         continuationToken = token,
                         settings = settings,
-                        // fields = Constants.YoutubeApi.Browse.Fields.SONGS_CONTINUATION,
+                        // fields = YoutubeApiConstants.Browse.Fields.SONGS_CONTINUATION,
                     ), settings
                 )
                 songs.addAll(otherSongs)
@@ -2129,7 +2129,7 @@ object YoutubeDataExtractor {
 
     private suspend fun getSongUrlFromYoutube(
         song: Song,
-        retries: Int = Constants.YoutubeApi.RETRY_COUNT,
+        retries: Int = YoutubeApiConstants.RETRY_COUNT,
         forceVideo: Boolean = false,
         quality: AudioQuality = AudioQuality.High,
         track: StreamTrack = StreamTrack.Muxed,
@@ -2176,7 +2176,7 @@ object YoutubeDataExtractor {
                 )
 
                 if (attempt < retries - 1) {
-                    delay((Constants.YoutubeApi.RETRY_DELAY * (attempt + 1)).milliseconds)
+                    delay((YoutubeApiConstants.RETRY_DELAY * (attempt + 1)).milliseconds)
                 }
             }
         }
@@ -2211,7 +2211,7 @@ object YoutubeDataExtractor {
 
     private suspend fun resolveAndroidVrStreamUrl(
         videoId: String,
-        retries: Int = Constants.YoutubeApi.RETRY_COUNT,
+        retries: Int = YoutubeApiConstants.RETRY_COUNT,
         preferVideo: Boolean = false,
         quality: AudioQuality = AudioQuality.High,
         track: StreamTrack = StreamTrack.Muxed,
@@ -2220,9 +2220,9 @@ object YoutubeDataExtractor {
         suspend fun executeRequest(): ResolvedAudioStream? {
             val response = YoutubeApiClient.getPlayerInfo(
                 videoId = videoId,
-                client = Constants.YoutubeApi.Client.ANDROID_VR,
+                client = YoutubeApiConstants.Client.ANDROID_VR,
                 visitorData = visitorData,
-                //   fields = Constants.YoutubeApi.PlayerInfo.Fields.STREAM,
+                //   fields = YoutubeApiConstants.PlayerInfo.Fields.STREAM,
             )
 
             return extractStreamFromAndroidVrResponse(

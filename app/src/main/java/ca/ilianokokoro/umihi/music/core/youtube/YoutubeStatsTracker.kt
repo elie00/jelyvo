@@ -66,7 +66,7 @@ object YoutubeStatsTracker {
             try {
                 val playerResponse = YoutubeApiClient.getPlayerInfo(
                     videoId = videoId, visitorData = visitorData, settings = settings,
-                    // fields = Constants.YoutubeApi.PlayerInfo.Fields.TRACKING,
+                    // fields = YoutubeApiConstants.PlayerInfo.Fields.TRACKING,
                 )
 
                 if (!isActive) {
@@ -82,7 +82,7 @@ object YoutubeStatsTracker {
                     return@launch
                 }
 
-                val referrer = "${Constants.YoutubeApi.ORIGIN}/watch?v=$videoId"
+                val referrer = "${YoutubeApiConstants.ORIGIN}/watch?v=$videoId"
 
                 startPlaybackTracking(
                     videoId = videoId, playbackUrl = playbackUrl, watchtimeUrl = watchtimeUrl,

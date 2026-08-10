@@ -7,6 +7,7 @@ import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.cachedApiFlow
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.localizedCacheKey
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.datasources.PlaylistDataSource
 import ca.ilianokokoro.umihi.music.extensions.toException
@@ -128,7 +129,7 @@ class PlaylistRepository(application: Application) {
 
         fun oneCacheKey(settings: UmihiSettings, info: PlaylistInfo): String {
             val id = if (info.isLikedSongsPlaylist) {
-                Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID
+                YoutubeApiConstants.Browse.LIKED_SONGS_BROWSE_ID
             } else {
                 info.id
             }
@@ -136,7 +137,7 @@ class PlaylistRepository(application: Application) {
         }
 
         fun updateLikedSnapshot(settings: UmihiSettings, song: Song, liked: Boolean) {
-            val info = PlaylistInfo(id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID)
+            val info = PlaylistInfo(id = YoutubeApiConstants.Browse.LIKED_SONGS_BROWSE_ID)
             val key = oneCacheKey(settings, info)
             val current = ResponseCache.get<Playlist>(key)
                 ?: ResponseCache.getFromDisk(key, Playlist.serializer())

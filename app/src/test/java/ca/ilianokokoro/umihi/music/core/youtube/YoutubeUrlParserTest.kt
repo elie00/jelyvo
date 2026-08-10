@@ -105,7 +105,7 @@ class YoutubeUrlParserTest {
 
     @Test
     fun `the share sheet regex accepts every host the manifest declares`() {
-        val regex = Regex(Constants.YoutubeApi.URL_REGEX)
+        val regex = Regex(YoutubeApiConstants.URL_REGEX)
         listOf(
             "https://www.youtube.com/embed/dQw4w9WgXcQ",
             "https://youtube.com/v/dQw4w9WgXcQ",

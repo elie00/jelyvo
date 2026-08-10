@@ -31,6 +31,7 @@ include(":app")
 include(":wear")
 include(":wear-shared")
 include(":music-core")
+include(":music-youtube")
 include(":desktopApp")
 
 include(":baselineprofile")

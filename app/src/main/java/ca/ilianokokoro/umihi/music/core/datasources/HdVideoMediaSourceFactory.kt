@@ -8,6 +8,7 @@ import androidx.media3.exoplayer.source.MergingMediaSource
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy
 import androidx.core.net.toUri
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 
 /**
  * Plays video above 720p by merging two streams.
@@ -40,16 +41,16 @@ class HdVideoMediaSourceFactory(
         val uri = mediaItem.localConfiguration?.uri?.toString()
             ?: return delegate.createMediaSource(mediaItem)
 
-        val isVideoRequest = uri.contains("${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1")
+        val isVideoRequest = uri.contains("${YoutubeApiConstants.FORCE_VIDEO_PARAM}=1")
         if (!isVideoRequest || !wantsMergedVideo()) {
             return delegate.createMediaSource(mediaItem)
         }
 
         val video = delegate.createMediaSource(
-            mediaItem.markedWith(Constants.YoutubeApi.VIDEO_ONLY_PARAM)
+            mediaItem.markedWith(YoutubeApiConstants.VIDEO_ONLY_PARAM)
         )
         val audio = delegate.createMediaSource(
-            mediaItem.markedWith(Constants.YoutubeApi.AUDIO_TRACK_PARAM)
+            mediaItem.markedWith(YoutubeApiConstants.AUDIO_TRACK_PARAM)
         )
         return MergingMediaSource(video, audio)
     }

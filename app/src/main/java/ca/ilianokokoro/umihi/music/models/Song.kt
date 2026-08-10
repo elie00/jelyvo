@@ -13,6 +13,7 @@ import androidx.room.PrimaryKey
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.ArtworkUrl
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import kotlinx.serialization.Serializable
 import kotlin.uuid.Uuid
 
@@ -162,8 +163,8 @@ data class Song(
             val playbackUri = when {
                 isLocal -> localUri ?: youtubeUrl
                 // The prefix already carries a "?v=" query, so the marker is appended with "&".
-                forceVideo -> "$youtubeUrl&${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1"
-                isVideo -> "$youtubeUrl&${Constants.YoutubeApi.SOURCE_VIDEO_PARAM}=1"
+                forceVideo -> "$youtubeUrl&${YoutubeApiConstants.FORCE_VIDEO_PARAM}=1"
+                isVideo -> "$youtubeUrl&${YoutubeApiConstants.SOURCE_VIDEO_PARAM}=1"
                 else -> youtubeUrl
             }
 
@@ -189,7 +190,7 @@ data class Song(
 
 
     val youtubeUrl: String
-        get() = "${Constants.YoutubeApi.YOUTUBE_URL_PREFIX}${youtubeId}"
+        get() = "${YoutubeApiConstants.YOUTUBE_URL_PREFIX}${youtubeId}"
     val downloaded: Boolean
         get() = audioFilePath != null && thumbnailPath != null
 
@@ -218,11 +219,11 @@ data class Song(
 
     companion object {
         fun createFromYoutubeUrl(url: String): Song {
-            val raw = url.removePrefix(Constants.YoutubeApi.YOUTUBE_URL_PREFIX)
+            val raw = url.removePrefix(YoutubeApiConstants.YOUTUBE_URL_PREFIX)
             // Split off any appended playback markers (e.g. "&umihiForceVideo=1") so the
             // youtubeId stays clean while the flag is recovered from the URI.
-            val forceVideo = raw.contains("${Constants.YoutubeApi.FORCE_VIDEO_PARAM}=1")
-            val sourceVideo = raw.contains("${Constants.YoutubeApi.SOURCE_VIDEO_PARAM}=1")
+            val forceVideo = raw.contains("${YoutubeApiConstants.FORCE_VIDEO_PARAM}=1")
+            val sourceVideo = raw.contains("${YoutubeApiConstants.SOURCE_VIDEO_PARAM}=1")
             return Song(youtubeId = raw.substringBefore("&")).also {
                 it.forceVideo = forceVideo
                 it.isVideo = sourceVideo || forceVideo

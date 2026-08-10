@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.cast
 
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.models.Song
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -58,4 +59,4 @@ private fun String?.toBareAudioType(): String? =
  * MediaInfo and fail with no useful message.
  */
 fun isUnresolvedWatchUrl(uri: String): Boolean =
-    uri.startsWith(Constants.YoutubeApi.YOUTUBE_URL_PREFIX)
+    uri.startsWith(YoutubeApiConstants.YOUTUBE_URL_PREFIX)

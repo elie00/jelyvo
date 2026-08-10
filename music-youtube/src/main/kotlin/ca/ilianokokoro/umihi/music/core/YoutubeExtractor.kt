@@ -12,7 +12,7 @@ import org.schabi.newpipe.extractor.NewPipe
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
-internal class YoutubeExtractor : Downloader() {
+class YoutubeExtractor : Downloader() {
     private val cookieStore = HashMap<String, String>()
 
     @Throws(IOException::class, ReCaptchaException::class)

@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.models
 
 import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeSession
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.VideoQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
@@ -11,7 +12,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePr
 data class UmihiSettings(
     val updateChecking: Boolean = true,
     val cookies: Cookies,
-    val dataSyncId: String?,
+    override val dataSyncId: String?,
     val showPodcastPlaylist: Boolean = true,
     val useSpecialLanguage: Boolean = false,
     val useAudioOffload: Boolean = false,
@@ -38,6 +39,10 @@ data class UmihiSettings(
     val autoDownloadLiked: Boolean = true,
     val autoDownloadWifiOnly: Boolean = true,
     val autoDownloadQuotaGb: Int = Constants.Downloads.AUTO_DOWNLOAD_QUOTA_GB_DEFAULT,
-) {
+) : YoutubeSession {
+    override val rawCookieHeader: String get() = cookies.toRawCookie()
+
+    override val cookieValues: Map<String, String> get() = cookies.data
+
     val canTrack: Boolean get() = sendPlaybackData && !cookies.isEmpty()
 }

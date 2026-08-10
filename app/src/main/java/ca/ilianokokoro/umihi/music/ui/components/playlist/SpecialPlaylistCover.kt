@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 
 /**
  * Les playlists automatiques (telechargements, titres likes, episodes de podcasts) n'ont pas de
@@ -36,8 +37,8 @@ enum class SpecialPlaylistCover {
 /** Le type de pochette de marque pour cet id de playlist, ou null pour une playlist ordinaire. */
 fun specialPlaylistCover(playlistId: String): SpecialPlaylistCover? = when (playlistId) {
     Constants.Downloads.DOWNLOADED_PLAYLIST_ID -> SpecialPlaylistCover.Downloads
-    "LM", Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID -> SpecialPlaylistCover.Liked
-    Constants.YoutubeApi.PODCAST_PLAYLIST_ID -> SpecialPlaylistCover.NewEpisodes
+    "LM", YoutubeApiConstants.Browse.LIKED_SONGS_BROWSE_ID -> SpecialPlaylistCover.Liked
+    YoutubeApiConstants.PODCAST_PLAYLIST_ID -> SpecialPlaylistCover.NewEpisodes
     // « À ecouter plus tard » : id observe cote YT Music pour les episodes sauvegardes.
     "VLLL", "LL" -> SpecialPlaylistCover.EpisodesForLater
     else -> null

@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.datasources
 
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.MoodCategorySection
@@ -12,7 +13,7 @@ class MoodsDataSource {
     suspend fun retrieveCategories(settings: UmihiSettings): List<MoodCategorySection> =
         YoutubeDataExtractor.extractMoodsAndGenres(
             YoutubeApiClient.browse(
-                Constants.YoutubeApi.Browse.MOODS_AND_GENRES_BROWSE_ID,
+                YoutubeApiConstants.Browse.MOODS_AND_GENRES_BROWSE_ID,
                 settings
             )
         )

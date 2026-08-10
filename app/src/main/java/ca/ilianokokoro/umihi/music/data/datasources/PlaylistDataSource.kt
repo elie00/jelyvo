@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.datasources
 
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
@@ -12,9 +13,9 @@ class PlaylistDataSource {
     suspend fun retrieveAll(settings: UmihiSettings): List<PlaylistInfo> {
         return YoutubeDataExtractor.extractPlaylists(
             YoutubeApiClient.browse(
-                Constants.YoutubeApi.Browse.PLAYLIST_BROWSE_ID,
+                YoutubeApiConstants.Browse.PLAYLIST_BROWSE_ID,
                 settings,
-                //  fields = Constants.YoutubeApi.Browse.Fields.PLAYLISTS,
+                //  fields = YoutubeApiConstants.Browse.Fields.PLAYLISTS,
             ), settings
         )
     }
@@ -25,7 +26,7 @@ class PlaylistDataSource {
                 YoutubeApiClient.browse(
                     playlist.info.id,
                     settings,
-                    //   fields = Constants.YoutubeApi.Browse.Fields.SONGS,
+                    //   fields = YoutubeApiConstants.Browse.Fields.SONGS,
                 ), settings
             )
         )
@@ -42,7 +43,7 @@ class PlaylistDataSource {
             YoutubeApiClient.createPlaylist(
                 title,
                 description,
-                privacy,
+                privacy.value,
                 settings = settings
             )
         )
@@ -53,7 +54,7 @@ class PlaylistDataSource {
         settings: UmihiSettings
     ) {
         YoutubeApiClient.deletePlaylist(
-            playlist,
+            playlist.id,
             settings = settings
         )
     }

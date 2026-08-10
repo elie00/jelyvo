@@ -10,6 +10,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityDiagnostics
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
@@ -84,7 +85,7 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
                     PlaylistRepository(this@Umihi).retrieveOne(
                         playlist = Playlist(
                             PlaylistInfo(
-                                id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID,
+                                id = YoutubeApiConstants.Browse.LIKED_SONGS_BROWSE_ID,
                                 title = getString(R.string.liked_songs),
                             )
                         ),

@@ -1,13 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.youtube
 
-import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeAuthHelper.applyHeaders
-import ca.ilianokokoro.umihi.music.models.PlaylistInfo
-import ca.ilianokokoro.umihi.music.models.Privacy
-import ca.ilianokokoro.umihi.music.models.Song
-import ca.ilianokokoro.umihi.music.models.SearchFilter
-import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
@@ -23,9 +17,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
 object YoutubeApiClient {
-    suspend fun browse(browseId: String, settings: UmihiSettings, fields: String? = null): String {
+    suspend fun browse(browseId: String, settings: YoutubeSession, fields: String? = null): String {
         return requestWithContext(
-            url = Constants.YoutubeApi.Browse.URL,
+            url = YoutubeApiConstants.Browse.URL,
             idName = "browseId",
             id = browseId,
             settings = settings,
@@ -34,14 +28,14 @@ object YoutubeApiClient {
     }
 
     /** Browse with a `params` token, e.g. to open an artist's full "Songs" list. */
-    suspend fun browse(browseId: String, params: String, settings: UmihiSettings): String {
+    suspend fun browse(browseId: String, params: String, settings: YoutubeSession): String {
         val base = YoutubeAuthHelper.buildContextBody("browseId", browseId, settings)
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
             put("params", params)
         }
         return requestWithBody(
-            url = Constants.YoutubeApi.Browse.URL,
+            url = YoutubeApiConstants.Browse.URL,
             body = body,
             settings = settings,
         )
@@ -49,11 +43,11 @@ object YoutubeApiClient {
 
     suspend fun requestContinuation(
         continuationToken: String,
-        settings: UmihiSettings,
+        settings: YoutubeSession,
         fields: String? = null,
     ): String {
         return requestWithContext(
-            url = Constants.YoutubeApi.Browse.URL,
+            url = YoutubeApiConstants.Browse.URL,
             idName = "continuation",
             id = continuationToken,
             settings = settings,
@@ -65,9 +59,9 @@ object YoutubeApiClient {
     suspend fun createPlaylist(
         title: String,
         description: String,
-        privacy: Privacy,
-        songs: List<Song> = listOf(),
-        settings: UmihiSettings
+        privacyStatus: String,
+        videoIds: List<String> = listOf(),
+        settings: YoutubeSession
     ): String {
         val baseBody = YoutubeAuthHelper.buildContextBody(
             idName = null,
@@ -82,26 +76,26 @@ object YoutubeApiClient {
 
             put("title", title)
             put("description", description)
-            put("privacyStatus", privacy.value)
+            put("privacyStatus", privacyStatus)
 
             put(
                 "videoIds",
                 buildJsonArray {
-                    songs.forEach { add(it.youtubeId) }
+                    videoIds.forEach { add(it) }
                 }
             )
         }
 
         return requestWithBody(
-            url = Constants.YoutubeApi.Create.URL,
+            url = YoutubeApiConstants.Create.URL,
             body = body,
             settings = settings
         )
     }
 
     suspend fun deletePlaylist(
-        playlist: PlaylistInfo,
-        settings: UmihiSettings
+        playlistId: String,
+        settings: YoutubeSession
     ): String {
         val baseBody = YoutubeAuthHelper.buildContextBody(
             idName = null,
@@ -109,19 +103,19 @@ object YoutubeApiClient {
             settings = settings
         )
 
-        val playlistId = playlist.id.removePrefix("VL")
+        val strippedId = playlistId.removePrefix("VL")
 
         val body = buildJsonObject {
             baseBody.forEach { (key, value) ->
                 put(key, value)
             }
 
-            put("playlistId", playlistId)
+            put("playlistId", strippedId)
         }
 
 
         return requestWithBody(
-            url = Constants.YoutubeApi.Delete.URL,
+            url = YoutubeApiConstants.Delete.URL,
             body = body,
             settings = settings
         )
@@ -132,11 +126,11 @@ object YoutubeApiClient {
         videoId: String,
         client: JsonObject? = null,
         visitorData: String? = null,
-        settings: UmihiSettings? = null,
+        settings: YoutubeSession? = null,
         fields: String? = null,
     ): String {
         return requestWithContext(
-            url = Constants.YoutubeApi.PlayerInfo.URL,
+            url = YoutubeApiConstants.PlayerInfo.URL,
             idName = "videoId",
             id = videoId,
             settings = settings,
@@ -162,7 +156,7 @@ object YoutubeApiClient {
             put("tunerSettingValue", "AUTOMIX_SETTING_NORMAL")
         }
         return requestWithBody(
-            url = Constants.YoutubeApi.Next.URL,
+            url = YoutubeApiConstants.Next.URL,
             body = body,
         )
     }
@@ -170,7 +164,7 @@ object YoutubeApiClient {
     suspend fun setLike(
         videoId: String,
         liked: Boolean,
-        settings: UmihiSettings
+        settings: YoutubeSession
     ): String {
         val baseBody = YoutubeAuthHelper.buildContextBody(
             idName = null,
@@ -192,9 +186,9 @@ object YoutubeApiClient {
         }
 
         val url = if (liked) {
-            Constants.YoutubeApi.Like.LIKE_URL
+            YoutubeApiConstants.Like.LIKE_URL
         } else {
-            Constants.YoutubeApi.Like.REMOVE_LIKE_URL
+            YoutubeApiConstants.Like.REMOVE_LIKE_URL
         }
 
         return requestWithBody(
@@ -213,12 +207,12 @@ object YoutubeApiClient {
      * Browses a channel on YouTube itself. Used when YouTube Music has no artist page for it —
      * a plain channel is absent from the music catalogue but exists here.
      */
-    suspend fun browseYoutubeChannel(channelId: String, settings: UmihiSettings): String {
+    suspend fun browseYoutubeChannel(channelId: String, settings: YoutubeSession): String {
         val base = YoutubeAuthHelper.buildContextBody(
             idName = "browseId",
             id = channelId,
             settings = settings,
-            client = Constants.YoutubeApi.Client.WEB_YOUTUBE,
+            client = YoutubeApiConstants.Client.WEB_YOUTUBE,
         )
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
@@ -236,7 +230,7 @@ object YoutubeApiClient {
     suspend fun setArtistSubscribed(
         channelId: String,
         subscribed: Boolean,
-        settings: UmihiSettings,
+        settings: YoutubeSession,
     ): String {
         val baseBody = YoutubeAuthHelper.buildContextBody(
             idName = null,
@@ -251,9 +245,9 @@ object YoutubeApiClient {
 
         return requestWithBody(
             url = if (subscribed) {
-                Constants.YoutubeApi.Like.SUBSCRIBE_URL
+                YoutubeApiConstants.Like.SUBSCRIBE_URL
             } else {
-                Constants.YoutubeApi.Like.UNSUBSCRIBE_URL
+                YoutubeApiConstants.Like.UNSUBSCRIBE_URL
             },
             body = body,
             settings = settings,
@@ -263,7 +257,7 @@ object YoutubeApiClient {
     suspend fun setAlbumSaved(
         playlistId: String,
         saved: Boolean,
-        settings: UmihiSettings
+        settings: YoutubeSession
     ): String {
         val baseBody = YoutubeAuthHelper.buildContextBody(
             idName = null,
@@ -285,9 +279,9 @@ object YoutubeApiClient {
         }
 
         val url = if (saved) {
-            Constants.YoutubeApi.Like.LIKE_URL
+            YoutubeApiConstants.Like.LIKE_URL
         } else {
-            Constants.YoutubeApi.Like.REMOVE_LIKE_URL
+            YoutubeApiConstants.Like.REMOVE_LIKE_URL
         }
 
         return requestWithBody(
@@ -297,21 +291,16 @@ object YoutubeApiClient {
         )
     }
 
-    /**
-     * [paramsOverride] replaces the filter's scope params when non-null, e.g. to rerun a spell
-     * correction link's exact searchEndpoint params.
-     */
+    /** [params] is the caller's scope token, e.g. a filter's params or a spell-correction link's. */
     suspend fun search(
         query: String,
-        filter: SearchFilter = SearchFilter.Songs,
-        paramsOverride: String? = null,
+        params: String,
     ): String {
         val base = YoutubeAuthHelper.buildContextBody(
             idName = "query",
             id = query,
             settings = null,
         )
-        val params = paramsOverride ?: filter.params
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
             if (params.isNotEmpty()) {
@@ -319,7 +308,7 @@ object YoutubeApiClient {
             }
         }
         return requestWithBody(
-            url = Constants.YoutubeApi.Search.URL,
+            url = YoutubeApiConstants.Search.URL,
             body = body,
         )
     }
@@ -333,7 +322,7 @@ object YoutubeApiClient {
             idName = if (continuation == null) "query" else null,
             id = if (continuation == null) query else null,
             settings = null,
-            client = Constants.YoutubeApi.Client.WEB_YOUTUBE,
+            client = YoutubeApiConstants.Client.WEB_YOUTUBE,
         )
         val body = buildJsonObject {
             base.forEach { (key, value) -> put(key, value) }
@@ -344,17 +333,17 @@ object YoutubeApiClient {
                 put("params", JsonPrimitive("EgIQAQ%3D%3D"))
             }
         }
-        return requestWithBody(url = Constants.YoutubeApi.Search.YOUTUBE_URL, body = body)
+        return requestWithBody(url = YoutubeApiConstants.Search.YOUTUBE_URL, body = body)
     }
 
     suspend fun searchSuggestions(input: String): String = requestWithContext(
-        url = Constants.YoutubeApi.Search.SUGGESTIONS_URL,
+        url = YoutubeApiConstants.Search.SUGGESTIONS_URL,
         idName = "input",
         id = input,
     )
 
     suspend fun searchContinuation(continuationToken: String): String {
-        val url = Constants.YoutubeApi.Search.URL.toHttpUrl().newBuilder()
+        val url = YoutubeApiConstants.Search.URL.toHttpUrl().newBuilder()
             .addQueryParameter("continuation", continuationToken)
             .addQueryParameter("type", "next")
             .build()
@@ -372,7 +361,7 @@ object YoutubeApiClient {
     private suspend fun requestWithBody(
         url: String,
         body: Any,
-        settings: UmihiSettings? = null,
+        settings: YoutubeSession? = null,
         client: JsonObject? = null,
         visitorData: String? = null,
         fields: String? = null,
@@ -417,7 +406,7 @@ object YoutubeApiClient {
         url: String,
         idName: String,
         id: String,
-        settings: UmihiSettings? = null,
+        settings: YoutubeSession? = null,
         client: JsonObject? = null,
         visitorData: String? = null,
         fields: String? = null,

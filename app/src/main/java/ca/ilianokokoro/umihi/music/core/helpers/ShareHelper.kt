@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.models.Song
 
 /**
@@ -26,7 +27,7 @@ object ShareHelper {
                     song.artist,
                     // music.youtube.com rather than Song.youtubeUrl (www.youtube.com): the shared
                     // link should open YouTube Music, while youtubeUrl also feeds playback URIs.
-                    shareUrl("${Constants.YoutubeApi.ORIGIN}/watch?v=${song.youtubeId}", positionSeconds),
+                    shareUrl("${YoutubeApiConstants.ORIGIN}/watch?v=${song.youtubeId}", positionSeconds),
                 )
             )
             type = "text/plain"
@@ -45,7 +46,7 @@ object ShareHelper {
                     text,
                     song.title,
                     song.artist,
-                    "${Constants.YoutubeApi.ORIGIN}/watch?v=${song.youtubeId}",
+                    "${YoutubeApiConstants.ORIGIN}/watch?v=${song.youtubeId}",
                 )
             )
             type = "text/plain"

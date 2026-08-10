@@ -1,6 +1,7 @@
 package ca.ilianokokoro.umihi.music.data.datasources
 
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.SearchResult
 import ca.ilianokokoro.umihi.music.models.SearchFilter
@@ -11,7 +12,7 @@ class SongDataSource {
         return YoutubeDataExtractor.extractSongInfo(
             YoutubeApiClient.getPlayerInfo(
                 songId,
-                //  fields = Constants.YoutubeApi.PlayerInfo.Fields.SONG_INFO
+                //  fields = YoutubeApiConstants.PlayerInfo.Fields.SONG_INFO
             )
         )
     }
@@ -35,7 +36,7 @@ class SongDataSource {
                 continuation = YoutubeDataExtractor.extractContinuationToken(videoJson),
             )
         }
-        val json = YoutubeApiClient.search(query, filter, paramsOverride)
+        val json = YoutubeApiClient.search(query, paramsOverride ?: filter.params)
         // Only the unscoped tab carries a top-result card; keep its entity out of the list rows
         // so it is not shown twice.
         val topResult = if (filter == SearchFilter.All) {

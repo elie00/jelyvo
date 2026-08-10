@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.data.datasources
 
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.models.ArtistAlbum
 import ca.ilianokokoro.umihi.music.models.SearchItem
@@ -13,7 +14,7 @@ class LibraryDataSource {
     suspend fun retrieveLikedSongs(settings: UmihiSettings): List<Song> {
         return YoutubeDataExtractor.extractSongList(
             YoutubeApiClient.browse(
-                Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID,
+                YoutubeApiConstants.Browse.LIKED_SONGS_BROWSE_ID,
                 settings,
             ), settings
         )
@@ -23,7 +24,7 @@ class LibraryDataSource {
     suspend fun retrieveSavedAlbums(settings: UmihiSettings): List<SearchItem.Album> {
         return YoutubeDataExtractor.extractLibraryAlbums(
             YoutubeApiClient.browse(
-                Constants.YoutubeApi.Browse.LIKED_ALBUMS_BROWSE_ID,
+                YoutubeApiConstants.Browse.LIKED_ALBUMS_BROWSE_ID,
                 settings,
             )
         )
@@ -36,7 +37,7 @@ class LibraryDataSource {
     suspend fun retrieveFollowedArtists(settings: UmihiSettings): List<SearchItem.Artist> {
         val artists = YoutubeDataExtractor.extractLibraryArtists(
             YoutubeApiClient.browse(
-                Constants.YoutubeApi.Browse.LIBRARY_ARTISTS_BROWSE_ID,
+                YoutubeApiConstants.Browse.LIBRARY_ARTISTS_BROWSE_ID,
                 settings,
             )
         )
@@ -46,7 +47,7 @@ class LibraryDataSource {
 
         return YoutubeDataExtractor.extractLibraryArtists(
             YoutubeApiClient.browse(
-                Constants.YoutubeApi.Browse.LIBRARY_LANDING_BROWSE_ID,
+                YoutubeApiConstants.Browse.LIBRARY_LANDING_BROWSE_ID,
                 settings,
             )
         )

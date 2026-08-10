@@ -5,6 +5,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.adapters.toTrack
@@ -82,7 +83,7 @@ object DownloadHelper {
     suspend fun downloadAudio(
         context: Context,
         song: Song,
-        retries: Int = Constants.YoutubeApi.RETRY_COUNT
+        retries: Int = YoutubeApiConstants.RETRY_COUNT
     ): String? = withContext(Dispatchers.IO) {
         val audioDir = UmihiHelper.getDownloadDirectory(
             context,

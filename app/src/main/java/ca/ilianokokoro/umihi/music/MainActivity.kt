@@ -43,6 +43,7 @@ import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
@@ -357,7 +358,7 @@ class MainActivity : ComponentActivity() {
         val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
 
         val urlRegex = Regex(
-            Constants.YoutubeApi.URL_REGEX
+            YoutubeApiConstants.URL_REGEX
         )
 
         val url = urlRegex.find(text)?.value ?: return

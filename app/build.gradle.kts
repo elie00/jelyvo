@@ -240,6 +240,7 @@ dependencies {
     implementation(libs.play.services.wearable)
     implementation(project(":wear-shared"))
     implementation(project(":music-core"))
+    implementation(project(":music-youtube"))
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

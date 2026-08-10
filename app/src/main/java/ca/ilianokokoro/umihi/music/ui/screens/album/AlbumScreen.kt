@@ -61,6 +61,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.groupSongsByDisc
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
@@ -523,7 +524,7 @@ fun AlbumScreen(
                                         Intent.EXTRA_TEXT,
                                         albumShareTemplate.format(
                                             header,
-                                            "${Constants.YoutubeApi.ORIGIN}/browse/$albumId"
+                                            "${YoutubeApiConstants.ORIGIN}/browse/$albumId"
                                         )
                                     )
                                     type = "text/plain"

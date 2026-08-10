@@ -1,7 +1,5 @@
 package ca.ilianokokoro.umihi.music.core.youtube
 
-import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -19,11 +17,11 @@ object YoutubeAuthHelper {
     fun buildContextBody(
         idName: String?,
         id: String?,
-        settings: UmihiSettings?,
+        settings: YoutubeSession?,
         client: JsonObject? = null,
         visitorData: String? = null,
     ): JsonObject {
-        val baseClient = client ?: Constants.YoutubeApi.Client.WEB_REMIX
+        val baseClient = client ?: YoutubeApiConstants.Client.WEB_REMIX
         // The device language localizes server labels. Do not forward Locale.country as `gl`:
         // YouTube rejects otherwise-valid requests with HTTP 400 for some legitimate Android
         // regions (for example CG). Without `gl`, the service safely infers the network region.
@@ -61,7 +59,7 @@ object YoutubeAuthHelper {
 
     fun Request.Builder.applyHeaders(
         url: HttpUrl,
-        settings: UmihiSettings?,
+        settings: YoutubeSession?,
         visitorData: String? = null,
         client: JsonObject? = null,
     ) = apply {
@@ -72,13 +70,13 @@ object YoutubeAuthHelper {
 
     private fun getHeaders(
         url: HttpUrl,
-        settings: UmihiSettings? = null,
+        settings: YoutubeSession? = null,
         visitorData: String? = null,
         client: JsonObject? = null,
     ): Map<String, String> {
         val origin = "${url.scheme}://${url.host}"
 
-        val clientToUse = client ?: Constants.YoutubeApi.Client.WEB_REMIX
+        val clientToUse = client ?: YoutubeApiConstants.Client.WEB_REMIX
 
         val nowMs = System.currentTimeMillis()
         val tz = TimeZone.getDefault()
@@ -122,10 +120,10 @@ object YoutubeAuthHelper {
         }
 
 
-        settings?.cookies?.let {
-            headers["Cookie"] = it.toRawCookie()
+        settings?.let {
+            headers["Cookie"] = it.rawCookieHeader
 
-            val cookieMap = it.data
+            val cookieMap = it.cookieValues
             val sapisidCookie = cookieMap["SAPISID"] ?: cookieMap["__Secure-3PAPISID"]
 
             if (sapisidCookie != null) {

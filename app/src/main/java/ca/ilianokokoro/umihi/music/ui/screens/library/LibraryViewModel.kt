@@ -12,6 +12,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.data.datasources.local.LocalAudioDataSource
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
@@ -339,7 +340,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
         )
 
         if (!settings.showPodcastPlaylist) {
-            mutablePlaylists.removeIf { it.id == Constants.YoutubeApi.PODCAST_PLAYLIST_ID }
+            mutablePlaylists.removeIf { it.id == YoutubeApiConstants.PODCAST_PLAYLIST_ID }
         }
 
         mutablePlaylists.add(0, downloadedPlaylist)

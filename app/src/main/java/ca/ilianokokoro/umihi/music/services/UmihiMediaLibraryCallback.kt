@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
@@ -488,7 +489,7 @@ class UmihiMediaLibraryCallback(
         }
 
         return mediaItem.buildUpon()
-            .setUri("${Constants.YoutubeApi.YOUTUBE_URL_PREFIX}$mediaId")
+            .setUri("${YoutubeApiConstants.YOUTUBE_URL_PREFIX}$mediaId")
             .build()
     }
 
@@ -512,7 +513,7 @@ class UmihiMediaLibraryCallback(
     private suspend fun collectionSongs(collectionId: String) = when (collectionId) {
         Constants.ExoPlayer.Library.RECENT_ROOT -> historyRepository.recentSongs(50).first()
         Constants.ExoPlayer.Library.LIKED_ROOT -> {
-            val info = PlaylistInfo(id = Constants.YoutubeApi.Browse.LIKED_SONGS_BROWSE_ID)
+            val info = PlaylistInfo(id = YoutubeApiConstants.Browse.LIKED_SONGS_BROWSE_ID)
             val result = playlistRepository.retrieveOne(
                 Playlist(info),
                 datastoreRepository.settings.first(),
