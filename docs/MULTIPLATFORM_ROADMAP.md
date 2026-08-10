@@ -66,6 +66,46 @@
 - Aucun module macOS ou Web ne doit être créé avant que ces trois frontières aient un premier
   adapter Android couvert par des tests contractuels.
 
+## Premier client macOS livré le 10 août 2026
+
+`:desktopApp` existe et tourne : Compose Multiplatform sur la JVM, fenêtre native, recherche
+YouTube Music réelle et lecture audio stable. L'application est empaquetée (`createDistributable`)
+et installée dans `/Applications`. La couche requête InnerTube a été extraite dans `:music-youtube`,
+module Kotlin pur consommé par Android et macOS ; `YoutubeDataExtractor` reste dans `:app`, seul
+véritablement lié à Room, DataStore et `Song`.
+
+### Moteur de lecture : ce qui a été mesuré
+
+Le spike du moteur macOS est fait, et il tranche l'option 1 (moteur JVM) sans pont natif :
+
+- JavaFX Media **refuse** les rendus audio seuls de YouTube (`MEDIA_UNSUPPORTED`). Ce sont des MP4
+  fragmentés ; il annonce le double de la durée réelle et s'arrête après le premier fragment.
+- Le même flux téléchargé sur disque est lu, mais toujours avec la durée doublée et un arrêt
+  prématuré : le conteneur est bien la cause, pas le transport.
+- Le rendu **progressif muxé (itag 18)**, MP4 ordinaire AAC + H.264, est lu directement depuis son
+  URL, annonce la durée exacte et tient dans la durée. C'est le format que JavaFX documente.
+
+Coût assumé : ce rendu transporte 360p de vidéo qu'un client audio jette. Un pont AVFoundation
+reste la voie pour l'éviter, avec AirPlay et Now Playing en prime.
+
+### Interface partagée : blocage identifié sur les polices
+
+Le thème Android (`Color`, `SeedSchemes`, `ThemePresets`, `Type`, `Theme`, environ 1000 lignes) ne
+dépend d'Android que par la couleur dynamique Material You. `MaterialExpressiveTheme` et
+`MotionScheme` existent dans Compose Multiplatform 1.9.0, donc les couleurs sont partageables.
+
+En revanche les polices Nunito ne sont pas des fichiers du dépôt : `res/font/*.xml` les déclare en
+*downloadable fonts* servies par Google Play Services. macOS n'a pas d'équivalent. Un module
+`:music-ui` partagé impose donc de choisir d'abord :
+
+1. embarquer les TTF Nunito dans le dépôt (SIL OFL, redistribuable) et les servir aux deux clients
+   via les `composeResources` de Compose Multiplatform ;
+2. ou paramétrer la famille de polices par plateforme, Android gardant Play Services et macOS
+   recevant une famille embarquée ou la police système.
+
+Les enums `ThemeColor` et `ThemePreset` devront aussi quitter `DatastoreRepository` pour le module
+commun ; 69 références réparties sur 8 fichiers, mécaniques.
+
 ## Décision recommandée
 
 Jelyvo peut devenir multiplateforme, mais les deux cibles ne doivent pas être développées en
