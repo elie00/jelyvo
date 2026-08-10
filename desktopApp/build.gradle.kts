@@ -49,6 +49,11 @@ compose.desktop {
         mainClass = "ca.ilianokokoro.umihi.music.desktop.MainKt"
 
         nativeDistributions {
+            // jlink prunes anything unreferenced by static analysis. NewPipe reaches sun.misc.Unsafe
+            // reflectively while extracting playlists, so without jdk.unsupported the packaged app
+            // opens an album page and fails with NoClassDefFoundError where the dev run succeeds.
+            modules("jdk.unsupported", "java.naming", "jdk.crypto.ec")
+
             targetFormats(TargetFormat.Dmg)
             packageName = "Jelyvo"
             // macOS rejects a leading zero in an app version, so the preview line starts at 1.0.0.
