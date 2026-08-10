@@ -21,6 +21,9 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(libs.compose.multiplatform.material3)
 
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
     implementation(libs.kotlinx.coroutines.core)
 
     // JavaFX ships per-platform natives; this client targets Apple Silicon only.

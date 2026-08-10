@@ -23,6 +23,9 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":music-core"))
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.okhttp)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.ui)

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
@@ -40,7 +42,9 @@ import ca.ilianokokoro.umihi.music.core.domain.formatTrackDuration
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeMusicSearch
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeStreamResolver
 import ca.ilianokokoro.umihi.music.desktop.playback.JavaFxAudioEngine
+import androidx.compose.foundation.layout.Spacer
 import ca.ilianokokoro.umihi.music.desktop.theme.nunitoFontFamily
+import ca.ilianokokoro.umihi.music.ui.components.SquareArtwork
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -141,9 +145,16 @@ private fun TrackRow(track: Track, playing: Boolean, onClick: () -> Unit) {
             .fillMaxWidth()
             .background(background)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        SquareArtwork(
+            uri = track.displayArtwork.orEmpty(),
+            modifier = Modifier.size(ARTWORK_SIZE),
+            cornerRadius = 8.dp,
+            requestSize = ARTWORK_SIZE,
+        )
+        Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = track.title,
@@ -217,3 +228,6 @@ private fun TransportBar(engine: JavaFxAudioEngine) {
         Button(onClick = { engine.seekBy(10_000) }, enabled = track != null) { Text("+10 s") }
     }
 }
+
+/** Same 60 dp row thumbnail the phone draws. */
+private val ARTWORK_SIZE = 60.dp
