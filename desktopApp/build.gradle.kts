@@ -22,6 +22,11 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.core)
 
+    // JavaFX ships per-platform natives; this client targets Apple Silicon only.
+    implementation(variantOf(libs.javafx.base) { classifier("mac-aarch64") })
+    implementation(variantOf(libs.javafx.graphics) { classifier("mac-aarch64") })
+    implementation(variantOf(libs.javafx.media) { classifier("mac-aarch64") })
+
     testImplementation(libs.junit)
 }
 
@@ -43,3 +48,4 @@ compose.desktop {
         }
     }
 }
+

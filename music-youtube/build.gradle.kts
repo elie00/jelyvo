@@ -11,6 +11,8 @@ kotlin {
 }
 
 dependencies {
+    api(project(":music-core"))
+
     api(libs.kotlinx.serialization.json)
     api(libs.okhttp)
     api(libs.newpipeextractor)
