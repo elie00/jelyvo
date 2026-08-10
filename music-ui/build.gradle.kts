@@ -26,13 +26,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.ui)
-            implementation(compose.components.resources)
             api(libs.compose.multiplatform.material3)
         }
     }
-}
-
-compose.resources {
-    publicResClass = true
-    packageOfResClass = "ca.ilianokokoro.umihi.music.ui.theme.resources"
 }

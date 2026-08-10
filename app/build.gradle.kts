@@ -31,6 +31,15 @@ kotlinExtension.jvmToolchain {
     languageVersion.set(JavaLanguageVersion.of(21))
 }
 
+// The typeface is vendored once, in :music-ui. Copying it into generated resources keeps a single
+// file under version control while still giving Android a real res/font entry.
+val jelyvoFontResDir = "build/generated/jelyvoFont/res"
+val copyJelyvoFont by tasks.registering(Copy::class) {
+    from(rootProject.file("music-ui/fonts/nunito.ttf"))
+    into(file("$jelyvoFontResDir/font"))
+}
+tasks.named("preBuild") { dependsOn(copyJelyvoFont) }
+
 android {
     namespace = "ca.ilianokokoro.umihi.music"
     compileSdk {
@@ -38,6 +47,10 @@ android {
     }
     ndkVersion = "30.0.14904198"
     buildToolsVersion = "37.0.0"
+
+    sourceSets.getByName("main") {
+        res.srcDir(jelyvoFontResDir)
+    }
 
     defaultConfig {
         applicationId = "ca.ilianokokoro.umihi.music"

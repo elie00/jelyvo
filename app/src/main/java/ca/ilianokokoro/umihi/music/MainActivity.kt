@@ -55,6 +55,7 @@ import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -127,7 +128,11 @@ class MainActivity : ComponentActivity() {
                     initialValue = ThemePreset.Jelyvo
                 )
 
-            UmihiMusicTheme(themeColor = themeColor, themePreset = themePreset) {
+            UmihiMusicTheme(
+                themeColor = themeColor,
+                themePreset = themePreset,
+                fontFamily = nunitoFontFamily(),
+            ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     NavigationRoot(
                         modifier = Modifier.fillMaxSize()

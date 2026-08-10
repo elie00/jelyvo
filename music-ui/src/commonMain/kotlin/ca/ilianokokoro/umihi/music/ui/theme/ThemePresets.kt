@@ -34,12 +34,12 @@ object ThemePresets {
 
     /** Typographie du preset ; Jelyvo garde [appTypography] (Nunito). */
     @Composable
-    fun typography(preset: ThemePreset): Typography = when (preset) {
-        ThemePreset.Jelyvo -> appTypography()
+    fun typography(preset: ThemePreset, fontFamily: FontFamily): Typography = when (preset) {
+        ThemePreset.Jelyvo -> appTypography(fontFamily)
         ThemePreset.Minuit -> withFontFamily(FontFamily.SansSerif)
-        ThemePreset.Vinyle -> withDisplayFontFamily(FontFamily.Serif)
-        ThemePreset.Neon -> appTypography()
-        ThemePreset.Oled -> appTypography()
+        ThemePreset.Vinyle -> withDisplayFontFamily(FontFamily.Serif, fontFamily)
+        ThemePreset.Neon -> appTypography(fontFamily)
+        ThemePreset.Oled -> appTypography(fontFamily)
     }
 
     /** Langage de formes du preset, ou null pour les formes expressives par defaut. */
@@ -186,7 +186,7 @@ object ThemePresets {
 
     /** [appTypography] avec toutes les familles remplacees. */
     @Composable
-    private fun withFontFamily(family: FontFamily): Typography = appTypography().run {
+    private fun withFontFamily(family: FontFamily): Typography = appTypography(family).run {
         Typography(
             displayLarge = displayLarge.copy(fontFamily = family),
             displayMedium = displayMedium.copy(fontFamily = family),
@@ -211,7 +211,7 @@ object ThemePresets {
      * restant en Nunito : le serif fait la pochette, pas les listes.
      */
     @Composable
-    private fun withDisplayFontFamily(family: FontFamily): Typography = appTypography().run {
+    private fun withDisplayFontFamily(family: FontFamily, bodyFamily: FontFamily): Typography = appTypography(bodyFamily).run {
         Typography(
             displayLarge = displayLarge.copy(fontFamily = family),
             displayMedium = displayMedium.copy(fontFamily = family),

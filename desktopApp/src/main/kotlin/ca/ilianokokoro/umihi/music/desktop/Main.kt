@@ -40,6 +40,7 @@ import ca.ilianokokoro.umihi.music.core.domain.formatTrackDuration
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeMusicSearch
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeStreamResolver
 import ca.ilianokokoro.umihi.music.desktop.playback.JavaFxAudioEngine
+import ca.ilianokokoro.umihi.music.desktop.theme.nunitoFontFamily
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -78,7 +79,7 @@ private fun JelyvoDesktopApp() {
         }
     }
 
-    UmihiMusicTheme(darkTheme = true) {
+    UmihiMusicTheme(darkTheme = true, fontFamily = nunitoFontFamily) {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(

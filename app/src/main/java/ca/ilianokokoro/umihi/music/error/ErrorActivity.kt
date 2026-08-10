@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 class ErrorActivity : ComponentActivity() {
 
@@ -12,7 +13,7 @@ class ErrorActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            UmihiMusicTheme {
+            UmihiMusicTheme(fontFamily = nunitoFontFamily()) {
                 ErrorScreen()
             }
         }

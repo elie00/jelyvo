@@ -9,6 +9,7 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
@@ -100,6 +101,8 @@ fun UmihiMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     themeColor: ThemeColor = ThemeColor.Umihi,
     themePreset: ThemePreset = ThemePreset.Jelyvo,
+    /** Loaded by the client: see `music-ui/fonts/nunito.ttf` and [appTypography]. */
+    fontFamily: FontFamily,
     content: @Composable () -> Unit
 ) {
     // Un preset complet (Minuit, Vinyle, Neon) impose couleurs, typo et formes ; Jelyvo garde le
@@ -120,7 +123,7 @@ fun UmihiMusicTheme(
     if (presetShapes != null) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
-            typography = ThemePresets.typography(themePreset),
+            typography = ThemePresets.typography(themePreset, fontFamily),
             shapes = presetShapes,
             motionScheme = MotionScheme.expressive(),
             content = content,
@@ -128,7 +131,7 @@ fun UmihiMusicTheme(
     } else {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
-            typography = ThemePresets.typography(themePreset),
+            typography = ThemePresets.typography(themePreset, fontFamily),
             motionScheme = MotionScheme.expressive(),
             content = content,
         )

@@ -31,6 +31,16 @@ dependencies {
     testImplementation(libs.junit)
 }
 
+// Same vendored typeface as Android, copied onto the desktop classpath.
+val copyJelyvoFont by tasks.registering(Copy::class) {
+    from(rootProject.file("music-ui/fonts/nunito.ttf"))
+    into(layout.buildDirectory.dir("generated/jelyvoFont/font"))
+}
+
+sourceSets["main"].resources.srcDir(layout.buildDirectory.dir("generated/jelyvoFont"))
+
+tasks.named("processResources") { dependsOn(copyJelyvoFont) }
+
 compose.desktop {
     application {
         mainClass = "ca.ilianokokoro.umihi.music.desktop.MainKt"
