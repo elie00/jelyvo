@@ -31,5 +31,6 @@ include(":app")
 include(":wear")
 include(":wear-shared")
 include(":music-core")
+include(":desktopApp")
 
 include(":baselineprofile")
