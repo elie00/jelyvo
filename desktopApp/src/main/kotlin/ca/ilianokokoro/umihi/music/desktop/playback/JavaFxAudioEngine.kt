@@ -21,17 +21,16 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * First macOS playback engine: JavaFX Media on the JVM.
  *
- * Chosen to get sound out without native interop. Two measured limits shape it: JavaFX refuses
- * YouTube's remote fragmented MP4 (MEDIA_UNSUPPORTED) but plays the same bytes from disk, hence
- * [StreamCache]; and it reports totalDuration at twice the real length, so duration is taken from
- * the track's own metadata. Its playback clock, by contrast, tracks wall time correctly.
+ * Chosen to get sound out without native interop. It only handles YouTube's muxed progressive
+ * rendition: the audio-only ones are fragmented MP4, which JavaFX misparses badly enough to report
+ * twice the real duration and stop after the first fragment. The resolver is configured
+ * accordingly, and the stream then plays straight from its URL with a correct timeline.
  *
  * Gapless, crossfade and Now Playing are deliberately absent until an AVFoundation bridge is
  * evaluated.
  */
 class JavaFxAudioEngine(
     private val resolver: StreamResolver,
-    private val cache: StreamCache = StreamCache(),
 ) {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -54,10 +53,10 @@ class JavaFxAudioEngine(
             currentIndex = 0,
         )
 
-        val file = cache.localFile(track, resolver.resolve(track).url)
+        val url = resolver.resolve(track).url
         onFxThread {
             player?.dispose()
-            val created = MediaPlayer(Media(file.toURI().toString()))
+            val created = MediaPlayer(Media(url))
             created.setOnReady {
                 _state.value = _state.value.copy(status = PlaybackStatus.READY)
             }
@@ -90,7 +89,7 @@ class JavaFxAudioEngine(
         val current = player ?: return@onFxThread
         val target = relativeSeekTarget(
             positionMs = current.currentTime.toMillis().toLong(),
-            durationMs = trackDurationMs(),
+            durationMs = durationMs(current),
             deltaMs = deltaMs,
         )
         current.seek(Duration.millis(target.toDouble()))
@@ -98,7 +97,7 @@ class JavaFxAudioEngine(
 
     fun progress(): PlaybackProgress? {
         val current = player ?: return null
-        val duration = trackDurationMs()
+        val duration = durationMs(current)
         if (duration <= 0L) return null
         return PlaybackProgress(
             positionMs = current.currentTime.toMillis().toLong(),
@@ -106,8 +105,11 @@ class JavaFxAudioEngine(
         )
     }
 
-    /** The provider's own length. JavaFX reports twice the real duration for these files. */
-    private fun trackDurationMs(): Long = _state.value.currentTrack?.durationMs ?: 0L
+    /** JavaFX knows the length once the media is ready; until then the search metadata stands in. */
+    private fun durationMs(current: MediaPlayer): Long =
+        current.totalDuration?.toMillis()?.toLong()?.takeIf { it > 0L }
+            ?: _state.value.currentTrack?.durationMs
+            ?: 0L
 
     fun setRepeatMode(mode: RepeatMode) {
         _state.value = _state.value.copy(repeatMode = mode)

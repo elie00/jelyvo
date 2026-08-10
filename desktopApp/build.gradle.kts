@@ -37,7 +37,8 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg)
             packageName = "Jelyvo"
-            packageVersion = project.findProperty("jelyvoDesktopVersion")?.toString() ?: "0.1.0"
+            // macOS rejects a leading zero in an app version, so the preview line starts at 1.0.0.
+            packageVersion = project.findProperty("jelyvoDesktopVersion")?.toString() ?: "1.0.0"
             description = "Material YouTube Music player for macOS"
             vendor = "Jelyvo"
 
@@ -48,4 +49,3 @@ compose.desktop {
         }
     }
 }
-

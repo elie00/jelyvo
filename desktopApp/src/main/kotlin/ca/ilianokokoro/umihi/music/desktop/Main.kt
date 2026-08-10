@@ -56,7 +56,7 @@ fun main() = application {
 
 @Composable
 private fun JelyvoDesktopApp() {
-    val engine = remember { JavaFxAudioEngine(NewPipeStreamResolver()) }
+    val engine = remember { JavaFxAudioEngine(NewPipeStreamResolver(preferMuxedProgressive = true)) }
     val scope = rememberCoroutineScope()
 
     var query by remember { mutableStateOf("") }
