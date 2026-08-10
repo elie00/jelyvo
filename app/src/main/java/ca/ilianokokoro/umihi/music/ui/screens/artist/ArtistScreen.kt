@@ -526,7 +526,7 @@ private fun ArtistHero(
             Text(
                 text = name,
                 style = MaterialTheme.typography.displaySmall.copy(
-                    fontFamily = nunitoFontFamily,
+                    fontFamily = nunitoFontFamily(),
                     fontWeight = FontWeight.Bold,
                 ),
                 maxLines = 2,
@@ -586,7 +586,7 @@ private fun ColumnScope.ArtistContextHeader(
     Text(
         text = name,
         style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-            fontFamily = nunitoFontFamily
+            fontFamily = nunitoFontFamily()
         ),
         textAlign = TextAlign.Center,
     )

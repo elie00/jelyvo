@@ -16,6 +16,7 @@ kotlin {
 dependencies {
     implementation(project(":music-core"))
     implementation(project(":music-youtube"))
+    implementation(project(":music-ui"))
 
     implementation(compose.desktop.currentOs)
     implementation(libs.compose.multiplatform.material3)

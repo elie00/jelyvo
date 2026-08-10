@@ -151,7 +151,7 @@ fun AlbumScreen(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                            fontFamily = nunitoFontFamily
+                            fontFamily = nunitoFontFamily()
                         ),
                         modifier = Modifier.alpha(collapseProgress)
                     )
@@ -591,7 +591,7 @@ private fun ColumnScope.AlbumContextHeader(
     Text(
         text = name,
         style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-            fontFamily = nunitoFontFamily
+            fontFamily = nunitoFontFamily()
         ),
         textAlign = TextAlign.Center,
     )

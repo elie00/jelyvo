@@ -108,6 +108,8 @@ import ca.ilianokokoro.umihi.music.ui.components.dialog.videoQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.audioQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themePresetLabel
+import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
+import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import coil3.compose.AsyncImage
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
@@ -281,7 +283,7 @@ fun SettingsScreen(
                             // L'accent n'a de sens que sous le theme Jelyvo : les autres presets
                             // imposent leurs propres couleurs.
                             if (screenState.settings.themePreset ==
-                                DatastoreRepository.ThemePreset.Jelyvo
+                                ThemePreset.Jelyvo
                             ) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 SettingsItem(

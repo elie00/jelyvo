@@ -1,7 +1,7 @@
 package ca.ilianokokoro.umihi.music.models
 
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
+import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test

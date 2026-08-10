@@ -28,7 +28,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import ca.ilianokokoro.umihi.music.R
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
+import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePresets
 
 

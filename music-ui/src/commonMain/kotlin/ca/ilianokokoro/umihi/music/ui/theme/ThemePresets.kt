@@ -4,11 +4,11 @@ import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Shapes
+import androidx.compose.runtime.Composable
 import androidx.compose.material3.Typography
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 
 /**
  * Themes complets, par opposition aux simples accents de [SeedSchemes] : chaque preset engage a la
@@ -32,13 +32,14 @@ object ThemePresets {
         ThemePreset.Oled -> oledScheme(darkTheme)
     }
 
-    /** Typographie du preset ; Jelyvo garde [AppTypography] (Nunito). */
+    /** Typographie du preset ; Jelyvo garde [appTypography] (Nunito). */
+    @Composable
     fun typography(preset: ThemePreset): Typography = when (preset) {
-        ThemePreset.Jelyvo -> AppTypography
+        ThemePreset.Jelyvo -> appTypography()
         ThemePreset.Minuit -> withFontFamily(FontFamily.SansSerif)
         ThemePreset.Vinyle -> withDisplayFontFamily(FontFamily.Serif)
-        ThemePreset.Neon -> AppTypography
-        ThemePreset.Oled -> AppTypography
+        ThemePreset.Neon -> appTypography()
+        ThemePreset.Oled -> appTypography()
     }
 
     /** Langage de formes du preset, ou null pour les formes expressives par defaut. */
@@ -183,8 +184,9 @@ object ThemePresets {
 
     // ------------------------------------------------------------------ helpers
 
-    /** [AppTypography] avec toutes les familles remplacees. */
-    private fun withFontFamily(family: FontFamily): Typography = AppTypography.run {
+    /** [appTypography] avec toutes les familles remplacees. */
+    @Composable
+    private fun withFontFamily(family: FontFamily): Typography = appTypography().run {
         Typography(
             displayLarge = displayLarge.copy(fontFamily = family),
             displayMedium = displayMedium.copy(fontFamily = family),
@@ -205,10 +207,11 @@ object ThemePresets {
     }
 
     /**
-     * [AppTypography] avec les titrages (display/headline/title) en [family], le corps de texte
+     * [appTypography] avec les titrages (display/headline/title) en [family], le corps de texte
      * restant en Nunito : le serif fait la pochette, pas les listes.
      */
-    private fun withDisplayFontFamily(family: FontFamily): Typography = AppTypography.run {
+    @Composable
+    private fun withDisplayFontFamily(family: FontFamily): Typography = appTypography().run {
         Typography(
             displayLarge = displayLarge.copy(fontFamily = family),
             displayMedium = displayMedium.copy(fontFamily = family),

@@ -69,7 +69,7 @@ fun ArtistReleasesScreen(
                 Text(
                     text = localizedApiSectionTitle(title),
                     style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                        fontFamily = nunitoFontFamily
+                        fontFamily = nunitoFontFamily()
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

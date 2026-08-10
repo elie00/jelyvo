@@ -133,3 +133,9 @@ keystore. Share that keystore between machines if you want to install over an ex
 ## License 📄
 
 GPL-3.0, inherited from the upstream project. See [LICENSE](LICENSE).
+
+The bundled **Nunito** typeface is a separate work by the Nunito Project Authors, used under the
+SIL Open Font License 1.1 — see [music-ui/licenses/OFL-Nunito.txt](music-ui/licenses/OFL-Nunito.txt).
+It ships as a variable font in `:music-ui` so the Android and macOS clients render identically;
+before that it was an Android downloadable font, which meant devices without Google Play Services
+silently fell back to the system typeface.

@@ -52,6 +52,8 @@ import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.ui.components.PipVideoOverlay
 import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
 import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
+import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
+import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
@@ -118,11 +120,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeColor by datastoreRepository.themeColor
                 .collectAsStateWithLifecycle(
-                    initialValue = DatastoreRepository.ThemeColor.Umihi
+                    initialValue = ThemeColor.Umihi
                 )
             val themePreset by datastoreRepository.themePreset
                 .collectAsStateWithLifecycle(
-                    initialValue = DatastoreRepository.ThemePreset.Jelyvo
+                    initialValue = ThemePreset.Jelyvo
                 )
 
             UmihiMusicTheme(themeColor = themeColor, themePreset = themePreset) {

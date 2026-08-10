@@ -1375,7 +1375,7 @@ fun SongInfo(
                 Text(
                     text = it?.title ?: "",
                     style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                        fontFamily = nunitoFontFamily
+                        fontFamily = nunitoFontFamily()
                     ),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.basicMarquee()

@@ -152,7 +152,7 @@ fun PlaylistScreen(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                                fontFamily = nunitoFontFamily
+                                fontFamily = nunitoFontFamily()
                             )
                         )
                     },

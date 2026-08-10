@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,6 +40,7 @@ import ca.ilianokokoro.umihi.music.core.domain.formatTrackDuration
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeMusicSearch
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeStreamResolver
 import ca.ilianokokoro.umihi.music.desktop.playback.JavaFxAudioEngine
+import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -78,7 +78,7 @@ private fun JelyvoDesktopApp() {
         }
     }
 
-    MaterialTheme(colorScheme = darkColorScheme()) {
+    UmihiMusicTheme(darkTheme = true) {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(modifier = Modifier.fillMaxSize()) {
                 Row(

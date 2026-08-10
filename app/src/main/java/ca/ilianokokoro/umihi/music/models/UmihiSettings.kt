@@ -5,8 +5,8 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeSession
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.VideoQuality
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
+import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
+import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 
 @Immutable
 data class UmihiSettings(

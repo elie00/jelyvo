@@ -43,6 +43,8 @@ import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
+import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -431,29 +433,6 @@ class DatastoreRepository(private val context: Context) {
             }
         }
 
-    }
-
-    enum class ThemeColor {
-        Umihi,
-        Dynamic,
-        OceanBlue,
-        ForestGreen,
-        Violet,
-        SunsetOrange,
-        RoseRed,
-        Mono
-    }
-
-    /**
-     * Full theme identities (colors + typography + shapes), against [ThemeColor] which only swaps
-     * the accent. [Jelyvo] keeps the brand look and the accent picker; the others override it all.
-     */
-    enum class ThemePreset {
-        Jelyvo,
-        Minuit,
-        Vinyle,
-        Neon,
-        Oled,
     }
 
     enum class AudioQuality {

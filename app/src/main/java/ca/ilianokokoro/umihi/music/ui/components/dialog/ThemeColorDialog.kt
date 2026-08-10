@@ -28,8 +28,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import ca.ilianokokoro.umihi.music.R
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.SeedSchemes
+import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 
 
 @Composable

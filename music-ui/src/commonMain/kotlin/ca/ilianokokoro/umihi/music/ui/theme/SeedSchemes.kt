@@ -4,7 +4,6 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemeColor
 
 /**
  * Hand-built Material 3 color schemes generated from seed colors.

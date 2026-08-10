@@ -241,6 +241,7 @@ dependencies {
     implementation(project(":wear-shared"))
     implementation(project(":music-core"))
     implementation(project(":music-youtube"))
+    implementation(project(":music-ui"))
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
