@@ -13,6 +13,7 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.AudioStream
 import org.schabi.newpipe.extractor.stream.DeliveryMethod
 import org.schabi.newpipe.extractor.stream.StreamExtractor
+import org.schabi.newpipe.extractor.stream.VideoStream
 import java.io.IOException
 
 /**
@@ -54,7 +55,7 @@ class NewPipeStreamResolver(
     private fun bestStreamUrl(track: Track): String {
         val extractor = extractorFor(track)
         if (preferMuxedProgressive) {
-            muxedProgressiveUrl(extractor)?.let { return it }
+            muxedProgressive(extractor)?.let { return it.content }
         }
         return bestAudioStream(extractor).content
     }
@@ -65,11 +66,10 @@ class NewPipeStreamResolver(
     }
 
     /** The audio+video rendition served as a plain, non-fragmented MP4. */
-    private fun muxedProgressiveUrl(extractor: StreamExtractor): String? =
+    private fun muxedProgressive(extractor: StreamExtractor): VideoStream? =
         extractor.videoStreams
             .filter { !it.isVideoOnly && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP && it.isUrl }
             .minByOrNull { it.itag }
-            ?.content
 
     private fun bestAudioStream(extractor: StreamExtractor): AudioStream {
         // Progressive streams only: DASH and HLS need a player that can drive a manifest, which
