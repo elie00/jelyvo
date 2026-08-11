@@ -16,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -31,8 +32,11 @@ import ca.ilianokokoro.umihi.music.core.domain.QueueEntry
 import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeMusicSearch
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeStreamResolver
+import ca.ilianokokoro.umihi.music.desktop.account.DesktopAccount
+import ca.ilianokokoro.umihi.music.desktop.account.checkAccount
 import ca.ilianokokoro.umihi.music.desktop.playback.JavaFxAudioEngine
 import ca.ilianokokoro.umihi.music.desktop.theme.nunitoFontFamily
+import ca.ilianokokoro.umihi.music.desktop.ui.AccountScreen
 import ca.ilianokokoro.umihi.music.desktop.ui.CollectionScreen
 import ca.ilianokokoro.umihi.music.desktop.ui.PlayerBar
 import ca.ilianokokoro.umihi.music.desktop.ui.Screen
@@ -58,6 +62,13 @@ private fun JelyvoDesktopApp() {
     val playback by engine.state.collectAsState()
 
     var screen by remember { mutableStateOf<Screen>(Screen.Search) }
+
+    val account = remember { DesktopAccount() }
+    val session by account.session.collectAsState()
+    var accountBusy by remember { mutableStateOf(false) }
+    var accountCheck by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) { account.restore() }
 
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(CatalogSearchFilter.SONGS) }
@@ -125,6 +136,12 @@ private fun JelyvoDesktopApp() {
                         icon = { Text("⌕", style = MaterialTheme.typography.headlineSmall) },
                         label = { Text("Recherche") },
                     )
+                    NavigationRailItem(
+                        selected = screen is Screen.Account,
+                        onClick = { screen = Screen.Account },
+                        icon = { Text("◍", style = MaterialTheme.typography.headlineSmall) },
+                        label = { Text("Compte") },
+                    )
                 }
                 VerticalDivider()
 
@@ -158,6 +175,39 @@ private fun JelyvoDesktopApp() {
                                     openCollection(Screen.Artist(artist.id, artist.name)) {
                                         val page = NewPipeMusicSearch.artist(artist.id)
                                         Triple(page.allTracks, page.artworkUrl, "Artiste")
+                                    }
+                                },
+                            )
+
+                            Screen.Account -> AccountScreen(
+                                session = session,
+                                checkResult = accountCheck,
+                                busy = accountBusy,
+                                onSignIn = { header ->
+                                    scope.launch {
+                                        accountBusy = true
+                                        accountCheck = if (account.signIn(header)) {
+                                            "Enregistré dans le Trousseau."
+                                        } else {
+                                            "Impossible d'écrire dans le Trousseau."
+                                        }
+                                        accountBusy = false
+                                    }
+                                },
+                                onSignOut = {
+                                    scope.launch {
+                                        accountBusy = true
+                                        account.signOut()
+                                        accountCheck = null
+                                        accountBusy = false
+                                    }
+                                },
+                                onCheck = {
+                                    val current = session ?: return@AccountScreen
+                                    scope.launch {
+                                        accountBusy = true
+                                        accountCheck = checkAccount(current)
+                                        accountBusy = false
                                     }
                                 },
                             )
