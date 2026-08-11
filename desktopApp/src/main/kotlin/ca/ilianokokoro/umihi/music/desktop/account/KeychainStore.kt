@@ -7,9 +7,9 @@ import kotlinx.coroutines.withContext
  * Secrets in the macOS Keychain rather than a preferences file, as the multiplatform roadmap
  * requires: a YouTube cookie header is a full account credential.
  *
- * There is no JVM binding for the Keychain, so this drives the `security` command. Its one wart is
- * that writing passes the secret as an argument, which is briefly visible to `ps` for processes
- * owned by the same user. Reading and deleting do not expose it.
+ * There is no JVM binding for the Keychain, so this drives the `security` command. The secret never
+ * appears in the argument vector: `-w` with no inline value makes the tool prompt, and it reads
+ * that prompt from stdin, so the credential is piped instead. It asks twice, once to confirm.
  */
 object KeychainStore {
     private const val SERVICE = "ca.ilianokokoro.umihi.music.desktop"
@@ -27,10 +27,18 @@ object KeychainStore {
     suspend fun write(secret: String): Boolean = withContext(Dispatchers.IO) {
         val process = ProcessBuilder(
             "security", "add-generic-password",
-            "-s", SERVICE, "-a", ACCOUNT, "-w", secret,
-            // Replace any existing entry rather than failing with "already exists".
-            "-U",
+            // -U replaces any existing entry rather than failing with "already exists". -w must come
+            // last and carry no value, so the tool prompts and we can feed it over stdin.
+            "-U", "-s", SERVICE, "-a", ACCOUNT, "-w",
         ).redirectErrorStream(true).start()
+
+        process.outputStream.bufferedWriter().use { writer ->
+            // Once for the prompt, once for its confirmation.
+            writer.write(secret)
+            writer.newLine()
+            writer.write(secret)
+            writer.newLine()
+        }
         process.inputStream.readBytes()
         process.waitFor() == 0
     }

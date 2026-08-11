@@ -106,6 +106,73 @@ En revanche les polices Nunito ne sont pas des fichiers du dépôt : `res/font/*
 Les enums `ThemeColor` et `ThemePreset` devront aussi quitter `DatastoreRepository` pour le module
 commun ; 69 références réparties sur 8 fichiers, mécaniques.
 
+## Investigations du 11 août 2026
+
+Quatre chantiers restants ont été instruits en parallèle. Deux ont été contre-vérifiés par un
+second agent chargé de les réfuter ; deux ne l'ont pas été, faute de quota, et sont signalés comme
+tels. Ce qui suit distingue systématiquement ce qui a été **mesuré** de ce qui reste **inféré**.
+
+### Now Playing et touches multimédias — non contre-vérifié
+
+Résultat contraire à l'attente : **aucun code natif n'est nécessaire**. L'API Foreign Function &
+Memory de Java 21 atteint `objc_msgSend` via `SymbolLookup.libraryLookup` sur
+`/usr/lib/libobjc.A.dylib`, et `MediaPlayer.framework` se charge par `dlopen`. L'agent a publié des
+métadonnées Now Playing et enregistré des commandes, puis observé dans `log stream` que
+`mediaremoted` acceptait la JVM comme client Now Playing (`CanBeNowPlaying changed to true`), que le
+lecteur actif basculait vers le processus JVM, et que le Centre de contrôle interrogeait nos
+`supportedCommands`. Des commandes système réelles ont déclenché le handler Java.
+
+Points techniques à ne pas redécouvrir :
+
+- `--enable-preview` est inutile ici. La barrière preview du JDK 21 est un contrôle de version
+  mineure de fichier `.class`, et Kotlin 2.4.0 émet `minor=0`. Aucun drapeau de compilation ni de
+  JVM n'est requis.
+- Le packaging ne change pas : l'image `jlink` livrée contient déjà les classes `java.lang.foreign`,
+  et les entitlements accordent déjà `allow-jit` et `disable-library-validation`.
+- `objc_msgSend` doit être lié une fois **par signature concrète** et jamais en variadique sur
+  arm64.
+- Les clés du dictionnaire doivent être les `NSString` obtenues par `dlsym`, pas les noms
+  d'identifiants C — sinon `mediaremoted` journalise `Clearing nowPlayingInfo` en silence.
+- Les handlers arrivent sur le thread AWT-AppKit, donc chaque action doit repasser par
+  `onFxThread`.
+
+Restent non prouvés : l'artwork (`MPMediaItemArtwork`), et les touches matérielles elles-mêmes —
+l'agent n'a pas pu presser physiquement F7/F8/F9. Il a en revanche prouvé le chemin de livraison
+identique. À noter : ces touches ne sont **pas** captables autrement ; s'enregistrer comme client
+Now Playing est la seule voie sans demander une autorisation d'accessibilité.
+
+### Signature et notarisation — non contre-vérifié, blocage dur
+
+Le `.dmg` se construit, mais il n'est pas distribuable et ne peut pas le devenir en l'état. Cette
+machine ne possède qu'une identité `Apple Development`, et **Compose Desktop 1.12.0-beta03 ne sait
+pas s'en servir** : `ValidatedMacOSSigningSettings.getFullDeveloperID()` préfixe en dur
+`"Developer ID Application: "`. Le blocage est donc double — administratif (adhésion payante
+requise pour obtenir ce type de certificat) et outillage.
+
+### Accueil et Bibliothèque — contre-vérifié
+
+L'Accueil Android est deux choses cousues : une moitié **locale** (salutation, raccourcis, reprise,
+écoutés récemment, mixes « Pour vous »), entièrement dérivée de la table d'historique Room et d'un
+mix quotidien en cache JSON, sans réseau ; et une moitié **distante** (`FEmusic_home`). Tout l'écran
+est aujourd'hui conditionné à la présence de cookies, donc la moitié locale est jetée quand on est
+déconnecté — un client macOS anonyme peut la récupérer.
+
+`FEmusic_home` répond **sans cookies** (vérifié par requête directe avec le client WEB_REMIX). La
+Bibliothèque combine quatre sections de compte et deux sections locales, et implémente déjà le motif
+dont le Mac a besoin : déconnecté, elle affiche une bannière et restreint les onglets aux sections
+locales.
+
+### Lien avec le téléphone — contre-vérifié
+
+Le dépôt contient déjà deux mécanismes en germe, dont aucun n'atteint macOS. `BackupManager` est un
+document JSON versionné qui transporte déjà préférences, historique, playlists locales **et la file
+persistée avec sa position** — c'est 90 % d'une charge utile de synchronisation, mais sa restauration
+est destructive : c'est un format d'instantané, pas de fusion. La couche de données Wear est un
+protocole appareil-à-appareil versionné et fonctionnel, mais elle repose sur `MessageClient` de Play
+Services, sans équivalent macOS.
+
+La décision retenue est le compte YouTube comme frontière de synchronisation.
+
 ## Décision recommandée
 
 Jelyvo peut devenir multiplateforme, mais les deux cibles ne doivent pas être développées en
