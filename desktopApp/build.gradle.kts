@@ -44,6 +44,21 @@ sourceSets["main"].resources.srcDir(layout.buildDirectory.dir("generated/jelyvoF
 
 tasks.named("processResources") { dependsOn(copyJelyvoFont) }
 
+// The app icon lives once, as fastlane's launcher icon; macOS needs it as an .icns.
+val jelyvoIconDir = layout.buildDirectory.dir("generated/jelyvoIcon")
+val generateMacIcon by tasks.registering(Exec::class) {
+    val source = rootProject.file("fastlane/metadata/android/en-US/images/icon.png")
+    inputs.file(source)
+    inputs.file(file("make-icns.sh"))
+    outputs.dir(jelyvoIconDir)
+    commandLine(
+        "bash",
+        file("make-icns.sh").absolutePath,
+        source.absolutePath,
+        jelyvoIconDir.get().asFile.absolutePath,
+    )
+}
+
 compose.desktop {
     application {
         mainClass = "ca.ilianokokoro.umihi.music.desktop.MainKt"
@@ -64,7 +79,13 @@ compose.desktop {
             macOS {
                 bundleID = "ca.ilianokokoro.umihi.music.desktop"
                 dockName = "Jelyvo"
+                iconFile.set(jelyvoIconDir.map { it.file("Jelyvo.icns") })
             }
         }
     }
+}
+
+// jpackage reads the icon while assembling the bundle, so it must exist first.
+listOf("createDistributable", "packageDmg").forEach { name ->
+    tasks.matching { it.name == name }.configureEach { dependsOn(generateMacIcon) }
 }
