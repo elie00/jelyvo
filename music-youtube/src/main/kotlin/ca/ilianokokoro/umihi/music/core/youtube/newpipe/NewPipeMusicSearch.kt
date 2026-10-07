@@ -9,6 +9,9 @@ import ca.ilianokokoro.umihi.music.core.domain.CatalogSearchFilter
 import ca.ilianokokoro.umihi.music.core.domain.CatalogSearchItem
 import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.core.domain.TrackKind
+import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.Image
@@ -41,6 +44,10 @@ object NewPipeMusicSearch {
         extractor.initialPage.items
             .take(limit)
             .mapNotNull { it.toSearchItem() }
+            .map { item ->
+                if (filter == CatalogSearchFilter.VIDEOS && item is CatalogSearchItem.TrackItem)
+                    item.copy(track = item.track.copy(kind = TrackKind.VIDEO)) else item
+            }
     }
 
     /** An album is a YouTube Music playlist; [id] is the playlist URL NewPipe handed back. */
@@ -155,8 +162,20 @@ private fun List<Image>.largest(): Image? = maxByOrNull { it.height }
 /** Pulls the `v=` id out of a watch URL; NewPipe returns full URLs, [Track.id] holds bare ids. */
 internal fun videoIdOf(url: String?): String? {
     if (url.isNullOrBlank()) return null
-    val marker = "v="
-    val start = url.indexOf(marker).takeIf { it >= 0 }?.plus(marker.length) ?: return null
-    val end = url.indexOf('&', start).takeIf { it >= 0 } ?: url.length
-    return url.substring(start, end).takeIf { it.isNotBlank() }
+    return runCatching {
+        val uri = URI(url)
+        if (uri.scheme !in setOf("https", "http")) return null
+        val host = uri.host?.lowercase() ?: return null
+        val id = when (host) {
+            "youtu.be" -> uri.path.trim('/').takeIf { '/' !in it }
+            "youtube.com", "www.youtube.com", "music.youtube.com", "m.youtube.com" -> {
+                if (uri.path == "/watch") uri.rawQuery.orEmpty().split('&').firstNotNullOfOrNull { pair ->
+                    val parts = pair.split('=', limit = 2)
+                    if (parts.size == 2 && parts[0] == "v") URLDecoder.decode(parts[1], StandardCharsets.UTF_8) else null
+                } else uri.path.split('/').takeIf { it.size == 3 && it[1] in setOf("shorts", "embed", "v") }?.get(2)
+            }
+            else -> null
+        }
+        id?.takeIf { Regex("[A-Za-z0-9_-]{11}").matches(it) }
+    }.getOrNull()
 }

@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,7 @@ fun AccountScreen(
     onCheck: () -> Unit,
 ) {
     var pasted by remember { mutableStateOf("") }
+    LaunchedEffect(session) { if (session != null) pasted = "" }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -43,8 +45,8 @@ fun AccountScreen(
         if (session == null) {
             Text(
                 text = "Le compte porte vos titres likés, vos albums enregistrés, vos artistes " +
-                    "suivis et vos playlists. Connecter ce Mac au même compte que votre téléphone " +
-                    "les rend identiques des deux côtés.",
+                    "suivis et vos playlists sur YouTube. Les favoris et playlists de la bibliothèque " +
+                    "locale restent propres à ce Mac.",
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(

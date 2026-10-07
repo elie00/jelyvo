@@ -1,5 +1,8 @@
 package ca.ilianokokoro.umihi.music.desktop.ui
 
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +39,7 @@ fun SearchScreen(
     results: List<CatalogSearchItem>,
     playingTrackId: String?,
     onPlayTrack: (Int) -> Unit,
+    onEnqueue: (Track) -> Unit,
     onOpenAlbum: (CatalogSearchItem.Album) -> Unit,
     onOpenArtist: (CatalogSearchItem.Artist) -> Unit,
 ) {
@@ -50,9 +54,11 @@ fun SearchScreen(
                 onValueChange = onQueryChange,
                 label = { Text("Rechercher sur YouTube Music") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
                 modifier = Modifier.weight(1f),
             )
-            Button(onClick = onSubmit, enabled = !loading) { Text("Chercher") }
+            Button(onClick = onSubmit, enabled = !loading && query.isNotBlank()) { Text("Chercher") }
         }
 
         Row(
@@ -88,12 +94,13 @@ fun SearchScreen(
                 )
 
                 else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    itemsIndexed(results, key = { _, item -> item.id }) { index, item ->
+                    itemsIndexed(results, key = { index, item -> "${item.id}#$index" }) { index, item ->
                         when (item) {
                             is CatalogSearchItem.TrackItem -> TrackRow(
                                 track = item.track,
                                 playing = playingTrackId == item.track.id,
                                 onClick = { onPlayTrack(index) },
+                                onEnqueue = { onEnqueue(item.track) },
                             )
 
                             is CatalogSearchItem.Album -> AlbumRow(

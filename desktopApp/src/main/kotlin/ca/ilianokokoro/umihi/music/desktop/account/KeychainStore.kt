@@ -1,53 +1,49 @@
 package ca.ilianokokoro.umihi.music.desktop.account
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import java.util.concurrent.TimeUnit
 
-/**
- * Secrets in the macOS Keychain rather than a preferences file, as the multiplatform roadmap
- * requires: a YouTube cookie header is a full account credential.
- *
- * There is no JVM binding for the Keychain, so this drives the `security` command. The secret never
- * appears in the argument vector: `-w` with no inline value makes the tool prompt, and it reads
- * that prompt from stdin, so the credential is piped instead. It asks twice, once to confirm.
- */
-object KeychainStore {
+interface CredentialStore {
+    suspend fun read(): String?
+    suspend fun write(secret: String): Boolean
+    suspend fun clear(): Boolean
+}
+
+/** The secret is sent through stdin, never the process argument vector or a temporary file. */
+object KeychainStore : CredentialStore {
     private const val SERVICE = "ca.ilianokokoro.umihi.music.desktop"
     private const val ACCOUNT = "youtube-session"
+    private const val NOT_FOUND = 44
 
-    suspend fun read(): String? = withContext(Dispatchers.IO) {
-        val process = ProcessBuilder(
-            "security", "find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w",
-        ).redirectErrorStream(false).start()
-
-        val output = process.inputStream.bufferedReader().readText().trim()
-        if (process.waitFor() == 0 && output.isNotBlank()) output else null
+    override suspend fun read(): String? {
+        val (code, output) = runSecurity(listOf("find-generic-password", "-s", SERVICE, "-a", ACCOUNT, "-w"))
+        check(code == 0 || code == NOT_FOUND) { "Trousseau indisponible" }
+        return output.trim().takeIf { code == 0 && it.isNotBlank() }
     }
 
-    suspend fun write(secret: String): Boolean = withContext(Dispatchers.IO) {
-        val process = ProcessBuilder(
-            "security", "add-generic-password",
-            // -U replaces any existing entry rather than failing with "already exists". -w must come
-            // last and carry no value, so the tool prompts and we can feed it over stdin.
-            "-U", "-s", SERVICE, "-a", ACCOUNT, "-w",
-        ).redirectErrorStream(true).start()
+    override suspend fun write(secret: String): Boolean = runSecurity(
+        listOf("add-generic-password", "-U", "-s", SERVICE, "-a", ACCOUNT, "-w"),
+        "$secret\n$secret\n",
+    ).first == 0
 
-        process.outputStream.bufferedWriter().use { writer ->
-            // Once for the prompt, once for its confirmation.
-            writer.write(secret)
-            writer.newLine()
-            writer.write(secret)
-            writer.newLine()
+    override suspend fun clear(): Boolean = runSecurity(
+        listOf("delete-generic-password", "-s", SERVICE, "-a", ACCOUNT),
+    ).first.let { it == 0 || it == NOT_FOUND }
+
+    private suspend fun runSecurity(arguments: List<String>, input: String? = null): Pair<Int, String> =
+        withContext(Dispatchers.IO) {
+            val process = ProcessBuilder(listOf("/usr/bin/security") + arguments)
+                .redirectError(ProcessBuilder.Redirect.DISCARD).start()
+            try {
+                coroutineScope {
+                    val output = async(Dispatchers.IO) { process.inputStream.bufferedReader().use { it.readText() } }
+                    process.outputStream.bufferedWriter().use { writer -> input?.let(writer::write) }
+                    if (!process.waitFor(15, TimeUnit.SECONDS)) {
+                        process.destroyForcibly()
+                        error("Le Trousseau n'a pas répondu")
+                    }
+                    process.exitValue() to output.await()
+                }
+            } finally { process.destroyForcibly() }
         }
-        process.inputStream.readBytes()
-        process.waitFor() == 0
-    }
-
-    suspend fun clear(): Boolean = withContext(Dispatchers.IO) {
-        val process = ProcessBuilder(
-            "security", "delete-generic-password", "-s", SERVICE, "-a", ACCOUNT,
-        ).redirectErrorStream(true).start()
-        process.inputStream.readBytes()
-        process.waitFor() == 0
-    }
 }

@@ -13,25 +13,27 @@ import kotlinx.coroutines.flow.asStateFlow
  * show the same library. Anything the phone keeps locally — play history, local playlists,
  * downloads — does not cross this way and would need its own mechanism.
  */
-class DesktopAccount {
+class DesktopAccount(private val store: CredentialStore = KeychainStore) {
     private val _session = MutableStateFlow<DesktopYoutubeSession?>(null)
     val session: StateFlow<DesktopYoutubeSession?> = _session.asStateFlow()
 
     suspend fun restore() {
-        _session.value = KeychainStore.read()?.let(::DesktopYoutubeSession)
+        _session.value = store.read()?.let(::DesktopYoutubeSession)
     }
 
     suspend fun signIn(rawCookieHeader: String): Boolean {
         val trimmed = rawCookieHeader.trim()
-        if (trimmed.isBlank()) return false
-        if (!KeychainStore.write(trimmed)) return false
+        if (trimmed.isBlank() || trimmed.length > 32_768 || trimmed.any { it.code < 32 || it.code == 127 }) return false
+        if (!DesktopYoutubeSession(trimmed).looksAuthenticated) return false
+        if (!store.write(trimmed)) return false
         _session.value = DesktopYoutubeSession(trimmed)
         return true
     }
 
-    suspend fun signOut() {
-        KeychainStore.clear()
+    suspend fun signOut(): Boolean {
+        if (!store.clear()) return false
         _session.value = null
+        return true
     }
 }
 
@@ -53,7 +55,7 @@ class DesktopYoutubeSession(override val rawCookieHeader: String) : YoutubeSessi
 
     /** The cookie YouTube derives its authorization hash from; without it a request is anonymous. */
     val looksAuthenticated: Boolean
-        get() = cookieValues.containsKey("SAPISID") || cookieValues.containsKey("__Secure-3PAPISID")
+        get() = !cookieValues["SAPISID"].isNullOrBlank() || !cookieValues["__Secure-3PAPISID"].isNullOrBlank()
 
     /** For display: never show the raw header, it is a credential. */
     val summary: String

@@ -43,6 +43,7 @@ fun CollectionScreen(
     playingTrackId: String?,
     onBack: () -> Unit,
     onPlayTrack: (Int) -> Unit,
+    onEnqueue: (Track) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         TextButton(onClick = onBack, modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
@@ -102,6 +103,7 @@ fun CollectionScreen(
                             track = track,
                             playing = playingTrackId == track.id,
                             onClick = { onPlayTrack(index) },
+                            onEnqueue = { onEnqueue(track) },
                         )
                         HorizontalDivider()
                     }

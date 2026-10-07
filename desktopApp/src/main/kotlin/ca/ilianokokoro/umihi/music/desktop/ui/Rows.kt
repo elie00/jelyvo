@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,13 +29,14 @@ import androidx.compose.foundation.shape.CircleShape
 val ARTWORK_SIZE = 60.dp
 
 @Composable
-fun TrackRow(track: Track, playing: Boolean, onClick: () -> Unit) {
+fun TrackRow(track: Track, playing: Boolean, onClick: () -> Unit, onEnqueue: (() -> Unit)? = null) {
     ListRow(
         artworkUri = track.displayArtwork.orEmpty(),
         title = track.title,
         subtitle = track.artist.name,
         trailing = formatTrackDuration(track.durationMs),
         highlighted = playing,
+        action = onEnqueue,
         onClick = onClick,
     )
 }
@@ -71,6 +75,7 @@ private fun ListRow(
     highlighted: Boolean,
     onClick: () -> Unit,
     circularArtwork: Boolean = false,
+    action: (() -> Unit)? = null,
 ) {
     val background = if (highlighted) {
         MaterialTheme.colorScheme.surfaceVariant
@@ -111,6 +116,11 @@ private fun ListRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
+        }
+        action?.let {
+            TextButton(onClick = it, modifier = Modifier.semantics { contentDescription = "Ajouter $title à la file" }) {
+                Text("+")
             }
         }
         if (trailing.isNotBlank()) {

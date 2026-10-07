@@ -38,7 +38,10 @@ class NewPipeStreamResolver(
         kind: StreamKind,
     ): ResolvedStream = withContext(Dispatchers.IO) {
         if (allowLocal) {
-            track.offlineAudioPath?.let { return@withContext ResolvedStream(it) }
+            track.offlineAudioPath?.let { path ->
+                val file = java.io.File(path)
+                if (file.isFile && file.length() > 0) return@withContext ResolvedStream(file.toURI().toString())
+            }
         }
         ResolvedStream(bestStreamUrl(track))
     }
@@ -55,7 +58,8 @@ class NewPipeStreamResolver(
     private fun bestStreamUrl(track: Track): String {
         val extractor = extractorFor(track)
         if (preferMuxedProgressive) {
-            muxedProgressive(extractor)?.let { return it.content }
+            return muxedProgressive(extractor)?.content
+                ?: throw IOException("No compatible progressive MP4 stream available")
         }
         return bestAudioStream(extractor).content
     }
@@ -68,7 +72,7 @@ class NewPipeStreamResolver(
     /** The audio+video rendition served as a plain, non-fragmented MP4. */
     private fun muxedProgressive(extractor: StreamExtractor): VideoStream? =
         extractor.videoStreams
-            .filter { !it.isVideoOnly && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP && it.isUrl }
+            .filter { !it.isVideoOnly && it.format == MediaFormat.MPEG_4 && it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP && it.isUrl }
             .minByOrNull { it.itag }
 
     private fun bestAudioStream(extractor: StreamExtractor): AudioStream {

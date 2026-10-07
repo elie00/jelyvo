@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilterChip
+import ca.ilianokokoro.umihi.music.core.domain.RepeatMode
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,14 +36,18 @@ import ca.ilianokokoro.umihi.music.ui.components.SquareArtwork
 import kotlinx.coroutines.delay
 
 @Composable
-fun PlayerBar(engine: JavaFxAudioEngine) {
+fun PlayerBar(engine: JavaFxAudioEngine, favorite: Boolean, onFavorite: (Track) -> Unit, onQueue: () -> Unit) {
     val state by engine.state.collectAsState()
     val queue by engine.queue.collectAsState()
+    val error by engine.error.collectAsState()
+    val volume by engine.volume.collectAsState()
     var progress by remember { mutableStateOf<PlaybackProgress?>(null) }
     var scrubbing by remember { mutableStateOf<Float?>(null) }
 
     // JavaFX exposes the playhead by polling, not by a flow.
-    LaunchedEffect(state.currentTrack?.id) {
+    LaunchedEffect(queue.current?.entryId) {
+        scrubbing = null
+        progress = null
         while (true) {
             progress = engine.snapshotProgress()
             delay(500)
@@ -48,6 +56,7 @@ fun PlayerBar(engine: JavaFxAudioEngine) {
 
     val track = state.currentTrack
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Row(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -78,6 +87,10 @@ fun PlayerBar(engine: JavaFxAudioEngine) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+            TextButton(onClick = { track?.let(onFavorite) }, enabled = track != null) {
+                Text(if (favorite) "♥" else "♡")
+            }
+            TextButton(onClick = onQueue) { Text("File") }
             Text(
                 text = queuePositionLabel(state.currentIndex, queue.entries.size),
                 style = MaterialTheme.typography.labelSmall,
@@ -100,6 +113,22 @@ fun PlayerBar(engine: JavaFxAudioEngine) {
             }
         }
 
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = state.shuffleEnabled, onClick = { engine.setShuffleEnabled(!state.shuffleEnabled) }, label = { Text("Aléatoire") })
+            FilterChip(selected = state.repeatMode != RepeatMode.OFF, onClick = {
+                engine.setRepeatMode(when (state.repeatMode) {
+                    RepeatMode.OFF -> RepeatMode.ALL
+                    RepeatMode.ALL -> RepeatMode.ONE
+                    RepeatMode.ONE -> RepeatMode.OFF
+                })
+            }, label = { Text(when (state.repeatMode) {
+                RepeatMode.OFF -> "Répétition désactivée"
+                RepeatMode.ALL -> "Répéter la file"
+                RepeatMode.ONE -> "Répéter le titre"
+            }) })
+            Text("Volume", style = MaterialTheme.typography.labelSmall)
+            Slider(value = volume.toFloat(), onValueChange = { engine.setVolume(it.toDouble()) }, modifier = Modifier.weight(1f))
+        }
         val duration = progress?.durationMs ?: 0L
         Row(
             verticalAlignment = Alignment.CenterVertically,
