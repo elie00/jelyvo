@@ -88,7 +88,7 @@ Le dépôt GitHub reste privé.
 
 ## Preuves locales
 
-- **458 tests JVM** : Android 410, Watch 2, cœur 17, YouTube 6, protocole Wear 9, desktop 14.
+- **459 tests JVM** : Android 410, Watch 2, cœur 17, YouTube 6, protocole Wear 9, desktop 15.
 - **10 tests instrumentés** : 4 sur téléphone API 36 ARM64, dont les migrations Room 16→17,
   17→18 et 16→18 ; 6 sur Wear API 36 ARM64, dont purge pendant téléchargement, publication,
   récupération d'index et concurrence entre instances.

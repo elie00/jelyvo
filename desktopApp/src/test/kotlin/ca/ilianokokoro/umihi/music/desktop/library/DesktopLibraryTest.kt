@@ -35,6 +35,17 @@ class DesktopLibraryTest {
         assertEquals(25, store.state.value.favorites.size)
     }
 
+    @Test fun `oversized update cannot create a library that fails on restart`() = runBlocking {
+        val path = temp.root.toPath()
+        val store = DesktopLibrary(path)
+        store.restore()
+        store.toggleFavorite(Track("a"))
+        assertTrue(runCatching { store.toggleFavorite(Track("large", title = "é".repeat(4 * 1024 * 1024))) }.isFailure)
+        val restored = DesktopLibrary(path)
+        restored.restore()
+        assertEquals(listOf("a"), restored.state.value.favorites.map { it.id })
+    }
+
     @Test fun `corrupt or future library is preserved on failure`() = runBlocking {
         for (content in listOf("broken", "{\"version\":2}")) {
             val file = temp.root.toPath().resolve("library.json")

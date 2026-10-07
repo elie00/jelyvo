@@ -38,7 +38,7 @@ class DesktopLibrary(private val directory: Path = defaultDirectory()) {
     suspend fun restore() = withContext(Dispatchers.IO) {
         mutex.withLock {
             val restored = if (Files.exists(file)) {
-                check(Files.size(file) <= 8 * 1024 * 1024) { "Bibliothèque trop volumineuse." }
+                check(Files.size(file) <= MAX_LIBRARY_BYTES) { "Bibliothèque trop volumineuse." }
                 json.decodeFromString<LibrarySnapshot>(Files.readString(file)).also {
                     check(it.version == 1) { "Version de bibliothèque non prise en charge." }
                 }
@@ -78,10 +78,12 @@ class DesktopLibrary(private val directory: Path = defaultDirectory()) {
         mutex.withLock {
             check(loaded) { "La bibliothèque n'a pas pu être chargée. Le fichier existant est conservé." }
             val next = transform(_state.value)
+            val encoded = json.encodeToString(next)
+            check(encoded.toByteArray(Charsets.UTF_8).size <= MAX_LIBRARY_BYTES) { "Bibliothèque trop volumineuse." }
             Files.createDirectories(directory)
             val temp = Files.createTempFile(directory, "library-", ".tmp")
             try {
-                Files.writeString(temp, json.encodeToString(next))
+                Files.writeString(temp, encoded)
                 Files.move(temp, file, ATOMIC_MOVE, REPLACE_EXISTING)
                 _state.value = next
             } finally { Files.deleteIfExists(temp) }
@@ -89,6 +91,7 @@ class DesktopLibrary(private val directory: Path = defaultDirectory()) {
     }
 
     companion object {
+        private const val MAX_LIBRARY_BYTES = 8L * 1024 * 1024
         fun defaultDirectory(): Path = Path.of(System.getProperty("user.home"), "Library", "Application Support", "Jelyvo")
     }
 }
