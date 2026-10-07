@@ -20,8 +20,9 @@ android {
         applicationId = "ca.ilianokokoro.umihi.music"
         minSdk = 30
         targetSdk = 37
-        versionCode = 20611
-        versionName = "2.6.11"
+        versionCode = 20613
+        versionName = "2.6.13"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
@@ -95,4 +96,6 @@ dependencies {
 
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

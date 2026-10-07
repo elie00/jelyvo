@@ -17,7 +17,14 @@ data class HomeState(
     val forYouMixes: List<HomeMix> = emptyList(),
     val profileName: String = "",
     val profileAvatarPath: String = "",
-)
+) {
+    /** Local listening data is useful without a session and while the network is unavailable. */
+    val visibleScreenState: ScreenState
+        get() = if (screenState !is ScreenState.LoggedIn &&
+            (recentlyPlayed.isNotEmpty() || resumeItems.isNotEmpty() || shortcuts.isNotEmpty() || forYouMixes.isNotEmpty())) {
+            ScreenState.LoggedIn()
+        } else screenState
+}
 
 @Immutable
 sealed class ScreenState {

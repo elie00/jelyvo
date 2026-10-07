@@ -80,6 +80,7 @@ fun HomeScreen(
 
 ) {
     val uiState = homeViewModel.uiState.collectAsStateWithLifecycle().value
+    val visibleState = uiState.visibleScreenState
 
     FadingStatusBarWrapper { statusBarHeight ->
         Scaffold(
@@ -91,12 +92,12 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                when (uiState.screenState) {
+                when (visibleState) {
                     is ScreenState.LoggedIn -> {
-                        val homeSections = uiState.screenState.homeSections
-                        val newReleases = uiState.screenState.newReleases
+                        val homeSections = visibleState.homeSections
+                        val newReleases = visibleState.newReleases
 
-                        if (homeSections.isEmpty() && newReleases.isEmpty() && uiState.recentlyPlayed.isEmpty() && uiState.resumeItems.isEmpty()) {
+                        if (homeSections.isEmpty() && newReleases.isEmpty() && uiState.recentlyPlayed.isEmpty() && uiState.resumeItems.isEmpty() && uiState.shortcuts.isEmpty() && uiState.forYouMixes.isEmpty()) {
                             Text(
                                 stringResource(R.string.home_empty),
                                 textAlign = TextAlign.Center
@@ -136,6 +137,15 @@ fun HomeScreen(
                                             profileAvatarPath = uiState.profileAvatarPath,
                                             onSettingsButtonPress = onSettingsButtonPress,
                                         )
+                                    }
+                                    if (uiState.screenState !is ScreenState.LoggedIn) {
+                                        item(key = "local-home-status", span = { GridItemSpan(maxLineSpan) }) {
+                                            Text(
+                                                stringResource(R.string.home_local_content),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            )
+                                        }
                                     }
                                     if (uiState.shortcuts.isNotEmpty()) {
                                         // Spotify-style shortcut tiles, always above the carousels.
@@ -275,7 +285,7 @@ fun HomeScreen(
 
                     ScreenState.Loading -> MusicSkeleton(MusicSkeletonLayout.Home)
                     is ScreenState.Error -> ErrorMessage(
-                        ex = uiState.screenState.exception,
+                        ex = visibleState.exception,
                         onRetry = homeViewModel::getHomeFeed
                     )
 

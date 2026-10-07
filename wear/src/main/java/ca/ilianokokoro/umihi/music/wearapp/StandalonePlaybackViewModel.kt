@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.wearapp
 
+import ca.ilianokokoro.umihi.music.wear.handoffDestinationReady
 import android.app.Application
 import android.content.ComponentName
 import androidx.lifecycle.AndroidViewModel
@@ -74,6 +75,8 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     )
     val state: StateFlow<StandaloneUiState> = _state.asStateFlow()
     private var controller: MediaController? = null
+    private var handoffStarted: Pair<String, () -> Unit>? = null
+    private var handoffTimeout: kotlinx.coroutines.Job? = null
     private var pendingPhoneHandoff: Pair<WearPlaybackSnapshot, () -> Unit>? = null
     private val controllerFuture: ListenableFuture<MediaController>
 
@@ -81,6 +84,8 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
         override fun onEvents(player: Player, events: Player.Events) = updatePlayerState(player)
 
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+            handoffStarted = null
+            handoffTimeout?.cancel()
             _state.update { it.copy(error = error.cause?.message ?: error.message) }
         }
     }
@@ -176,6 +181,9 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun play(song: WatchSong, source: List<WatchSong>) {
+        handoffStarted = null
+        handoffTimeout?.cancel()
+        pendingPhoneHandoff = null
         val player = controller ?: return
         val queue = source.ifEmpty { listOf(song) }.distinctBy(WatchSong::videoId)
         val index = queue.indexOfFirst { it.videoId == song.videoId }.coerceAtLeast(0)
@@ -244,7 +252,11 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
     }
 
     fun toggleDownload(song: WatchSong) {
-        if (song.videoId in library.downloads().map(WatchSong::videoId)) {
+        if (song.videoId in _state.value.downloadingIds) {
+            library.removeDownload(song.videoId)
+            workManager.cancelUniqueWork("${WatchDownloadWorker.TAG}:${song.videoId}")
+            _state.update { it.copy(downloadingIds = it.downloadingIds - song.videoId) }
+        } else if (song.videoId in library.downloads().map(WatchSong::videoId)) {
             library.removeDownload(song.videoId)
             _state.update { it.copy(downloads = library.downloads()) }
         } else {
@@ -255,7 +267,8 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
 
     fun clearDownloads() {
         library.clearDownloads()
-        _state.update { it.copy(downloads = emptyList()) }
+        workManager.cancelAllWorkByTag(WatchDownloadWorker.TAG)
+        _state.update { it.copy(downloads = emptyList(), downloadingIds = emptySet()) }
     }
 
     fun setSmartDownloadLimit(limit: Int) {
@@ -294,20 +307,43 @@ class StandalonePlaybackViewModel(application: Application) : AndroidViewModel(a
         onStarted: () -> Unit,
     ) {
         if (snapshot.queue.isEmpty()) return
-        val queue = snapshot.queue.map {
+        val supported = snapshot.queue.filter { isWatchVideoId(it.mediaId) }
+        if (supported.isEmpty()) {
+            _state.update { it.copy(error = "Cette file ne contient aucun titre YouTube lisible sur la montre.") }
+            return
+        }
+        val queue = supported.map {
             WatchSong(it.mediaId, it.title, it.artist, it.artworkUri)
         }
-        val index = snapshot.queueIndex.coerceIn(queue.indices)
-        val position = snapshot.estimatedPositionMs(System.currentTimeMillis())
+        val originalId = snapshot.queue.getOrNull(snapshot.queueIndex)?.mediaId
+        val matchedIndex = queue.indexOfFirst { it.videoId == originalId }
+        val index = matchedIndex.coerceAtLeast(0)
+        val position = if (matchedIndex >= 0) snapshot.estimatedPositionMs(System.currentTimeMillis()) else 0L
+        handoffTimeout?.cancel()
+        handoffStarted = null
         player.setMediaItems(queue.map(WatchSong::toMediaItem), index, position)
+        handoffStarted = queue[index].videoId to onStarted
+        handoffTimeout = viewModelScope.launch {
+            delay(20_000)
+            if (player.currentMediaItem?.mediaId == queue[index].videoId) player.pause()
+            handoffStarted = null
+            _state.update { it.copy(error = "Le relais n'a pas démarré. La lecture reste sur le téléphone.") }
+        }
         player.prepare()
         player.play()
         library.addRecent(queue[index])
         _state.update { it.copy(recents = library.recents(), error = null) }
-        onStarted()
     }
 
     private fun updatePlayerState(player: Player) {
+        handoffStarted?.let { (expectedId, onStarted) ->
+            if (handoffDestinationReady(expectedId, player.currentMediaItem?.mediaId, true,
+                    player.isPlaying, player.playbackState == Player.STATE_READY)) {
+                handoffStarted = null
+                handoffTimeout?.cancel()
+                onStarted()
+            }
+        }
         val item = player.currentMediaItem
         val currentSong = item?.toWatchSong()
         val queue = List(player.mediaItemCount) { index -> player.getMediaItemAt(index).toWatchSong() }

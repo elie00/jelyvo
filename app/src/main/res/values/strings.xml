@@ -606,4 +606,5 @@
     <string name="add_selection_to_queue">Add selection to queue</string>
     <string name="add_selection_to_playlist">Add selection to playlist</string>
     <string name="selection_already_in_playlist">Every selected track is already in this playlist</string>
+    <string name="home_local_content">Your listening history stays available on this device. Account recommendations are currently unavailable.</string>
 </resources>

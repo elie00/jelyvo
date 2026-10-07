@@ -14,7 +14,7 @@ import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 
-@UnstableApi
+@androidx.annotation.OptIn(UnstableApi::class)
 class StandalonePlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
 
@@ -32,6 +32,7 @@ class StandalonePlaybackService : MediaSessionService() {
             .setMediaSourceFactory(
                 androidx.media3.exoplayer.source.DefaultMediaSourceFactory(resolvingFactory),
             )
+            .setAudioAttributes(androidx.media3.common.AudioAttributes.DEFAULT, true)
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .setHandleAudioBecomingNoisy(true)
             .setSuppressPlaybackOnUnsuitableOutput(true)
@@ -39,7 +40,8 @@ class StandalonePlaybackService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, player).build()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? =
+        if (controllerInfo.packageName == packageName || controllerInfo.isTrusted) mediaSession else null
 
     override fun onTaskRemoved(rootIntent: android.content.Intent?) {
         mediaSession?.player?.let { player ->
@@ -57,12 +59,13 @@ class StandalonePlaybackService : MediaSessionService() {
     }
 }
 
+@androidx.annotation.OptIn(UnstableApi::class)
 private fun DataSpec.resolveJelyvoUri(client: WatchYoutubeClient, context: android.content.Context): DataSpec {
     if (uri.scheme != "jelyvo" || uri.host != "youtube") return this
     val videoId = uri.lastPathSegment?.takeIf(String::isNotBlank)
         ?: error("Identifiant du titre manquant")
     val localFile = WatchLibraryStore(context).audioFile(videoId)
-    if (localFile.exists()) return withUri(Uri.fromFile(localFile))
+    if (localFile.isFile && localFile.length() > 0) return withUri(Uri.fromFile(localFile))
     val directUrl = runBlocking { client.resolveAudioUrl(videoId) }
     return withUri(Uri.parse(directUrl))
 }

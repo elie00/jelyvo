@@ -592,4 +592,5 @@
     <string name="add_selection_to_queue">Ajouter la sélection à la file d’attente</string>
     <string name="add_selection_to_playlist">Ajouter la sélection à une playlist</string>
     <string name="selection_already_in_playlist">Tous les titres sélectionnés sont déjà dans cette playlist</string>
+    <string name="home_local_content">Votre historique reste disponible sur cet appareil. Les recommandations du compte sont actuellement indisponibles.</string>
 </resources>

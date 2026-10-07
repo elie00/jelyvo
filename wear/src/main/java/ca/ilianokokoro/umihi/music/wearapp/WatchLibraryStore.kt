@@ -18,7 +18,7 @@ class WatchLibraryStore(context: Context) {
 
     fun favorites(): List<WatchSong> = read(KEY_FAVORITES)
     fun recents(): List<WatchSong> = read(KEY_RECENTS)
-    fun downloads(): List<WatchSong> = read(KEY_DOWNLOADS).filter { audioFile(it.videoId).exists() }
+    fun downloads(): List<WatchSong> = read(KEY_DOWNLOADS).filter { isWatchVideoId(it.videoId) && audioFile(it.videoId).let { file -> file.isFile && file.length() > 0 } }
 
     var smartDownloadLimit: Int
         get() = preferences.getInt(KEY_SMART_DOWNLOAD_LIMIT, 0)
@@ -32,7 +32,7 @@ class WatchLibraryStore(context: Context) {
         get() = preferences.getBoolean(KEY_RESTRICTED_MODE, false)
         set(value) = preferences.edit { putBoolean(KEY_RESTRICTED_MODE, value) }
 
-    fun toggleFavorite(song: WatchSong): Boolean {
+    fun toggleFavorite(song: WatchSong): Boolean = synchronized(lock) {
         val songs = favorites().toMutableList()
         val removed = songs.removeAll { it.videoId == song.videoId }
         if (!removed) songs.add(0, song)
@@ -40,31 +40,56 @@ class WatchLibraryStore(context: Context) {
         return !removed
     }
 
-    fun addRecent(song: WatchSong) {
+    fun addRecent(song: WatchSong) = synchronized(lock) {
         write(
             KEY_RECENTS,
             (listOf(song) + recents().filterNot { it.videoId == song.videoId }).take(MAX_RECENTS),
         )
     }
 
-    fun addDownload(song: WatchSong) {
+    private fun addDownload(song: WatchSong) {
         write(
             KEY_DOWNLOADS,
-            (listOf(song) + downloads().filterNot { it.videoId == song.videoId }).take(MAX_DOWNLOADS),
+            (listOf(song) + downloads().filterNot { it.videoId == song.videoId }),
         )
     }
 
-    fun removeDownload(videoId: String) {
+    fun downloadToken(videoId: String): String = synchronized(lock) {
+        "${preferences.getLong(KEY_DOWNLOAD_GENERATION, 0)}:${preferences.getLong("download:$videoId", 0)}"
+    }
+
+    fun registerExistingDownload(song: WatchSong, token: String): Boolean = synchronized(lock) {
+        if (token != downloadToken(song.videoId)) return false
+        val file = audioFile(song.videoId)
+        if (!file.isFile || file.length() == 0L) return false
+        addDownload(song)
+        true
+    }
+
+    fun publishDownload(song: WatchSong, partial: File, token: String): Boolean = synchronized(lock) {
+        if (token != downloadToken(song.videoId) || partial.length() == 0L) return false
+        java.nio.file.Files.move(partial.toPath(), audioFile(song.videoId).toPath(),
+            java.nio.file.StandardCopyOption.ATOMIC_MOVE, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        addDownload(song)
+        true
+    }
+
+    fun removeDownload(videoId: String) = synchronized(lock) {
+        preferences.edit { putLong("download:$videoId", preferences.getLong("download:$videoId", 0) + 1) }
         audioFile(videoId).delete()
         write(KEY_DOWNLOADS, downloads().filterNot { it.videoId == videoId })
     }
 
-    fun clearDownloads() {
+    fun clearDownloads() = synchronized(lock) {
+        preferences.edit { putLong(KEY_DOWNLOAD_GENERATION, preferences.getLong(KEY_DOWNLOAD_GENERATION, 0) + 1) }
         downloadsDirectory.listFiles().orEmpty().forEach(File::delete)
         write(KEY_DOWNLOADS, emptyList())
     }
 
-    fun audioFile(videoId: String): File = File(downloadsDirectory, "$videoId.audio")
+    fun audioFile(videoId: String): File {
+        require(isWatchVideoId(videoId)) { "Identifiant YouTube invalide" }
+        return File(downloadsDirectory, "$videoId.audio")
+    }
 
     private val downloadsDirectory: File
         get() = File(preferencesFileDirectory, DOWNLOADS_DIRECTORY).apply { mkdirs() }
@@ -114,7 +139,8 @@ class WatchLibraryStore(context: Context) {
         const val DOWNLOADS_DIRECTORY = "watch_audio"
         const val MAX_FAVORITES = 100
         const val MAX_RECENTS = 30
-        const val MAX_DOWNLOADS = 200
+        const val KEY_DOWNLOAD_GENERATION = "download_generation"
+        val lock = Any()
     }
 }
 

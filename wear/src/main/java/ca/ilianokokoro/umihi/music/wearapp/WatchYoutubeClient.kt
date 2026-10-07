@@ -179,11 +179,11 @@ class WatchYoutubeClient(
             "Mozilla/5.0 (Linux; Android 16; Watch) AppleWebKit/537.36 Chrome/140 Safari/537.36"
         const val VR_USER_AGENT =
             "com.google.android.apps.youtube.vr.oculus/1.61.48 (Linux; U; Android 12; en_US; Quest 3)"
-        val WEB_REMIX_CLIENT = """{
+        val WEB_REMIX_CLIENT get() = """{
             "clientName":"WEB_REMIX","clientVersion":"1.20250212.01.00",
             "userAgent":"$WEB_USER_AGENT","hl":"${Locale.getDefault().language.ifBlank { "fr" }}"
         }""".trimIndent()
-        val ANDROID_VR_CLIENT = """{
+        val ANDROID_VR_CLIENT get() = """{
             "clientName":"ANDROID_VR","clientVersion":"1.61.48","clientId":"28",
             "userAgent":"$VR_USER_AGENT","osName":"Android","osVersion":"12",
             "deviceMake":"Oculus","deviceModel":"Quest 3","androidSdkVersion":"32",

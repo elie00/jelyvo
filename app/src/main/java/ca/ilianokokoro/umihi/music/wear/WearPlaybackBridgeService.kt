@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.wear
 
 import androidx.media3.common.util.UnstableApi
 import androidx.annotation.OptIn
+import ca.ilianokokoro.umihi.music.wear.handoffDestinationReady
 import android.content.ComponentName
 import android.os.Bundle
 import android.util.Log
@@ -71,7 +72,7 @@ class WearPlaybackBridgeService : WearableListenerService() {
             )
             return
         }
-        withController(
+        openController(
             onError = {
                 sendResult(
                     messageEvent.sourceNodeId,
@@ -96,15 +97,42 @@ class WearPlaybackBridgeService : WearableListenerService() {
                     )
                     .build()
             }
-            controller.setMediaItems(items, handoff.currentIndex, handoff.positionMs)
-            controller.prepare()
-            if (handoff.playWhenReady) controller.play() else controller.pause()
-            sendResult(
-                messageEvent.sourceNodeId,
-                WearPlaybackContract.COMMAND_HANDOFF_TO_PHONE,
-                true,
-                "",
-            )
+            val handler = android.os.Handler(android.os.Looper.getMainLooper())
+            var finished = false
+            lateinit var listener: Player.Listener
+            lateinit var timeout: Runnable
+            fun finish(success: Boolean) {
+                if (finished) return
+                finished = true
+                handler.removeCallbacks(timeout)
+                if (!success && controller.currentMediaItem?.mediaId == handoff.queue[handoff.currentIndex].mediaId) {
+                    runCatching { controller.pause() }
+                }
+                controller.removeListener(listener)
+                controller.release()
+                sendResult(messageEvent.sourceNodeId, WearPlaybackContract.COMMAND_HANDOFF_TO_PHONE,
+                    success, if (success) "" else "phone_unavailable")
+            }
+            fun checkReady() {
+                if (finished) return
+                if (controller.playerError != null) finish(false)
+                else if (handoffDestinationReady(
+                        handoff.queue[handoff.currentIndex].mediaId, controller.currentMediaItem?.mediaId,
+                        handoff.playWhenReady, controller.isPlaying, controller.playbackState == Player.STATE_READY,
+                    )) finish(true)
+            }
+            listener = object : Player.Listener {
+                override fun onEvents(player: Player, events: Player.Events) { checkReady() }
+            }
+            timeout = Runnable { finish(false) }
+            try {
+                controller.setMediaItems(items, handoff.currentIndex, handoff.positionMs)
+                controller.addListener(listener)
+                handler.postDelayed(timeout, 20_000)
+                controller.prepare()
+                if (handoff.playWhenReady) controller.play() else controller.pause()
+                checkReady()
+            } catch (_: RuntimeException) { finish(false) }
         }
     }
 

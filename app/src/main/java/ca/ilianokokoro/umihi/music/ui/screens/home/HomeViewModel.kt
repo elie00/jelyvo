@@ -197,6 +197,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
             try {
                 getHomeFeedSuspend(useCache = false)
+            } catch (ex: CancellationException) {
+                throw ex
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
             } finally {
