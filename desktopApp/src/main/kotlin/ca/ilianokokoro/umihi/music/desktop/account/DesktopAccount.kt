@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * The account is the sync boundary: liked songs, saved albums, followed artists and remote
  * playlists live on it, so signing the desktop into the same account is what makes the two clients
- * show the same library. Anything the phone keeps locally — play history, local playlists,
+ * read the same account likes. This client currently exposes liked tracks only;
+ * the local library remains independent. Anything the phone keeps locally — play history, local playlists,
  * downloads — does not cross this way and would need its own mechanism.
  */
 class DesktopAccount(private val store: CredentialStore = KeychainStore) {

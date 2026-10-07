@@ -9,6 +9,7 @@ sealed interface Screen {
     data object Queue : Screen
     data object Search : Screen
     data object Account : Screen
+    data object AccountTracks : Screen
     data class Album(val id: String, val title: String) : Screen
     data class Artist(val id: String, val name: String) : Screen
 }

@@ -35,10 +35,12 @@ import ca.ilianokokoro.umihi.music.core.domain.CatalogSearchItem
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackQueue
 import ca.ilianokokoro.umihi.music.core.domain.QueueEntry
 import ca.ilianokokoro.umihi.music.core.domain.Track
+import ca.ilianokokoro.umihi.music.core.youtube.newpipe.youtubePlaylistUrl
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeMusicSearch
 import ca.ilianokokoro.umihi.music.core.youtube.newpipe.NewPipeStreamResolver
 import ca.ilianokokoro.umihi.music.desktop.account.DesktopAccount
 import ca.ilianokokoro.umihi.music.desktop.account.checkAccount
+import ca.ilianokokoro.umihi.music.desktop.account.likedAccountTracks
 import ca.ilianokokoro.umihi.music.desktop.playback.JavaFxAudioEngine
 import ca.ilianokokoro.umihi.music.desktop.theme.nunitoFontFamily
 import ca.ilianokokoro.umihi.music.desktop.library.DesktopLibrary
@@ -65,12 +67,13 @@ fun main() = application {
         title = "Jelyvo",
         state = rememberWindowState(size = DpSize(1200.dp, 800.dp)),
     ) {
-        JelyvoDesktopApp()
+        LaunchedEffect(Unit) { window.minimumSize = java.awt.Dimension(860, 580) }
+        JelyvoDesktopApp(onQuit = ::exitApplication)
     }
 }
 
 @Composable
-private fun JelyvoDesktopApp() {
+private fun JelyvoDesktopApp(onQuit: () -> Unit) {
     val engine = remember { JavaFxAudioEngine(NewPipeStreamResolver(preferMuxedProgressive = true)) }
     val scope = rememberCoroutineScope()
     DisposableEffect(engine) { onDispose { engine.release() } }
@@ -132,6 +135,14 @@ private fun JelyvoDesktopApp() {
 
     var searchJob by remember { mutableStateOf<Job?>(null) }
     var collectionJob by remember { mutableStateOf<Job?>(null) }
+
+    LaunchedEffect(session) {
+        if (screen == Screen.AccountTracks) {
+            collectionJob?.cancel()
+            collectionTracks = emptyList()
+            screen = Screen.Account
+        }
+    }
 
     fun runSearch() {
         if (query.isBlank()) return
@@ -215,6 +226,7 @@ private fun JelyvoDesktopApp() {
         Surface(modifier = Modifier.fillMaxSize().onPreviewKeyEvent { event ->
             if (event.type != KeyEventType.KeyDown || (!event.isMetaPressed && !event.isCtrlPressed)) false
             else when (event.key) {
+                Key.Q, Key.W -> { onQuit(); true }
                 Key.Spacebar -> { if (playback.isPlaying) engine.pause() else engine.play(); true }
                 Key.DirectionRight -> { engine.skipNext(); true }
                 Key.DirectionLeft -> { engine.skipPrevious(); true }
@@ -261,7 +273,14 @@ private fun JelyvoDesktopApp() {
                                 onQueryChange = { query = it },
                                 filter = filter,
                                 onFilterChange = { filter = it; runSearch() },
-                                onSubmit = ::runSearch,
+                                onSubmit = {
+                                    val playlistUrl = youtubePlaylistUrl(query)
+                                    if (playlistUrl == null) runSearch()
+                                    else openCollection(Screen.Album(playlistUrl, "Playlist YouTube")) {
+                                        val page = NewPipeMusicSearch.album(playlistUrl)
+                                        Triple(page.tracks, page.artworkUrl, page.title)
+                                    }
+                                },
                                 loading = searching,
                                 error = searchError,
                                 results = results,
@@ -313,14 +332,27 @@ private fun JelyvoDesktopApp() {
                                         finally { accountBusy = false }
                                     }
                                 },
+                                onOpenLikes = {
+                                    val current = session ?: return@AccountScreen
+                                    openCollection(Screen.AccountTracks) {
+                                        Triple(likedAccountTracks(current), "", "Compte YouTube")
+                                    }
+                                },
                                 onCheck = {
                                     val current = session ?: return@AccountScreen
                                     scope.launch {
                                         accountBusy = true
-                                        accountCheck = checkAccount(current)
-                                        accountBusy = false
+                                        try { accountCheck = checkAccount(current) }
+                                        finally { accountBusy = false }
                                     }
                                 },
+                            )
+
+                            Screen.AccountTracks -> CollectionScreen(
+                                title = "Titres aimés sur YouTube", subtitle = collectionSubtitle, artworkUri = "",
+                                tracks = collectionTracks, loading = collectionLoading, error = collectionError,
+                                playingTrackId = playback.currentTrack?.id, onBack = { screen = Screen.Account },
+                                onPlayTrack = { play(collectionTracks, it) }, onEnqueue = engine::enqueue,
                             )
 
                             is Screen.Album -> CollectionScreen(

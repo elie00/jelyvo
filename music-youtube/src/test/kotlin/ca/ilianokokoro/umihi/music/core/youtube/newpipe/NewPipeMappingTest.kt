@@ -19,6 +19,11 @@ class NewPipeMappingTest {
             assertNull(url, videoIdOf(url))
         }
     }
+    @Test fun `playlist links are normalized without arbitrary hosts or parameters`() {
+        assertEquals("https://www.youtube.com/playlist?list=PLtest", youtubePlaylistUrl("https://music.youtube.com/watch?v=aB0-_123456&list=PLtest&si=secret"))
+        assertNull(youtubePlaylistUrl("https://evil.test/playlist?list=PLtest"))
+        assertNull(youtubePlaylistUrl("https://www.youtube.com/playlist?list=../etc"))
+    }
     @Test fun `downloaded file becomes a playable file URI without network resolution`() = runBlocking {
         val file = temp.newFile("audio with space.mp4").apply { writeText("audio") }
         val resolved = NewPipeStreamResolver().resolve(Track("a", offlineAudioPath = file.path), allowLocal = true)

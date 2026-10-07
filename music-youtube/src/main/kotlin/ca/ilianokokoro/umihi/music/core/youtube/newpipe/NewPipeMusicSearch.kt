@@ -12,6 +12,8 @@ import ca.ilianokokoro.umihi.music.core.domain.TrackKind
 import java.net.URI
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.schabi.newpipe.extractor.Image
@@ -62,8 +64,17 @@ object NewPipeMusicSearch {
         // cost the user the track list.
         val artistName = runCatching { extractor.uploaderName.orEmpty() }.getOrDefault("")
         val albumName = runCatching { extractor.name.orEmpty() }.getOrDefault("")
-        val tracks = extractor.initialPage.items
-            .filterIsInstance<StreamInfoItem>()
+        val items = mutableListOf<StreamInfoItem>()
+        var page = extractor.initialPage
+        var pageCount = 0
+        while (true) {
+            coroutineContext.ensureActive()
+            items += page.items.filterIsInstance<StreamInfoItem>()
+            if (!page.hasNextPage()) break
+            check(++pageCount <= 200) { "Collection trop volumineuse" }
+            page = extractor.getPage(page.nextPage)
+        }
+        val tracks = items
             .mapIndexed { index, item ->
                 item.toTrack().copy(
                     positionInCollection = index + 1,
@@ -179,3 +190,15 @@ internal fun videoIdOf(url: String?): String? {
         id?.takeIf { Regex("[A-Za-z0-9_-]{11}").matches(it) }
     }.getOrNull()
 }
+
+/** Accept only provider playlist links; the caller can then open the collection instead of searching its URL. */
+fun youtubePlaylistUrl(input: String): String? = runCatching {
+    val uri = URI(input.trim())
+    if (uri.scheme !in setOf("http", "https") || uri.host?.lowercase() !in setOf("youtube.com", "www.youtube.com", "music.youtube.com", "m.youtube.com")) return null
+    val id = uri.rawQuery.orEmpty().split('&').firstNotNullOfOrNull {
+        val pair = it.split('=', limit = 2)
+        if (pair.size == 2 && pair[0] == "list") pair[1] else null
+    } ?: return null
+    if (!Regex("[A-Za-z0-9_-]{2,150}").matches(id)) return null
+    "https://www.youtube.com/playlist?list=$id"
+}.getOrNull()

@@ -32,6 +32,7 @@ fun AccountScreen(
     onSignIn: (String) -> Unit,
     onSignOut: () -> Unit,
     onCheck: () -> Unit,
+    onOpenLikes: () -> Unit,
 ) {
     var pasted by remember { mutableStateOf("") }
     LaunchedEffect(session) { if (session != null) pasted = "" }
@@ -80,6 +81,7 @@ fun AccountScreen(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onOpenLikes, enabled = !busy && session.looksAuthenticated) { Text("Titres aimés sur YouTube") }
                 Button(onClick = onCheck, enabled = !busy) { Text("Tester la connexion") }
                 OutlinedButton(onClick = onSignOut, enabled = !busy) { Text("Se déconnecter") }
             }
