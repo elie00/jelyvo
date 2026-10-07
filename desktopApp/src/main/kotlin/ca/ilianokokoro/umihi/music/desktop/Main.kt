@@ -15,6 +15,7 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -62,18 +63,20 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 
 fun main() = application {
+    var shortcutHandler by remember { mutableStateOf<(KeyEvent) -> Boolean>({ false }) }
     Window(
         onCloseRequest = ::exitApplication,
+        onPreviewKeyEvent = { shortcutHandler(it) },
         title = "Jelyvo",
         state = rememberWindowState(size = DpSize(1200.dp, 800.dp)),
     ) {
         LaunchedEffect(Unit) { window.minimumSize = java.awt.Dimension(860, 580) }
-        JelyvoDesktopApp(onQuit = ::exitApplication)
+        JelyvoDesktopApp(onQuit = ::exitApplication, registerShortcuts = { shortcutHandler = it })
     }
 }
 
 @Composable
-private fun JelyvoDesktopApp(onQuit: () -> Unit) {
+private fun JelyvoDesktopApp(onQuit: () -> Unit, registerShortcuts: ((KeyEvent) -> Boolean) -> Unit) {
     val engine = remember { JavaFxAudioEngine(NewPipeStreamResolver(preferMuxedProgressive = true)) }
     val scope = rememberCoroutineScope()
     DisposableEffect(engine) { onDispose { engine.release() } }
@@ -199,6 +202,32 @@ private fun JelyvoDesktopApp(onQuit: () -> Unit) {
         }
     }
 
+    // Window-level dispatch also works before any Compose child owns keyboard focus.
+    SideEffect {
+        registerShortcuts { event ->
+            // On AZERTY, Shift+é produces "2" but retains the é key code.
+            val shortcutKey = when (event.utf16CodePoint) {
+                '1'.code -> Key.One
+                '2'.code -> Key.Two
+                '3'.code -> Key.Three
+                '4'.code -> Key.Four
+                else -> event.key
+            }
+            if (event.type != KeyEventType.KeyDown || (!event.isMetaPressed && !event.isCtrlPressed)) false
+            else when (shortcutKey) {
+                Key.Q, Key.W -> { onQuit(); true }
+                Key.Spacebar -> { if (playback.isPlaying) engine.pause() else engine.play(); true }
+                Key.DirectionRight -> { engine.skipNext(); true }
+                Key.DirectionLeft -> { engine.skipPrevious(); true }
+                Key.One -> { screen = Screen.Home; true }
+                Key.Two -> { screen = Screen.Search; true }
+                Key.Three -> { screen = Screen.Library; true }
+                Key.Four -> { screen = Screen.Queue; true }
+                else -> false
+            }
+        }
+    }
+
     UmihiMusicTheme(darkTheme = true, fontFamily = nunitoFontFamily) {
         if (savePlaylist || renamePlaylist != null) PlaylistNameDialog(
             initialName = renamePlaylist?.name.orEmpty(),
@@ -223,20 +252,7 @@ private fun JelyvoDesktopApp(onQuit: () -> Unit) {
             }) { Text("Supprimer") } },
             dismissButton = { TextButton(onClick = { deletePlaylist = null; clearHistory = false }) { Text("Annuler") } },
         )
-        Surface(modifier = Modifier.fillMaxSize().onPreviewKeyEvent { event ->
-            if (event.type != KeyEventType.KeyDown || (!event.isMetaPressed && !event.isCtrlPressed)) false
-            else when (event.key) {
-                Key.Q, Key.W -> { onQuit(); true }
-                Key.Spacebar -> { if (playback.isPlaying) engine.pause() else engine.play(); true }
-                Key.DirectionRight -> { engine.skipNext(); true }
-                Key.DirectionLeft -> { engine.skipPrevious(); true }
-                Key.One -> { screen = Screen.Home; true }
-                Key.Two -> { screen = Screen.Search; true }
-                Key.Three -> { screen = Screen.Library; true }
-                Key.Four -> { screen = Screen.Queue; true }
-                else -> false
-            }
-        }) {
+        Surface(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxSize()) {
                 NavigationRail(modifier = Modifier.fillMaxHeight()) {
                     NavigationRailItem(selected = screen is Screen.Home, onClick = { screen = Screen.Home }, icon = { Text("⌂") }, label = { Text("Accueil") })

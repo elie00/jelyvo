@@ -37,7 +37,8 @@ Le dépôt GitHub reste privé.
   Vidéos est exposé. Les liens de playlists YouTube sont reconnus et les pages suivantes des
   collections sont parcourues.
 - Cmd/Ctrl+Espace : lecture/pause ; gauche/droite : précédent/suivant ; 1–4 : accueil, recherche,
-  bibliothèque, file ; Q/W : quitter/fermer. La fenêtre a une taille minimale utilisable.
+  bibliothèque, file ; Q/W : quitter/fermer. Le routage se fait au niveau de la fenêtre et
+  reconnaît les chiffres produits avec Maj sur AZERTY. La fenêtre a une taille minimale utilisable.
 - Les en-têtes de session incomplets ou contenant des caractères de contrôle sont refusés avant
   stockage. La déconnexion ne prétend plus réussir lorsque la suppression du Trousseau échoue.
   Les processus `security` ont un délai maximal et ne reçoivent pas le secret dans leurs arguments.
@@ -78,7 +79,8 @@ Le dépôt GitHub reste privé.
   et le DMG sur Apple Silicon. Le choix du runner suit la
   [référence GitHub](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 - CodeQL construit sans secret de signature. Le dépôt privé doit encore avoir Code scanning activé
-  pour accepter ses résultats : le run antérieur `37638399986` échouait aussi sur cette configuration.
+  pour accepter ses résultats : les runs `37638399986` et `37695448868` confirment ce blocage
+  de configuration lors de l’envoi des résultats Actions.
 - L'ancien workflow de publication visait le dépôt privé des sources, alors que l'updater consulte
   `elie00/jelyvo-releases`. Le workflow produit désormais manuellement des artefacts signés et
   vérifie le certificat des deux APK. La publication reste assurée par `publish-release.sh`,
@@ -98,7 +100,10 @@ Le dépôt GitHub reste privé.
   conforme à l'empreinte pérenne `b47ac9b86845664530b6e1a77465f210fa7b4913e77b1d44fde6a4f28fbe081d`.
 - DMG et bundle Apple Silicon construits. Le client empaqueté a effectué la recherche « Daft Punk »
   puis lu « Instant Crush (feat. Julian Casablancas) » : progression observée de 0:05 à 0:55,
-  pause à 0:58, durée annoncée 5:37, file de 20 titres affichée.
+  pause à 0:58, durée annoncée 5:37, file de 20 titres affichée. Dans le bundle final, l’album
+  « Random Access Memories » charge 13 titres ; « Give Life Back to Music » progresse jusqu’à
+  0:19 avant pause. La file enregistrée en playlist est retrouvée après redémarrage.
+  Les raccourcis de recherche, bibliothèque et fermeture sont vérifiés avec le clavier AZERTY.
 - Aller-retour du Trousseau vérifié avec un secret factice dans une entrée temporaire distincte,
   supprimée immédiatement après le test ; aucun compte utilisateur modifié.
 - `actionlint` et `bash -n scripts/publish-release.sh` vérifient la syntaxe des workflows/scripts.
