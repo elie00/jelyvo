@@ -3,7 +3,21 @@
 Le module `wear` est le compagnon Wear OS du lecteur Android. La version stable vise la
 Galaxy Watch 8 et reste compatible avec les montres Wear OS 3 ou plus récentes (API 30+).
 
-## Fonctionnalités actuelles
+## Mise à jour du 8 octobre 2026
+
+La montre peut maintenant lire sans téléphone : recherche YouTube, favoris et historique locaux,
+téléchargements avec contrainte Wi-Fi, file, répétition et lecture aléatoire. L'écran compagnon
+reste disponible pour piloter le téléphone. Le relais entre appareils nécessite encore une
+validation avec une vraie paire téléphone/montre.
+
+Les téléchargements sont publiés par renommage atomique. Une annulation, une suppression ou une
+purge invalide les travaux déjà partis. Les écritures de bibliothèque sont sérialisées entre les
+instances du service, du lecteur et des workers. Les identifiants de fichiers sont validés.
+
+La lecture autonome gère le focus audio et refuse les contrôleurs externes non approuvés par Android.
+Les fichiers locaux propres au téléphone sont exclus du relais vers la montre.
+
+## Fonctionnalités du compagnon
 
 - état de connexion au téléphone ;
 - pochette, titre et artiste en cours ;
@@ -51,5 +65,5 @@ Glissez horizontalement depuis le lecteur pour ouvrir les commandes, puis la fil
 La couronne ou la lunette rotative fait défiler la file. Pour ajouter la tuile, effectuez un appui
 long sur le cadran, ouvrez **Tuiles**, puis choisissez **Lecteur Jelyvo**.
 
-La lecture reste volontairement pilotée par le téléphone : le compte, le cache, les téléchargements
-et le moteur YouTube restent ainsi centralisés, sans dupliquer des données sensibles sur la montre.
+En mode compagnon, le compte, le cache et la lecture restent sur le téléphone. En mode autonome,
+la montre utilise sa propre bibliothèque et ses propres fichiers, sans copier les cookies du compte.

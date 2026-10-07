@@ -1,5 +1,7 @@
 # Chantier Jelyvo — fork elie00
 
+> État courant : [audit et validation du 8 octobre 2026](docs/PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
+
 > Document de passation pour reprendre le travail sur un autre poste.
 > Dernière mise à jour : 2026-07-27, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 

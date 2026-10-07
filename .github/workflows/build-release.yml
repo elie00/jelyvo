@@ -1,167 +1,79 @@
-name: Build the android APK
+name: Build signed Android artifacts
+# Publication is deliberately handled by scripts/publish-release.sh, which checks the release
+# repository, version and certificate. The former jobs published to the private source repository,
+# while installed applications read elie00/jelyvo-releases.
+on:
+  workflow_dispatch:
+    inputs:
+      beta:
+        description: Append the beta version suffix
+        type: boolean
+        default: true
 permissions:
   contents: read
-on:
-  push:
-    branches:
-      - main
-      - prod
-
-  workflow_dispatch:
-
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: signed-build-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  MAIN_PROJECT_MODULE: app
-  APK_FILE_NAME: Jelyvo
-  STORE_FILE: release-key.jks
-  BETA_TAG: beta
-
 jobs:
-  build-android-apk:
-    permissions:
-      packages: write
-      contents: write
+  build:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
-
-      - name: Set Up JDK
-        uses: actions/setup-java@v5
+      - uses: actions/setup-java@v5
         with:
-          distribution: "temurin"
+          distribution: temurin
           java-version: 21
-          cache: "gradle"
-
-      - name: Change wrapper permissions
-        run: chmod +x ./gradlew
-
-      - name: Set up Keystore
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > ${{env.MAIN_PROJECT_MODULE}}/${{ env.STORE_FILE }}
+          cache: gradle
+      - name: Run verification
+        run: >-
+          ./gradlew :music-core:test :music-youtube:test :wear-shared:test
+          :app:testStandaloneDebugUnitTest :wear:testDebugUnitTest
+          :app:lintStandaloneDebug :wear:lintDebug --console=plain
+      - name: Configure release signing
         env:
-          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEY }}
-
-      - name: Create keystore.properties file
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          STORE_PASSWORD: ${{ secrets.KEY_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "storeFile=${{ env.STORE_FILE }}" > keystore.properties
-          echo "storePassword=${{ secrets.KEY_STORE_PASSWORD }}" >> keystore.properties
-          echo "keyAlias=${{ secrets.ALIAS }}" >> keystore.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
-
-      - name: Build APKs
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          names = ['SIGNING_KEY', 'STORE_PASSWORD', 'KEY_ALIAS', 'KEY_PASSWORD']
+          if any(not os.environ.get(name) for name in names):
+              raise SystemExit('Missing release signing configuration')
+          key = Path(os.environ['RUNNER_TEMP']) / 'jelyvo-release.jks'
+          key.write_bytes(base64.b64decode(os.environ['SIGNING_KEY'], validate=True))
+          key.chmod(0o600)
+          def escape(value):
+              return value.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '\\r').replace(' ', '\\ ')
+          values = dict(storeFile=str(key), storePassword=os.environ['STORE_PASSWORD'],
+                        keyAlias=os.environ['KEY_ALIAS'], keyPassword=os.environ['KEY_PASSWORD'])
+          props = Path('keystore.properties')
+          props.write_text(''.join(f'{k}={escape(v)}\n' for k, v in values.items()))
+          props.chmod(0o600)
+          PY
+      - name: Build phone and watch releases
+        env:
+          BETA: ${{ inputs.beta }}
+        run: ./gradlew :app:assembleStandaloneRelease :wear:assembleRelease -Pbeta="$BETA" -PgitHash="$GITHUB_SHA" --console=plain
+      - name: Verify both signing certificates and collect artifacts
         run: |
-          if [[ "${{ github.ref_name }}" == "prod" ]]; then
-            ./gradlew \
-              assembleStandaloneRelease \
-              -Pbeta=false \
-              -PgitHash=${{ github.sha }}
-          else
-            ./gradlew \
-              assembleStandaloneRelease \
-              -Pbeta=true \
-              -PgitHash=${{ github.sha }}
-          fi
-
-      - name: Collect APKs
-        run: |
-          mkdir -p release-apks
-
-          # Keep this source name aligned with outputFileName in app/build.gradle.kts.
-          cp app/build/outputs/apk/standalone/release/Jelyvo.apk \
-            release-apks/${{env.APK_FILE_NAME}}.apk
-
-      - name: Upload APK Artifacts
-        uses: actions/upload-artifact@v7
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          expected=b47ac9b86845664530b6e1a77465f210fa7b4913e77b1d44fde6a4f28fbe081d
+          mkdir -p release-artifacts
+          for apk in app/build/outputs/apk/standalone/release/Jelyvo.apk wear/build/outputs/apk/release/Jelyvo-Watch.apk; do
+            actual=$("$signer" verify --print-certs "$apk" | sed -nE 's/.*SHA-256 digest: ([0-9a-f]+).*/\1/p' | head -1)
+            test "$actual" = "$expected"
+          done
+          cp app/build/outputs/apk/standalone/release/Jelyvo.apk release-artifacts/
+          zip -j release-artifacts/Jelyvo-Watch.zip wear/build/outputs/apk/release/Jelyvo-Watch.apk
+      - uses: actions/upload-artifact@v7
         with:
-          name: apk-files
-          path: release-apks/
-          overwrite: true
+          name: signed-android
+          path: release-artifacts/
           if-no-files-found: error
-  update-beta-prerelease:
-    permissions:
-      packages: write
-      contents: write
-    if: github.ref_name != 'prod'
-    needs:
-      - build-android-apk
-    runs-on: ubuntu-latest
-    name: Update the beta GitHub release
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-        with:
-          path: ./artifacts
-
-      - name: Delete Old Beta Release
-        run: gh release delete ${{ env.BETA_TAG }} --cleanup-tag -y || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create new Beta release
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: ${{ env.BETA_TAG }}
-          name: Beta
-          artifacts: ./artifacts/**/*.apk
-          allowUpdates: true
-          removeArtifacts: true
-          generateReleaseNotes: false
-          body: ${{ github.event.head_commit.message }}
-          makeLatest: false
-          prerelease: true
-          draft: false
-          commit: ${{ github.sha }}
-
-  publish-github-release:
-    permissions:
-      packages: write
-      contents: write
-    if: github.ref_name == 'prod'
-    needs:
-      - build-android-apk
-    runs-on: ubuntu-latest
-    name: Publish the GitHub release
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-        with:
-          path: ./artifacts
-      - name: Extract version
-        id: get_version
-        run: |
-          version=$(grep -oP 'val\s+appVersionName\s*=\s*"\K[^"]+' app/build.gradle.kts)
-
-          echo "version=$version"
-          echo "version=$version" >> $GITHUB_OUTPUT
-
-      - name: Create a Release
-        uses: ncipollo/release-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag: v${{ steps.get_version.outputs.version }}
-          commit: prod
-          artifacts: ./artifacts/**/*.apk
-          generateReleaseNotes: false
-          draft: true
-          body: |
-            ## Release v${{ steps.get_version.outputs.version }}
-
-            ### Features
-            -
-
-            ### Bug fixes
-            -
-
-            ### Full Changelog
-            https://github.com/elie00/umihi-music/compare/v${{ steps.get_version.outputs.version }}...v${{ steps.get_version.outputs.version }}
+      - name: Remove temporary signing material
+        if: always()
+        run: rm -f keystore.properties "$RUNNER_TEMP/jelyvo-release.jks"

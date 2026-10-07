@@ -1,5 +1,7 @@
 # Publication des mises à jour Jelyvo
 
+> État courant : [audit et validation du 8 octobre 2026](PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
+
 Ce document décrit le circuit de publication à reprendre depuis le Mac qui possède la clé ayant
 signé les versions publiques de Jelyvo.
 

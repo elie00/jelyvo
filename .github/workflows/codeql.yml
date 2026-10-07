@@ -50,22 +50,6 @@ jobs:
         if: matrix.language == 'java-kotlin'
         run: chmod +x ./gradlew
 
-      - name: Set up Keystore
-        if: matrix.language == 'java-kotlin'
-        run:
-          echo "$KEYSTORE_BASE64" | base64 -d > ${{ env.MAIN_PROJECT_MODULE }}/${{
-          env.STORE_FILE }}
-        env:
-          KEYSTORE_BASE64: ${{ secrets.SIGNING_KEY }}
-
-      - name: Create keystore.properties
-        if: matrix.language == 'java-kotlin'
-        run: |
-          echo "storeFile=${{ env.STORE_FILE }}" > keystore.properties
-          echo "storePassword=${{ secrets.KEY_STORE_PASSWORD }}" >> keystore.properties
-          echo "keyAlias=${{ secrets.ALIAS }}" >> keystore.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> keystore.properties
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
@@ -74,7 +58,7 @@ jobs:
 
       - name: Build
         if: matrix.language == 'java-kotlin'
-        run: ./gradlew assembleRelease -Pbeta=true -PgitHash=${{ github.sha }}
+        run: ./gradlew :app:assembleStandaloneDebug :wear:assembleDebug --console=plain
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4

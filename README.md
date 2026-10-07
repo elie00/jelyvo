@@ -2,7 +2,9 @@
 
 <img src="fastlane/metadata/android/en-US/images/icon.png" height="72" alt="Jelyvo app icon">
 
-A **Material YouTube Music player** for Android, built with **Kotlin** and **Jetpack Compose**.
+A **Material YouTube Music player** for Android, Wear OS and macOS Apple Silicon, built with **Kotlin** and **Compose**.
+
+Current verification and remaining limits: [8 October 2026 audit](docs/PROJECT_AUDIT_2026-10-08.md).
 
 > This is a personal hard fork of **[ilianoKokoro/umihi-music](https://github.com/ilianoKokoro/umihi-music)**,
 > licensed GPL-3.0. It has diverged substantially from the original and is **neither supported nor
@@ -22,16 +24,15 @@ not distributed through Google Play, F-Droid, IzzyOnDroid or Obtainium.
 - It keeps upstream's application id (`ca.ilianokokoro.umihi.music`), so it **cannot be installed
   alongside** the original app.
 
-Verification is partial and stated honestly: the JVM unit-test suite passes, recent Room migrations
-have instrumented tests, both debug and minified release APKs build, and the release APK has been
-installed and smoke-tested on an arm64 Android emulator. The migration tests still require an
-Android device or emulator to execute; Chromecast hand-off needs a physical receiver test and the
-full matrix needs a pass on the target phone.
+JVM tests, Android lint, recent Room migrations and Watch storage tests are exercised locally.
+Debug and minified release APKs and a macOS DMG build. macOS streaming has also been exercised in
+the packaged app. Physical phone/watch pairing, Chromecast and macOS notarization remain separate
+release gates; see the dated audit for exact evidence.
 
 ## Features ✨
 
 Inherited from upstream: play your YouTube / YT Music playlists, search and play without signing
-in, brand-account login, offline downloads, Android Auto browsing, 32 UI languages. Streams come from
+in, brand-account login, offline downloads, Android Auto browsing, English and French UI. Streams come from
 the InnerTube API, so no ads are served — that is a consequence of how it plays, not a feature this
 fork implements.
 
@@ -74,18 +75,26 @@ synced lyrics via LRCLIB, no account needed.
 local playlists, queue and preferences. Session cookies are deliberately excluded from backups: they
 are encrypted with a device-bound Keystore key and could never be decrypted after a restore.
 
-**Wear OS** — full Galaxy Watch companion with artwork and live progress, transport and seek
-controls, likes, shuffle/repeat, phone volume, a rotary-friendly queue, low-power ambient UI and a
-launcher tile. Playback stays on the paired phone and is controlled through the encrypted Wear OS
-Data Layer. See [the Galaxy Watch guide](docs/GALAXY_WATCH.md).
+**Wear OS** — Galaxy Watch companion plus standalone playback: search, local favorites, history,
+Wi-Fi-constrained downloads, shuffle/repeat and a launcher tile. The companion controls the phone
+through the Wear OS Data Layer. See [the Galaxy Watch guide](docs/GALAXY_WATCH.md).
+
+**macOS** — search tracks, videos, albums and artists; open public YouTube playlist links; stream
+audio; edit, reorder and save the queue as local playlists; keep local favorites and history;
+shuffle, repeat, volume and keyboard shortcuts. Account cookies are stored in Keychain; the Account
+screen can read YouTube likes. Local favorites/playlists do not synchronize to the phone.
+
+**Public playlist import on Android** — Spotify, Apple Music and Deezer shared links can be matched
+to YouTube tracks and saved locally. Only tracks visible in the providers' public pages are imported;
+private libraries and full provider OAuth synchronization are not implemented.
 
 ### Not implemented
 
 - **Editing YouTube Music playlists themselves.** Creating and deleting a remote playlist works;
   adding or removing tracks inside one does not. On-device playlists are fully editable.
-- **Spotify import** — the code is present but hidden and unfinished. It needs a client id at build
-  time (`-PspotifyClientId=…`) *and* the OAuth redirect is still not wired up, so it does not work
-  end to end even when enabled.
+- **macOS system integrations** — native Now Playing/media keys, AirPlay, offline downloads and
+  Developer ID notarization are not shipped. Cmd/Ctrl+Space and Cmd/Ctrl+Left/Right control playback
+  while the application has focus. Cmd/Ctrl+1–4 opens Home, Search, Library and Queue.
 
 ## Build it yourself 🔨
 
@@ -97,7 +106,14 @@ Requires **JDK 21** and the Android SDK (compileSdk 37, minSdk 24).
 
 ./gradlew :wear:assembleRelease
 # → wear/build/outputs/apk/release/Jelyvo-Watch.apk
+
+./gradlew :desktopApp:packageDmg
+# → desktopApp/build/compose/binaries/main/dmg/Jelyvo-1.1.0.dmg
 ```
+
+The macOS build requires an Apple Silicon Mac. It is an ad hoc signed local preview, not a
+notarized public distribution. JavaFX uses a progressive MP4 stream including video bytes for
+compatibility. A missing compatible rendition is reported as a playback error.
 
 Useful properties:
 
@@ -105,7 +121,6 @@ Useful properties:
 |---|---|
 | `-Pbeta=false` | Drops the `-beta` suffix from the version name (the suffix is **on by default**) |
 | `-PtargetAbi=arm64-v8a` | Packages native libs for that ABI only — a noticeably smaller APK. Unset means universal |
-| `-PspotifyClientId=<id>` | Enables the (unfinished) Spotify import entry point |
 | `-PgitHash=<sha>` | Stamps a commit hash into `BuildConfig` |
 
 Without a `keystore.properties` at the repo root, release builds fall back to your local **debug**
@@ -115,10 +130,9 @@ keystore. Share that keystore between machines if you want to install over an ex
 
 - Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
 - **Jelyvo identity and app logo**: created for this fork.
-- **Translations**: inherited from the upstream project's Crowdin, and still shipped here. This fork
-  no longer syncs with it, so the list is frozen as of the fork point. New Jelyvo features are
-  maintained in English and French; the other 30 locales intentionally fall back to English for
-  untranslated new strings. See [the translation policy](docs/I18N.md). Thank you to
+- **Translations**: English and French are shipped and maintained. The other inherited locales
+  are archived in `app/translations-legacy` until their translations are complete. This fork
+  no longer synchronizes with upstream Crowdin. See [the translation policy](docs/I18N.md). Thank you to
   [ilianoKokoro](https://crowdin.com/profile/ilianoKokoro),
   [Tusk](https://crowdin.com/profile/frittusk),
   [Mickael81](https://crowdin.com/profile/Mickael81),

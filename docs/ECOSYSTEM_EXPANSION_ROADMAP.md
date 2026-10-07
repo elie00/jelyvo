@@ -1,5 +1,7 @@
 # Feuille de route d'expansion de l'écosystème Jelyvo
 
+> État courant : [audit et validation du 8 octobre 2026](PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
+
 ## État d'avancement au 30 juillet 2026
 
 La phase A est lancée sur la base Android `v2.3.3`. Les premiers incréments sont livrés sur `main` :

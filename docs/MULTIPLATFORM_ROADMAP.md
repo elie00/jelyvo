@@ -1,5 +1,7 @@
 # Feuille de route macOS Apple Silicon et Web
 
+> État courant : [audit et validation du 8 octobre 2026](PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
+
 ## État d'avancement au 30 juillet 2026
 
 - Android stable : `v2.3.3` est publiée avec signature pérenne et mise à jour intégrée.

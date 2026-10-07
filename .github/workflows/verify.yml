@@ -1,0 +1,60 @@
+name: Verify all platforms
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Test, lint and package phone and watch
+        run: >-
+          ./gradlew :music-core:test :music-youtube:test :wear-shared:test
+          :app:testStandaloneDebugUnitTest :wear:testDebugUnitTest
+          :app:lintStandaloneDebug :wear:lintDebug
+          :app:assembleStandaloneDebug :wear:assembleDebug
+          --console=plain
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-verification
+          path: |
+            **/build/reports/
+            app/build/outputs/apk/standalone/debug/*.apk
+            wear/build/outputs/apk/debug/*.apk
+          retention-days: 14
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - name: Verify Apple Silicon host
+        run: test "$(uname -m)" = arm64
+      - name: Test and package macOS
+        run: ./gradlew :desktopApp:test :desktopApp:packageDmg --console=plain
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: macos-verification
+          path: |
+            desktopApp/build/reports/
+            desktopApp/build/compose/binaries/main/dmg/*.dmg
+          retention-days: 14
