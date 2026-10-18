@@ -90,6 +90,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import kotlin.uuid.Uuid
 
@@ -531,32 +532,30 @@ class PlaybackService : MediaLibraryService() {
     override fun onDestroy() {
         queuePersistenceJob?.cancel()
         volumeFadeJob?.cancel()
-        if (queueRestoreComplete && ::player.isInitialized) {
-            val snapshot = captureQueueSnapshot()
-            runBlocking(Dispatchers.IO) {
-                persistQueueSnapshot(snapshot)
-            }
-        }
-        if (::player.isInitialized) {
-            val currentItem = activePlayer.currentMediaItem
-            runBlocking(Dispatchers.IO) {
-                PlaybackWidgetStateStore.write(
-                    context = applicationContext,
-                    track = currentItem?.toSong()?.toTrack(),
-                    isPlaying = false,
-                    artworkBytes = currentItem?.mediaMetadata?.artworkData?.cappedTo(),
-                )
-                PlaybackWidget().updateAll(applicationContext)
+        val playerReady = ::player.isInitialized
+        val snapshot = if (queueRestoreComplete && playerReady) captureQueueSnapshot() else null
+        val currentItem = if (playerReady) activePlayer.currentMediaItem else null
+        val interruptedPlay = playEventTracker.onServiceDestroyed(System.currentTimeMillis())
+        // Blocking on purpose: serviceScope is about to die, and the queue snapshot and the
+        // interrupted play (exactly the signal APP_KILLED exists for) must reach disk first. The
+        // writes run concurrently under one deadline, so a slow disk or widget host cannot hold
+        // the main thread long enough to raise an ANR.
+        runBlocking(Dispatchers.IO) {
+            withTimeoutOrNull(SHUTDOWN_WRITE_TIMEOUT_MS) {
+                snapshot?.let { launch { persistQueueSnapshot(it) } }
+                interruptedPlay?.let { launch { playEventRepository.record(it) } }
+                if (playerReady) launch {
+                    PlaybackWidgetStateStore.write(
+                        context = applicationContext,
+                        track = currentItem?.toSong()?.toTrack(),
+                        isPlaying = false,
+                        artworkBytes = currentItem?.mediaMetadata?.artworkData?.cappedTo(),
+                    )
+                    PlaybackWidget().updateAll(applicationContext)
+                }
             }
         }
         audioManager?.unregisterAudioDeviceCallback(audioDeviceCallback)
-        // Blocking on purpose (like the queue snapshot above): serviceScope is about to die, and
-        // the interrupted play is exactly the signal APP_KILLED exists for.
-        playEventTracker.onServiceDestroyed(System.currentTimeMillis())?.let { event ->
-            runBlocking(Dispatchers.IO) {
-                playEventRepository.record(event)
-            }
-        }
         serviceScope.cancel()
         mediaLibrarySession?.run {
             if (currentAudioSessionId > 0) {
@@ -1192,6 +1191,7 @@ class PlaybackService : MediaLibraryService() {
         private const val QUEUE_CHANGE_DEBOUNCE_MS = 350L
         private const val QUEUE_POSITION_SAVE_INTERVAL_MS = 5_000L
         private const val MAX_CONSECUTIVE_PLAYBACK_ERRORS = 5
+        private const val SHUTDOWN_WRITE_TIMEOUT_MS = 3_000L
 
         /** Personal audio outputs whose connection may resume a becoming-noisy pause. */
         private val HEADPHONE_DEVICE_TYPES = setOf(
