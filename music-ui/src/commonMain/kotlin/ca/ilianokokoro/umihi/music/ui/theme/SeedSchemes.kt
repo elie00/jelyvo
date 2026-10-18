@@ -4,6 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 
 /**
  * Hand-built Material 3 color schemes generated from seed colors.
@@ -61,7 +62,22 @@ object SeedSchemes {
             // collapses near black/white in the HCT model.
             val distanceFromMid = kotlin.math.abs(tone - 50) / 50f
             val saturation = (chroma * (1f - 0.35f * distanceFromMid)).coerceIn(0f, 1f)
-            return Color.hsl(hue, saturation, tone / 100f)
+            // A Material tone is a CIE L* value, which is what makes the 40/100 or 80/20 pairs
+            // readable. HSL lightness is not perceptual (a yellow at 40% is nearly as bright as
+            // white), so search the lightness that lands on the tone's luminance instead.
+            val targetLuminance = luminanceOfLStar(tone.toFloat())
+            var low = 0f
+            var high = 1f
+            repeat(24) {
+                val mid = (low + high) / 2f
+                if (Color.hsl(hue, saturation, mid).luminance() < targetLuminance) low = mid else high = mid
+            }
+            return Color.hsl(hue, saturation, (low + high) / 2f)
+        }
+
+        private fun luminanceOfLStar(lStar: Float): Float {
+            val f = (lStar + 16f) / 116f
+            return if (f > 6f / 29f) f * f * f else (lStar / 903.2963f)
         }
     }
 

@@ -31,5 +31,8 @@ kotlin {
             implementation(compose.ui)
             api(libs.compose.multiplatform.material3)
         }
+        named("desktopTest").dependencies {
+            implementation(libs.junit)
+        }
     }
 }
