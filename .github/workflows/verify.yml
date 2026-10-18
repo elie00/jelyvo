@@ -49,7 +49,7 @@ jobs:
       - name: Verify Apple Silicon host
         run: test "$(uname -m)" = arm64
       - name: Test and package macOS
-        run: ./gradlew :desktopApp:test :desktopApp:packageDmg --console=plain
+        run: ./gradlew :music-ui:desktopTest :desktopApp:test :desktopApp:packageDmg --console=plain
       - uses: actions/upload-artifact@v7
         if: always()
         with:
