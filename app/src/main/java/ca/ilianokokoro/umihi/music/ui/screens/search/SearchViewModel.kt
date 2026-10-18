@@ -36,6 +36,7 @@ import ca.ilianokokoro.umihi.music.models.SearchResult
 import ca.ilianokokoro.umihi.music.models.adapters.toCatalogSearchFilter
 import ca.ilianokokoro.umihi.music.models.adapters.toSearchResult
 import ca.ilianokokoro.umihi.music.models.searchLocalLibrary
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -103,6 +104,8 @@ class SearchViewModel(
                         _uiState.update { it.copy(moodSections = result.data) }
                     }
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 printe(message = "Failed to load moods & genres", exception = e)
             }
@@ -322,6 +325,8 @@ class SearchViewModel(
                         isLoadingMore = false,
                     )
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 // The continuation token is kept, so scrolling back down retries; without a
                 // message the spinner just vanishes and the list looks silently truncated.

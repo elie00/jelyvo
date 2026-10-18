@@ -100,6 +100,8 @@ class SongDownloadWorker(
                     DownloadWorkContract.KEY_FAILED to 1,
                 ),
             )
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (e: Exception) {
             NotificationManager.showSongDownloadFailed(appContext, song)
 

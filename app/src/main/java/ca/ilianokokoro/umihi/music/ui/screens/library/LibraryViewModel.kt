@@ -22,6 +22,7 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Privacy
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.coroutineScope
@@ -128,6 +129,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             val message = try {
                 localPlaylistRepository.importFromUri(getApplication(), uri)
                 R.string.playlist_imported
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = "Failed to import playlist", exception = ex)
                 R.string.playlist_import_failed
@@ -149,6 +152,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                 } else {
                     R.string.song_already_in_playlist
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = "Failed to add dropped song to local playlist", exception = ex)
                 R.string.playlist_update_failed
@@ -172,6 +177,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             _uiState.update { it.copy(isRefreshing = true) }
             try {
                 loadSuspend(showFullLoading = false, useCache = false)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
             } finally {
@@ -189,6 +196,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                     return@launch
                 }
                 loadPlaylistsSuspend(settings)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
             }
@@ -201,6 +210,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val songs = localAudioDataSource.getSongs()
                 _uiState.update { it.copy(localSongs = songs, localSongsLoaded = true) }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = "Failed to load local songs", exception = ex)
                 _uiState.update { it.copy(localSongs = emptyList(), localSongsLoaded = true) }
@@ -250,6 +261,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
                             )
                         }
                     }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
             }
@@ -268,6 +281,8 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
             launch {
                 try {
                     loadPlaylistsSuspend(settings)
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
                 } catch (ex: Exception) {
                     printe(message = "Failed to load playlists", exception = ex)
                 }

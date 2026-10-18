@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -202,6 +203,8 @@ class UmihiMediaLibraryCallback(
                                 .retrieveAll(datastoreRepository.settings.first())
                                 .first { it !is ApiResult.Loading }
                             (result as? ApiResult.Success)?.data.orEmpty()
+                        } catch (cancellation: CancellationException) {
+                            throw cancellation
                         } catch (_: Exception) {
                             emptyList()
                         }
@@ -235,6 +238,8 @@ class UmihiMediaLibraryCallback(
                             playlistRepository
                                 .retrieveOne(playlist, datastoreRepository.settings.first())
                                 .first { it !is ApiResult.Loading }
+                        } catch (cancellation: CancellationException) {
+                            throw cancellation
                         } catch (_: Exception) {
                             null
                         }
@@ -262,6 +267,8 @@ class UmihiMediaLibraryCallback(
                         params
                     )
                 )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (_: Exception) {
                 future.set(
                     LibraryResult.ofError(SessionError.ERROR_UNKNOWN)
@@ -289,6 +296,8 @@ class UmihiMediaLibraryCallback(
                 searchResults[query.normalizedSearchKey()] = results
                 session.notifySearchResultChanged(browser, query, results.size, params)
                 future.set(LibraryResult.ofVoid(params))
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (_: Exception) {
                 future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
             }
@@ -319,6 +328,8 @@ class UmihiMediaLibraryCallback(
                         params,
                     )
                 )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (_: Exception) {
                 future.set(LibraryResult.ofError(SessionError.ERROR_UNKNOWN))
             }

@@ -5,6 +5,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
 import ca.ilianokokoro.umihi.music.models.PlayEvent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -132,6 +133,8 @@ class RecoWeightsStore internal constructor(
                     )
                 )
             }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (exception: Exception) {
             printe(message = "Failed to tune the reco weights", exception = exception)
         }

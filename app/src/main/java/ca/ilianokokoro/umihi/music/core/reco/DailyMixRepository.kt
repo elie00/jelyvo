@@ -4,6 +4,7 @@ import android.content.Context
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.models.Song
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -85,6 +86,8 @@ class DailyMixRepository private constructor(context: Context) {
                 // Too small to feel like a mix: not cached either, so the next open retries.
                 emptyList()
             }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (exception: Exception) {
             printe(message = "Failed to generate the daily mix", exception = exception)
             emptyList()

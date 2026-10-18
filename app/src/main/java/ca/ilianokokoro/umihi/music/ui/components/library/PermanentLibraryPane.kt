@@ -59,6 +59,7 @@ import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropTarget
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -181,6 +182,8 @@ fun PermanentLibraryPane(
                                                 } else {
                                                     R.string.song_already_in_playlist
                                                 }
+                                            } catch (cancellation: CancellationException) {
+                                                throw cancellation
                                             } catch (_: Exception) {
                                                 R.string.playlist_update_failed
                                             }

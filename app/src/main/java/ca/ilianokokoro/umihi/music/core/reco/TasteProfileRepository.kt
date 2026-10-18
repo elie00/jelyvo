@@ -9,6 +9,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LibraryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
 import ca.ilianokokoro.umihi.music.models.Library
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -100,6 +101,8 @@ class TasteProfileRepository private constructor(context: Context) {
             )
             _profile.value = fresh
             persist(fresh)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (exception: Exception) {
             printe(message = "Failed to refresh the taste profile", exception = exception)
         }

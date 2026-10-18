@@ -30,6 +30,7 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.models.Version
 import ca.ilianokokoro.umihi.music.models.dto.GithubReleaseResponse
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -143,6 +144,8 @@ fun UpdateDialog(scope: CoroutineScope) {
                                     )
                                     VersionManager.clearPendingUpdate()
                                     showDialog = false
+                                } catch (cancellation: CancellationException) {
+                                    throw cancellation
                                 } catch (_: Exception) {
                                     Toast.makeText(
                                         context,

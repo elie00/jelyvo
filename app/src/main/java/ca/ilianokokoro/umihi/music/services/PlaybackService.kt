@@ -1100,6 +1100,8 @@ class PlaybackService : MediaLibraryService() {
                 if (artBytes != null) {
                     updateMediaItemArtwork(mediaItem, artBytes, artworkUri)
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(
                     message = "Failed to get full res thumbnail for $songId. Error : ${ex.message}",

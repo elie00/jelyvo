@@ -13,6 +13,7 @@ import ca.ilianokokoro.umihi.music.core.reco.TasteProfileRepository
 import ca.ilianokokoro.umihi.music.core.reco.skipRatesBySourceContext
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -77,6 +78,8 @@ class RecoDebugViewModel(application: Application) : AndroidViewModel(applicatio
         val songById = try {
             historyRepository.songsByIds(topSongEntries.map { it.key })
                 .associateBy { it.youtubeId }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (exception: Exception) {
             LogHelper.printe("Failed to resolve debug track titles", exception = exception)
             emptyMap()
@@ -113,6 +116,8 @@ class RecoDebugViewModel(application: Application) : AndroidViewModel(applicatio
                     health30d = skipRatesBySourceContext(events, nowMs - DAYS_30_MS),
                 )
             }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (exception: Exception) {
             LogHelper.printe("Failed to load reco debug data", exception = exception)
         }

@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.VideoQuality
 import ca.ilianokokoro.umihi.music.models.Song
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -174,6 +175,8 @@ object YoutubeStreamExtractor {
         var savedSong: Song? = null
         try {
             savedSong = localSongRepository.getSong(song.youtubeId)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (ex: Exception) {
             Toast.makeText(
                 context,
@@ -324,6 +327,8 @@ object YoutubeStreamExtractor {
                         quality = quality,
                     )
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Throwable) {
                 lastError = e
 

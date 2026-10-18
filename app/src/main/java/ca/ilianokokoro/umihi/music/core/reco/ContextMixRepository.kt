@@ -5,6 +5,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.playback.hourOfDay
 import ca.ilianokokoro.umihi.music.models.Song
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -107,6 +108,8 @@ class ContextMixRepository private constructor(context: Context) {
                 // Too small to feel like a mix: not cached either, so the next open retries.
                 null
             }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (exception: Exception) {
             printe(message = "Failed to generate the context mix", exception = exception)
             null

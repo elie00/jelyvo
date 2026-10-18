@@ -30,6 +30,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.adapters.toTrack
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -206,6 +207,8 @@ class PlayerViewModel(application: Application) :
                     ),
                     Toast.LENGTH_SHORT,
                 ).show()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (exception: Exception) {
                 printe(
                     message = "Failed to save queue as playlist: ${exception.message}",
@@ -419,6 +422,8 @@ class PlayerViewModel(application: Application) :
                         poster = result.data.thumbnailHref
                     }
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 printe(message = "Failed to fetch video artwork: ${e.message}", exception = e)
             }

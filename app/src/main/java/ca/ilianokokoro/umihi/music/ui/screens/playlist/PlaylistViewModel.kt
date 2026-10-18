@@ -34,6 +34,7 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SongSort
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -261,6 +262,8 @@ class PlaylistViewModel(
                         }
                     }
 
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = ex.toString(), exception = ex)
                 showToast(R.string.delete_playlist_failed_toast)
@@ -310,6 +313,8 @@ class PlaylistViewModel(
                     songs = playlist.songs.map { LocalPlaylistSong.fromSong(it) },
                 )
                 showToast(R.string.playlist_exported_toast)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = "Failed to export playlist", exception = ex)
                 showToast(R.string.playlist_export_failed_toast)
@@ -390,6 +395,8 @@ class PlaylistViewModel(
                     }
                 }
 
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (ex: Exception) {
             printe(message = ex.toString(), exception = ex)
             _uiState.update {

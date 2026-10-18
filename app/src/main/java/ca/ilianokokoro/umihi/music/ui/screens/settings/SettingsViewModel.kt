@@ -31,6 +31,7 @@ import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -157,6 +158,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 if (previous.isNotBlank()) {
                     File(previous).delete()
                 }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 LogHelper.printe("Failed to save profile avatar", exception = e)
             }
@@ -374,6 +377,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             try {
                 BackupManager.exportToUri(_application, uri)
                 showToast(R.string.backup_success)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 LogHelper.printe("Backup export failed", exception = e)
                 showToast(R.string.backup_error)
@@ -394,6 +399,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             try {
                 BackupManager.restoreFromUri(_application, uri)
                 showToast(R.string.restore_success)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 LogHelper.printe("Backup restore failed", exception = e)
                 showToast(R.string.restore_error)

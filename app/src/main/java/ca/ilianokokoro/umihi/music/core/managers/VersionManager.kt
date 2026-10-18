@@ -25,6 +25,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.GithubRepository
 import ca.ilianokokoro.umihi.music.models.Version
 import ca.ilianokokoro.umihi.music.models.dto.GithubReleaseResponse
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -127,6 +128,8 @@ object VersionManager {
                 }
             }
             printe(message = e.message.orEmpty(), exception = e)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
         } catch (ex: Exception) {
             if (manualCheck) {
                 withContext(Dispatchers.Main) {

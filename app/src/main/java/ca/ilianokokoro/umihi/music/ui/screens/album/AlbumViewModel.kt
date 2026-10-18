@@ -24,6 +24,7 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.adapters.toAlbumPage
 import ca.ilianokokoro.umihi.music.models.adapters.toTrack
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -113,6 +114,8 @@ class AlbumViewModel(
                 showToast(
                     if (target) R.string.album_saved_toast else R.string.album_removed_toast
                 )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 printe(message = "Failed to update album library state", exception = e)
                 _isAlbumSaved.value = !target

@@ -15,6 +15,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -148,6 +149,8 @@ class ListeningStatsViewModel(application: Application) : AndroidViewModel(appli
                     export = StatsExporter.buildExport(System.currentTimeMillis(), periods),
                 )
                 showToast(R.string.stats_export_success)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 LogHelper.printe("Stats export failed", exception = e)
                 showToast(R.string.stats_export_error)

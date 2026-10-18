@@ -16,6 +16,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.data.catalog.YoutubeMusicCatalog
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.models.adapters.toArtistPage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -84,6 +85,8 @@ class ArtistViewModel(
                 showToast(
                     if (target) R.string.artist_followed_toast else R.string.artist_unfollowed_toast
                 )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (e: Exception) {
                 printe(message = "Failed to update artist subscription", exception = e)
                 _isSubscribed.value = !target

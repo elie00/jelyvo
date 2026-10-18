@@ -18,6 +18,7 @@ import ca.ilianokokoro.umihi.music.models.LocalPlaylistSong
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SongSort
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -131,6 +132,8 @@ class LocalPlaylistViewModel(
             try {
                 repository.exportToUri(context, uri, _uiState.value.name, _uiState.value.songs)
                 showToast(R.string.playlist_exported_toast)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
             } catch (ex: Exception) {
                 printe(message = "Failed to export playlist", exception = ex)
                 showToast(R.string.playlist_export_failed_toast)

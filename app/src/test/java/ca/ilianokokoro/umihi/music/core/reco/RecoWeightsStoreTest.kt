@@ -2,11 +2,13 @@ package ca.ilianokokoro.umihi.music.core.reco
 
 import ca.ilianokokoro.umihi.music.core.playback.PlayEndReason
 import ca.ilianokokoro.umihi.music.models.PlayEvent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 import java.time.ZoneOffset
 
@@ -98,6 +100,17 @@ class RecoWeightsStoreTest {
         assertEquals(1, storage.writeCount)
     }
 
+    @Test
+    fun `cancellation of a tuning pass propagates to the caller`() {
+        val storage = MemorySnapshotStore()
+        val store = RecoWeightsStore(FakeInputs(failure = CancellationException("left")), storage)
+
+        assertThrows(CancellationException::class.java) {
+            runBlocking { store.maybeTune(TasteProfile(computedAtMs = now), now, ZoneOffset.UTC) }
+        }
+        assertEquals(0, storage.writeCount)
+    }
+
     private fun event(
         reason: PlayEndReason = PlayEndReason.COMPLETED,
     ) = PlayEvent(
@@ -116,12 +129,14 @@ class RecoWeightsStoreTest {
     private class FakeInputs(
         private val events: List<PlayEvent> = emptyList(),
         private val artists: Map<String, String> = emptyMap(),
+        private val failure: Throwable? = null,
     ) : RecoWeightsInputs {
         var eventsCalls = 0
         var artistCalls = 0
 
         override suspend fun eventsSince(epochMs: Long): List<PlayEvent> {
             eventsCalls += 1
+            failure?.let { throw it }
             return events
         }
 
