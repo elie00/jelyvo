@@ -17,7 +17,7 @@ class YoutubeStreamResolver(context: Context) : StreamResolver {
         allowLocal: Boolean,
         kind: StreamKind,
     ): ResolvedStream = ResolvedStream(
-        url = YoutubeDataExtractor.getSongPlayerUrl(
+        url = YoutubeStreamExtractor.getSongPlayerUrl(
             context = applicationContext,
             song = track.toSong(),
             allowLocal = allowLocal,
@@ -30,7 +30,7 @@ class YoutubeStreamResolver(context: Context) : StreamResolver {
     )
 
     override suspend fun resolveRemote(track: Track): ResolvedRemoteStream {
-        val stream = YoutubeDataExtractor.getCastableStream(applicationContext, track.toSong())
+        val stream = YoutubeStreamExtractor.getCastableStream(applicationContext, track.toSong())
         return ResolvedRemoteStream(url = stream.url, contentType = stream.contentType)
     }
 }

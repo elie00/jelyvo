@@ -23,6 +23,7 @@ import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
@@ -386,7 +387,7 @@ class PlayerViewModel(application: Application) :
         val variant = videoVariantCache[current.youtubeId] ?: current
 
         val hasVideoStream = try {
-            YoutubeDataExtractor.probeVideoStream(getApplication(), variant)
+            YoutubeStreamExtractor.probeVideoStream(getApplication(), variant)
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -560,7 +561,7 @@ class PlayerViewModel(application: Application) :
                 // Do not make speculative video resolution compete with the title the user just
                 // asked to hear. Audio reaches PLAYING first; video then warms during playback.
                 delay(VIDEO_PREWARM_START_DELAY_MS)
-                YoutubeDataExtractor.probeVideoStream(getApplication(), video)
+                YoutubeStreamExtractor.probeVideoStream(getApplication(), video)
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (_: Exception) {
