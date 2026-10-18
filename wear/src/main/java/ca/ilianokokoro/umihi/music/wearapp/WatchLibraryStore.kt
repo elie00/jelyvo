@@ -33,18 +33,13 @@ class WatchLibraryStore(context: Context) {
         set(value) = preferences.edit { putBoolean(KEY_RESTRICTED_MODE, value) }
 
     fun toggleFavorite(song: WatchSong): Boolean = synchronized(lock) {
-        val songs = favorites().toMutableList()
-        val removed = songs.removeAll { it.videoId == song.videoId }
-        if (!removed) songs.add(0, song)
-        write(KEY_FAVORITES, songs.take(MAX_FAVORITES))
-        return !removed
+        val (songs, added) = toggledFavorite(favorites(), song, MAX_FAVORITES)
+        write(KEY_FAVORITES, songs)
+        return added
     }
 
     fun addRecent(song: WatchSong) = synchronized(lock) {
-        write(
-            KEY_RECENTS,
-            (listOf(song) + recents().filterNot { it.videoId == song.videoId }).take(MAX_RECENTS),
-        )
+        write(KEY_RECENTS, withRecent(recents(), song, MAX_RECENTS))
     }
 
     private fun addDownload(song: WatchSong) {
@@ -97,35 +92,10 @@ class WatchLibraryStore(context: Context) {
     private val preferencesFileDirectory: File
         get() = appContext.filesDir
 
-    private fun read(key: String): List<WatchSong> = runCatching {
-        val value = preferences.getString(key, null) ?: return emptyList()
-        (Json.parseToJsonElement(value) as? JsonArray).orEmpty().mapNotNull { element ->
-            val item = element as? JsonObject ?: return@mapNotNull null
-            WatchSong(
-                videoId = item.text("videoId") ?: return@mapNotNull null,
-                title = item.text("title").orEmpty(),
-                artist = item.text("artist").orEmpty(),
-                artworkUrl = item.text("artworkUrl").orEmpty(),
-                durationText = item.text("durationText").orEmpty(),
-                isExplicit = item.boolean("isExplicit"),
-            )
-        }
-    }.getOrDefault(emptyList())
+    private fun read(key: String): List<WatchSong> = decodeWatchSongs(preferences.getString(key, null))
 
     private fun write(key: String, songs: List<WatchSong>) {
-        val json = buildJsonArray {
-            songs.forEach { song ->
-                add(buildJsonObject {
-                    put("videoId", JsonPrimitive(song.videoId))
-                    put("title", JsonPrimitive(song.title))
-                    put("artist", JsonPrimitive(song.artist))
-                    put("artworkUrl", JsonPrimitive(song.artworkUrl))
-                    put("durationText", JsonPrimitive(song.durationText))
-                    put("isExplicit", JsonPrimitive(song.isExplicit))
-                })
-            }
-        }
-        preferences.edit { putString(key, json.toString()) }
+        preferences.edit { putString(key, encodeWatchSongs(songs)) }
     }
 
     private companion object {
@@ -143,6 +113,51 @@ class WatchLibraryStore(context: Context) {
         val lock = Any()
     }
 }
+
+/** Removes [song] when present, otherwise adds it first; the second value is true when added. */
+internal fun toggledFavorite(
+    favorites: List<WatchSong>,
+    song: WatchSong,
+    max: Int,
+): Pair<List<WatchSong>, Boolean> {
+    val songs = favorites.toMutableList()
+    val removed = songs.removeAll { it.videoId == song.videoId }
+    if (!removed) songs.add(0, song)
+    return songs.take(max) to !removed
+}
+
+/** Moves [song] to the front of the history without duplicating it. */
+internal fun withRecent(recents: List<WatchSong>, song: WatchSong, max: Int): List<WatchSong> =
+    (listOf(song) + recents.filterNot { it.videoId == song.videoId }).take(max)
+
+internal fun encodeWatchSongs(songs: List<WatchSong>): String = buildJsonArray {
+    songs.forEach { song ->
+        add(buildJsonObject {
+            put("videoId", JsonPrimitive(song.videoId))
+            put("title", JsonPrimitive(song.title))
+            put("artist", JsonPrimitive(song.artist))
+            put("artworkUrl", JsonPrimitive(song.artworkUrl))
+            put("durationText", JsonPrimitive(song.durationText))
+            put("isExplicit", JsonPrimitive(song.isExplicit))
+        })
+    }
+}.toString()
+
+/** Unreadable or missing storage reads as an empty list, never as a crash. */
+internal fun decodeWatchSongs(value: String?): List<WatchSong> = runCatching {
+    if (value == null) return emptyList()
+    (Json.parseToJsonElement(value) as? JsonArray).orEmpty().mapNotNull { element ->
+        val item = element as? JsonObject ?: return@mapNotNull null
+        WatchSong(
+            videoId = item.text("videoId") ?: return@mapNotNull null,
+            title = item.text("title").orEmpty(),
+            artist = item.text("artist").orEmpty(),
+            artworkUrl = item.text("artworkUrl").orEmpty(),
+            durationText = item.text("durationText").orEmpty(),
+            isExplicit = item.boolean("isExplicit"),
+        )
+    }
+}.getOrDefault(emptyList())
 
 private fun JsonObject.text(key: String): String? = get(key)?.jsonPrimitive?.contentOrNull
 private fun JsonObject.boolean(key: String): Boolean =
