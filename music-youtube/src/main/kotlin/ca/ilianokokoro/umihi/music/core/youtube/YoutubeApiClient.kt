@@ -17,7 +17,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
 object YoutubeApiClient {
-    suspend fun browse(browseId: String, settings: YoutubeSession, fields: String? = null): String {
+    suspend fun browse(browseId: String, settings: YoutubeSession?, fields: String? = null): String {
         return requestWithContext(
             url = YoutubeApiConstants.Browse.URL,
             idName = "browseId",

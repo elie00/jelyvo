@@ -8,7 +8,7 @@ class WatchYoutubeClientTest {
     fun parsesSongRowsAndDeduplicatesVideoIds() {
         val row = """{
           "musicResponsiveListItemRenderer": {
-            "playlistItemData":{"videoId":"abc123"},
+            "playlistItemData":{"videoId":"aB0-_123456"},
             "thumbnail":{"musicThumbnailRenderer":{"thumbnail":{"thumbnails":[
               {"url":"small","width":60},{"url":"large","width":544}
             ]}}},
@@ -26,7 +26,7 @@ class WatchYoutubeClientTest {
         val songs = WatchYoutubeClient().parseSearchResponse(response)
 
         assertEquals(1, songs.size)
-        assertEquals("abc123", songs.single().videoId)
+        assertEquals("aB0-_123456", songs.single().videoId)
         assertEquals("Mon titre", songs.single().title)
         assertEquals("Mon artiste", songs.single().artist)
         assertEquals("large", songs.single().artworkUrl)

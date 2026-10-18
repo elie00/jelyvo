@@ -69,6 +69,7 @@ androidComponents {
 
 dependencies {
     implementation(project(":wear-shared"))
+    implementation(project(":music-youtube"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)

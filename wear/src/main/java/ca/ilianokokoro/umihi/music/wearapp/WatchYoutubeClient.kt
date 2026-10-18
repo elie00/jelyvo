@@ -1,5 +1,11 @@
 package ca.ilianokokoro.umihi.music.wearapp
 
+import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
+import ca.ilianokokoro.umihi.music.core.domain.Track
+import ca.ilianokokoro.umihi.music.core.domain.formatTrackDuration
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiClient
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
+import ca.ilianokokoro.umihi.music.core.youtube.parseMusicListItems
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -7,52 +13,31 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
-import java.util.Locale
-import java.util.concurrent.TimeUnit
 import org.schabi.newpipe.extractor.ServiceList
 
-class WatchYoutubeClient(
-    private val httpClient: OkHttpClient = defaultHttpClient(),
-) {
+/** Watch-side facade over the shared InnerTube layer of `:music-youtube`. */
+class WatchYoutubeClient {
     suspend fun searchSongs(query: String): List<WatchSong> = withContext(Dispatchers.IO) {
         if (query.isBlank()) return@withContext emptyList()
-        val body = """{
-            "context":{"client":$WEB_REMIX_CLIENT,"user":{"lockedSafetyMode":false}},
-            "query":${Json.encodeToString(query.trim())},
-            "params":"$SONGS_FILTER"
-        }""".trimIndent()
-        parseSearchResponse(post(SEARCH_URL, body, WEB_REMIX_HEADERS))
+        parseSearchResponse(YoutubeApiClient.search(query.trim(), SONGS_FILTER))
     }
 
     suspend fun homeSongs(seedArtist: String? = null): List<WatchSong> = withContext(Dispatchers.IO) {
-        val body = """{
-            "context":{"client":$WEB_REMIX_CLIENT,"user":{"lockedSafetyMode":false}},
-            "browseId":"FEmusic_home"
-        }""".trimIndent()
-        val directSongs = parseSearchResponse(post(BROWSE_URL, body, WEB_REMIX_HEADERS))
+        val directSongs = parseSearchResponse(YoutubeApiClient.browse(HOME_BROWSE_ID, settings = null))
         if (directSongs.isNotEmpty()) directSongs
         else searchSongs(seedArtist?.takeIf(String::isNotBlank) ?: "Nouveautés musique")
     }
 
     suspend fun resolveAudioUrl(videoId: String): String = withContext(Dispatchers.IO) {
-        val body = """{
-            "context":{"client":$ANDROID_VR_CLIENT,"user":{"lockedSafetyMode":false}},
-            "videoId":${Json.encodeToString(videoId)},
-            "contentCheckOk":true,
-            "racyCheckOk":true
-        }""".trimIndent()
-        val root = Json.parseToJsonElement(post(PLAYER_URL, body, ANDROID_VR_HEADERS)).jsonObject
+        val response = YoutubeApiClient.getPlayerInfo(
+            videoId = videoId,
+            client = YoutubeApiConstants.Client.ANDROID_VR,
+        )
+        val root = Json.parseToJsonElement(response).jsonObject
         val status = root.objectAt("playabilityStatus")?.stringAt("status")
         val formats = root.objectAt("streamingData")
             ?.get("adaptiveFormats")
@@ -76,7 +61,7 @@ class WatchYoutubeClient(
     }
 
     private fun resolveAudioWithNewPipe(videoId: String, fastStatus: String?): String {
-        WatchYoutubeDownloader.ensureInitialized()
+        YoutubeExtractor.ensureInitialized()
         return runCatching {
             ServiceList.YouTube
                 .getStreamExtractor("https://www.youtube.com/watch?v=$videoId")
@@ -94,124 +79,26 @@ class WatchYoutubeClient(
         }
     }
 
-    internal fun parseSearchResponse(response: String): List<WatchSong> {
-        val root = Json.parseToJsonElement(response)
-        return root.walkObjects()
-            .mapNotNull { it["musicResponsiveListItemRenderer"]?.asObject() }
-            .mapNotNull(::parseSongRenderer)
-            .distinctBy(WatchSong::videoId)
+    internal fun parseSearchResponse(response: String): List<WatchSong> =
+        parseMusicListItems(response)
             .take(MAX_RESULTS)
-            .toList()
-    }
-
-    private fun parseSongRenderer(renderer: JsonObject): WatchSong? {
-        val videoId = renderer.objectAt("playlistItemData")?.stringAt("videoId")
-            ?: renderer.walkObjects().mapNotNull { objectValue ->
-                objectValue.objectAt("watchEndpoint")?.stringAt("videoId")
-            }.firstOrNull()
-            ?: return null
-
-        val columns = renderer["flexColumns"]?.asArray().orEmpty()
-        val title = columns.getOrNull(0)
-            ?.asObject()
-            ?.columnRuns()
-            ?.firstOrNull()
-            ?.stringAt("text")
-            ?.takeIf(String::isNotBlank)
-            ?: return null
-
-        val subtitleRuns = columns.getOrNull(1)?.asObject()?.columnRuns().orEmpty()
-        val artist = subtitleRuns.firstOrNull { run ->
-            run.walkObjects().any { nested ->
-                nested.objectAt("browseEndpoint")?.stringAt("browseId")?.startsWith("UC") == true
-            }
-        }?.stringAt("text")
-            ?: subtitleRuns.asSequence()
-                .mapNotNull { it.stringAt("text") }
-                .firstOrNull { it.isNotBlank() && it != " • " }
-            ?: "Artiste inconnu"
-
-        val thumbnails = renderer.objectAt("thumbnail")
-            ?.walkObjects()
-            ?.filter { it.stringAt("url") != null }
-            ?.toList()
-            .orEmpty()
-        val artworkUrl = thumbnails.maxByOrNull { it.intAt("width") ?: 0 }
-            ?.stringAt("url")
-            .orEmpty()
-        val duration = renderer.walkObjects()
-            .mapNotNull { it.stringAt("text") }
-            .firstOrNull { DURATION_REGEX.matches(it) }
-            .orEmpty()
-
-        val isExplicit = renderer.walkObjects().any { it.stringAt("iconType") == "MUSIC_EXPLICIT_BADGE" }
-        return WatchSong(videoId, title, artist, artworkUrl, duration, isExplicit)
-    }
-
-    private fun JsonObject.columnRuns(): List<JsonObject> = objectAt(
-        "musicResponsiveListItemFlexColumnRenderer",
-    )?.objectAt("text")?.get("runs")?.asArray().orEmpty().mapNotNull(JsonElement::asObject)
-
-    private fun post(url: String, body: String, headers: Map<String, String>): String {
-        val request = Request.Builder()
-            .url(url)
-            .post(body.toRequestBody(JSON_MEDIA_TYPE))
-            .apply { headers.forEach(::addHeader) }
-            .build()
-        return httpClient.newCall(request).execute().use { response ->
-            val responseBody = response.body?.string().orEmpty()
-            if (!response.isSuccessful) {
-                throw IOException("HTTP ${response.code}: ${responseBody.take(240)}")
-            }
-            responseBody.ifBlank { throw IOException("Réponse vide") }
-        }
-    }
+            .map(Track::toWatchSong)
 
     private companion object {
-        const val SEARCH_URL = "https://music.youtube.com/youtubei/v1/search?prettyPrint=false"
-        const val BROWSE_URL = "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
-        const val PLAYER_URL = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
+        const val HOME_BROWSE_ID = "FEmusic_home"
         const val SONGS_FILTER = "EgWKAQIIAWoKEAkQBRAKEAMQBA=="
         const val MAX_RESULTS = 30
-        val DURATION_REGEX = Regex("""\d{1,2}:\d{2}(?::\d{2})?""")
-        val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
-        const val WEB_USER_AGENT =
-            "Mozilla/5.0 (Linux; Android 16; Watch) AppleWebKit/537.36 Chrome/140 Safari/537.36"
-        const val VR_USER_AGENT =
-            "com.google.android.apps.youtube.vr.oculus/1.61.48 (Linux; U; Android 12; en_US; Quest 3)"
-        val WEB_REMIX_CLIENT get() = """{
-            "clientName":"WEB_REMIX","clientVersion":"1.20250212.01.00",
-            "userAgent":"$WEB_USER_AGENT","hl":"${Locale.getDefault().language.ifBlank { "fr" }}"
-        }""".trimIndent()
-        val ANDROID_VR_CLIENT get() = """{
-            "clientName":"ANDROID_VR","clientVersion":"1.61.48","clientId":"28",
-            "userAgent":"$VR_USER_AGENT","osName":"Android","osVersion":"12",
-            "deviceMake":"Oculus","deviceModel":"Quest 3","androidSdkVersion":"32",
-            "packageName":"com.google.android.apps.youtube.vr.oculus",
-            "hl":"${Locale.getDefault().language.ifBlank { "fr" }}"
-        }""".trimIndent()
-        val WEB_REMIX_HEADERS = mapOf(
-            "Content-Type" to "application/json; charset=utf-8",
-            "Origin" to "https://music.youtube.com",
-            "Referer" to "https://music.youtube.com/",
-            "User-Agent" to WEB_USER_AGENT,
-            "X-YouTube-Client-Name" to "67",
-            "X-YouTube-Client-Version" to "1.20250212.01.00",
-        )
-        val ANDROID_VR_HEADERS = mapOf(
-            "Content-Type" to "application/json; charset=utf-8",
-            "Origin" to "https://www.youtube.com",
-            "User-Agent" to VR_USER_AGENT,
-            "X-YouTube-Client-Version" to "1.61.48",
-        )
-
-        fun defaultHttpClient(): OkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .callTimeout(30, TimeUnit.SECONDS)
-            .build()
     }
 }
+
+private fun Track.toWatchSong() = WatchSong(
+    videoId = id,
+    title = title,
+    artist = artist.name.ifBlank { "Artiste inconnu" },
+    artworkUrl = artworkUrl.orEmpty(),
+    durationText = formatTrackDuration(durationMs),
+    isExplicit = explicit,
+)
 
 private fun JsonElement.asObject(): JsonObject? = this as? JsonObject
 private fun JsonElement.asArray(): JsonArray? = this as? JsonArray
@@ -220,14 +107,3 @@ private fun JsonObject.stringAt(key: String): String? =
     (get(key) as? JsonPrimitive)?.contentOrNull
 private fun JsonObject.intAt(key: String): Int? =
     (get(key) as? JsonPrimitive)?.intOrNull
-
-private fun JsonElement.walkObjects(): Sequence<JsonObject> = sequence {
-    when (this@walkObjects) {
-        is JsonObject -> {
-            yield(this@walkObjects)
-            values.forEach { yieldAll(it.walkObjects()) }
-        }
-        is JsonArray -> forEach { yieldAll(it.walkObjects()) }
-        else -> Unit
-    }
-}
