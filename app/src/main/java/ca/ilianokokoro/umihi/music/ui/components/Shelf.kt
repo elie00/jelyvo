@@ -18,10 +18,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -110,5 +114,43 @@ fun ShelfCard(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+/** A filter as a plain pill: filled when on, and the same on every page that filters. */
+@Composable
+fun PillFilterChip(
+    selected: Boolean,
+    onClick: () -> Unit,
+    label: String,
+    leadingIcon: (@Composable () -> Unit)? = null,
+) {
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        shape = RoundedCornerShape(percent = 50),
+        border = null,
+        leadingIcon = leadingIcon,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            selectedContainerColor = MaterialTheme.colorScheme.primary,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+    )
+}
+
+/**
+ * Lets a row inside a [PageGutter]-padded grid reach the screen's edges. Song rows carry the same
+ * inset themselves, so without this they would sit twice as far in as the cards around them.
+ */
+fun Modifier.bleedToPageEdges(): Modifier = layout { measurable, constraints ->
+    val gutter = PageGutter.roundToPx()
+    val width = constraints.maxWidth + gutter * 2
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+    layout(constraints.maxWidth, placeable.height) {
+        placeable.place(-gutter, 0)
     }
 }
