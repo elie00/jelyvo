@@ -49,6 +49,7 @@ import androidx.compose.material.icons.rounded.Forward10
 import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.MoreVert
@@ -614,6 +615,7 @@ private fun GestureHelpDialog(onDismiss: () -> Unit) {
                 GestureHint(Icons.Rounded.Swipe, stringResource(R.string.gesture_swipe_tracks))
                 GestureHint(Icons.Rounded.TouchApp, stringResource(R.string.gesture_double_tap))
                 GestureHint(Icons.Rounded.Lyrics, stringResource(R.string.gesture_tap_lyrics))
+                GestureHint(Icons.Rounded.Share, stringResource(R.string.gesture_share_lyric))
             }
         },
         confirmButton = {
@@ -667,6 +669,8 @@ private fun ArtworkOrLyrics(
             LyricsPanel(
                 lyricsState = uiState.lyrics,
                 currentPositionMs = uiState.playbackProgress.position.toLong(),
+                isPlaying = uiState.isPlaying,
+                playbackSpeed = uiState.playbackSpeed,
                 onSeekTo = { PlayerManager.currentController?.seekTo(it) },
                 onRetry = onRetryLyrics,
                 onShareLine = { line ->

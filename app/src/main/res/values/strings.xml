@@ -258,6 +258,7 @@
     <string name="show_lyrics" tools:ignore="MissingTranslation">Show lyrics</string>
     <string name="show_cover" tools:ignore="MissingTranslation">Show cover</string>
     <string name="player_artwork_description" tools:ignore="MissingTranslation">Cover for %1$s</string>
+    <string name="gesture_share_lyric">Touch and hold a lyric line to share it</string>
     <string name="got_it">Got it</string>
     <string name="normalize_volume_title">Normalize volume</string>
     <string name="normalize_volume_description">Play every track at a similar loudness level</string>
