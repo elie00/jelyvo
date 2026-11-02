@@ -22,7 +22,7 @@ jobs:
           cache: gradle
       - name: Test, lint and package phone and watch
         run: >-
-          ./gradlew :music-core:test :music-youtube:test :wear-shared:test
+          ./gradlew :music-core:test :music-youtube:test :wear-shared:test :automix:test
           :app:testStandaloneDebugUnitTest :wear:testDebugUnitTest
           :app:lintStandaloneDebug :wear:lintDebug
           :app:assembleStandaloneDebug :wear:assembleDebug

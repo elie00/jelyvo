@@ -40,7 +40,7 @@ fi
 [[ -f keystore.properties ]] || { echo "keystore.properties manquant : le build serait signé avec la clé debug du poste." >&2; exit 1; }
 
 echo "== Tests et analyse statique =="
-./gradlew :music-core:test :music-youtube:test :wear-shared:test \
+./gradlew :music-core:test :music-youtube:test :wear-shared:test :automix:test \
     :app:testStandaloneDebugUnitTest :wear:testDebugUnitTest \
     :app:lintStandaloneDebug :wear:lintDebug --console=plain
 
