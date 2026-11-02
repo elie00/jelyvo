@@ -3,6 +3,18 @@
 > Document de passation pour reprendre le travail sur un autre poste.
 > Dernière mise à jour : 2026-07-27, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 
+## Reprise depuis BitChord (2026-11-02), branche `feat/bitchord-port-v2`
+
+Part de `origin/main` en 2.6.12, et remplace `feat/bitchord-port`, construite par erreur sur la 2.3.1. Rien n'est fusionné dans `main`.
+Mobile uniquement : `:desktopApp` est seulement compilé, car le thème Studio vit dans `:music-ui`. Aucun essai sur appareil.
+
+- **Fait** : scrobbling ListenBrainz et Last.fm, paroles au mot (lrc.red, BetterLyrics, Unison, LRCLIB), fondu enchaîné à deux lecteurs,
+  écoute à plusieurs (`backend/`, aucun serveur déployé), thème Studio, navigation et barres dépolies (Haze), lecteur, écran des paroles,
+  accueil, recherche.
+- **Reste** : bibliothèque et détails, réglages, Automix.
+- **Test connu en échec sur ce poste** : `WearPlaybackBridgeThreadingTest`, qui cherche un saut de ligne LF alors que le clone Windows est en CRLF.
+- **Captures sans appareil** : `app/build/outputs/theme-showcase`. Toujours faire `git fetch` avant de se fier à `origin/main` depuis ce clone.
+
 ## Contexte général
 
 Fork personnel d'`ilianoKokoro/umihi-music` (lecteur YouTube Music, Kotlin + Jetpack Compose, Material 3). Direction assumée : divergence du projet d'origine.
