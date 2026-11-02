@@ -1,5 +1,17 @@
 package ca.ilianokokoro.umihi.music.ui.components
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TopAppBarColors
@@ -43,3 +55,35 @@ fun frostedTopAppBarColors(): TopAppBarColors = TopAppBarDefaults.topAppBarColor
     containerColor = Color.Transparent,
     scrolledContainerColor = Color.Transparent,
 )
+
+/** The bar's own height, under whatever status bar inset it sits below. */
+val FrostedPageBarHeight = 52.dp
+
+/** A fixed frosted bar for pages without a Material top bar: a title, and actions at the far end. */
+@Composable
+fun FrostedPageBar(
+    title: String,
+    hazeState: HazeState,
+    modifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .frosted(hazeState)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .height(FrostedPageBarHeight)
+            .padding(start = PageGutter, end = 8.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        actions()
+    }
+}
