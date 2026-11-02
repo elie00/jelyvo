@@ -14,11 +14,10 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import ca.ilianokokoro.umihi.music.core.ApiResult
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 import ca.ilianokokoro.umihi.music.models.LyricLine
 import ca.ilianokokoro.umihi.music.models.LyricWord
 import ca.ilianokokoro.umihi.music.models.Lyrics
-import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -48,7 +47,7 @@ class LyricsPanelScreenshotTest {
 
     private fun render(name: String, dark: Boolean, lyrics: Lyrics, positionMs: Long) {
         compose.setContent {
-            UmihiMusicTheme(darkTheme = dark, themePreset = ThemePreset.Studio) {
+            StudioTestTheme(dark = dark) {
                 Box(
                     Modifier
                         .fillMaxWidth()
