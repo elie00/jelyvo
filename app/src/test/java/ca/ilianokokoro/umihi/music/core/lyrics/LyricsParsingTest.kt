@@ -1,7 +1,10 @@
 package ca.ilianokokoro.umihi.music.core.lyrics
 
 import ca.ilianokokoro.umihi.music.models.LyricLine
+import ca.ilianokokoro.umihi.music.models.LyricLine
 import ca.ilianokokoro.umihi.music.models.LyricWord
+import ca.ilianokokoro.umihi.music.models.Lyrics
+import kotlinx.serialization.json.Json
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.sungWordCount
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -15,6 +18,24 @@ class LyricsParsingTest {
           <body><div>$body</div></body>
         </tt>
     """.trimIndent()
+
+    @Test
+    fun `word timing survives the disk cache`() {
+        val lyrics = Lyrics(
+            lines = listOf(LyricLine(1_000L, "Hello", listOf(LyricWord(1_000L, 2_000L, "Hello")))),
+            isSynced = true,
+        )
+        val stored = Json.encodeToString(Lyrics.serializer(), lyrics)
+
+        assertEquals(lyrics, Json.decodeFromString(Lyrics.serializer(), stored))
+    }
+
+    @Test
+    fun `entries cached before word timing still load`() {
+        val stored = """{"lines":[{"timeMs":1000,"text":"Hello"}],"isSynced":true}"""
+
+        assertTrue(Json.decodeFromString(Lyrics.serializer(), stored).lines.single().words.isEmpty())
+    }
 
     @Test
     fun `ttml splits words on whitespace and joins syllables`() {

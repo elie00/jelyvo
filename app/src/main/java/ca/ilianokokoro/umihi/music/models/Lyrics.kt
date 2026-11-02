@@ -22,6 +22,7 @@ data class LyricLine(
 
 /** One word of a line and the stretch of the song it is sung over. */
 @Immutable
+@Serializable
 data class LyricWord(
     val startMs: Long,
     val endMs: Long,
