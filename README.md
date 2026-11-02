@@ -115,6 +115,12 @@ keystore. Share that keystore between machines if you want to install over an ex
 
 - Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
 - **Jelyvo identity and app logo**: created for this fork.
+- **Word-timed lyrics parsing, lyrics source matching, the listening party server and protocol, and
+  the Studio theme's layout and type scale**: adapted from
+  [BitChord](https://github.com/kushagrasinghx/BitChord) by Kushagra Singh and contributors
+  (GPL-3.0). Adapted files say so in their header.
+- **DM Sans**, the Studio theme's typeface: The DM Sans Project Authors, under the SIL Open Font
+  License (`music-ui/licenses/OFL-DMSans.txt`).
 - **Translations**: inherited from the upstream project's Crowdin, and still shipped here. This fork
   no longer syncs with it, so the list is frozen as of the fork point. New Jelyvo features are
   maintained in English and French; the other 30 locales intentionally fall back to English for
