@@ -5,15 +5,16 @@
 > Document de passation pour reprendre le travail sur un autre poste.
 > Dernière mise à jour : 2026-07-27, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 
-## Reprise depuis BitChord (2026-11-02), branche `feat/bitchord-port-v2`
+## Reprise depuis BitChord (2026-11-02), publiée en 2.6.13
 
-Part de `origin/main` en 2.6.12, et remplace `feat/bitchord-port`, construite par erreur sur la 2.3.1. Rien n'est fusionné dans `main`.
-Mobile uniquement : `:desktopApp` est seulement compilé, car le thème Studio vit dans `:music-ui`. Aucun essai sur appareil.
+`feat/bitchord-port-v2` et `codex/finish-existing-platforms` sont fusionnées dans `main`. `feat/bitchord-port`, construite par erreur sur la 2.3.1, est remplacée et ne doit pas être reprise.
 
 - **Fait** : scrobbling ListenBrainz et Last.fm, paroles au mot (lrc.red, BetterLyrics, Unison, LRCLIB), fondu enchaîné à deux lecteurs,
-  écoute à plusieurs (`worker/` sur Cloudflare, gratuit avec garde-fous, utilisé par défaut ; `backend/` en Go conservé jusqu'au test sur deux téléphones), toute l'interface (thème Studio, navigation et barres dépolies, lecteur, paroles, accueil, recherche, bibliothèque, détails, réglages, écrans secondaires), Automix sans calage sur le tempo (`automix/`, AGPL-3.0).
-- **Reste** : tout tester sur téléphone, calage d'Automix sur le tempo (modèles ONNX, moteur natif).
-- **Test connu en échec sur ce poste** : `WearPlaybackBridgeThreadingTest`, qui cherche un saut de ligne LF alors que le clone Windows est en CRLF.
+  écoute à plusieurs (`worker/` sur Cloudflare, gratuit avec garde-fous, utilisé par défaut ; `backend/` en Go conservé jusqu'au test sur deux téléphones), toute l'interface (thème Studio, navigation et barres dépolies, lecteur, paroles, accueil, recherche, bibliothèque, détails, réglages, écrans secondaires), Automix sans calage sur le tempo (`automix/`, AGPL-3.0), material3 1.5.0-beta02.
+- **Vérifié sur émulateur, APK de release signé, en mise à jour depuis la 2.6.12** : démarrage, recherche, lecture, paroles synchronisées, création d'une partie sur le serveur déployé, et synchronisation (changement de titre, pause, reprise, saut) pilotée par un second appareil simulé.
+- **Reste à tester** : sur téléphone réel ; écoute à plusieurs entre deux vrais appareils, dont les gestes de l'hôte vers l'invité ; fondu enchaîné et Automix en release ; scrobbling avec de vrais comptes ; écrans secondaires.
+- **Reste à faire** : calage d'Automix sur le tempo (modèles ONNX, moteur natif), jamais porté.
+- **Test connu en échec sur le poste Windows** : `WearPlaybackBridgeThreadingTest`, qui cherche un saut de ligne LF alors que le clone Windows est en CRLF. Il passe sur le Mac.
 - **Captures sans appareil** : `app/build/outputs/theme-showcase`. Toujours faire `git fetch` avant de se fier à `origin/main` depuis ce clone.
 
 ## Contexte général
