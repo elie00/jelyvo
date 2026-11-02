@@ -1,34 +1,28 @@
 package ca.ilianokokoro.umihi.music.ui.screens.home
 
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.HazeState
-import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBarHeight
-import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBar
 import android.app.Application
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -38,6 +32,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -45,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,15 +54,20 @@ import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
+import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBar
+import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBarHeight
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
 import ca.ilianokokoro.umihi.music.ui.components.home.ForYouMixesRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeShortcutGrid
-import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
 import ca.ilianokokoro.umihi.music.ui.components.home.ResumeListeningRow
+import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import java.time.LocalTime
 
 @Composable
@@ -87,6 +87,7 @@ fun HomeScreen(
     val uiState = homeViewModel.uiState.collectAsStateWithLifecycle().value
 
     val hazeState = remember { HazeState() }
+    val pullToRefreshState = rememberPullToRefreshState()
 
     // The frosted bar takes over from the status bar fade while the feed is up.
     FadingStatusBarWrapper(
@@ -127,6 +128,17 @@ fun HomeScreen(
                                 isRefreshing = uiState.isRefreshing,
                                 onRefresh = homeViewModel::refresh,
                                 modifier = Modifier.hazeSource(hazeState),
+                                state = pullToRefreshState,
+                                // Drawn below the fixed bar, which would otherwise hide it.
+                                indicator = {
+                                    PullToRefreshDefaults.Indicator(
+                                        state = pullToRefreshState,
+                                        isRefreshing = uiState.isRefreshing,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .padding(top = statusBarHeight + FrostedPageBarHeight),
+                                    )
+                                },
                             ) {
                                 LazyVerticalGrid(
                                     modifier = Modifier.fillMaxSize(),
