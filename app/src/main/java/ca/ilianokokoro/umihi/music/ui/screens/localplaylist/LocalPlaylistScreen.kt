@@ -64,6 +64,10 @@ import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.components.EditableSongItem
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,8 +114,11 @@ fun LocalPlaylistScreen(
     }
 
     FadingStatusBarWrapper {
+        val hazeState = remember { HazeState() }
         Scaffold(topBar = {
             TopAppBar(
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
                 title = {
                     Text(
                         uiState.name,
@@ -201,12 +208,12 @@ fun LocalPlaylistScreen(
                 LazyColumn(
                     modifier = modifier
                         .fillMaxSize()
-                        .padding(paddingValues),
+                        .hazeSource(hazeState),
                     state = lazyListState,
                     contentPadding = PaddingValues(
                         start = 8.dp,
                         end = 8.dp,
-                        top = 8.dp,
+                        top = paddingValues.calculateTopPadding() + 8.dp,
                         bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
