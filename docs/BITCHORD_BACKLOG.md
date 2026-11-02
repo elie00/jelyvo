@@ -1,0 +1,105 @@
+# Suite de la 2.6.13 et reprises possibles depuis BitChord
+
+> Notes du 2 novembre 2026, à reprendre le 3 novembre. Rien de ce qui suit n'est commencé.
+
+## État
+
+La v2.6.13 est publiée sur `elie00/jelyvo-releases`. L'APK est signé avec la clé officielle
+(`b47ac9b…`). `feat/bitchord-port-v2` et `codex/finish-existing-platforms` sont fusionnées dans
+`main`, et la PR #1 est close.
+
+## À décider en premier
+
+1. **Par quoi commencer ?** Recommandation : l'écoute à plusieurs complète et les petits gains
+   rapides, parce que c'est visible tout de suite et que le serveur est prêt. PoToken vient ensuite.
+2. **Comment fournir le code source ?** Jelyvo est sous GPL-3.0 et son APK est public, alors que
+   `umihi-music` est privé et que `jelyvo-releases` ne contient qu'un README. La GPL impose de
+   fournir le code source à ceux qui reçoivent l'APK, et la 2.6.13 ajoute du code BitChord sous GPL
+   et AGPL. Le plus simple est de rendre le dépôt public, après avoir vérifié qu'il ne contient aucun
+   secret. Sinon, joindre le code source à chaque release.
+
+## Résultats des tests du 2 novembre
+
+Sur émulateur, avec un APK de release signé, installé par-dessus la 2.6.12 publique.
+
+| Test | Résultat | Constat |
+|---|---|---|
+| Mise à jour depuis la 2.6.12 | OK | Pas de désinstallation ni de plantage. Le schéma Room n'a pas changé. |
+| Recherche, lecture, paroles synchronisées | OK | Le client `ANDROID_VR` est refusé par YouTube, le repli prend le relais. |
+| Fondu enchaîné | OK | Deux lecteurs audio actifs pendant ≈ 6 s, la durée réglée, puis un seul. |
+| Automix | En partie | Transition sans plantage, mais rien ne prouve que l'analyse a changé le fondu. |
+| Écoute à plusieurs | OK | Titre, pause, reprise et saut passent dans les deux sens, avec un second appareil simulé par un script sur le protocole réel. |
+
+Deux bugs trouvés ainsi sont corrigés dans la 2.6.13 : l'artiste « Song » dans la recherche, et la
+partie créée pendant une écoute qui ne partageait rien.
+
+**Reste à tester** :
+
+- le rendu à l'oreille, sur un vrai téléphone ;
+- l'écoute à plusieurs entre deux vrais téléphones, avant de retirer `backend/` ;
+- l'effet réel de l'analyse d'Automix. Elle ne journalise rien : il faudra ajouter un journal dans un
+  build de debug. En données mobiles, elle ne lit que les fichiers déjà sur l'appareil ;
+- le scrobbling avec de vrais comptes ;
+- les écrans secondaires : téléchargements, ambiances, import, égaliseur, statistiques.
+
+## Reprises possibles depuis BitChord
+
+Source : [kushagrasinghx/BitChord](https://github.com/kushagrasinghx/BitChord), GPL-3.0, examiné au
+commit `b690dc1` (v1.9). Conserver le crédit dans l'en-tête des fichiers adaptés et dans le README.
+Les chemins ci-dessous partent de `app/src/main/java/com/music/bitchord/`, sauf mention contraire.
+
+### À prendre en priorité
+
+| Fonction | Dans BitChord | Dans Jelyvo aujourd'hui | Effort |
+|---|---|---|---|
+| Écoute à plusieurs complète : lien d'invitation, QR code, membres, exclusion, contrôle réservé à l'hôte, file partagée | `ui/screens/ListenTogetherScreen.kt`, `ui/screens/ListenTogetherSheets.kt`, `data/listentogether/ListenTogether.kt`, `playback/PartySync.kt`, `ui/components/QrCode.kt` (`com.google.zxing:core:3.5.3`) | `JamManager` n'envoie que lecture, pause, saut et titre. `worker/` gère déjà le reste, dont `/invite/{code}`. Le manifeste n'a pas de lien pour les invitations. | Moyen |
+| PoToken | `data/innertube/potoken/PoTokenWebView.kt` | Absent. Le repli marche encore, mais c'est le point le plus fragile. | Moyen |
+| Carte image pour partager les paroles | `ui/player/LyricsShareCard.kt`, `ui/player/AndroidLyricsShareSheet.kt` | `ShareHelper.shareLyrics` n'envoie que du texte. | Faible |
+| Traduction des paroles | `docs/LYRICS_TRANSLATION.md` et `shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LyricsTranslation.kt` (depuis la racine du dépôt) | Absente. | Faible à moyen |
+| Saut des silences | Réglage Media3 `skipSilenceEnabled` | Absent. | Faible |
+| Arrêt de la minuterie en fin de titre, durée libre | Notes de la v1.9 | Curseur en minutes seulement. | Faible |
+| « Ouvrir avec » pour les fichiers audio | Notes de la v1.9 | Le manifeste ne déclare aucun type audio. | Faible |
+| Choix du taux de rafraîchissement (120 Hz) | `ui/performance/DisplayRefreshRates.kt` | Absent. | Faible |
+| Replay, rétrospective façon « Wrapped » | `ui/replay/`, `data/stats/ListeningStats.kt` | Les écoutes sont déjà enregistrées, avec un écran de statistiques. | Moyen |
+| Bibliothèque locale : dossiers, pochettes et paroles intégrées aux fichiers | `data/LocalMediaRepository.kt`, `data/LocalGroups.kt`, `data/remote/EmbeddedArt.kt`, `data/lyrics/EmbeddedLyrics.kt` | Aucune lecture des tags intégrés. L'absence de navigation par dossiers reste à confirmer. | Moyen |
+
+Points d'attention :
+
+- **PoToken** : le code exécute dans une WebView le JavaScript BotGuard servi par Google. La correction
+  doit aussi être reportée à la main dans Umihi Tube, qui a sa propre couche d'extraction.
+- **Traduction** : elle passe par un service web Google non officiel, qui peut cesser de fonctionner,
+  et envoie les paroles à Google.
+- **Saut des silences** : le `CrossfadeController` de BitChord tient compte de ce réglage. Vérifier
+  son effet sur le fondu de Jelyvo avant de l'activer en même temps.
+- **Invitations** : il faudra déclarer l'adresse du serveur dans le manifeste, et gérer le cas où
+  l'utilisateur a choisi un autre serveur.
+
+### Gros chantiers, à décider
+
+- **Automix complet, calage sur le tempo.** Il faut `beat_this_final0_q8.onnx` (23 Mo),
+  `vocals_umxhq_int8.onnx` (9,1 Mo), ONNX Runtime et l'analyseur natif (`native/analyzer/`, depuis la
+  racine du dépôt, sous AGPL), pour un APK de 6,7 Mo aujourd'hui. Il faudrait télécharger les modèles
+  à la demande, et seule une écoute réelle permettra de juger le résultat.
+- **Application Android TV.** `tv/` compte 40 fichiers Kotlin et s'appuie sur `shared/` et `sharedUi/`
+  (220 fichiers), une séparation que Jelyvo n'a pas sous cette forme.
+- **Audio avancé.** `playback/EqualizerProcessor.kt` avec limiteur, `playback/SpatialAudioProcessor.kt`,
+  `playback/LoudnessProcessor.kt`, et la sortie USB `playback/audio/bitperfect/`. Surtout utile aux
+  audiophiles.
+
+### À éviter
+
+- **Modules de sources tierces** (`data/sources/`) : ils exécutent du code externe via QuickJS, et le
+  code cite Tidal, Qobuz et Deezer. Risque de sécurité et risque juridique.
+- **Pochettes animées** (`data/canvas/`) : elles reposent sur un cookie Spotify `sp_dc` et sur un jeton
+  Apple récupéré hors API officielle. C'est fragile.
+- **Discord Rich Presence** (`data/discord/DiscordRPC.kt`) : la connexion se fait avec le compte de
+  l'utilisateur, ce qui peut faire bannir ce compte.
+
+## Ménage
+
+- Branches distantes déjà fusionnées et supprimables : `release/2.6.13`, `feat/bitchord-port-v2`,
+  `codex/finish-existing-platforms`, `agent/finalize-m3-experience`.
+- `feat/bitchord-port` n'est pas fusionnée, et ne doit pas l'être : elle part de la 2.3.1. Ses
+  corrections utiles sont déjà couvertes, et ses notes de suivi n'ont pas été comparées une à une.
+- La CI n'exécute ni les tests de `worker/` ni ceux de `backend/`. Ils passent en local (64 tests pour
+  le worker).
