@@ -6,20 +6,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,11 +37,16 @@ import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 /** Complete album, EP or singles shelf opened from an artist page. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ArtistReleasesScreen(
     title: String,
@@ -52,48 +61,56 @@ fun ArtistReleasesScreen(
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
 
-    Scaffold(contentWindowInsets = WindowInsets.systemBars) { paddingValues ->
+    val hazeState = remember { HazeState() }
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            TopAppBar(
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
+                navigationIcon = { BackButton(onBack = onBack) },
+                title = {
+                    Text(
+                        text = localizedApiSectionTitle(title),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
+            )
+        },
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .hazeSource(hazeState),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                BackButton(onBack = onBack)
-                Text(
-                    text = localizedApiSectionTitle(title),
-                    style = MaterialTheme.typography.headlineSmallEmphasized,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
             when (state) {
                 ArtistReleasesState.Loading -> Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .padding(paddingValues),
                     contentAlignment = Alignment.Center,
                 ) {
                     MusicSkeleton(MusicSkeletonLayout.Library)
                 }
 
-                is ArtistReleasesState.Error -> ErrorMessage(
-                    ex = state.exception,
-                    onRetry = viewModel::load,
-                )
+                is ArtistReleasesState.Error -> Box(modifier = Modifier.padding(paddingValues)) {
+                    ErrorMessage(
+                        ex = state.exception,
+                        onRetry = viewModel::load,
+                    )
+                }
 
                 is ArtistReleasesState.Success -> {
                     if (state.releases.isEmpty()) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .weight(1f),
+                                .weight(1f)
+                                .padding(paddingValues),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
@@ -110,9 +127,9 @@ fun ArtistReleasesScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             contentPadding = PaddingValues(
-                                start = 12.dp,
-                                end = 12.dp,
-                                top = 8.dp,
+                                start = PageGutter,
+                                end = PageGutter,
+                                top = paddingValues.calculateTopPadding() + 8.dp,
                                 bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
                             ),
                         ) {
@@ -145,22 +162,23 @@ private fun ArtistReleaseGridCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         SquareImage(
             uri = release.thumbnail,
             modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(Modifier.height(10.dp))
         Text(
             text = release.title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (release.subtitle.isNotBlank()) {
             Text(
                 text = release.subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
