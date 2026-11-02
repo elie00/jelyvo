@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.home
 
+import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
+import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -49,16 +51,7 @@ fun RecentlyPlayedRow(
     onRemoveFromHistory: (Song) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.recently_played),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-        ) {
+    Shelf(title = stringResource(R.string.recently_played), modifier = modifier) {
             items(items = songs, key = { it.youtubeId }) { song ->
                 RecentlyPlayedCard(
                     song = song,
@@ -66,7 +59,6 @@ fun RecentlyPlayedRow(
                     onRemoveFromHistory = { onRemoveFromHistory(song) },
                 )
             }
-        }
     }
 }
 
@@ -83,39 +75,18 @@ private fun RecentlyPlayedCard(
         PlayerManager.prewarmStream(context, song)
     }
     Box {
-        Column(
+        ShelfCard(
             modifier = Modifier
-                .width(136.dp)
-                .keyboardFocusOutline(RoundedCornerShape(20.dp))
+                .keyboardFocusOutline(RoundedCornerShape(16.dp))
                 .songDragAndDropSource(song)
                 .onKeyboardContextMenu { menuExpanded = true }
-                .onSecondaryClick { menuExpanded = true }
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = { menuExpanded = true },
-                ),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            SquareImage(
-                uri = song.thumbnailPath ?: song.thumbnailHref,
-                modifier = Modifier.fillMaxWidth(),
-                cornerRadius = 18.dp,
-            )
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.basicMarquee()
-            )
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+                .onSecondaryClick { menuExpanded = true },
+            title = song.title,
+            subtitle = song.artist,
+            artworkUri = song.thumbnailPath ?: song.thumbnailHref,
+            onClick = onClick,
+            onLongClick = { menuExpanded = true },
+        )
         HistoryCardMenu(
             expanded = menuExpanded,
             onDismiss = { menuExpanded = false },

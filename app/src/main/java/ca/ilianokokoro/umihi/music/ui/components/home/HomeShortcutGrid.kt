@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.ui.components.home
 
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,7 +34,7 @@ fun HomeShortcutGrid(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(horizontal = PageGutter, vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         songs.chunked(2).forEach { rowSongs ->
@@ -59,7 +60,7 @@ private fun ShortcutTile(
     Surface(
         modifier = modifier.height(56.dp),
         shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Row(
             modifier = Modifier.clickable(onClick = onClick),

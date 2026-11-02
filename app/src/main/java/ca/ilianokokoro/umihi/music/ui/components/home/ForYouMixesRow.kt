@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.home
 
+import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
+import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -46,20 +48,10 @@ fun ForYouMixesRow(
     onMixClick: (HomeMix) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.home_for_you),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
+    Shelf(title = stringResource(R.string.home_for_you), modifier = modifier) {
             items(items = mixes, key = { it.kind }) { mix ->
                 MixCard(mix = mix, onClick = { onMixClick(mix) })
             }
-        }
     }
 }
 
@@ -69,29 +61,10 @@ private fun MixCard(
     onClick: () -> Unit,
 ) {
     val cover = mix.songs.first()
-    Column(
-        modifier = Modifier
-            .width(160.dp)
-            .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        SquareImage(
-            uri = cover.thumbnailPath ?: cover.thumbnailHref,
-            modifier = Modifier.fillMaxWidth(),
-            cornerRadius = 18.dp,
-        )
-        Text(
-            text = homeMixTitle(mix.kind),
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = pluralStringResource(R.plurals.song_count, mix.songs.size, mix.songs.size),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+    ShelfCard(
+        title = homeMixTitle(mix.kind),
+        subtitle = pluralStringResource(R.plurals.song_count, mix.songs.size, mix.songs.size),
+        artworkUri = cover.thumbnailPath ?: cover.thumbnailHref,
+        onClick = onClick,
+    )
 }
