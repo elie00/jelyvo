@@ -47,7 +47,7 @@ object Constants {
 
     object Ui {
         object MiniPlayer {
-            val HEIGHT = 76.dp
+            val HEIGHT = 68.dp
         }
 
         val SCROLLABLE_BOTTOM_PADDING = 200.dp

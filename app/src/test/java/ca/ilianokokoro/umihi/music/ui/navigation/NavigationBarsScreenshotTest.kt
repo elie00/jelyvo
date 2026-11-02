@@ -28,7 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
+import ca.ilianokokoro.umihi.music.core.domain.ArtistRef
+import ca.ilianokokoro.umihi.music.core.domain.Track
 import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.miniplayer.MiniPlayer
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import dev.chrisbanes.haze.HazeState
@@ -101,12 +104,29 @@ class NavigationBarsScreenshotTest {
                             }
                         }
                     }
-                    BottomNavigationBar(
-                        currentTab = tab as androidx.navigation3.runtime.NavKey,
-                        onTabSelected = {},
-                        hazeState = dockHaze,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
+                    Column(Modifier.align(Alignment.BottomCenter)) {
+                        MiniPlayer(
+                            currentTrack = Track(
+                                id = "x",
+                                title = "Harder, Better, Faster, Stronger",
+                                artist = ArtistRef(name = "Daft Punk"),
+                            ),
+                            onClick = {},
+                            onPlayPause = {},
+                            onSkipNext = {},
+                            onSkipPrevious = {},
+                            isPlaying = true,
+                            isLoading = false,
+                            progressFraction = 0.4f,
+                            hazeState = dockHaze,
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                        )
+                        BottomNavigationBar(
+                            currentTab = tab as androidx.navigation3.runtime.NavKey,
+                            onTabSelected = {},
+                            hazeState = dockHaze,
+                        )
+                    }
                 }
             }
         }

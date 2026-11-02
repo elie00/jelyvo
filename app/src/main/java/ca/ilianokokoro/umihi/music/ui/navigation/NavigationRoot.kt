@@ -570,6 +570,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     playbackEngine = Media3PlaybackEngine,
                     showMiniPlayer =
                         screenConfig.showMiniPlayer && !showPermanentPlaybackPane,
+                    hazeState = dockHazeState,
                     onMiniPlayerPressed = { showFullPlayer = true },
                     artworkModifier = artworkModifier,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
