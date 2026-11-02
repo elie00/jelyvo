@@ -172,8 +172,8 @@ fun LibraryScreen(
     val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
     val pullToRefreshState = rememberPullToRefreshState()
 
-    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { _ ->
-        Box(Modifier.fillMaxSize()) {
+    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { paddingValues ->
+        Box(Modifier.fillMaxSize().padding(paddingValues)) {
             CompositionLocalProvider(LocalLibraryHeaderHeight provides headerHeight) {
             Column(
                 modifier = Modifier

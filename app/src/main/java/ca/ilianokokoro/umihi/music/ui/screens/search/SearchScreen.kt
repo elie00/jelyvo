@@ -166,8 +166,8 @@ fun SearchScreen(
     var headerHeightPx by remember { mutableIntStateOf(0) }
     val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
 
-    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { _ ->
-        Box(Modifier.fillMaxSize()) {
+    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { paddingValues ->
+        Box(Modifier.fillMaxSize().padding(paddingValues)) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
