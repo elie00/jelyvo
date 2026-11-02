@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.search.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -76,28 +78,21 @@ fun TopResultCard(
         Text(
             text = stringResource(R.string.top_result),
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 16.dp, bottom = 10.dp),
         )
-        Card(
-            onClick = onOpen,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SquareImage(
                     uri = thumbnail,
-                    modifier = Modifier.size(100.dp),
-                    cornerRadius = if (item is SearchItem.Artist) 50.dp else 12.dp,
+                    modifier = Modifier.size(88.dp),
+                    cornerRadius = if (item is SearchItem.Artist) 44.dp else 12.dp,
                 )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -108,6 +103,7 @@ fun TopResultCard(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
