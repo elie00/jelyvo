@@ -1,5 +1,8 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.ui.graphics.graphicsLayer
 import android.app.Activity
 import android.app.Application
 import android.content.Context
@@ -356,7 +359,7 @@ fun PlayerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(0.92f)
-                        .padding(horizontal = 20.dp),
+                        .padding(horizontal = 30.dp),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -703,6 +706,8 @@ private fun ArtworkOrLyrics(
                 contentDescription = currentSong?.title?.let {
                     stringResource(R.string.player_artwork_description, it)
                 },
+                // Buffering is not a pause: the cover must not dip at every track change.
+                isPlaying = uiState.isPlaying || uiState.isLoading,
                 onToggle = onToggle,
                 onSkipNext = onSkipNext,
                 onSkipPrevious = onSkipPrevious,
@@ -716,10 +721,13 @@ private fun ArtworkOrLyrics(
     }
 }
 
+private const val ARTWORK_PAUSED_SCALE = 0.88f
+
 @Composable
 fun Thumbnail(
     href: String,
     contentDescription: String? = null,
+    isPlaying: Boolean = true,
     onToggle: () -> Unit = {},
     onSkipNext: () -> Unit = {},
     onSkipPrevious: () -> Unit = {},
@@ -730,10 +738,16 @@ fun Thumbnail(
 ) {
     val showLyricsLabel = stringResource(R.string.show_lyrics)
     BoxWithConstraints(
-        modifier = modifier.padding(20.dp),
+        modifier = modifier.padding(30.dp),
         contentAlignment = Alignment.Center
     ) {
         val artSize = minOf(maxWidth, maxHeight)
+        // The cover sits back while the music is stopped and comes forward when it plays.
+        val artScale by animateFloatAsState(
+            targetValue = if (isPlaying) 1f else ARTWORK_PAUSED_SCALE,
+            animationSpec = spring(dampingRatio = 0.72f, stiffness = 320f),
+            label = "playerArtworkScale",
+        )
 
         AnimatedContent(
             targetState = href,
@@ -757,6 +771,10 @@ fun Thumbnail(
                             onToggle()
                             true
                         }
+                    }
+                    .graphicsLayer {
+                        scaleX = artScale
+                        scaleY = artScale
                     }
                     // Tap toggles lyrics; double-tap on the right/left half seeks ±10s.
                     .pointerInput(Unit) {
@@ -1374,7 +1392,7 @@ fun SongInfo(
                 Text(
                     text = it?.title ?: "",
                     style = MaterialTheme.typography.titleLargeEmphasized,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.basicMarquee()
                 )
                 Row(
@@ -1385,10 +1403,8 @@ fun SongInfo(
                 ) {
                     Text(
                         text = it?.artist ?: "",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.Bold
-                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
                             .weight(1f, fill = false)
                             .basicMarquee()
@@ -1396,7 +1412,7 @@ fun SongInfo(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = stringResource(R.string.view_artist),
-                        tint = MaterialTheme.colorScheme.secondary,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -1420,10 +1436,10 @@ fun SongInfo(
                     },
                     shapes = IconButtonDefaults.toggleableShapes(),
                     colors = IconButtonDefaults.filledIconToggleButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        containerColor = androidx.compose.ui.graphics.Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.onSurface,
-                        checkedContainerColor = IconButtonDefaults.filledIconToggleButtonColors().checkedContainerColor,
-                        checkedContentColor = IconButtonDefaults.filledIconToggleButtonColors().checkedContentColor,
+                        checkedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                        checkedContentColor = MaterialTheme.colorScheme.primary,
                     ),
                 ) {
                     Icon(
