@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music
 
+import ca.ilianokokoro.umihi.music.ui.theme.dmSansFontFamily
 import android.Manifest
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
@@ -125,13 +126,14 @@ class MainActivity : ComponentActivity() {
                 )
             val themePreset by datastoreRepository.themePreset
                 .collectAsStateWithLifecycle(
-                    initialValue = ThemePreset.Jelyvo
+                    initialValue = ThemePreset.Studio
                 )
 
             UmihiMusicTheme(
                 themeColor = themeColor,
                 themePreset = themePreset,
                 fontFamily = nunitoFontFamily(),
+                studioFontFamily = dmSansFontFamily(),
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     NavigationRoot(

@@ -36,6 +36,7 @@ import ca.ilianokokoro.umihi.music.ui.theme.ThemePresets
 fun themePresetLabel(preset: ThemePreset): String {
     return stringResource(
         when (preset) {
+            ThemePreset.Studio -> R.string.theme_preset_studio
             ThemePreset.Jelyvo -> R.string.theme_preset_jelyvo
             ThemePreset.Minuit -> R.string.theme_preset_minuit
             ThemePreset.Vinyle -> R.string.theme_preset_vinyle
@@ -49,6 +50,7 @@ fun themePresetLabel(preset: ThemePreset): String {
 private fun themePresetDescription(preset: ThemePreset): String {
     return stringResource(
         when (preset) {
+            ThemePreset.Studio -> R.string.theme_preset_studio_description
             ThemePreset.Jelyvo -> R.string.theme_preset_jelyvo_description
             ThemePreset.Minuit -> R.string.theme_preset_minuit_description
             ThemePreset.Vinyle -> R.string.theme_preset_vinyle_description

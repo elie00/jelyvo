@@ -100,9 +100,10 @@ data class ColorFamily(
 fun UmihiMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     themeColor: ThemeColor = ThemeColor.Umihi,
-    themePreset: ThemePreset = ThemePreset.Jelyvo,
+    themePreset: ThemePreset = ThemePreset.Studio,
     /** Loaded by the client: see `music-ui/fonts/nunito.ttf` and [appTypography]. */
     fontFamily: FontFamily,
+    studioFontFamily: FontFamily,
     content: @Composable () -> Unit
 ) {
     // Un preset complet (Minuit, Vinyle, Neon) impose couleurs, typo et formes ; Jelyvo garde le
@@ -123,7 +124,7 @@ fun UmihiMusicTheme(
     if (presetShapes != null) {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
-            typography = ThemePresets.typography(themePreset, fontFamily),
+            typography = ThemePresets.typography(themePreset, fontFamily, studioFontFamily),
             shapes = presetShapes,
             motionScheme = MotionScheme.expressive(),
             content = content,
@@ -131,7 +132,7 @@ fun UmihiMusicTheme(
     } else {
         MaterialExpressiveTheme(
             colorScheme = colorScheme,
-            typography = ThemePresets.typography(themePreset, fontFamily),
+            typography = ThemePresets.typography(themePreset, fontFamily, studioFontFamily),
             motionScheme = MotionScheme.expressive(),
             content = content,
         )

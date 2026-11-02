@@ -153,7 +153,7 @@ class DatastoreRepository(private val context: Context) {
         } ?: ThemeColor.Umihi
         val themePreset = it[PreferenceKeys.THEME_PRESET]?.let { value ->
             runCatching { ThemePreset.valueOf(value) }.getOrNull()
-        } ?: ThemePreset.Jelyvo
+        } ?: ThemePreset.Studio
         val profileName = it[PreferenceKeys.PROFILE_NAME].orEmpty()
         val profileAvatarPath = it[PreferenceKeys.PROFILE_AVATAR].orEmpty()
         val notifyNewReleases = it[NOTIFY_NEW_RELEASES] ?: false
@@ -230,7 +230,7 @@ class DatastoreRepository(private val context: Context) {
     val themePreset: Flow<ThemePreset> = context.dataStore.data.map {
         it[PreferenceKeys.THEME_PRESET]?.let { value ->
             runCatching { ThemePreset.valueOf(value) }.getOrNull()
-        } ?: ThemePreset.Jelyvo
+        } ?: ThemePreset.Studio
     }
 
     /**

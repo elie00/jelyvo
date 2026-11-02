@@ -133,6 +133,8 @@
     <string name="general">Général</string>
     <string name="appearance">Apparence</string>
     <string name="theme_preset_title">Thème</string>
+    <string name="theme_preset_studio">Studio</string>
+    <string name="theme_preset_studio_description">Noir et blanc, la couleur vient des pochettes</string>
     <string name="theme_preset_jelyvo">Jelyvo</string>
     <string name="theme_preset_jelyvo_description">Le style de la marque, avec son sélecteur d\'accent</string>
     <string name="theme_preset_minuit">Minuit</string>

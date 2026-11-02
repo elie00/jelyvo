@@ -137,6 +137,8 @@
     <string name="general">General</string>
     <string name="appearance">Appearance</string>
     <string name="theme_preset_title">Theme</string>
+    <string name="theme_preset_studio">Studio</string>
+    <string name="theme_preset_studio_description">Black and white, colour comes from the artwork</string>
     <string name="theme_preset_jelyvo">Jelyvo</string>
     <string name="theme_preset_jelyvo_description">The brand look, with its accent picker</string>
     <string name="theme_preset_minuit">Midnight</string>

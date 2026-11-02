@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.desktop
 
+import ca.ilianokokoro.umihi.music.desktop.theme.dmSansFontFamily
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -126,7 +127,7 @@ private fun JelyvoDesktopApp() {
         }
     }
 
-    UmihiMusicTheme(darkTheme = true, fontFamily = nunitoFontFamily) {
+    UmihiMusicTheme(darkTheme = true, fontFamily = nunitoFontFamily, studioFontFamily = dmSansFontFamily) {
         Surface(modifier = Modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxSize()) {
                 NavigationRail(modifier = Modifier.fillMaxHeight()) {

@@ -24,3 +24,15 @@ fun nunitoFontFamily(): FontFamily = FontFamily(
     Font(R.font.nunito, FontWeight.ExtraBold, FontStyle.Normal),
     Font(R.font.nunito, FontWeight.Black, FontStyle.Normal),
 )
+
+/** DM Sans on Android, the Studio theme's typeface, delivered the same way as Nunito. */
+@Composable
+fun dmSansFontFamily(): FontFamily = FontFamily(
+    Font(R.font.dm_sans, FontWeight.Light, FontStyle.Normal),
+    Font(R.font.dm_sans, FontWeight.Normal, FontStyle.Normal),
+    Font(R.font.dm_sans, FontWeight.Medium, FontStyle.Normal),
+    Font(R.font.dm_sans, FontWeight.SemiBold, FontStyle.Normal),
+    Font(R.font.dm_sans, FontWeight.Bold, FontStyle.Normal),
+    Font(R.font.dm_sans, FontWeight.ExtraBold, FontStyle.Normal),
+    Font(R.font.dm_sans, FontWeight.Black, FontStyle.Normal),
+)

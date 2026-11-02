@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.error
 
+import ca.ilianokokoro.umihi.music.ui.theme.dmSansFontFamily
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -13,7 +14,7 @@ class ErrorActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            UmihiMusicTheme(fontFamily = nunitoFontFamily()) {
+            UmihiMusicTheme(fontFamily = nunitoFontFamily(), studioFontFamily = dmSansFontFamily()) {
                 ErrorScreen()
             }
         }

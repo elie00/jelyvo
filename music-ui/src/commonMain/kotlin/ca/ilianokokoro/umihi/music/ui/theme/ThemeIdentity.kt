@@ -20,6 +20,7 @@ enum class ThemeColor {
  * the accent. [Jelyvo] keeps the brand look and the accent picker; the others override it all.
  */
 enum class ThemePreset {
+    Studio,
     Jelyvo,
     Minuit,
     Vinyle,
