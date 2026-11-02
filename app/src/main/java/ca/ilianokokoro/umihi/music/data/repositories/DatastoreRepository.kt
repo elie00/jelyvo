@@ -103,6 +103,8 @@ class DatastoreRepository(private val context: Context) {
         val NOT_INTERESTED = stringPreferencesKey(Constants.Datastore.NOT_INTERESTED)
         val LISTENBRAINZ_TOKEN = stringPreferencesKey(Constants.Datastore.LISTENBRAINZ_TOKEN)
         val LASTFM_CREDENTIALS = stringPreferencesKey(Constants.Datastore.LASTFM_CREDENTIALS)
+        val JAM_SERVER_URL = stringPreferencesKey(Constants.Datastore.JAM_SERVER_URL)
+        val JAM_DEVICE_ID = stringPreferencesKey(Constants.Datastore.JAM_DEVICE_ID)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -402,6 +404,23 @@ class DatastoreRepository(private val context: Context) {
         // Cached responses belong to the previous account state (login/logout).
         ResponseCache.clear()
         LikeManager.reset()
+    }
+
+    /** The listening party server, empty until the user has entered one. */
+    val jamServerUrl: Flow<String> = context.dataStore.data.map {
+        it[PreferenceKeys.JAM_SERVER_URL].orEmpty()
+    }
+
+    /** A random id for this install, created on first use. Not tied to the device or an account. */
+    suspend fun jamDeviceId(): String {
+        var id = ""
+        context.dataStore.edit { prefs ->
+            id = prefs[PreferenceKeys.JAM_DEVICE_ID]
+                ?: java.util.UUID.randomUUID().toString().also {
+                    prefs[PreferenceKeys.JAM_DEVICE_ID] = it
+                }
+        }
+        return id
     }
 
     /** The Last.fm connection, null when not connected or no longer decryptable. */

@@ -54,6 +54,7 @@ import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
+import ca.ilianokokoro.umihi.music.core.jam.JamBridge
 import ca.ilianokokoro.umihi.music.core.playback.CrossfadeController
 import ca.ilianokokoro.umihi.music.core.scrobbling.DatastorePendingScrobbleStore
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmSink
@@ -106,6 +107,7 @@ class PlaybackService : MediaLibraryService() {
     private lateinit var exoCache: ExoCache
     private lateinit var player: ExoPlayer
     private lateinit var crossfade: CrossfadeController
+    private lateinit var jam: JamBridge
     private val activePlayer: Player
         get() = mediaLibrarySession?.player ?: player
     @Volatile private var isCasting = false
@@ -253,6 +255,12 @@ class PlaybackService : MediaLibraryService() {
             targetVolume = { normalizedVolume },
         )
         crossfade.start()
+        jam = JamBridge(
+            player = { activePlayer },
+            scope = CoroutineScope(serviceScope.coroutineContext + Dispatchers.Main),
+            isSuspended = { isRestoringQueue },
+        )
+        jam.start()
         player.addAnalyticsListener(
             object : AnalyticsListener {
                 override fun onAudioInputFormatChanged(
@@ -313,6 +321,7 @@ class PlaybackService : MediaLibraryService() {
                 mediaItem: MediaItem?,
                 reason: Int
             ) {
+                jam.onLocalTrack(mediaItem)
                 scrobbles.onTrackChanged(
                     track = mediaItem?.toScrobbleTrack(System.currentTimeMillis()),
                     isPlaying = activePlayer.isPlaying,
@@ -374,6 +383,11 @@ class PlaybackService : MediaLibraryService() {
                 newPosition: Player.PositionInfo,
                 reason: Int,
             ) {
+                if (reason == Player.DISCONTINUITY_REASON_SEEK &&
+                    oldPosition.mediaItemIndex == newPosition.mediaItemIndex
+                ) {
+                    jam.onLocalSeek(newPosition.positionMs)
+                }
                 scheduleQueuePersistence()
                 wearPlaybackStatePublisher.publish(activePlayer)
             }
@@ -404,6 +418,7 @@ class PlaybackService : MediaLibraryService() {
             }
 
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                jam.onLocalPlayWhenReady(playWhenReady)
                 // Only an unplug/disconnect pause arms the resume-on-connect guard; any other
                 // playWhenReady change (manual pause, resume, focus loss) disarms it.
                 pausedByBecomingNoisy = !playWhenReady &&

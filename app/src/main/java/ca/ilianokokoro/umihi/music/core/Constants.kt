@@ -116,6 +116,8 @@ object Constants {
         const val SCROBBLE_PENDING_LISTENBRAINZ = "scrobble-pending-listenbrainz"
         const val LASTFM_CREDENTIALS = "lastfm-credentials"
         const val SCROBBLE_PENDING_LASTFM = "scrobble-pending-lastfm"
+        const val JAM_SERVER_URL = "jam-server-url"
+        const val JAM_DEVICE_ID = "jam-device-id"
 
         // DataStore rewrites the complete preferences file on every edit. Two hundred YouTube ids
         // stay below roughly 3 KB while leaving ample room for deliberate rejections.

@@ -118,6 +118,7 @@ object BackupManager {
         Constants.Datastore.SCROBBLE_PENDING_LISTENBRAINZ,
         Constants.Datastore.LASTFM_CREDENTIALS,
         Constants.Datastore.SCROBBLE_PENDING_LASTFM,
+        Constants.Datastore.JAM_DEVICE_ID,
     )
 
     suspend fun exportToUri(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
