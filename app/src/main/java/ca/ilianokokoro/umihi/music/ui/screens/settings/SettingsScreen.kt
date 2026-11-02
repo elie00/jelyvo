@@ -27,6 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.outlined.Rule
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Brush
@@ -448,6 +449,16 @@ fun SettingsScreen(
                                         PreferenceKeys.CROSSFADE_SECONDS,
                                         it
                                     )
+                                }
+                            )
+                            SettingsRowDivider()
+                            BooleanSettingItem(
+                                title = stringResource(R.string.automix_title),
+                                subtitle = stringResource(R.string.automix_description),
+                                leadingIcon = Icons.Outlined.AutoAwesome,
+                                value = screenState.settings.automix,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(PreferenceKeys.AUTOMIX, it)
                                 }
                             )
                             SettingsRowDivider()

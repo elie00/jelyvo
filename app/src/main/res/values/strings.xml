@@ -238,6 +238,8 @@
     <string name="crossfade_title">Crossfade</string>
     <string name="crossfade_disabled">Off — gapless playback</string>
     <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
+    <string name="automix_title">Automix</string>
+    <string name="automix_description">Studies each track to skip silences and leave before quiet endings. On mobile data, only downloaded tracks are studied</string>
     <string name="smart_transitions_title">Smart transitions</string>
     <string name="smart_transitions_description">Preserves gapless albums and adapts fades for playlists and radio</string>
     <string name="about_this_song">About this song</string>
