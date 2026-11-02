@@ -54,6 +54,11 @@ import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
+import ca.ilianokokoro.umihi.music.core.scrobbling.DatastorePendingScrobbleStore
+import ca.ilianokokoro.umihi.music.core.scrobbling.ListenBrainzSink
+import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleCoordinator
+import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleDelivery
+import ca.ilianokokoro.umihi.music.core.scrobbling.toScrobbleTrack
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
@@ -124,6 +129,15 @@ class PlaybackService : MediaLibraryService() {
     private val historyRepository by lazy { HistoryRepository(applicationContext) }
     private val playEventRepository by lazy { PlayEventRepository(applicationContext) }
     private val playEventTracker = PlayEventTracker()
+    private val scrobbles by lazy {
+        ScrobbleCoordinator(
+            scope = serviceScope,
+            delivery = ScrobbleDelivery(
+                store = DatastorePendingScrobbleStore(datastoreRepository),
+                sinks = listOf(ListenBrainzSink(datastoreRepository)),
+            ),
+        )
+    }
     private val radioRepository = RadioRepository()
     private var lastRadioSeedId: String? = null
 
@@ -157,6 +171,7 @@ class PlaybackService : MediaLibraryService() {
         datastoreRepository = DatastoreRepository(applicationContext)
         playlistRepository = PlaylistRepository(application)
         playerQueueRepository = PlayerQueueRepository(applicationContext)
+        scrobbles.start()
         exoCache = ExoCache(application)
 
         val httpDataSourceFactory = OkHttpDataSource.Factory(UmihiHttpClient.client)
@@ -276,6 +291,10 @@ class PlaybackService : MediaLibraryService() {
                 mediaItem: MediaItem?,
                 reason: Int
             ) {
+                scrobbles.onTrackChanged(
+                    track = mediaItem?.toScrobbleTrack(System.currentTimeMillis()),
+                    isPlaying = activePlayer.isPlaying,
+                )
                 // Finalizes the previous track's play event and opens one for the new track.
                 // Safe during a queue restore: a play that never ran is never recorded.
                 persistPlayEvent(
@@ -319,6 +338,7 @@ class PlaybackService : MediaLibraryService() {
                     // A track played successfully: reset the failure guard.
                     consecutivePlaybackErrors = 0
                     playEventTracker.onDurationKnown(activePlayer.duration)
+                    scrobbles.onDurationKnown(activePlayer.duration)
                 }
                 if (playbackState == Player.STATE_ENDED) {
                     // The queue played out with no further transition: close the last play here.
@@ -352,6 +372,7 @@ class PlaybackService : MediaLibraryService() {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 playEventTracker.onIsPlayingChanged(isPlaying, System.currentTimeMillis())
+                scrobbles.onIsPlayingChanged(isPlaying)
                 if (!isPlaying) {
                     scheduleQueuePersistence()
                     serviceScope.launch { persistPlaybackPosition() }
