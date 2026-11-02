@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -354,9 +355,13 @@ private fun FullscreenVideoControls(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 12.dp)
         ) {
+            val seekBarPosition = uiState.playbackProgress.position.coerceIn(0f, safeDuration)
+            val seekBarState = remember(safeDuration) {
+                SliderState(seekBarPosition, trackRange = 0f..safeDuration)
+            }
+            seekBarState.value = seekBarPosition
             Slider(
-                value = uiState.playbackProgress.position.coerceIn(0f, safeDuration),
-                valueRange = 0f..safeDuration,
+                state = seekBarState,
                 enabled = seekEnabled,
                 onValueChange = { newValue ->
                     onUpdateSeekBarHeldState(true)
