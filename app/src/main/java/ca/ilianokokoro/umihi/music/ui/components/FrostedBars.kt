@@ -18,6 +18,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,13 +69,15 @@ fun FrostedPageBar(
     title: String,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
+    /** How far the glass and title are in, for a page that keeps its big title until scrolled. */
+    visibility: Float = 1f,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .frosted(hazeState)
+            .frosted(hazeState, visibility)
             .windowInsetsPadding(WindowInsets.statusBars)
             .height(FrostedPageBarHeight)
             .padding(start = PageGutter, end = 8.dp),
@@ -85,7 +88,9 @@ fun FrostedPageBar(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .alpha(visibility),
         )
         actions()
     }
