@@ -7,20 +7,22 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.annotation.StringRes
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -31,26 +33,30 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FileOpen
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -59,12 +65,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
@@ -78,12 +88,15 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
-import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
+import ca.ilianokokoro.umihi.music.ui.components.FrostedPageHeader
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
+import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.bleedToPageEdges
 import ca.ilianokokoro.umihi.music.ui.components.dialog.PlaylistCreationDialog
 import ca.ilianokokoro.umihi.music.ui.components.materialu.MaterialUButton
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
@@ -91,6 +104,8 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 private enum class LibraryTab(@StringRes val labelRes: Int) {
     Playlists(R.string.playlists),
@@ -105,6 +120,9 @@ private enum class LibraryTab(@StringRes val labelRes: Int) {
  * on-device playback and local playlists stay reachable without signing in.
  */
 private val LOCAL_LIBRARY_TABS = listOf(LibraryTab.Playlists, LibraryTab.OnDevice)
+
+/** How far every list starts down the page, to clear the frosted header. */
+private val LocalLibraryHeaderHeight = compositionLocalOf { 0.dp }
 
 /** How many songs a stacked section previews before its "show all" button. */
 private const val SECTION_SONG_PREVIEW_COUNT = 5
@@ -174,59 +192,37 @@ fun LibraryScreen(
         }
     }
 
-    FadingStatusBarWrapper { statusBarHeight ->
-        Scaffold(
-            contentWindowInsets = WindowInsets(0.dp),
-        ) { paddingValues ->
+    val hazeState = remember { HazeState() }
+    // Measured, so every list clears the header whatever the font size and banner made of it.
+    var headerHeightPx by remember { mutableIntStateOf(0) }
+    val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { _ ->
+        Box(Modifier.fillMaxSize()) {
+            CompositionLocalProvider(LocalLibraryHeaderHeight provides headerHeight) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = paddingValues.calculateTopPadding() + statusBarHeight),
+                    .hazeSource(hazeState),
             ) {
                 when (uiState.screenState) {
                     is ScreenState.Success -> {
-                        // Spotify-style filter chips: selecting a chip replaces the current
-                        // filter, tapping the X (or the chip again) clears it.
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
-                                .padding(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            LibraryTab.entries.forEach { tab ->
-                                val selected = selectedTab == tab
-                                FilterChip(
-                                    selected = selected,
-                                    onClick = {
-                                        selectedTabOrdinal = if (selected) -1 else tab.ordinal
-                                    },
-                                    label = {
-                                        Text(
-                                            stringResource(tab.labelRes),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    },
-                                    leadingIcon = if (selected) {
-                                        {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription = stringResource(R.string.clear_filter),
-                                                modifier = Modifier.size(FilterChipDefaults.IconSize),
-                                            )
-                                        }
-                                    } else {
-                                        null
-                                    },
-                                )
-                            }
-                        }
-
                         PullToRefreshBox(
                             isRefreshing = uiState.isRefreshing,
                             onRefresh = libraryViewModel::refresh,
                             modifier = Modifier.fillMaxSize(),
+                            state = pullToRefreshState,
+                            // Drawn below the header, which would otherwise hide it.
+                            indicator = {
+                                PullToRefreshDefaults.Indicator(
+                                    state = pullToRefreshState,
+                                    isRefreshing = uiState.isRefreshing,
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .padding(top = headerHeight),
+                                )
+                            },
                         ) {
                             LibraryContent(
                                 library = uiState.screenState.library,
@@ -260,44 +256,6 @@ fun LibraryScreen(
                         // the local chips, with a banner prompting sign-in for account content.
                         val localSelectedTab = selectedTab?.takeIf { it in LOCAL_LIBRARY_TABS }
 
-                        LoggedOutBanner(onSettingsButtonPress = onSettingsButtonPress)
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
-                                .padding(horizontal = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            LOCAL_LIBRARY_TABS.forEach { tab ->
-                                val selected = localSelectedTab == tab
-                                FilterChip(
-                                    selected = selected,
-                                    onClick = {
-                                        selectedTabOrdinal = if (selected) -1 else tab.ordinal
-                                    },
-                                    label = {
-                                        Text(
-                                            stringResource(tab.labelRes),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    },
-                                    leadingIcon = if (selected) {
-                                        {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Close,
-                                                contentDescription = stringResource(R.string.clear_filter),
-                                                modifier = Modifier.size(FilterChipDefaults.IconSize),
-                                            )
-                                        }
-                                    } else {
-                                        null
-                                    },
-                                )
-                            }
-                        }
-
                         LibraryContent(
                             library = Library(),
                             playlists = emptyList(),
@@ -330,7 +288,12 @@ fun LibraryScreen(
                         if (hasLocalSnapshot) {
                             // Never cover useful on-device or persisted playlist data with a
                             // full-screen skeleton while account sections refresh.
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .zIndex(1f)
+                                    .offset(y = headerHeight)
+                                    .fillMaxWidth()
+                            )
                             LibraryContent(
                                 library = Library(),
                                 playlists = uiState.playlists,
@@ -360,7 +323,9 @@ fun LibraryScreen(
                             )
                         } else {
                             Box(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(top = headerHeight),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 MusicSkeleton(MusicSkeletonLayout.Library)
@@ -368,10 +333,12 @@ fun LibraryScreen(
                         }
                     }
 
-                    is ScreenState.Error -> ErrorMessage(
-                        ex = uiState.screenState.exception,
-                        onRetry = libraryViewModel::load
-                    )
+                    is ScreenState.Error -> Box(Modifier.padding(top = headerHeight)) {
+                        ErrorMessage(
+                            ex = uiState.screenState.exception,
+                            onRetry = libraryViewModel::load,
+                        )
+                    }
                 }
 
                 if (createPlaylistOpen) {
@@ -381,6 +348,58 @@ fun LibraryScreen(
                             libraryViewModel.createPlaylist(title, description, privacy)
                             createPlaylistOpen = false
                         })
+                }
+            }
+            }
+
+            val screenState = uiState.screenState
+            val isLoggedOut = screenState is ScreenState.LoggedOut
+            val chipTabs = when (screenState) {
+                is ScreenState.Success -> LibraryTab.entries
+                ScreenState.LoggedOut -> LOCAL_LIBRARY_TABS
+                else -> emptyList()
+            }
+            FrostedPageHeader(
+                title = stringResource(R.string.library),
+                hazeState = hazeState,
+                onHeightChanged = { headerHeightPx = it },
+                modifier = Modifier.align(Alignment.TopCenter),
+            ) {
+                if (isLoggedOut) {
+                    LoggedOutBanner(onSettingsButtonPress = onSettingsButtonPress)
+                }
+                if (chipTabs.isNotEmpty()) {
+                    // Spotify-style filter chips: selecting a chip replaces the current filter,
+                    // tapping the X (or the chip again) clears it.
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = PageGutter),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        chipTabs.forEach { tab ->
+                            val selected = selectedTab == tab
+                            PillFilterChip(
+                                selected = selected,
+                                onClick = {
+                                    selectedTabOrdinal = if (selected) -1 else tab.ordinal
+                                },
+                                label = stringResource(tab.labelRes),
+                                leadingIcon = if (selected) {
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Rounded.Close,
+                                            contentDescription = stringResource(R.string.clear_filter),
+                                            modifier = Modifier.size(FilterChipDefaults.IconSize),
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -393,7 +412,7 @@ private fun LoggedOutBanner(onSettingsButtonPress: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = PageGutter, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -546,10 +565,10 @@ private fun AllSectionsContent(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
+            start = PageGutter,
+            end = PageGutter,
         ),
     ) {
         sectionHeader(key = "header-playlists", titleRes = R.string.playlists)
@@ -572,6 +591,7 @@ private fun AllSectionsContent(
                 contentType = { "song" },
                 span = { GridItemSpan(maxLineSpan) },
             ) { song ->
+                Box(Modifier.bleedToPageEdges()) {
                 LikedSongListItem(
                     song = song,
                     songs = library.likedSongs,
@@ -579,6 +599,7 @@ private fun AllSectionsContent(
                     onOpenAlbum = onOpenAlbum,
                     onOpenArtist = onOpenArtist,
                 )
+                }
             }
             showAllItem(
                 key = "show-all-liked-songs",
@@ -609,7 +630,9 @@ private fun AllSectionsContent(
                 contentType = { "artist" },
                 span = { GridItemSpan(maxLineSpan) },
             ) { artist ->
-                ArtistListItem(artist = artist, onOpenArtist = onOpenArtist)
+                Box(Modifier.bleedToPageEdges()) {
+                    ArtistListItem(artist = artist, onOpenArtist = onOpenArtist)
+                }
             }
         }
 
@@ -621,11 +644,13 @@ private fun AllSectionsContent(
                 contentType = { "song" },
                 span = { GridItemSpan(maxLineSpan) },
             ) { song ->
+                Box(Modifier.bleedToPageEdges()) {
                 LocalSongListItem(
                     song = song,
                     songs = localSongs,
                     onOpenPlayer = onOpenPlayer,
                 )
+                }
             }
             showAllItem(
                 key = "show-all-on-device",
@@ -640,7 +665,8 @@ private fun LazyGridScope.sectionHeader(key: String, @StringRes titleRes: Int) {
     item(key = key, contentType = "header", span = { GridItemSpan(maxLineSpan) }) {
         Text(
             text = stringResource(titleRes),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(top = 12.dp),
         )
     }
@@ -752,10 +778,8 @@ private fun OnDeviceTab(
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
         ),
     ) {
         item(key = "play-shuffle") {
@@ -835,10 +859,10 @@ private fun PlaylistsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
+            start = PageGutter,
+            end = PageGutter,
         ),
     ) {
         playlistItems(
@@ -983,10 +1007,8 @@ private fun LikedSongsTab(
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
         ),
     ) {
         item(key = "search-bar") {
@@ -1101,10 +1123,10 @@ private fun SavedAlbumsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
+            start = PageGutter,
+            end = PageGutter,
         ),
     ) {
         items(items = albums, key = { it.id }) { album ->
@@ -1125,22 +1147,23 @@ private fun LibraryAlbumCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
+            ) {
         SquareImage(
             uri = album.thumbnail,
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(Modifier.height(10.dp))
         Text(
             text = album.title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (album.subtitle.isNotBlank()) {
             Text(
                 text = album.subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -1166,7 +1189,7 @@ private fun FollowedArtistsTab(
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
         ),
     ) {
@@ -1182,12 +1205,13 @@ private fun ArtistListItem(
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
     ListItem(
-        headlineContent = { Text(artist.name) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(artist.name, style = MaterialTheme.typography.titleMedium) },
         leadingContent = {
             SquareImage(
                 uri = artist.thumbnail,
-                modifier = Modifier.size(64.dp),
-                cornerRadius = 32.dp,
+                modifier = Modifier.size(56.dp),
+                cornerRadius = 28.dp,
             )
         },
         modifier = Modifier.clickable { onOpenArtist(artist.id, artist.name) },
