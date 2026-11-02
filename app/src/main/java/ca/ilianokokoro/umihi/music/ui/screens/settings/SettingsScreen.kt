@@ -112,6 +112,8 @@ import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import coil3.compose.AsyncImage
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
+import ca.ilianokokoro.umihi.music.core.jam.JamStatus
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.JamDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.LastFmDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.ListenBrainzDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
@@ -658,6 +660,19 @@ fun SettingsScreen(
                         }
 
                         SettingsSection(
+                            title = stringResource(R.string.jam_title)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.jam_title),
+                                subtitle = (uiState.jamStatus as? JamStatus.InParty)?.let {
+                                    stringResource(R.string.jam_share_code, it.code)
+                                } ?: stringResource(R.string.jam_subtitle),
+                                leadingIcon = Icons.Outlined.Headphones,
+                                onClick = { settingsViewModel.updateShowJamDialog(true) }
+                            )
+                        }
+
+                        SettingsSection(
                             title = stringResource(R.string.scrobbling_section)
                         ) {
                             SettingsItem(
@@ -793,6 +808,15 @@ fun SettingsScreen(
                                 onClose = {
                                     settingsViewModel.updateShowListenBrainzDialog(false)
                                 },
+                            )
+                        } else if (uiState.showJamDialog) {
+                            JamDialog(
+                                status = uiState.jamStatus,
+                                savedServerUrl = uiState.jamServerUrl,
+                                onCreate = settingsViewModel::createJam,
+                                onJoin = settingsViewModel::joinJam,
+                                onLeave = settingsViewModel::leaveJam,
+                                onClose = { settingsViewModel.updateShowJamDialog(false) },
                             )
                         } else if (uiState.showLastFmDialog) {
                             LastFmDialog(

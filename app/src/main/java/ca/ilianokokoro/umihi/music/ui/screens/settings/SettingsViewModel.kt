@@ -26,6 +26,9 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
+import ca.ilianokokoro.umihi.music.core.jam.JamIdentity
+import ca.ilianokokoro.umihi.music.core.jam.JamManager
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmAuthException
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmClient
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
@@ -108,6 +111,47 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         _application.startActivity(chooser)
     }
+
+    init {
+        viewModelScope.launch {
+            JamManager.status.collect { status ->
+                _uiState.update { it.copy(jamStatus = status) }
+            }
+        }
+        viewModelScope.launch {
+            datastoreRepository.jamServerUrl.collect { url ->
+                _uiState.update { it.copy(jamServerUrl = url) }
+            }
+        }
+    }
+
+    fun updateShowJamDialog(value: Boolean) {
+        JamManager.clearFailure()
+        _uiState.update { it.copy(showJamDialog = value) }
+    }
+
+    fun createJam(serverUrl: String) {
+        viewModelScope.launch {
+            datastoreRepository.save(PreferenceKeys.JAM_SERVER_URL, serverUrl)
+            JamManager.create(serverUrl, jamIdentity())
+        }
+    }
+
+    fun joinJam(serverUrl: String, code: String) {
+        viewModelScope.launch {
+            datastoreRepository.save(PreferenceKeys.JAM_SERVER_URL, serverUrl)
+            JamManager.join(serverUrl, code, jamIdentity())
+        }
+    }
+
+    fun leaveJam() {
+        viewModelScope.launch { JamManager.leave() }
+    }
+
+    private suspend fun jamIdentity() = JamIdentity(
+        deviceId = datastoreRepository.jamDeviceId(),
+        displayName = datastoreRepository.getSettings().profileName.ifBlank { "Jelyvo" },
+    )
 
     // Held between the browser approval's two steps. Never put in the UI state.
     private var pendingLastFmAuth: PendingLastFmAuth? = null

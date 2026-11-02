@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import ca.ilianokokoro.umihi.music.core.StorageCategory
 import ca.ilianokokoro.umihi.music.core.StorageUsage
 import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityReport
+import ca.ilianokokoro.umihi.music.core.jam.JamStatus
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 
 @Immutable
@@ -37,6 +38,9 @@ data class SettingsState(
     val lastFmError: Int? = null,
     // Set while the user is approving the app in their browser.
     val lastFmAuthorizeUrl: String? = null,
+    val showJamDialog: Boolean = false,
+    val jamStatus: JamStatus = JamStatus.Idle,
+    val jamServerUrl: String = "",
 )
 
 @Immutable
