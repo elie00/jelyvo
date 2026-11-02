@@ -8,7 +8,7 @@ the same protocol as the Go server in [`backend/`](../backend/README.md), so tha
 reference for how devices stay in time and for every REST route and WebSocket frame. This one covers
 only what differs.
 
-Deployed at `https://jelyvo-listen-together.elieyvon-b-o.workers.dev`, which the app uses by default.
+Deployed at `https://jelyvo-listen-together.jelyvo.workers.dev`, which the app uses by default.
 
 ```bash
 npm install
