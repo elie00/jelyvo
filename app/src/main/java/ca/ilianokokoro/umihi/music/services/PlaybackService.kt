@@ -55,6 +55,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.core.scrobbling.DatastorePendingScrobbleStore
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmSink
 import ca.ilianokokoro.umihi.music.core.scrobbling.ListenBrainzSink
 import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleCoordinator
 import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleDelivery
@@ -134,7 +135,10 @@ class PlaybackService : MediaLibraryService() {
             scope = serviceScope,
             delivery = ScrobbleDelivery(
                 store = DatastorePendingScrobbleStore(datastoreRepository),
-                sinks = listOf(ListenBrainzSink(datastoreRepository)),
+                sinks = listOf(
+                    ListenBrainzSink(datastoreRepository),
+                    LastFmSink(datastoreRepository),
+                ),
             ),
         )
     }

@@ -41,6 +41,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
 import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleTrack
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
@@ -101,6 +102,7 @@ class DatastoreRepository(private val context: Context) {
         val RECENT_SEARCHES = stringPreferencesKey(Constants.Datastore.RECENT_SEARCHES)
         val NOT_INTERESTED = stringPreferencesKey(Constants.Datastore.NOT_INTERESTED)
         val LISTENBRAINZ_TOKEN = stringPreferencesKey(Constants.Datastore.LISTENBRAINZ_TOKEN)
+        val LASTFM_CREDENTIALS = stringPreferencesKey(Constants.Datastore.LASTFM_CREDENTIALS)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -400,6 +402,25 @@ class DatastoreRepository(private val context: Context) {
         // Cached responses belong to the previous account state (login/logout).
         ResponseCache.clear()
         LikeManager.reset()
+    }
+
+    /** The Last.fm connection, null when not connected or no longer decryptable. */
+    val lastFmCredentials: Flow<LastFmCredentials?> = context.dataStore.data.map { prefs ->
+        prefs[PreferenceKeys.LASTFM_CREDENTIALS]?.let(KeystoreCrypto::decrypt)?.let { stored ->
+            runCatching { Json.decodeFromString<LastFmCredentials>(stored) }.getOrNull()
+        }
+    }
+
+    /** Stores the connection encrypted. Null disconnects, and so does a failed encryption. */
+    suspend fun saveLastFmCredentials(credentials: LastFmCredentials?) {
+        val stored = credentials?.let { KeystoreCrypto.encrypt(Json.encodeToString(it)) }
+        context.dataStore.edit {
+            if (stored == null) {
+                it.remove(PreferenceKeys.LASTFM_CREDENTIALS)
+            } else {
+                it[PreferenceKeys.LASTFM_CREDENTIALS] = stored
+            }
+        }
     }
 
     /** The user's ListenBrainz token, empty when not connected or no longer decryptable. */

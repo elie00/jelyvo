@@ -11,6 +11,7 @@ class DatastorePendingScrobbleStore(
 ) : PendingScrobbleStore {
     private val keys = mapOf(
         LISTENBRAINZ_SINK_ID to Constants.Datastore.SCROBBLE_PENDING_LISTENBRAINZ,
+        LASTFM_SINK_ID to Constants.Datastore.SCROBBLE_PENDING_LASTFM,
     )
 
     override suspend fun read(sinkId: String): List<ScrobbleTrack> =
@@ -23,6 +24,21 @@ class DatastorePendingScrobbleStore(
 }
 
 private const val LISTENBRAINZ_SINK_ID = "listenbrainz"
+private const val LASTFM_SINK_ID = "lastfm"
+
+class LastFmSink(private val datastore: DatastoreRepository) : ScrobbleSink {
+    override val id = LASTFM_SINK_ID
+
+    private suspend fun credentials() = datastore.lastFmCredentials.first()
+
+    override suspend fun isEnabled(): Boolean = credentials() != null
+
+    override suspend fun nowPlaying(track: ScrobbleTrack): SubmitResult =
+        credentials()?.let { LastFmClient.nowPlaying(it, track) } ?: SubmitResult.Unauthorized
+
+    override suspend fun submit(tracks: List<ScrobbleTrack>): SubmitResult =
+        credentials()?.let { LastFmClient.scrobble(it, tracks) } ?: SubmitResult.Unauthorized
+}
 
 class ListenBrainzSink(private val datastore: DatastoreRepository) : ScrobbleSink {
     override val id = LISTENBRAINZ_SINK_ID
