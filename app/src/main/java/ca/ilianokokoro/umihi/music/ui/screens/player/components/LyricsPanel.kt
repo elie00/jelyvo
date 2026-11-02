@@ -167,6 +167,11 @@ private fun SyncedLyricsList(
                 line = line,
                 isActive = index == activeIndex,
                 activeProgress = if (index == activeIndex) activeProgress else 0f,
+                sungWords = if (index == activeIndex) {
+                    sungWordCount(line, currentPositionMs)
+                } else {
+                    null
+                },
                 onSeekTo = onSeekTo,
                 onShare = { onShareLine(line.text) },
             )
@@ -179,6 +184,7 @@ private fun LyricRow(
     line: LyricLine,
     isActive: Boolean,
     activeProgress: Float,
+    sungWords: Int?,
     onSeekTo: (Long) -> Unit,
     onShare: () -> Unit,
 ) {
@@ -192,12 +198,13 @@ private fun LyricRow(
         label = "lyricLineColor"
     )
     val highlightedColor = MaterialTheme.colorScheme.primary
-    val displayedText = remember(line.text, isActive, activeProgress, highlightedColor) {
+    val displayedText = remember(line, isActive, activeProgress, sungWords, highlightedColor) {
         karaokeText(
             text = line.text,
             progress = activeProgress,
             highlightedColor = highlightedColor,
             enabled = isActive,
+            sungWords = sungWords,
         )
     }
 
@@ -234,15 +241,21 @@ private fun LyricRow(
     }
 }
 
+/** How many words of [line] have started at [positionMs], or null if it has no word timing. */
+internal fun sungWordCount(line: LyricLine, positionMs: Long): Int? =
+    line.words.takeIf { it.isNotEmpty() }?.count { it.startMs <= positionMs }
+
 /**
- * LRCLIB timestamps each line rather than every syllable. Interpolating between two line starts
- * gives a stable word-by-word progression while preserving the exact timing and seek behaviour.
+ * Highlights the words already sung. [sungWords] comes from real word timing when the source has
+ * it. Otherwise only lines are timed, and interpolating between two line starts gives a stable
+ * word-by-word progression while preserving the exact timing and seek behaviour.
  */
 internal fun karaokeText(
     text: String,
     progress: Float,
     highlightedColor: androidx.compose.ui.graphics.Color,
     enabled: Boolean,
+    sungWords: Int? = null,
 ): AnnotatedString {
     if (!enabled || text.isBlank()) {
         return AnnotatedString(text)
@@ -252,9 +265,8 @@ internal fun karaokeText(
     if (words.isEmpty()) {
         return AnnotatedString(text)
     }
-    val highlightedCount = ceil(progress.coerceIn(0f, 1f) * words.size)
-        .toInt()
-        .coerceIn(1, words.size)
+    val highlightedCount = sungWords?.coerceIn(0, words.size)
+        ?: ceil(progress.coerceIn(0f, 1f) * words.size).toInt().coerceIn(1, words.size)
 
     return buildAnnotatedString {
         append(text)
