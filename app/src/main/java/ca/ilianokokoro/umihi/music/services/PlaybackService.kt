@@ -54,6 +54,7 @@ import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
+import ca.ilianokokoro.umihi.music.core.playback.CrossfadeController
 import ca.ilianokokoro.umihi.music.core.scrobbling.DatastorePendingScrobbleStore
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmSink
 import ca.ilianokokoro.umihi.music.core.scrobbling.ListenBrainzSink
@@ -104,6 +105,7 @@ class PlaybackService : MediaLibraryService() {
     private var mediaLibrarySession: MediaLibrarySession? = null
     private lateinit var exoCache: ExoCache
     private lateinit var player: ExoPlayer
+    private lateinit var crossfade: CrossfadeController
     private val activePlayer: Player
         get() = mediaLibrarySession?.player ?: player
     @Volatile private var isCasting = false
@@ -235,6 +237,22 @@ class PlaybackService : MediaLibraryService() {
                 )
             )
             .build()
+        crossfade = CrossfadeController(
+            main = player,
+            createTail = {
+                // Audio focus and output changes stay with the main player, the only one the
+                // session knows. The tail just follows it.
+                ExoPlayer.Builder(this)
+                    .setAudioAttributes(audioAttributes, false)
+                    .setMediaSourceFactory(DefaultMediaSourceFactory(resolvingFactory))
+                    .build()
+            },
+            scope = CoroutineScope(serviceScope.coroutineContext + Dispatchers.Main),
+            fadeDurationMs = ::fadeDurationMs,
+            isAllowed = { !isCasting && crossfadeMs > 0L },
+            targetVolume = { normalizedVolume },
+        )
+        crossfade.start()
         player.addAnalyticsListener(
             object : AnalyticsListener {
                 override fun onAudioInputFormatChanged(
@@ -556,6 +574,7 @@ class PlaybackService : MediaLibraryService() {
     override fun onDestroy() {
         queuePersistenceJob?.cancel()
         volumeFadeJob?.cancel()
+        if (::crossfade.isInitialized) crossfade.release()
         if (queueRestoreComplete && ::player.isInitialized) {
             val snapshot = captureQueueSnapshot()
             runBlocking(Dispatchers.IO) {
@@ -828,7 +847,7 @@ class PlaybackService : MediaLibraryService() {
                         if (isCasting) return@withContext
                         val videoId = player.currentMediaItem?.mediaId ?: return@withContext
                         normalizedVolume = trackVolumeFor(videoId)
-                        if (!fadeInActive) player.volume = normalizedVolume
+                        if (!fadeInActive && !crossfade.isFading) player.volume = normalizedVolume
                     }
                 }
             }
@@ -840,7 +859,7 @@ class PlaybackService : MediaLibraryService() {
                     if (isCasting || !normalizeVolumeEnabled) return@withContext
                     if (player.currentMediaItem?.mediaId == update.videoId) {
                         normalizedVolume = update.volume
-                        if (!fadeInActive) player.volume = normalizedVolume
+                        if (!fadeInActive && !crossfade.isFading) player.volume = normalizedVolume
                     }
                 }
             }
@@ -850,7 +869,7 @@ class PlaybackService : MediaLibraryService() {
             while (true) {
                 delay(AUDIO_FADE_POLL_INTERVAL_MS)
                 withContext(Dispatchers.Main) {
-                    if (isCasting) return@withContext
+                    if (isCasting || crossfade.isActive) return@withContext
                     if (fadeInActive || !player.isPlaying || !player.hasNextMediaItem()) {
                         return@withContext
                     }
@@ -899,6 +918,11 @@ class PlaybackService : MediaLibraryService() {
         if (isCasting) return
         normalizedVolume = trackVolumeFor(videoId)
         volumeFadeJob?.cancel()
+        // The crossfade is bringing this track in and owns the volume until it ends.
+        if (crossfade.isFading) {
+            fadeInActive = false
+            return
+        }
         if (transitionReason != Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
             fadeInActive = false
             player.volume = normalizedVolume
