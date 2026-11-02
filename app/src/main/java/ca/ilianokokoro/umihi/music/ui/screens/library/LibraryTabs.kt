@@ -5,15 +5,16 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,32 +27,35 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.FileOpen
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
@@ -62,6 +66,7 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.materialu.MaterialUButton
@@ -164,10 +169,8 @@ internal fun OnDeviceTab(
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
         ),
     ) {
         item(key = "play-shuffle") {
@@ -247,10 +250,10 @@ internal fun PlaylistsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
+            start = PageGutter,
+            end = PageGutter,
         ),
     ) {
         playlistItems(
@@ -395,10 +398,8 @@ internal fun LikedSongsTab(
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
         ),
     ) {
         item(key = "search-bar") {
@@ -513,10 +514,10 @@ internal fun SavedAlbumsTab(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-            start = 8.dp,
-            end = 8.dp,
+            start = PageGutter,
+            end = PageGutter,
         ),
     ) {
         items(items = albums, key = { it.id }) { album ->
@@ -537,22 +538,23 @@ internal fun LibraryAlbumCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         SquareImage(
             uri = album.thumbnail,
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(Modifier.height(10.dp))
         Text(
             text = album.title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         if (album.subtitle.isNotBlank()) {
             Text(
                 text = album.subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -578,7 +580,7 @@ internal fun FollowedArtistsTab(
         modifier = Modifier.fillMaxSize(),
         state = listState,
         contentPadding = PaddingValues(
-            top = 8.dp,
+            top = LocalLibraryHeaderHeight.current + 8.dp,
             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
         ),
     ) {
@@ -594,12 +596,13 @@ internal fun ArtistListItem(
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
     ListItem(
-        headlineContent = { Text(artist.name) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        headlineContent = { Text(artist.name, style = MaterialTheme.typography.titleMedium) },
         leadingContent = {
             SquareImage(
                 uri = artist.thumbnail,
-                modifier = Modifier.size(64.dp),
-                cornerRadius = 32.dp,
+                modifier = Modifier.size(56.dp),
+                cornerRadius = 28.dp,
             )
         },
         modifier = Modifier.clickable { onOpenArtist(artist.id, artist.name) },

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,9 +42,10 @@ fun EditableSongItem(
     onDragStopped: () -> Unit,
     dragEnabled: Boolean = true,
 ) {
-    val innerHeight = 60.dp
+    val innerHeight = 56.dp
 
     ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier
             .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onPress),

@@ -16,14 +16,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -32,12 +32,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,10 +48,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.models.importing.ExternalMusicPlaylist
 import ca.ilianokokoro.umihi.music.models.importing.MusicImportProgress
 import ca.ilianokokoro.umihi.music.models.importing.MusicImportService
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 
 @Composable
 fun MusicImportScreen(
@@ -65,7 +70,13 @@ fun MusicImportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.music_import_title)) },
+                colors = frostedTopAppBarColors(),
+                title = {
+                    Text(
+                        stringResource(R.string.music_import_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
                 navigationIcon = { BackButton(onBack = onBack) },
             )
         },
@@ -115,14 +126,19 @@ fun MusicImportScreen(
 }
 
 @Composable
-private fun LinkContent(
+internal fun LinkContent(
     link: String,
     onLinkChange: (String) -> Unit,
     onAnalyze: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(24.dp),
+        contentPadding = PaddingValues(
+            start = PageGutter,
+            end = PageGutter,
+            top = 8.dp,
+            bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+        ),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item {
@@ -149,6 +165,7 @@ private fun LinkContent(
                 label = { Text(stringResource(R.string.music_import_link_label)) },
                 placeholder = { Text(stringResource(R.string.music_import_link_placeholder)) },
                 leadingIcon = { Icon(Icons.Outlined.Link, contentDescription = null) },
+                shape = RoundedCornerShape(12.dp),
                 keyboardOptions = KeyboardOptions(autoCorrectEnabled = false),
                 minLines = 2,
                 maxLines = 4,
@@ -166,7 +183,7 @@ private fun LinkContent(
         item {
             Text(
                 text = stringResource(R.string.music_import_public_note),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -185,12 +202,16 @@ private fun ServiceRow() {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             listOf("Spotify", "Apple Music", "Deezer").forEach { service ->
-                ElevatedCard(modifier = Modifier.weight(1f)) {
+                Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(percent = 50),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    ) {
                     Text(
                         text = service,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 14.dp),
+                            .padding(horizontal = 8.dp, vertical = 10.dp),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium,
                         maxLines = 1,
@@ -211,7 +232,12 @@ private fun PreviewContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(
+                start = PageGutter,
+                end = PageGutter,
+                top = 24.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -256,7 +282,12 @@ private fun LoadingContent(title: String) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(
+                start = PageGutter,
+                end = PageGutter,
+                top = 24.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -277,7 +308,12 @@ private fun ImportingContent(progress: MusicImportProgress) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(
+                start = PageGutter,
+                end = PageGutter,
+                top = 24.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -305,7 +341,7 @@ private fun ImportingContent(progress: MusicImportProgress) {
                 progress.matchedCount,
                 progress.failureCount,
             ),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -322,7 +358,12 @@ private fun CompleteContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(
+                start = PageGutter,
+                end = PageGutter,
+                top = 24.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -354,7 +395,7 @@ private fun CompleteContent(
                     R.string.music_import_failed_summary,
                     progress.failureCount,
                 ),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -393,7 +434,12 @@ private fun ErrorContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .padding(
+                start = PageGutter,
+                end = PageGutter,
+                top = 24.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

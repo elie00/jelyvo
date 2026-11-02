@@ -8,78 +8,91 @@ import android.speech.RecognizerIntent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
-import androidx.compose.ui.res.pluralStringResource
 import ca.ilianokokoro.umihi.music.models.LocalLibrarySectionKind
 import ca.ilianokokoro.umihi.music.models.MoodCategory
 import ca.ilianokokoro.umihi.music.models.MoodCategorySection
-import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.models.SearchItem
+import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SpellCorrection
-import ca.ilianokokoro.umihi.music.ui.components.SquareImage
-import androidx.compose.foundation.layout.size
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
+import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
+import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 
 @Composable
@@ -148,76 +161,46 @@ fun SearchScreen(
             focusRequester.requestFocus()
         }
     }
-    Scaffold { paddingValues ->
+    val hazeState = remember { HazeState() }
+    // Measured, so every list clears the frosted header whatever the font size made of it.
+    var headerHeightPx by remember { mutableIntStateOf(0) }
+    val headerHeight = with(LocalDensity.current) { headerHeightPx.toDp() }
+
+    Scaffold(contentWindowInsets = WindowInsets(0.dp)) { _ ->
+        Box(Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .padding(top = paddingValues.calculateTopPadding())
-                .fillMaxSize(),
+                .fillMaxSize()
+                .hazeSource(hazeState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // The field and filters must survive a failed request: otherwise the only way out
-            // of an error is retrying the exact same query.
-            SearchBar(
-                modifier = Modifier
-                    .focusRequester(focusRequester)
-                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
-                    .fillMaxWidth(),
-                value = uiState.search,
-                onValueChange = searchViewModel::onSearchFieldChange,
-                onSearch = searchViewModel::search,
-                onVoiceSearch = startVoiceSearch,
-                focusManager = focusManager,
-                focusRequester = focusRequester,
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SearchFilter.entries.forEach { filter ->
-                    FilterChip(
-                        selected = uiState.filter == filter,
-                        onClick = { searchViewModel.selectFilter(filter) },
-                        label = {
-                            Text(
-                                stringResource(
-                                    when (filter) {
-                                        SearchFilter.All -> R.string.search_all
-                                        SearchFilter.Songs -> R.string.search_songs
-                                        SearchFilter.Videos -> R.string.search_videos
-                                        SearchFilter.Albums -> R.string.search_albums
-                                        SearchFilter.Artists -> R.string.search_artists
-                                        SearchFilter.Library -> R.string.search_library
-                                    }
-                                )
-                            )
-                        },
-                    )
-                }
-            }
-
             if (uiState.screenState is ScreenState.Error) {
-                ErrorMessage(
+                Box(Modifier.padding(top = headerHeight)) {
+                    ErrorMessage(
                     ex = uiState.screenState.exception,
                     errorMessage = stringResource(R.string.search_request_failed),
                     onRetry = searchViewModel::search
-                )
+                    )
+                }
             } else {
                 if (uiState.showSuggestions && uiState.suggestions.isNotEmpty()) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            top = headerHeight,
+                            bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+                        ),
+                    ) {
                         items(uiState.suggestions, key = { it }) { suggestion ->
                             ListItem(
                                 headlineContent = { Text(suggestion) },
+                                colors = transparentRowColors(),
                                 modifier = Modifier.clickable {
                                     focusManager.clearFocus()
                                     searchViewModel.selectSuggestion(suggestion)
                                 },
                             )
-                            HorizontalDivider()
                         }
                     }
                     // An empty query never means "no results": on a fresh install both shelves are
@@ -230,7 +213,7 @@ fun SearchScreen(
                     LazyColumn(
                         state = browseListState,
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
+                        contentPadding = PaddingValues(top = headerHeight, bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
                     ) {
                         if (uiState.recentSearches.isEmpty() && uiState.moodSections.isEmpty()) {
                             item(key = "search_idle_prompt") {
@@ -265,6 +248,7 @@ fun SearchScreen(
                             }
                             items(uiState.recentSearches, key = { it }) { query ->
                                 ListItem(
+                                    colors = transparentRowColors(),
                                     headlineContent = { Text(query) },
                                     leadingContent = {
                                         Icon(
@@ -318,7 +302,9 @@ fun SearchScreen(
                     }
                 } else when (uiState.screenState) {
                     ScreenState.Loading -> {
-                        MusicSkeleton(MusicSkeletonLayout.Search)
+                        Box(Modifier.padding(top = headerHeight)) {
+                            MusicSkeleton(MusicSkeletonLayout.Search)
+                        }
                     }
 
                     is ScreenState.Success -> {
@@ -346,7 +332,7 @@ fun SearchScreen(
                                 state = listState,
                                 verticalArrangement = Arrangement.Top,
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
+                                contentPadding = PaddingValues(top = headerHeight + 8.dp, bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING),
                                 modifier = Modifier
                                     .fillMaxSize()
                             ) {
@@ -524,7 +510,8 @@ fun SearchScreen(
                         } else {
                             Column(
                                 modifier = Modifier
-                                    .fillMaxSize(),
+                                    .fillMaxSize()
+                                    .padding(top = headerHeight),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
 
@@ -542,6 +529,56 @@ fun SearchScreen(
                 }
 
             }
+        }
+        // The field and filters must survive a failed request: otherwise the only way out of an
+        // error is retrying the exact same query.
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .onSizeChanged { headerHeightPx = it.height }
+                .frosted(hazeState)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(bottom = 8.dp),
+        ) {
+            SearchBar(
+                modifier = Modifier
+                    .focusRequester(focusRequester)
+                    .padding(horizontal = PageGutter, vertical = 4.dp)
+                    .fillMaxWidth(),
+                value = uiState.search,
+                onValueChange = searchViewModel::onSearchFieldChange,
+                onSearch = searchViewModel::search,
+                onVoiceSearch = startVoiceSearch,
+                focusManager = focusManager,
+                focusRequester = focusRequester,
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = PageGutter),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SearchFilter.entries.forEach { filter ->
+                    PillFilterChip(
+                        selected = uiState.filter == filter,
+                        onClick = { searchViewModel.selectFilter(filter) },
+                        label = stringResource(
+                                    when (filter) {
+                                        SearchFilter.All -> R.string.search_all
+                                        SearchFilter.Songs -> R.string.search_songs
+                                        SearchFilter.Videos -> R.string.search_videos
+                                        SearchFilter.Albums -> R.string.search_albums
+                                        SearchFilter.Artists -> R.string.search_artists
+                                        SearchFilter.Library -> R.string.search_library
+                                    }
+                        ),
+                    )
+                }
+            }
+        }
         }
     }
 
@@ -669,6 +706,10 @@ private fun LocalLibrarySectionKind.titleRes(): Int = when (this) {
     LocalLibrarySectionKind.DOWNLOADS -> R.string.downloaded
 }
 
+/** Rows show the page behind them: a surface colour here would stripe a black page. */
+@Composable
+private fun transparentRowColors() = ListItemDefaults.colors(containerColor = Color.Transparent)
+
 @Composable
 private fun SearchBrowseResult(
     title: String,
@@ -678,15 +719,16 @@ private fun SearchBrowseResult(
     round: Boolean = false,
 ) {
     ListItem(
-        headlineContent = { Text(title) },
+        colors = transparentRowColors(),
+        headlineContent = { Text(title, style = MaterialTheme.typography.titleMedium) },
         supportingContent = subtitle.takeIf(String::isNotBlank)?.let { value ->
-            { Text(value) }
+            { Text(value, style = MaterialTheme.typography.bodyMedium) }
         },
         leadingContent = {
             SquareImage(
                 uri = thumbnail,
-                modifier = Modifier.size(64.dp),
-                cornerRadius = if (round) 32.dp else 8.dp,
+                modifier = Modifier.size(56.dp),
+                cornerRadius = if (round) 28.dp else 8.dp,
             )
         },
         modifier = Modifier.clickable(onClick = onClick),

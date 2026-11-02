@@ -1,29 +1,28 @@
 package ca.ilianokokoro.umihi.music.ui.screens.home
 
 import android.app.Application
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
-import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -33,6 +32,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -40,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,15 +54,20 @@ import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
+import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBar
+import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBarHeight
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
 import ca.ilianokokoro.umihi.music.ui.components.home.ForYouMixesRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeShortcutGrid
-import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.components.home.RecentlyPlayedRow
 import ca.ilianokokoro.umihi.music.ui.components.home.ResumeListeningRow
+import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import java.time.LocalTime
 
 @Composable
@@ -82,7 +87,17 @@ fun HomeScreen(
     val uiState = homeViewModel.uiState.collectAsStateWithLifecycle().value
     val visibleState = uiState.visibleScreenState
 
-    FadingStatusBarWrapper { statusBarHeight ->
+    val hazeState = remember { HazeState() }
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    // The frosted bar takes over from the status bar fade while the feed is up.
+    FadingStatusBarWrapper(
+        fadeColor = if (uiState.screenState is ScreenState.LoggedIn) {
+            Color.Transparent
+        } else {
+            MaterialTheme.colorScheme.background
+        },
+    ) { statusBarHeight ->
         Scaffold(
             contentWindowInsets = WindowInsets(0.dp),
         ) { paddingValues ->
@@ -109,21 +124,32 @@ fun HomeScreen(
                             // order only need to be right when the screen is (re)opened.
                             val currentHour = remember { LocalTime.now().hour }
 
+                            Box(Modifier.fillMaxSize()) {
                             PullToRefreshBox(
                                 isRefreshing = uiState.isRefreshing,
-                                onRefresh = homeViewModel::refresh
+                                onRefresh = homeViewModel::refresh,
+                                modifier = Modifier.hazeSource(hazeState),
+                                state = pullToRefreshState,
+                                // Drawn below the fixed bar, which would otherwise hide it.
+                                indicator = {
+                                    PullToRefreshDefaults.Indicator(
+                                        state = pullToRefreshState,
+                                        isRefreshing = uiState.isRefreshing,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .padding(top = statusBarHeight + FrostedPageBarHeight),
+                                    )
+                                },
                             ) {
                                 LazyVerticalGrid(
                                     modifier = Modifier.fillMaxSize(),
                                     state = gridState,
                                     columns = GridCells.Adaptive(minSize = 150.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(20.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     contentPadding = PaddingValues(
-                                        top = paddingValues.calculateTopPadding() + statusBarHeight + 6.dp,
+                                        top = paddingValues.calculateTopPadding() + statusBarHeight + FrostedPageBarHeight + 12.dp,
                                         bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-                                        end = 12.dp,
-                                        start = 12.dp
                                     )
 
                                 ) {
@@ -134,8 +160,6 @@ fun HomeScreen(
                                         HomeHeader(
                                             greeting = greetingForHour(currentHour),
                                             profileName = uiState.profileName,
-                                            profileAvatarPath = uiState.profileAvatarPath,
-                                            onSettingsButtonPress = onSettingsButtonPress,
                                         )
                                     }
                                     if (uiState.screenState !is ScreenState.LoggedIn) {
@@ -274,6 +298,24 @@ fun HomeScreen(
                                     }
                                 }
                             }
+                            FrostedPageBar(
+                                title = stringResource(R.string.app_name),
+                                hazeState = hazeState,
+                                modifier = Modifier.align(Alignment.TopCenter),
+                            ) {
+                                IconButton(onClick = onSettingsButtonPress) {
+                                    Icon(
+                                        Icons.Outlined.Settings,
+                                        contentDescription = stringResource(R.string.settings),
+                                    )
+                                }
+                                ProfileAvatar(
+                                    name = uiState.profileName,
+                                    avatarPath = uiState.profileAvatarPath,
+                                    size = 32.dp,
+                                )
+                            }
+                            }
                         }
                     }
 
@@ -300,50 +342,25 @@ fun HomeScreen(
 private fun HomeHeader(
     greeting: HomeGreeting,
     profileName: String,
-    profileAvatarPath: String,
-    onSettingsButtonPress: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        ProfileAvatar(
-            name = profileName,
-            avatarPath = profileAvatarPath,
-            size = 44.dp,
+    val greetingBase = stringResource(
+        when (greeting) {
+            HomeGreeting.MORNING -> R.string.home_greeting_morning
+            HomeGreeting.AFTERNOON -> R.string.home_greeting_afternoon
+            HomeGreeting.EVENING -> R.string.home_greeting_evening
+        }
+    )
+    Column(modifier = Modifier.padding(horizontal = PageGutter)) {
+        Text(
+            text = if (profileName.isNotBlank()) "$greetingBase $profileName" else greetingBase,
+            style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.onBackground,
         )
-        Column(modifier = Modifier.weight(1f)) {
-            val greetingBase = stringResource(
-                when (greeting) {
-                    HomeGreeting.MORNING -> R.string.home_greeting_morning
-                    HomeGreeting.AFTERNOON -> R.string.home_greeting_afternoon
-                    HomeGreeting.EVENING -> R.string.home_greeting_evening
-                }
-            )
-            val greetingText = if (profileName.isNotBlank()) {
-                "$greetingBase $profileName"
-            } else {
-                greetingBase
-            }
-            Text(
-                text = greetingText,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            )
-            Text(
-                text = stringResource(R.string.home_tagline),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        FilledTonalIconButton(onClick = onSettingsButtonPress) {
-            Icon(
-                Icons.Outlined.Settings,
-                contentDescription = stringResource(R.string.settings),
-            )
-        }
+        Text(
+            text = stringResource(R.string.home_tagline),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

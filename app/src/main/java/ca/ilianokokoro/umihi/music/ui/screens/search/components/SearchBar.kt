@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.screens.search.components
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -57,14 +59,15 @@ fun SearchBar(
         },
         onTrailingIconClick = if (showClear) onClear else onVoiceSearch,
         placeholder = stringResource(R.string.search),
+        shape = RoundedCornerShape(percent = 50),
         singleLine = true,
         colors = TextFieldDefaults.colors(
             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             errorContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-            unfocusedIndicatorColor = MaterialTheme.colorScheme.outlineVariant
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
         ),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Text,

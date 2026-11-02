@@ -137,6 +137,8 @@
     <string name="general">General</string>
     <string name="appearance">Appearance</string>
     <string name="theme_preset_title">Theme</string>
+    <string name="theme_preset_studio">Studio</string>
+    <string name="theme_preset_studio_description">Black and white, colour comes from the artwork</string>
     <string name="theme_preset_jelyvo">Jelyvo</string>
     <string name="theme_preset_jelyvo_description">The brand look, with its accent picker</string>
     <string name="theme_preset_minuit">Midnight</string>
@@ -236,6 +238,8 @@
     <string name="crossfade_title">Crossfade</string>
     <string name="crossfade_disabled">Off — gapless playback</string>
     <string name="crossfade_seconds">Fade between tracks over %1$d s</string>
+    <string name="automix_title">Automix</string>
+    <string name="automix_description">Studies each track to skip silences and leave before quiet endings. On mobile data, only downloaded tracks are studied</string>
     <string name="smart_transitions_title">Smart transitions</string>
     <string name="smart_transitions_description">Preserves gapless albums and adapts fades for playlists and radio</string>
     <string name="about_this_song">About this song</string>
@@ -256,6 +260,7 @@
     <string name="show_lyrics" tools:ignore="MissingTranslation">Show lyrics</string>
     <string name="show_cover" tools:ignore="MissingTranslation">Show cover</string>
     <string name="player_artwork_description" tools:ignore="MissingTranslation">Cover for %1$s</string>
+    <string name="gesture_share_lyric">Touch and hold a lyric line to share it</string>
     <string name="got_it">Got it</string>
     <string name="normalize_volume_title">Normalize volume</string>
     <string name="normalize_volume_description">Play every track at a similar loudness level</string>
@@ -607,4 +612,40 @@
     <string name="add_selection_to_playlist">Add selection to playlist</string>
     <string name="selection_already_in_playlist">Every selected track is already in this playlist</string>
     <string name="home_local_content">Your listening history stays available on this device. Account recommendations are currently unavailable.</string>
+    <string name="scrobbling_section">Scrobbling</string>
+    <string name="listenbrainz_title">ListenBrainz</string>
+    <string name="listenbrainz_subtitle">Send what you listen to to your ListenBrainz profile</string>
+    <string name="listenbrainz_connected">Connected. Your listens are being sent to ListenBrainz.</string>
+    <string name="listenbrainz_token_hint">Paste the user token shown on your listenbrainz.org settings page. It stays encrypted on this device and is left out of backups.</string>
+    <string name="listenbrainz_token_label">User token</string>
+    <string name="listenbrainz_connect">Connect</string>
+    <string name="listenbrainz_disconnect">Disconnect</string>
+    <string name="listenbrainz_invalid_token">ListenBrainz doesn\'t recognise this token.</string>
+    <string name="listenbrainz_unreachable">Couldn\'t reach ListenBrainz. Check your connection and try again.</string>
+    <string name="jam_title">Listen together</string>
+    <string name="jam_subtitle">Listen to the same thing at the same time as your friends</string>
+    <string name="jam_hint">Create a party or join one with its code. Only change the server address if you run your own. Your display name and what you play are shared with the party.</string>
+    <string name="jam_server_label">Server address (https://…)</string>
+    <string name="jam_code_label">Party code</string>
+    <string name="jam_create">Create</string>
+    <string name="jam_join">Join</string>
+    <string name="jam_leave">Leave</string>
+    <string name="jam_share_code">Party code: %1$s</string>
+    <string name="jam_members">Devices in the party: %1$d</string>
+    <string name="jam_error_unreachable">Couldn\'t reach the server. Check the address and your connection.</string>
+    <string name="jam_error_unknown_code">No party has this code.</string>
+    <string name="jam_error_full">This party is full.</string>
+    <string name="jam_error_refused">The server refused the request.</string>
+    <string name="lastfm_title">Last.fm</string>
+    <string name="lastfm_subtitle">Send what you listen to to your Last.fm profile</string>
+    <string name="lastfm_connected">Connected. Your listens are being sent to Last.fm.</string>
+    <string name="lastfm_keys_hint">Enter the API key and shared secret of your own Last.fm API account (last.fm/api/account/create). They stay encrypted on this device and are left out of backups.</string>
+    <string name="lastfm_api_key_label">API key</string>
+    <string name="lastfm_secret_label">Shared secret</string>
+    <string name="lastfm_authorize">Authorize</string>
+    <string name="lastfm_approve_hint">Approve Jelyvo in the page that just opened, then come back and tap Finish.</string>
+    <string name="lastfm_finish">Finish</string>
+    <string name="lastfm_disconnect">Disconnect</string>
+    <string name="lastfm_auth_failed">Last.fm refused the request. Check your key and secret, and that you approved access.</string>
+    <string name="lastfm_unreachable">Couldn\'t reach Last.fm. Check your connection and try again.</string>
 </resources>

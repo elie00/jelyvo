@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "jelyvo-listen-together",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [
+      { "name": "PARTY_ROOM", "class_name": "PartyRoom" },
+      { "name": "PARTY_BUDGET", "class_name": "PartyBudget" }
+    ]
+  },
+  // SQLite-backed classes are the only Durable Objects the free plan offers.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PartyRoom", "PartyBudget"] }]
+}

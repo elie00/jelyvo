@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -50,18 +51,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
-import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
-import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.models.mosaicCoverUris
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
-import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
+import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
 import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.components.EditableSongItem
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -109,15 +114,18 @@ fun LocalPlaylistScreen(
         if (uiState.isManualOrder) items else uiState.visibleSongs
     }
 
-    FadingStatusBarWrapper {
+    Box(Modifier.fillMaxSize()) {
+        val hazeState = remember { HazeState() }
         Scaffold(topBar = {
             TopAppBar(
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
                 title = {
                     Text(
                         uiState.name,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 },
                 navigationIcon = { BackButton(onBack = onBack) },
@@ -201,12 +209,10 @@ fun LocalPlaylistScreen(
                 LazyColumn(
                     modifier = modifier
                         .fillMaxSize()
-                        .padding(paddingValues),
+                        .hazeSource(hazeState),
                     state = lazyListState,
                     contentPadding = PaddingValues(
-                        start = 8.dp,
-                        end = 8.dp,
-                        top = 8.dp,
+                        top = paddingValues.calculateTopPadding() + 8.dp,
                         bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -221,7 +227,7 @@ fun LocalPlaylistScreen(
                     // Unconditional like the other header rows, so SONG_LIST_HEADER_ITEMS stays
                     // exact: a header that came and went would silently shift every drag index.
                     item(key = "filter-sort") {
-                        Column {
+                        Column(modifier = Modifier.padding(horizontal = PageGutter)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -281,7 +287,7 @@ fun LocalPlaylistScreen(
                                 onOpenPlayer()
                                 viewModel.shuffle()
                             },
-                            modifier = Modifier.padding(bottom = 8.dp),
+                            modifier = Modifier.padding(start = PageGutter, end = PageGutter, bottom = 8.dp),
                         )
                     }
 
@@ -427,13 +433,13 @@ private fun LocalPlaylistHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 8.dp),
+            .padding(start = PageGutter, end = PageGutter, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (coverUris.isNotEmpty()) {
             PlaylistMosaicCover(
                 uris = coverUris,
-                modifier = Modifier.size(180.dp),
+                modifier = Modifier.size(220.dp),
             )
         }
         if (description.isNotBlank()) {

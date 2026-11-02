@@ -10,11 +10,22 @@ import kotlinx.serialization.Serializable
  * @param timeMs Timestamp of the line in milliseconds, or `null` when the line
  *  comes from unsynchronized (plain) lyrics.
  * @param text The lyric text for this line (may be empty for musical interludes).
+ * @param words Per-word timing when the source has it, in the order they appear in [text].
  */
 @Immutable
 @Serializable
 data class LyricLine(
     val timeMs: Long?,
+    val text: String,
+    val words: List<LyricWord> = emptyList(),
+)
+
+/** One word of a line and the stretch of the song it is sung over. */
+@Immutable
+@Serializable
+data class LyricWord(
+    val startMs: Long,
+    val endMs: Long,
     val text: String,
 )
 
@@ -33,6 +44,9 @@ data class Lyrics(
 ) {
     val isEmpty: Boolean
         get() = lines.isEmpty()
+
+    val hasWordTiming: Boolean
+        get() = lines.any { it.words.isNotEmpty() }
 
     companion object {
         // Matches one or more leading LRC timestamps, e.g. "[01:23.45]" or "[1:23]".

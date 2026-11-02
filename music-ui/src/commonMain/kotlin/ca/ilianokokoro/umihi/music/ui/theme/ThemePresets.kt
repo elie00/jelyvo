@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.theme
 
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
@@ -15,6 +17,10 @@ import androidx.compose.ui.unit.dp
  * fois les couleurs (surfaces comprises), la typographie et le langage de formes. Jelyvo reste le
  * theme de la marque et conserve le selecteur d'accent ; les autres presets imposent le leur.
  *
+ * - [ThemePreset.Studio] : noir et blanc sans accent, DM Sans, coins sobres : la couleur vient des
+ *   pochettes. Repris de BitChord (GPL-3.0), avec des gris completes pour tous les roles, un texte
+ *   secondaire et des bordures un peu plus marques : sinon les actions secondaires de Jelyvo
+ *   semblent desactivees.
  * - [ThemePreset.Minuit] : noir OLED absolu, accents bleu glacier, sans-serif systeme, coins tres
  *   arrondis. Pense pour l'ecoute nocturne et l'economie d'ecran AMOLED.
  * - [ThemePreset.Vinyle] : creme sepia et brun chaud, titrages serif, coins courts — l'esthetique
@@ -26,6 +32,7 @@ object ThemePresets {
     /** Schema de couleurs du preset, ou null pour Jelyvo (gere par le theme de marque). */
     fun colorScheme(preset: ThemePreset, darkTheme: Boolean): ColorScheme? = when (preset) {
         ThemePreset.Jelyvo -> null
+        ThemePreset.Studio -> studioScheme(darkTheme)
         ThemePreset.Minuit -> minuitScheme(darkTheme)
         ThemePreset.Vinyle -> vinyleScheme(darkTheme)
         ThemePreset.Neon -> neonScheme(darkTheme)
@@ -34,7 +41,12 @@ object ThemePresets {
 
     /** Typographie du preset ; Jelyvo garde [appTypography] (Nunito). */
     @Composable
-    fun typography(preset: ThemePreset, fontFamily: FontFamily): Typography = when (preset) {
+    fun typography(
+        preset: ThemePreset,
+        fontFamily: FontFamily,
+        studioFontFamily: FontFamily,
+    ): Typography = when (preset) {
+        ThemePreset.Studio -> studioTypography(studioFontFamily)
         ThemePreset.Jelyvo -> appTypography(fontFamily)
         ThemePreset.Minuit -> withFontFamily(FontFamily.SansSerif)
         ThemePreset.Vinyle -> withDisplayFontFamily(FontFamily.Serif, fontFamily)
@@ -45,6 +57,14 @@ object ThemePresets {
     /** Langage de formes du preset, ou null pour les formes expressives par defaut. */
     fun shapes(preset: ThemePreset): Shapes? = when (preset) {
         ThemePreset.Jelyvo -> null
+        ThemePreset.Studio -> Shapes(
+            extraSmall = RoundedCornerShape(6.dp),
+            small = RoundedCornerShape(8.dp),
+            medium = RoundedCornerShape(12.dp),
+            large = RoundedCornerShape(16.dp),
+            extraLarge = RoundedCornerShape(24.dp),
+        )
+
         ThemePreset.Minuit -> Shapes(
             extraSmall = RoundedCornerShape(12.dp),
             small = RoundedCornerShape(16.dp),
@@ -86,6 +106,91 @@ object ThemePresets {
                 val scheme = colorScheme(preset, darkTheme)!!
                 Triple(scheme.background, scheme.primary, scheme.tertiary)
             }
+        }
+
+    // ------------------------------------------------------------------ Studio
+
+    private fun studioScheme(darkTheme: Boolean): ColorScheme =
+        if (darkTheme) {
+            darkColorScheme(
+                primary = Color.White,
+                onPrimary = Color.Black,
+                primaryContainer = Color(0xFF3A3A3C),
+                onPrimaryContainer = Color.White,
+                inversePrimary = Color.Black,
+                secondary = Color(0xFFC7C7CC),
+                onSecondary = Color.Black,
+                secondaryContainer = Color(0xFF3A3A3C),
+                onSecondaryContainer = Color.White,
+                tertiary = Color(0xFFAEAEB2),
+                onTertiary = Color.Black,
+                tertiaryContainer = Color(0xFF48484A),
+                onTertiaryContainer = Color.White,
+                background = Color.Black,
+                onBackground = Color.White,
+                surface = Color(0xFF0D0D0F),
+                onSurface = Color.White,
+                surfaceVariant = Color(0xFF1C1C1E),
+                onSurfaceVariant = Color(0xFFA1A1A6),
+                surfaceTint = Color.White,
+                inverseSurface = Color(0xFFF2F2F7),
+                inverseOnSurface = Color(0xFF1C1C1E),
+                error = Color(0xFFFF453A),
+                onError = Color.Black,
+                errorContainer = Color(0xFF4A1512),
+                onErrorContainer = Color(0xFFFFDAD6),
+                // Le gris de contour de BitChord est un gris de separateur, trop discret pour les
+                // bordures de champs et de boutons de Jelyvo : il passe en outlineVariant.
+                outline = Color(0xFF7C7C80),
+                outlineVariant = Color(0xFF48484A),
+                scrim = Color.Black,
+                surfaceBright = Color(0xFF2C2C2E),
+                surfaceDim = Color.Black,
+                surfaceContainerLowest = Color.Black,
+                surfaceContainerLow = Color(0xFF0D0D0F),
+                surfaceContainer = Color(0xFF151517),
+                surfaceContainerHigh = Color(0xFF1C1C1E),
+                surfaceContainerHighest = Color(0xFF2C2C2E),
+            )
+        } else {
+            lightColorScheme(
+                primary = Color.Black,
+                onPrimary = Color.White,
+                primaryContainer = Color(0xFFD1D1D6),
+                onPrimaryContainer = Color.Black,
+                inversePrimary = Color.White,
+                secondary = Color(0xFF3A3A3C),
+                onSecondary = Color.White,
+                secondaryContainer = Color(0xFFD1D1D6),
+                onSecondaryContainer = Color.Black,
+                tertiary = Color(0xFF48484A),
+                onTertiary = Color.White,
+                tertiaryContainer = Color(0xFFC7C7CC),
+                onTertiaryContainer = Color.Black,
+                background = Color.White,
+                onBackground = Color.Black,
+                surface = Color(0xFFF7F7F9),
+                onSurface = Color.Black,
+                surfaceVariant = Color(0xFFF2F2F7),
+                onSurfaceVariant = Color(0xFF636368),
+                surfaceTint = Color.Black,
+                inverseSurface = Color(0xFF1C1C1E),
+                inverseOnSurface = Color(0xFFF2F2F7),
+                error = Color(0xFFD70015),
+                onError = Color.White,
+                errorContainer = Color(0xFFFFDAD6),
+                onErrorContainer = Color(0xFF410002),
+                outline = Color(0xFF8E8E93),
+                outlineVariant = Color(0xFFC7C7CC),
+                scrim = Color.Black,
+                surfaceBright = Color.White,
+                surfaceDim = Color(0xFFE5E5EA),
+                surfaceContainerLowest = Color.White,
+                surfaceContainerLow = Color(0xFFF7F7F9),
+                surfaceContainer = Color(0xFFF2F2F7),
+                surfaceContainerHigh = Color(0xFFECECF1),
+                surfaceContainerHighest = Color(0xFFE5E5EA),
+            )
         }
 
     // ------------------------------------------------------------------ Minuit

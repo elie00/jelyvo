@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import ca.ilianokokoro.umihi.music.R
 
@@ -23,4 +24,19 @@ fun nunitoFontFamily(): FontFamily = FontFamily(
     Font(R.font.nunito, FontWeight.Bold, FontStyle.Normal),
     Font(R.font.nunito, FontWeight.ExtraBold, FontStyle.Normal),
     Font(R.font.nunito, FontWeight.Black, FontStyle.Normal),
+)
+
+/**
+ * DM Sans on Android, the Studio theme's typeface, delivered the same way as Nunito. Each weight is
+ * asked of the variable font explicitly: left to the default settings, every title drew at Regular.
+ */
+@Composable
+fun dmSansFontFamily(): FontFamily = FontFamily(
+    listOf(300, 400, 500, 600, 700, 800, 900).map { weight ->
+        Font(
+            resId = R.font.dm_sans,
+            weight = FontWeight(weight),
+            variationSettings = FontVariation.Settings(FontVariation.weight(weight)),
+        )
+    }
 )

@@ -27,3 +27,8 @@ private val WEIGHTS = listOf(
 val nunitoFontFamily: FontFamily = FontFamily(
     WEIGHTS.map { weight -> Font(FONT_RESOURCE, weight, FontStyle.Normal) }
 )
+
+/** DM Sans on macOS, the Studio theme's typeface, delivered the same way as Nunito. */
+val dmSansFontFamily: FontFamily = FontFamily(
+    WEIGHTS.map { weight -> Font("font/dm_sans.ttf", weight, FontStyle.Normal) }
+)

@@ -107,10 +107,18 @@ object BackupManager {
     private const val TYPE_DOUBLE = "double"
     private const val TYPE_STRING_SET = "stringSet"
 
-    /** Preference keys that must never leave the device (session credentials). */
+    /**
+     * Preference keys that must never leave the device: session credentials, and listens still
+     * waiting to be sent, which a restore would otherwise submit a second time.
+     */
     private val EXCLUDED_PREFERENCE_KEYS = setOf(
         Constants.Datastore.COOKIES_KEY,
         Constants.Datastore.DATA_SYNC_ID,
+        Constants.Datastore.LISTENBRAINZ_TOKEN,
+        Constants.Datastore.SCROBBLE_PENDING_LISTENBRAINZ,
+        Constants.Datastore.LASTFM_CREDENTIALS,
+        Constants.Datastore.SCROBBLE_PENDING_LASTFM,
+        Constants.Datastore.JAM_DEVICE_ID,
     )
 
     suspend fun exportToUri(context: Context, uri: Uri) = withContext(Dispatchers.IO) {

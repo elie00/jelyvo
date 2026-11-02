@@ -18,16 +18,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
@@ -38,7 +38,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,11 +48,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,18 +73,27 @@ import ca.ilianokokoro.umihi.music.ui.components.BrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
+import ca.ilianokokoro.umihi.music.ui.components.Shelf
+import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
 import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import coil3.compose.AsyncImage
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** How far the page scrolls before the bar's glass and title are fully in. */
+private val ARTIST_TOP_BAR_COLLAPSE_DISTANCE = 240.dp
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun ArtistScreen(
     artistId: String,
@@ -100,25 +113,64 @@ fun ArtistScreen(
     val subscriptionChannelId by artistViewModel.subscriptionChannelId.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    Scaffold(contentWindowInsets = WindowInsets.systemBars) { paddingValues ->
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
+    val collapseDistancePx = remember(density) {
+        with(density) { ARTIST_TOP_BAR_COLLAPSE_DISTANCE.toPx() }
+    }
+    val collapseProgress by remember(collapseDistancePx) {
+        derivedStateOf {
+            if (listState.firstVisibleItemIndex > 0) {
+                1f
+            } else {
+                (listState.firstVisibleItemScrollOffset / collapseDistancePx).coerceIn(0f, 1f)
+            }
+        }
+    }
+    val hazeState = remember { HazeState() }
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
+        topBar = {
+            // Always there, so going back never depends on the hero still being on screen.
+            TopAppBar(
+                modifier = Modifier.frosted(hazeState, visibility = collapseProgress),
+                colors = frostedTopAppBarColors(),
+                title = {
+                    Text(
+                        text = (state as? ArtistState.Success)?.page?.artist?.name?.ifBlank { artistName }
+                            ?: artistName,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.alpha(collapseProgress),
+                    )
+                },
+                navigationIcon = { BackButton(onBack = onBack) },
+            )
+        },
+    ) { paddingValues ->
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .hazeSource(hazeState)
         ) {
             when (state) {
-                // The immersive hero owns the back button in Success; without these the user is
-                // stranded on a failed load with no way out but the system gesture.
                 is ArtistState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         MusicSkeleton(MusicSkeletonLayout.SongList)
                     }
-                    BackButton(onBack = onBack, modifier = Modifier.padding(8.dp))
                 }
 
                 is ArtistState.Error -> {
-                    ErrorMessage(ex = state.exception, onRetry = artistViewModel::load)
-                    BackButton(onBack = onBack, modifier = Modifier.padding(8.dp))
+                    Box(modifier = Modifier.padding(paddingValues)) {
+                        ErrorMessage(ex = state.exception, onRetry = artistViewModel::load)
+                    }
                 }
 
                 is ArtistState.Success -> {
@@ -173,9 +225,10 @@ fun ArtistScreen(
                     }
                     Row(modifier = Modifier.fillMaxSize()) {
                     if (showContextPane) {
-                        BrowsingContextPane {
+                        BrowsingContextPane(
+                            modifier = Modifier.padding(top = paddingValues.calculateTopPadding()),
+                        ) {
                             ArtistContextHeader(
-                                onBack = onBack,
                                 thumbnail = page.artist.thumbnailHref,
                                 name = page.artist.name,
                                 subscriberCount = page.artist.subscriberCount,
@@ -195,8 +248,10 @@ fun ArtistScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
+                        state = listState,
+                        // The hero runs under the bar and the status bar; everything else starts below them.
                         contentPadding = PaddingValues(
-                            top = if (showContextPane) 8.dp else 0.dp,
+                            top = if (showContextPane) paddingValues.calculateTopPadding() + 8.dp else 0.dp,
                             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
                         )
                     ) {
@@ -205,7 +260,6 @@ fun ArtistScreen(
                             // overlaid on a gradient, actions right below.
                             item(key = "hero", contentType = "hero") {
                                 ArtistHero(
-                                    onBack = onBack,
                                     thumbnail = page.artist.thumbnailHref,
                                     name = page.artist.name,
                                     subscriberCount = page.artist.subscriberCount,
@@ -215,7 +269,7 @@ fun ArtistScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                                        .padding(horizontal = PageGutter, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     subscriptionChannelId?.let {
@@ -325,7 +379,7 @@ fun ArtistScreen(
                                         selectedSongIds = emptySet()
                                         selectionAnchorId = null
                                     },
-                                    modifier = Modifier.padding(start = 16.dp)
+                                    modifier = Modifier.padding(start = 8.dp)
                                 ) {
                                     Text(
                                         stringResource(
@@ -370,24 +424,22 @@ fun ArtistScreen(
                                 }
                             }
                             item(key = "section-row-$index", contentType = "section-row") {
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
-                                ) {
+                                Shelf(title = null) {
                                     items(items = section.albums, key = { it.browseId }) { album ->
-                                        AlbumCard(
-                                            thumbnail = album.thumbnail,
+                                        ShelfCard(
                                             title = album.title,
                                             subtitle = album.subtitle,
+                                            artworkUri = album.thumbnail,
                                             onClick = {
                                                 onOpenAlbum(album.browseId, album.title, album.thumbnail)
                                             }
                                         )
                                     }
                                     items(items = section.videos, key = { it.youtubeId }) { video ->
-                                        AlbumCard(
-                                            thumbnail = video.thumbnailHref,
+                                        ShelfCard(
                                             title = video.title,
+                                            subtitle = "",
+                                            artworkUri = video.thumbnailHref,
                                             onClick = {
                                                 onOpenPlayer()
                                                 PlayerManager.playSong(video)
@@ -397,9 +449,11 @@ fun ArtistScreen(
                                     items(
                                         items = section.artists,
                                         key = { it.channelUrl }) { related ->
-                                        RelatedArtistCard(
-                                            thumbnail = related.thumbnailHref,
-                                            name = related.name,
+                                        ShelfCard(
+                                            title = related.name,
+                                            subtitle = "",
+                                            artworkUri = related.thumbnailHref,
+                                            circular = true,
                                             onClick = {
                                                 onOpenArtist(related.channelUrl, related.name)
                                             }
@@ -417,7 +471,7 @@ fun ArtistScreen(
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                                            .padding(horizontal = PageGutter, vertical = 8.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         SectionTitle(
@@ -471,7 +525,11 @@ fun ArtistScreen(
                         },
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                            .padding(
+                                top = paddingValues.calculateTopPadding() + 8.dp,
+                                start = 12.dp,
+                                end = 12.dp,
+                            ),
                     )
                 }
             }
@@ -485,8 +543,7 @@ fun ArtistScreen(
  * into the scrolling content below it.
  */
 @Composable
-private fun ArtistHero(
-    onBack: () -> Unit,
+internal fun ArtistHero(
     thumbnail: String,
     name: String,
     subscriberCount: String?,
@@ -494,7 +551,7 @@ private fun ArtistHero(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(320.dp)
+            .height(360.dp)
     ) {
         AsyncImage(
             model = thumbnail,
@@ -508,25 +565,18 @@ private fun ArtistHero(
                 .background(
                     Brush.verticalGradient(
                         0.35f to Color.Transparent,
-                        1f to MaterialTheme.colorScheme.surface,
+                        1f to MaterialTheme.colorScheme.background,
                     )
                 )
-        )
-        BackButton(
-            onBack = onBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(8.dp),
         )
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = PageGutter),
         ) {
             Text(
                 text = name,
                 style = MaterialTheme.typography.displaySmall.copy(
-                    fontFamily = nunitoFontFamily(),
                     fontWeight = FontWeight.Bold,
                 ),
                 maxLines = 2,
@@ -547,20 +597,19 @@ private fun ArtistHero(
 private fun SectionTitle(
     text: String,
     modifier: Modifier = Modifier,
-    padStart: Dp = 16.dp,
+    padStart: Dp = PageGutter,
 ) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = padStart, top = 12.dp, bottom = 4.dp),
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = modifier.padding(start = padStart, top = 12.dp, bottom = 8.dp),
     )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ColumnScope.ArtistContextHeader(
-    onBack: () -> Unit,
     thumbnail: String,
     name: String,
     subscriberCount: String?,
@@ -573,9 +622,6 @@ private fun ColumnScope.ArtistContextHeader(
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
 ) {
-    Row(modifier = Modifier.fillMaxWidth()) {
-        BackButton(onBack = onBack)
-    }
     SquareImage(
         uri = thumbnail,
         cornerRadius = 0.dp,
@@ -585,9 +631,7 @@ private fun ColumnScope.ArtistContextHeader(
     )
     Text(
         text = name,
-        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-            fontFamily = nunitoFontFamily()
-        ),
+        style = MaterialTheme.typography.headlineSmallEmphasized,
         textAlign = TextAlign.Center,
     )
     subscriberCount?.takeIf { it.isNotBlank() }?.let { count ->
@@ -615,71 +659,5 @@ private fun ColumnScope.ArtistContextHeader(
             onPlay = onPlay,
             onShuffle = onShuffle,
         )
-    }
-}
-
-/** A "Fans might also like" card: circular artwork, the way both YT Music and Spotify show people. */
-@Composable
-private fun RelatedArtistCard(
-    thumbnail: String,
-    name: String,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(150.dp)
-            .clickable(onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        SquareImage(
-            uri = thumbnail,
-            cornerRadius = 0.dp,
-            modifier = Modifier
-                .size(130.dp)
-                .clip(CircleShape)
-        )
-        Text(
-            text = name,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-private fun AlbumCard(
-    thumbnail: String,
-    title: String,
-    subtitle: String = "",
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(150.dp)
-            .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        SquareImage(
-            uri = thumbnail,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (subtitle.isNotBlank()) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
     }
 }

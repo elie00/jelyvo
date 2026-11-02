@@ -33,6 +33,7 @@ include(":wear-shared")
 include(":music-core")
 include(":music-youtube")
 include(":music-ui")
+include(":automix")
 include(":desktopApp")
 
 include(":baselineprofile")

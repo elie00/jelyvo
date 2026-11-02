@@ -45,7 +45,7 @@ import ca.ilianokokoro.umihi.music.core.domain.PlaybackEngine
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
 import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropTarget
-import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.delay
 
 @Composable
@@ -55,6 +55,7 @@ fun MiniPlayerWrapper(
     artworkModifier: Modifier = Modifier,
     onMiniPlayerPressed: () -> Unit,
     showMiniPlayer: Boolean,
+    hazeState: HazeState,
 ) {
     val playbackState by playbackEngine.state.collectAsStateWithLifecycle()
     val currentTrack = playbackState.currentTrack
@@ -91,68 +92,65 @@ fun MiniPlayerWrapper(
             .height(Constants.Ui.MiniPlayer.HEIGHT)
     ) {
         val track = currentTrack ?: return@AnimatedVisibility
-        ArtworkPlayerTheme(
-            artworkUri = track.displayArtwork.orEmpty(),
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .songDragAndDropTarget(
-                        onSongDropped = { droppedSong ->
-                            playbackEngine.enqueue(droppedSong.toTrack())
-                            Toast.makeText(context, queuedMessage, Toast.LENGTH_SHORT).show()
-                            true
-                        },
-                        onHoverChanged = { isQueueDropHovered = it },
-                    ),
-            ) {
-                MiniPlayer(
-                    currentTrack = track,
-                    artworkModifier = artworkModifier,
-                    onClick = onMiniPlayerPressed,
-                    onPlayPause = {
-                        if (isPlaying) {
-                            playbackEngine.pause()
-                        } else {
-                            playbackEngine.play()
-                        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .songDragAndDropTarget(
+                    onSongDropped = { droppedSong ->
+                        playbackEngine.enqueue(droppedSong.toTrack())
+                        Toast.makeText(context, queuedMessage, Toast.LENGTH_SHORT).show()
+                        true
                     },
-                    onSkipNext = playbackEngine::skipNext,
-                    onSkipPrevious = playbackEngine::skipPrevious,
-                    isPlaying = isPlaying,
-                    isLoading = isLoading,
-                    progressFraction = progressFraction,
-                )
+                    onHoverChanged = { isQueueDropHovered = it },
+                ),
+        ) {
+            MiniPlayer(
+                hazeState = hazeState,
+                currentTrack = track,
+                artworkModifier = artworkModifier,
+                onClick = onMiniPlayerPressed,
+                onPlayPause = {
+                    if (isPlaying) {
+                        playbackEngine.pause()
+                    } else {
+                        playbackEngine.play()
+                    }
+                },
+                onSkipNext = playbackEngine::skipNext,
+                onSkipPrevious = playbackEngine::skipPrevious,
+                isPlaying = isPlaying,
+                isLoading = isLoading,
+                progressFraction = progressFraction,
+            )
 
-                AnimatedVisibility(
-                    visible = isQueueDropHovered,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                    modifier = Modifier.matchParentSize(),
+            AnimatedVisibility(
+                visible = isQueueDropHovered,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.matchParentSize(),
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RoundedCornerShape(percent = 50),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    tonalElevation = 6.dp,
                 ) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        tonalElevation = 6.dp,
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(
+                            10.dp,
+                            Alignment.CenterHorizontally,
+                        ),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(
-                                10.dp,
-                                Alignment.CenterHorizontally,
-                            ),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                                contentDescription = null,
-                            )
-                            Text(
-                                text = stringResource(R.string.drop_to_queue),
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                            contentDescription = null,
+                        )
+                        Text(
+                            text = stringResource(R.string.drop_to_queue),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
                     }
                 }
             }

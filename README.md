@@ -130,6 +130,15 @@ keystore. Share that keystore between machines if you want to install over an ex
 
 - Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
 - **Jelyvo identity and app logo**: created for this fork.
+- **Word-timed lyrics parsing, lyrics source matching, the listening party server and protocol, and
+  the Studio theme's layout and type scale**: adapted from
+  [BitChord](https://github.com/kushagrasinghx/BitChord) by Kushagra Singh and contributors
+  (GPL-3.0). Adapted files say so in their header.
+- **Automix** (`automix/`, under the AGPL-3.0): the transition planner comes from BitChord and
+  [Orchard](https://github.com/SFG5453/Orchard), Copyright (C) 2026 SFG545 and Kushagra Singh. See
+  `automix/NOTICE.md`.
+- **DM Sans**, the Studio theme's typeface: The DM Sans Project Authors, under the SIL Open Font
+  License (`music-ui/licenses/OFL-DMSans.txt`).
 - **Translations**: English and French are shipped and maintained. The other inherited locales
   are archived in `app/translations-legacy` until their translations are complete. This fork
   no longer synchronizes with upstream Crowdin. See [the translation policy](docs/I18N.md). Thank you to

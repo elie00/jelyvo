@@ -7,20 +7,19 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.FeaturedPlayList
@@ -28,7 +27,7 @@ import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.automirrored.outlined.Rule
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
-import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Brush
@@ -40,26 +39,25 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Headphones
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.HighQuality
-import androidx.compose.material.icons.outlined.Leaderboard
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Leaderboard
 import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.NotInterested
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material.icons.outlined.Update
+import androidx.compose.material.icons.outlined.Waves
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -67,6 +65,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +76,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -91,35 +91,43 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.backup.BackupManager
+import ca.ilianokokoro.umihi.music.core.jam.JamStatus
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
-import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
+import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBar
 import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.ProfileAvatar
-import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
-import ca.ilianokokoro.umihi.music.ui.components.dialog.VideoQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.AudioQualityDialog
+import ca.ilianokokoro.umihi.music.ui.components.dialog.ConfirmDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.SleepTimerDefaultDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemeColorDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.ThemePresetDialog
-import ca.ilianokokoro.umihi.music.ui.components.dialog.videoQualityLabel
+import ca.ilianokokoro.umihi.music.ui.components.dialog.VideoQualityDialog
 import ca.ilianokokoro.umihi.music.ui.components.dialog.audioQualityLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themeColorLabel
 import ca.ilianokokoro.umihi.music.ui.components.dialog.themePresetLabel
-import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
-import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
-import coil3.compose.AsyncImage
+import ca.ilianokokoro.umihi.music.ui.components.dialog.videoQualityLabel
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.JamDialog
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.LastFmDialog
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.ListenBrainzDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsRowDivider
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SliderSettingItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.StorageDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.storageCategoryLabel
+import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
+
+/** How far the page scrolls before the bar's glass and title are fully in. */
+private val SETTINGS_TITLE_COLLAPSE_DISTANCE = 56.dp
 
 @Composable
 fun SettingsScreen(
@@ -146,7 +154,18 @@ fun SettingsScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    FadingStatusBarWrapper { statusBarHeight ->
+    val hazeState = remember { HazeState() }
+    val scrollState = rememberScrollState()
+    val density = LocalDensity.current
+    val collapseDistancePx = remember(density) {
+        with(density) { SETTINGS_TITLE_COLLAPSE_DISTANCE.toPx() }
+    }
+    val collapseProgress by remember(collapseDistancePx) {
+        derivedStateOf { (scrollState.value / collapseDistancePx).coerceIn(0f, 1f) }
+    }
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
+    Box(Modifier.fillMaxSize()) {
         Scaffold(
             contentWindowInsets = WindowInsets(0.dp)
         ) { paddingValues ->
@@ -161,24 +180,27 @@ fun SettingsScreen(
                 }
 
                 is ScreenState.Error -> {
-                    ErrorMessage(
-                        ex = screenState.exception,
-                        onRetry = settingsViewModel::getSettings
-                    )
+                    Box(Modifier.padding(top = statusBarHeight)) {
+                        ErrorMessage(
+                            ex = screenState.exception,
+                            onRetry = settingsViewModel::getSettings,
+                        )
+                    }
                 }
 
                 is ScreenState.Success -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
+                            .hazeSource(hazeState)
+                            .verticalScroll(scrollState)
                             .padding(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = statusBarHeight,
+                                top = statusBarHeight + 8.dp,
                                 bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING + paddingValues.calculateBottomPadding()
                             ),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Tapping the title repeatedly toggles the special language easter egg
                         // (previously triggered from the bottom bar's Settings tab).
@@ -191,7 +213,9 @@ fun SettingsScreen(
                             text = stringResource(R.string.settings),
                             style = MaterialTheme.typography.headlineLarge,
                             color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier.clickable(
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp)
+                                .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null
                             ) {
@@ -253,14 +277,14 @@ fun SettingsScreen(
                                     onClick = openAuthScreen
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.clear_login_info),
                                 subtitle = stringResource(R.string.clear_login_message),
                                 leadingIcon = Icons.Outlined.Delete,
                                 onClick = settingsViewModel::clearLogins
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.music_import_title),
                                 subtitle = stringResource(R.string.music_import_settings_subtitle),
@@ -285,7 +309,7 @@ fun SettingsScreen(
                             if (screenState.settings.themePreset ==
                                 ThemePreset.Jelyvo
                             ) {
-                                Spacer(modifier = Modifier.height(4.dp))
+                                SettingsRowDivider()
                                 SettingsItem(
                                     title = stringResource(R.string.theme_color_title),
                                     subtitle = stringResource(
@@ -315,7 +339,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.keep_screen_on_title),
                                 subtitle = stringResource(R.string.keep_screen_on_title_description),
@@ -323,7 +347,7 @@ fun SettingsScreen(
                                 value = screenState.settings.keepScreenOn,
                                 onToggle = settingsViewModel::updateKeepScreenOnSetting
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.send_playback_data_title),
                                 subtitle = stringResource(R.string.send_playback_data_description),
@@ -336,7 +360,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.notify_new_releases_title),
                                 subtitle = stringResource(R.string.notify_new_releases_description),
@@ -355,21 +379,21 @@ fun SettingsScreen(
                                 leadingIcon = Icons.Outlined.Leaderboard,
                                 onClick = openListeningStats,
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.download_manager_title),
                                 subtitle = stringResource(R.string.download_manager_subtitle),
                                 leadingIcon = Icons.Outlined.CloudDownload,
                                 onClick = openDownloadManager,
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.reco_debug_title),
                                 subtitle = stringResource(R.string.reco_debug_subtitle),
                                 leadingIcon = Icons.AutoMirrored.Outlined.Rule,
                                 onClick = openRecoDebug,
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.autoplay_title),
                                 subtitle = stringResource(R.string.autoplay_subtitle),
@@ -382,7 +406,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.not_interested_title),
                                 subtitle = if (uiState.notInterestedCount == 0) {
@@ -400,7 +424,7 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowNotInterestedClearConfirm(true)
                                 },
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.enable_audio_offload),
                                 subtitle = stringResource(R.string.audio_offload_subtitle),
@@ -408,7 +432,7 @@ fun SettingsScreen(
                                 value = screenState.settings.useAudioOffload,
                                 onToggle = settingsViewModel::updateAudioOffloadSetting
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             val crossfadeSeconds = screenState.settings.crossfadeSeconds
                             SliderSettingItem(
                                 title = stringResource(R.string.crossfade_title),
@@ -427,7 +451,17 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
+                            BooleanSettingItem(
+                                title = stringResource(R.string.automix_title),
+                                subtitle = stringResource(R.string.automix_description),
+                                leadingIcon = Icons.Outlined.AutoAwesome,
+                                value = screenState.settings.automix,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(PreferenceKeys.AUTOMIX, it)
+                                }
+                            )
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.smart_transitions_title),
                                 subtitle = stringResource(R.string.smart_transitions_description),
@@ -440,7 +474,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.normalize_volume_title),
                                 subtitle = stringResource(R.string.normalize_volume_description),
@@ -453,7 +487,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.resume_on_audio_connect_title),
                                 subtitle = stringResource(R.string.resume_on_audio_connect_description),
@@ -466,7 +500,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.sleep_timer_default_title),
                                 subtitle = stringResource(
@@ -478,7 +512,7 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowSleepTimerDefaultDialog(true)
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.equalizer_title),
                                 subtitle = stringResource(R.string.equalizer_subtitle),
@@ -501,7 +535,7 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowAudioQualityDialog(true)
                                 },
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.video_quality_title),
                                 subtitle = stringResource(
@@ -513,7 +547,7 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowVideoQualityDialog(true)
                                 },
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.data_saver_title),
                                 subtitle = stringResource(R.string.data_saver_description),
@@ -526,7 +560,7 @@ fun SettingsScreen(
                                     )
                                 },
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.download_on_metered_title),
                                 subtitle = stringResource(R.string.download_on_metered_description),
@@ -539,7 +573,7 @@ fun SettingsScreen(
                                     )
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.storage_title),
                                 subtitle = stringResource(R.string.storage_subtitle),
@@ -548,7 +582,7 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowStorageDialog(true)
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.delete_downloads),
                                 subtitle = stringResource(R.string.clear_data_message),
@@ -585,7 +619,7 @@ fun SettingsScreen(
                                     backupLauncher.launch(BackupManager.SUGGESTED_FILE_NAME)
                                 }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.restore_data_title),
                                 subtitle = if (uiState.backupInProgress) {
@@ -612,7 +646,7 @@ fun SettingsScreen(
                                 onToggle = settingsViewModel::updateAutoDownloadSetting
                             )
                             if (screenState.settings.autoDownload) {
-                                Spacer(modifier = Modifier.height(4.dp))
+                                SettingsRowDivider()
                                 BooleanSettingItem(
                                     title = stringResource(R.string.auto_download_liked_title),
                                     subtitle = stringResource(R.string.auto_download_liked_description),
@@ -625,7 +659,7 @@ fun SettingsScreen(
                                         )
                                     }
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                SettingsRowDivider()
                                 BooleanSettingItem(
                                     title = stringResource(R.string.auto_download_wifi_only_title),
                                     subtitle = stringResource(R.string.auto_download_wifi_only_description),
@@ -633,7 +667,7 @@ fun SettingsScreen(
                                     value = screenState.settings.autoDownloadWifiOnly,
                                     onToggle = settingsViewModel::updateAutoDownloadWifiOnlySetting
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                SettingsRowDivider()
                                 val quotaGb = screenState.settings.autoDownloadQuotaGb
                                 SliderSettingItem(
                                     title = stringResource(R.string.auto_download_quota_title),
@@ -656,6 +690,53 @@ fun SettingsScreen(
                         }
 
                         SettingsSection(
+                            title = stringResource(R.string.jam_title)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.jam_title),
+                                subtitle = (uiState.jamStatus as? JamStatus.InParty)?.let {
+                                    stringResource(R.string.jam_share_code, it.code)
+                                } ?: stringResource(R.string.jam_subtitle),
+                                leadingIcon = Icons.Outlined.Headphones,
+                                onClick = { settingsViewModel.updateShowJamDialog(true) }
+                            )
+                        }
+
+                        SettingsSection(
+                            title = stringResource(R.string.scrobbling_section)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.listenbrainz_title),
+                                subtitle = stringResource(
+                                    if (uiState.listenBrainzConnected) {
+                                        R.string.listenbrainz_connected
+                                    } else {
+                                        R.string.listenbrainz_subtitle
+                                    }
+                                ),
+                                leadingIcon = Icons.Outlined.GraphicEq,
+                                onClick = {
+                                    settingsViewModel.updateShowListenBrainzDialog(true)
+                                }
+                            )
+                            SettingsRowDivider()
+                            SettingsItem(
+                                title = stringResource(R.string.lastfm_title),
+                                subtitle = stringResource(
+                                    if (uiState.lastFmConnected) {
+                                        R.string.lastfm_connected
+                                    } else {
+                                        R.string.lastfm_subtitle
+                                    }
+                                ),
+                                leadingIcon = Icons.Outlined.GraphicEq,
+                                onClick = {
+                                    settingsViewModel.updateShowLastFmDialog(true)
+                                }
+                            )
+                        }
+
+                        SettingsSection(
                             title = stringResource(R.string.updates)
                         ) {
                             SettingsItem(
@@ -664,7 +745,7 @@ fun SettingsScreen(
                                 leadingIcon = Icons.Outlined.Update,
                                 onClick = settingsViewModel::checkForUpdates
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             BooleanSettingItem(
                                 title = stringResource(R.string.auto_update_title),
                                 subtitle = stringResource(R.string.auto_update_subtitle),
@@ -691,7 +772,7 @@ fun SettingsScreen(
                                 enabled = false,
                                 onClick = { }
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.stability_report_title),
                                 subtitle = stringResource(
@@ -746,6 +827,39 @@ fun SettingsScreen(
                                 onClose = {
                                     settingsViewModel.updateShowProfileDialog(false)
                                 }
+                            )
+                        } else if (uiState.showListenBrainzDialog) {
+                            ListenBrainzDialog(
+                                connected = uiState.listenBrainzConnected,
+                                connecting = uiState.listenBrainzConnecting,
+                                errorMessage = uiState.listenBrainzError,
+                                onConnect = settingsViewModel::connectListenBrainz,
+                                onDisconnect = settingsViewModel::disconnectListenBrainz,
+                                onClose = {
+                                    settingsViewModel.updateShowListenBrainzDialog(false)
+                                },
+                            )
+                        } else if (uiState.showJamDialog) {
+                            JamDialog(
+                                status = uiState.jamStatus,
+                                savedServerUrl = uiState.jamServerUrl,
+                                onCreate = settingsViewModel::createJam,
+                                onJoin = settingsViewModel::joinJam,
+                                onLeave = settingsViewModel::leaveJam,
+                                onClose = { settingsViewModel.updateShowJamDialog(false) },
+                            )
+                        } else if (uiState.showLastFmDialog) {
+                            LastFmDialog(
+                                connected = uiState.lastFmConnected,
+                                busy = uiState.lastFmBusy,
+                                errorMessage = uiState.lastFmError,
+                                authorizeUrl = uiState.lastFmAuthorizeUrl,
+                                onRequestApproval = settingsViewModel::requestLastFmApproval,
+                                onApproved = settingsViewModel::finishLastFmApproval,
+                                onDisconnect = settingsViewModel::disconnectLastFm,
+                                onClose = {
+                                    settingsViewModel.updateShowLastFmDialog(false)
+                                },
                             )
                         } else if (uiState.showThemeColorDialog) {
                             ThemeColorDialog(
@@ -868,6 +982,13 @@ fun SettingsScreen(
                 }
             }
         }
+
+        FrostedPageBar(
+            title = stringResource(R.string.settings),
+            hazeState = hazeState,
+            visibility = collapseProgress,
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
     }
 }
 
@@ -884,7 +1005,6 @@ private fun ProfileItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -894,11 +1014,11 @@ private fun ProfileItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = name.ifBlank { stringResource(R.string.profile_name_placeholder) },
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.bodyLarge,
             )
             Text(
                 text = stringResource(R.string.profile_edit_hint),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

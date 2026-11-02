@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,7 +36,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -69,9 +66,15 @@ import ca.ilianokokoro.umihi.music.ui.components.BrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButton
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
+import ca.ilianokokoro.umihi.music.ui.components.Shelf
+import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
+import ca.ilianokokoro.umihi.music.ui.components.ShelfHeader
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
@@ -80,7 +83,8 @@ import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
 
 /**
@@ -137,37 +141,32 @@ fun AlbumScreen(
         ?.page?.name?.ifBlank { albumName }
         ?: albumName
 
+    val hazeState = remember { HazeState() }
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            // Barre collante : le bouton retour reste toujours atteignable, le fond et le
+            // Barre collante : le bouton retour reste toujours atteignable, le verre et le
             // titre n'apparaissent qu'au fur et a mesure du defilement.
-            val containerColor = MaterialTheme.colorScheme.surfaceContainer
-                .copy(alpha = collapseProgress)
             TopAppBar(
+                modifier = Modifier.frosted(hazeState, visibility = collapseProgress),
                 title = {
                     Text(
                         text = topBarTitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                            fontFamily = nunitoFontFamily()
-                        ),
+                        style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.alpha(collapseProgress)
                     )
                 },
                 navigationIcon = {
                     BackButton(onBack = onBack)
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = containerColor,
-                    scrolledContainerColor = containerColor,
-                ),
+                colors = frostedTopAppBarColors(),
             )
         }
     ) { paddingValues ->
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().hazeSource(hazeState)
         ) {
             when (state) {
                 is AlbumState.Loading -> {
@@ -295,14 +294,15 @@ fun AlbumScreen(
                         contentPadding = PaddingValues(
                             top = paddingValues.calculateTopPadding() + 8.dp,
                             bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-                            start = 8.dp,
-                            end = 8.dp
                         )
                     ) {
                         if (!showContextPane) {
                             item {
                                 Column(
-                                    modifier = Modifier.fillMaxSize(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = PageGutter)
+                                        .padding(bottom = 8.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                 ) {
@@ -315,7 +315,7 @@ fun AlbumScreen(
                                         artistId = page.artistId,
                                         metadataLine = metadataLine,
                                         description = "",
-                                        artworkSize = 180.dp,
+                                        artworkSize = 220.dp,
                                         hasSongs = playableSongs.isNotEmpty(),
                                         isLoggedIn = isLoggedIn,
                                         canSaveAlbum = page.playlistId != null,
@@ -360,7 +360,7 @@ fun AlbumScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(
-                                            start = 8.dp,
+                                            start = PageGutter,
                                             top = 12.dp,
                                             bottom = 4.dp
                                         )
@@ -439,7 +439,7 @@ fun AlbumScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { expanded = !expanded }
-                                        .padding(horizontal = 8.dp, vertical = 12.dp)
+                                        .padding(horizontal = PageGutter, vertical = 12.dp)
                                         .animateContentSize()
                                 )
                             }
@@ -447,31 +447,17 @@ fun AlbumScreen(
 
                         sections.forEachIndexed { index, section ->
                             item(key = "album-section-title-$index", contentType = "section-title") {
-                                Text(
-                                    text = localizedApiSectionTitle(section.title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(
-                                        start = 8.dp,
-                                        top = 8.dp,
-                                        bottom = 4.dp
-                                    )
-                                )
+                                ShelfHeader(title = localizedApiSectionTitle(section.title))
                             }
                             item(key = "album-section-row-$index", contentType = "section-row") {
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    contentPadding = PaddingValues(
-                                        horizontal = 8.dp,
-                                        vertical = 4.dp
-                                    )
-                                ) {
+                                Shelf(title = null) {
                                     items(
                                         items = section.albums,
                                         key = { it.browseId }) { album ->
-                                        AlbumVersionCard(
-                                            thumbnail = album.thumbnail,
+                                        ShelfCard(
                                             title = album.title,
                                             subtitle = album.subtitle,
+                                            artworkUri = album.thumbnail,
                                             onClick = {
                                                 onOpenAlbum(
                                                     album.browseId,
@@ -564,7 +550,7 @@ fun AlbumScreen(
 }
 
 @Composable
-private fun ColumnScope.AlbumContextHeader(
+internal fun ColumnScope.AlbumContextHeader(
     coverUri: String,
     name: String,
     artist: String,
@@ -590,9 +576,7 @@ private fun ColumnScope.AlbumContextHeader(
     )
     Text(
         text = name,
-        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-            fontFamily = nunitoFontFamily()
-        ),
+        style = MaterialTheme.typography.headlineSmallEmphasized,
         textAlign = TextAlign.Center,
     )
     if (artist.isNotBlank()) {
@@ -687,40 +671,5 @@ private fun ColumnScope.AlbumContextHeader(
                 .clickable { expanded = !expanded }
                 .animateContentSize(),
         )
-    }
-}
-
-@Composable
-private fun AlbumVersionCard(
-    thumbnail: String,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(140.dp)
-            .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        SquareImage(
-            uri = thumbnail,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        if (subtitle.isNotBlank()) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
     }
 }

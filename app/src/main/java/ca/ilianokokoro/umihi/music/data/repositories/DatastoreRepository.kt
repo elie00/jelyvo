@@ -11,36 +11,40 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
+import ca.ilianokokoro.umihi.music.core.jam.DEFAULT_JAM_SERVER_URL
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
+import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleTrack
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUDIO_QUALITY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOMIX
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_LIKED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_QUOTA_GB
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SAVER_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SAVER_ON_METERED
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.LAST_STREAM_QUALITY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NORMALIZE_VOLUME
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.RESUME_ON_AUDIO_CONNECT
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
-import ca.ilianokokoro.umihi.music.core.ResponseCache
-import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
@@ -51,10 +55,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.encodeToString
@@ -82,6 +86,7 @@ class DatastoreRepository(private val context: Context) {
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
         val SMART_TRANSITIONS = booleanPreferencesKey(Constants.Datastore.SMART_TRANSITIONS)
+        val AUTOMIX = booleanPreferencesKey(Constants.Datastore.AUTOMIX)
         val NORMALIZE_VOLUME = booleanPreferencesKey(Constants.Datastore.NORMALIZE_VOLUME)
         val RESUME_ON_AUDIO_CONNECT =
             booleanPreferencesKey(Constants.Datastore.RESUME_ON_AUDIO_CONNECT)
@@ -99,6 +104,10 @@ class DatastoreRepository(private val context: Context) {
         val AUTO_DOWNLOAD_QUOTA_GB = intPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_QUOTA_GB)
         val RECENT_SEARCHES = stringPreferencesKey(Constants.Datastore.RECENT_SEARCHES)
         val NOT_INTERESTED = stringPreferencesKey(Constants.Datastore.NOT_INTERESTED)
+        val LISTENBRAINZ_TOKEN = stringPreferencesKey(Constants.Datastore.LISTENBRAINZ_TOKEN)
+        val LASTFM_CREDENTIALS = stringPreferencesKey(Constants.Datastore.LASTFM_CREDENTIALS)
+        val JAM_SERVER_URL = stringPreferencesKey(Constants.Datastore.JAM_SERVER_URL)
+        val JAM_DEVICE_ID = stringPreferencesKey(Constants.Datastore.JAM_DEVICE_ID)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -135,6 +144,7 @@ class DatastoreRepository(private val context: Context) {
         val autoplay = it[AUTOPLAY] ?: true
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
         val smartTransitions = it[SMART_TRANSITIONS] ?: true
+        val automix = it[AUTOMIX] ?: false
         val normalizeVolume = it[NORMALIZE_VOLUME] ?: true
         val resumeOnAudioConnect = it[RESUME_ON_AUDIO_CONNECT] ?: false
         val sleepTimerDefaultMinutes = (it[SLEEP_TIMER_DEFAULT_MINUTES]
@@ -147,7 +157,7 @@ class DatastoreRepository(private val context: Context) {
         } ?: ThemeColor.Umihi
         val themePreset = it[PreferenceKeys.THEME_PRESET]?.let { value ->
             runCatching { ThemePreset.valueOf(value) }.getOrNull()
-        } ?: ThemePreset.Jelyvo
+        } ?: ThemePreset.Studio
         val profileName = it[PreferenceKeys.PROFILE_NAME].orEmpty()
         val profileAvatarPath = it[PreferenceKeys.PROFILE_AVATAR].orEmpty()
         val notifyNewReleases = it[NOTIFY_NEW_RELEASES] ?: false
@@ -182,6 +192,7 @@ class DatastoreRepository(private val context: Context) {
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
             smartTransitions = smartTransitions,
+            automix = automix,
             normalizeVolume = normalizeVolume,
             resumeOnAudioConnect = resumeOnAudioConnect,
             sleepTimerDefaultMinutes = sleepTimerDefaultMinutes,
@@ -224,7 +235,7 @@ class DatastoreRepository(private val context: Context) {
     val themePreset: Flow<ThemePreset> = context.dataStore.data.map {
         it[PreferenceKeys.THEME_PRESET]?.let { value ->
             runCatching { ThemePreset.valueOf(value) }.getOrNull()
-        } ?: ThemePreset.Jelyvo
+        } ?: ThemePreset.Studio
     }
 
     /**
@@ -399,6 +410,82 @@ class DatastoreRepository(private val context: Context) {
         ResponseCache.clear()
         LikeManager.reset()
     }
+
+    /** The listening party server: the user's own if they entered one, otherwise the default. */
+    val jamServerUrl: Flow<String> = context.dataStore.data.map {
+        it[PreferenceKeys.JAM_SERVER_URL].orEmpty().ifBlank { DEFAULT_JAM_SERVER_URL }
+    }
+
+    /** A random id for this install, created on first use. Not tied to the device or an account. */
+    suspend fun jamDeviceId(): String {
+        var id = ""
+        context.dataStore.edit { prefs ->
+            id = prefs[PreferenceKeys.JAM_DEVICE_ID]
+                ?: java.util.UUID.randomUUID().toString().also {
+                    prefs[PreferenceKeys.JAM_DEVICE_ID] = it
+                }
+        }
+        return id
+    }
+
+    /** The Last.fm connection, null when not connected or no longer decryptable. */
+    val lastFmCredentials: Flow<LastFmCredentials?> = context.dataStore.data.map { prefs ->
+        prefs[PreferenceKeys.LASTFM_CREDENTIALS]?.let(KeystoreCrypto::decrypt)?.let { stored ->
+            runCatching { Json.decodeFromString<LastFmCredentials>(stored) }.getOrNull()
+        }
+    }
+
+    /** Stores the connection encrypted. Null disconnects, and so does a failed encryption. */
+    suspend fun saveLastFmCredentials(credentials: LastFmCredentials?) {
+        val stored = credentials?.let { KeystoreCrypto.encrypt(Json.encodeToString(it)) }
+        context.dataStore.edit {
+            if (stored == null) {
+                it.remove(PreferenceKeys.LASTFM_CREDENTIALS)
+            } else {
+                it[PreferenceKeys.LASTFM_CREDENTIALS] = stored
+            }
+        }
+    }
+
+    /** The user's ListenBrainz token, empty when not connected or no longer decryptable. */
+    val listenBrainzToken: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[PreferenceKeys.LISTENBRAINZ_TOKEN]?.let(KeystoreCrypto::decrypt).orEmpty()
+    }
+
+    /** Stores the token encrypted. Blank disconnects, and so does a failed encryption. */
+    suspend fun saveListenBrainzToken(token: String) {
+        val stored = token.takeIf { it.isNotBlank() }?.let(KeystoreCrypto::encrypt)
+        context.dataStore.edit {
+            if (stored == null) {
+                it.remove(PreferenceKeys.LISTENBRAINZ_TOKEN)
+            } else {
+                it[PreferenceKeys.LISTENBRAINZ_TOKEN] = stored
+            }
+        }
+    }
+
+    /** Listens waiting for a scrobbling service, under that service's own preference key. */
+    suspend fun readPendingScrobbles(key: String): List<ScrobbleTrack> =
+        decodePendingScrobbles(context.dataStore.data.first()[stringPreferencesKey(key)])
+
+    suspend fun updatePendingScrobbles(
+        key: String,
+        transform: (List<ScrobbleTrack>) -> List<ScrobbleTrack>,
+    ) {
+        val preferenceKey = stringPreferencesKey(key)
+        context.dataStore.edit { prefs ->
+            val updated = transform(decodePendingScrobbles(prefs[preferenceKey]))
+            if (updated.isEmpty()) {
+                prefs.remove(preferenceKey)
+            } else {
+                prefs[preferenceKey] = Json.encodeToString(updated)
+            }
+        }
+    }
+
+    private fun decodePendingScrobbles(stored: String?): List<ScrobbleTrack> =
+        stored?.let { runCatching { Json.decodeFromString<List<ScrobbleTrack>>(it) }.getOrNull() }
+            .orEmpty()
 
     suspend fun logOut() {
         saveCookies(Cookies())

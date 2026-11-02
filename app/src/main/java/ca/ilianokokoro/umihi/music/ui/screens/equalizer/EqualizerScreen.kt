@@ -21,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.RestartAlt
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,6 +30,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
@@ -46,6 +46,13 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
+import ca.ilianokokoro.umihi.music.ui.components.PagePanel
+import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
 
 @Composable
@@ -58,10 +65,18 @@ fun EqualizerScreen(
 ) {
     val state = equalizerViewModel.uiState.collectAsStateWithLifecycle().value
 
+    val hazeState = remember { HazeState() }
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.equalizer_title)) },
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
+                title = {
+                    Text(
+                        stringResource(R.string.equalizer_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
                 navigationIcon = { BackButton(onBack = onBack) },
                 actions = {
                     if (state.available) {
@@ -79,11 +94,12 @@ fun EqualizerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .hazeSource(hazeState)
                 .verticalScroll(rememberScrollState())
+                .padding(top = paddingValues.calculateTopPadding())
                 .padding(
-                    start = 16.dp,
-                    end = 16.dp,
+                    start = PageGutter,
+                    end = PageGutter,
                     bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING
                 ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -125,21 +141,24 @@ fun EqualizerScreen(
             )
 
             // Master enable switch
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.equalizer_enable),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
-                )
-                Switch(
-                    checked = state.enabled,
-                    onCheckedChange = equalizerViewModel::setEnabled
-                )
+            PagePanel {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.equalizer_enable),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Switch(
+                        checked = state.enabled,
+                        onCheckedChange = equalizerViewModel::setEnabled,
+                    )
+                }
             }
 
             // Presets
@@ -152,11 +171,11 @@ fun EqualizerScreen(
                     )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         state.presets.forEachIndexed { index, name ->
-                            FilterChip(
+                            PillFilterChip(
                                 selected = state.selectedPreset == index,
                                 onClick = { equalizerViewModel.selectPreset(index) },
-                                label = { Text(name) },
-                                enabled = state.enabled
+                                label = name,
+                                enabled = state.enabled,
                             )
                         }
                         if (state.selectedPreset < 0) {

@@ -25,11 +25,12 @@ data class UmihiSettings(
     val autoplay: Boolean = true,
     val crossfadeSeconds: Int = 0,
     val smartTransitions: Boolean = true,
+    val automix: Boolean = false,
     val normalizeVolume: Boolean = true,
     val resumeOnAudioConnect: Boolean = false,
     val sleepTimerDefaultMinutes: Int = Constants.Ui.Player.SleepTimer.DEFAULT_MINUTES_FALLBACK,
     val themeColor: ThemeColor = ThemeColor.Umihi,
-    val themePreset: ThemePreset = ThemePreset.Jelyvo,
+    val themePreset: ThemePreset = ThemePreset.Studio,
     // Profil local d'affichage (l'identite Google n'est pas modifiable) : nom choisi et chemin
     // du fichier avatar copie dans le stockage interne. Vides tant que rien n'est personnalise.
     val profileName: String = "",

@@ -10,6 +10,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,16 +31,14 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -68,10 +67,17 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.speedLabel
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.extensions.toTimeString
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
+import ca.ilianokokoro.umihi.music.ui.components.ThinSlider
 import ca.ilianokokoro.umihi.music.ui.screens.player.PlaybackProgress
 
-private val PlayPauseButtonSize = 76.dp
-private val SkipButtonSize = 54.dp
+private class TransportSizes(val playGlyph: Dp, val playTouch: Dp, val skipGlyph: Dp, val skipTouch: Dp)
+
+private val RegularTransport = TransportSizes(74.dp, 92.dp, 53.dp, 64.dp)
+private val CompactTransport = TransportSizes(58.dp, 76.dp, 44.dp, 56.dp)
+
+/** Below this height the regular transport would push the secondary row off the screen. */
+private val CompactControlsHeight = 280.dp
+
 private val SecondaryButtonSize = 44.dp
 private val SecondaryIconSize = 24.dp
 
@@ -101,61 +107,33 @@ fun PlayerControls(
     val seekEnabled = !isLoading && progress.duration > 0f
     val safeDuration = progress.duration.coerceAtLeast(1f)
 
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+    val compact = maxHeight < CompactControlsHeight
+    val sizes = if (compact) CompactTransport else RegularTransport
     Column(
-        modifier = modifier
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 0.dp else 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Slider(
-            value = progress.position.coerceIn(0f, safeDuration),
-            valueRange = 0f..safeDuration,
+        ThinSlider(
+            value = progress.position.coerceIn(0f, safeDuration) / safeDuration,
             enabled = seekEnabled,
-
-            onValueChange = { newValue ->
+            onValueChange = { fraction ->
                 onUpdateSeekBarHeldState(true)
-                onSeek(newValue)
+                onSeek(fraction * safeDuration)
             },
-
             onValueChangeFinished = {
                 hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
                 onSeekPlayer()
                 onUpdateSeekBarHeldState(false)
             },
-
-            thumb = {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (seekEnabled) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
-                            }
-                        )
-                )
-            },
-
-            track = { sliderState ->
-                LinearWavyProgressIndicator(
-                    progress = { sliderState.coercedValueAsFraction },
-                    modifier = Modifier.fillMaxWidth(),
-                    // Flat track while paused, wavy while playing
-                    amplitude = { if (isPlaying && seekEnabled) 1f else 0f },
-                )
-            },
-
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp)
         )
 
+        // The bar's touch target reaches well past what is drawn: this pulls the times back under it.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp)
+                .offset(y = (-9).dp)
         ) {
             Row(
                 modifier = Modifier
@@ -166,18 +144,14 @@ fun PlayerControls(
             ) {
                 Text(
                     text = progress.position.toTimeString(),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum",
-                    ),
+                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = progress.duration.toTimeString(),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum",
-                    ),
+                    text = "-" + (progress.duration - progress.position)
+                        .coerceAtLeast(0f)
+                        .toTimeString(),
+                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -198,42 +172,56 @@ fun PlayerControls(
             )
         }
 
-        // Main transport row: Previous - Play/Pause - Next
+        // Bare glyphs, spread across the width: the artwork is the one heavy thing on this screen.
         Row(
-            modifier = Modifier
-                .padding(horizontal = 10.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(
-                20.dp,
-                Alignment.CenterHorizontally
-            ),
-            verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            SkipButton(
+            TransportGlyph(
                 icon = Icons.Rounded.SkipPrevious,
                 contentDescription = stringResource(R.string.previous),
+                glyphSize = sizes.skipGlyph,
+                touchSize = sizes.skipTouch,
                 onClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
                     PlayerManager.skipToPrevious()
                 },
             )
 
-            PlayPauseMorphButton(
-                isPlaying = isPlaying,
-                isLoading = isLoading,
-                onClick = {
-                    hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
-                    if (isPlaying) {
-                        PlayerManager.currentController?.pause()
-                    } else {
-                        PlayerManager.currentController?.play()
-                    }
-                },
-            )
+            if (isLoading) {
+                // Same footprint as the button it replaces, or everything below would shift.
+                Box(Modifier.size(sizes.playTouch), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        strokeWidth = 3.dp,
+                        modifier = Modifier.size(sizes.playGlyph / 2),
+                    )
+                }
+            } else {
+                TransportGlyph(
+                    icon = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                    contentDescription = stringResource(
+                        if (isPlaying) R.string.pause else R.string.play
+                    ),
+                    glyphSize = sizes.playGlyph,
+                    touchSize = sizes.playTouch,
+                    onClick = {
+                        hapticFeedback.performHapticFeedback(HapticFeedbackType.Confirm)
+                        if (isPlaying) {
+                            PlayerManager.currentController?.pause()
+                        } else {
+                            PlayerManager.currentController?.play()
+                        }
+                    },
+                )
+            }
 
-            SkipButton(
+            TransportGlyph(
                 icon = Icons.Rounded.SkipNext,
                 contentDescription = stringResource(R.string.next),
+                glyphSize = sizes.skipGlyph,
+                touchSize = sizes.skipTouch,
                 onClick = {
                     hapticFeedback.performHapticFeedback(HapticFeedbackType.ContextClick)
                     PlayerManager.skipToNext()
@@ -245,7 +233,7 @@ fun PlayerControls(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 12.dp, bottom = 8.dp),
+                .padding(top = if (compact) 0.dp else 12.dp, bottom = if (compact) 0.dp else 8.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -337,100 +325,42 @@ fun PlayerControls(
             }
         }
     }
-}
-
-/**
- * Central play/pause button whose container morphs between a circle (paused)
- * and a rounded square (playing) by animating the corner radius.
- */
-@Composable
-private fun PlayPauseMorphButton(
-    isPlaying: Boolean,
-    isLoading: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val pressScale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1f,
-        animationSpec = tween(durationMillis = if (isPressed) 90 else 140),
-        label = "playPausePressScale",
-    )
-    val cornerRadius: Dp by animateDpAsState(
-        targetValue = if (isPlaying && !isLoading) {
-            22.dp
-        } else {
-            PlayPauseButtonSize / 2
-        },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow,
-        ),
-        label = "playPauseCornerRadius"
-    )
-
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(cornerRadius),
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        interactionSource = interactionSource,
-        modifier = modifier
-            .minimumInteractiveComponentSize()
-            .size(PlayPauseButtonSize)
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-            },
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            if (isLoading) {
-                CircularWavyProgressIndicator(
-                    modifier = Modifier.size(28.dp),
-                )
-            } else {
-                val icon = if (isPlaying) {
-                    Icons.Rounded.Pause
-                } else {
-                    Icons.Rounded.PlayArrow
-                }
-                Icon(
-                    imageVector = icon,
-                    contentDescription = if (isPlaying) {
-                        stringResource(R.string.pause)
-                    } else {
-                        stringResource(R.string.play)
-                    },
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-        }
     }
 }
 
-/**
- * Previous/Next skip button: tonal container tinted by the animated artwork
- * color scheme, no outline.
- */
+/** A bare transport glyph that gives under the finger. */
 @Composable
-private fun SkipButton(
+private fun TransportGlyph(
     icon: ImageVector,
-    contentDescription: String?,
+    contentDescription: String,
+    glyphSize: Dp,
+    touchSize: Dp,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    FilledTonalIconButton(
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.88f else 1f,
+        animationSpec = tween(durationMillis = if (pressed) 90 else 140),
+        label = "transportGlyphScale",
+    )
+    IconButton(
         onClick = onClick,
-        shapes = IconButtonDefaults.shapes(),
-        modifier = modifier
-            .minimumInteractiveComponentSize()
-            .size(SkipButtonSize),
+        interactionSource = interactionSource,
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        modifier = Modifier.size(touchSize),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            modifier = Modifier.size(30.dp)
+            modifier = Modifier
+                .size(glyphSize)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
         )
     }
 }

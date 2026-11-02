@@ -2,6 +2,8 @@
 
 package ca.ilianokokoro.umihi.music.ui.components.home
 
+import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
+import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,18 +39,7 @@ fun HomeFeedSectionRow(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    Column(modifier.fillMaxWidth()) {
-        if (section.title.isNotBlank()) {
-            Text(
-                text = localizedApiSectionTitle(section.title),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
+    Shelf(title = localizedApiSectionTitle(section.title), modifier = modifier) {
             itemsIndexed(
                 items = section.items,
                 key = { index, item -> "${section.title}-$index-$item" },
@@ -87,33 +78,13 @@ fun HomeFeedSectionRow(
                     }
                 }
 
-                Column(
-                    modifier = Modifier.width(160.dp).clickable(onClick = onClick),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    SquareImage(
-                        uri = thumbnail,
-                        modifier = Modifier.fillMaxWidth(),
-                        cornerRadius = if (item is HomeFeedItem.Artist) 80.dp else 18.dp,
-                    )
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.basicMarquee(),
-                    )
-                    if (subtitle.isNotBlank()) {
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+                ShelfCard(
+                    title = title,
+                    subtitle = subtitle,
+                    artworkUri = thumbnail,
+                    onClick = onClick,
+                    circular = item is HomeFeedItem.Artist,
+                )
             }
-        }
     }
 }

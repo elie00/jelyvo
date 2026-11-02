@@ -86,6 +86,8 @@ import ca.ilianokokoro.umihi.music.ui.screens.settings.SettingsScreen
 import ca.ilianokokoro.umihi.music.ui.screens.stats.ListeningStatsScreen
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
 import ca.ilianokokoro.umihi.music.models.PlaylistInfo
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 
 @Composable
@@ -116,6 +118,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
     val bottomDockState = remember { BottomDockState() }
     val navigationFocusRequester = remember { FocusRequester() }
     var dockHeightPixels by remember { mutableIntStateOf(0) }
+    val dockHazeState = remember { HazeState() }
     BackHandler(enabled = showFullPlayer) { showFullPlayer = false }
 
     // Every navigation starts with the dock revealed again.
@@ -289,6 +292,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
             NavDisplay(
                 modifier = Modifier
                     .fillMaxSize()
+                    .hazeSource(dockHazeState)
                     .nestedScroll(bottomDockState.nestedScrollConnection),
                 backStack = backStack,
                 onBack = backStack::safePop,
@@ -566,6 +570,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     playbackEngine = Media3PlaybackEngine,
                     showMiniPlayer =
                         screenConfig.showMiniPlayer && !showPermanentPlaybackPane,
+                    hazeState = dockHazeState,
                     onMiniPlayerPressed = { showFullPlayer = true },
                     artworkModifier = artworkModifier,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -583,6 +588,7 @@ fun NavigationRoot(modifier: Modifier = Modifier) {
                     ),
                 ) {
                     BottomNavigationBar(
+                        hazeState = dockHazeState,
                         currentTab = screenConfig.selectedTab,
                         onTabSelected = ::selectRootTab,
                     )

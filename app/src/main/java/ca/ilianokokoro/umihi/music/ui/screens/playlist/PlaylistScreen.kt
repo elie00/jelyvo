@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +26,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -48,19 +51,20 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
-import ca.ilianokokoro.umihi.music.ui.components.FadingStatusBarWrapper
-import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
+import ca.ilianokokoro.umihi.music.ui.components.playlist.SpecialPlaylistCover
+import ca.ilianokokoro.umihi.music.ui.components.playlist.specialPlaylistCover
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.components.PlaylistHeader
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
-import ca.ilianokokoro.umihi.music.ui.components.playlist.SpecialPlaylistCover
-import ca.ilianokokoro.umihi.music.ui.components.playlist.specialPlaylistCover
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun PlaylistScreen(
@@ -99,12 +103,14 @@ fun PlaylistScreen(
         }
     }
 
-    FadingStatusBarWrapper {
+    Box(Modifier.fillMaxSize()) {
 
+        val hazeState = remember { HazeState() }
         Scaffold(topBar = {
             if (uiState.showingSearch) {
                 TopAppBar(
-                    modifier = modifier,
+                    colors = frostedTopAppBarColors(),
+                    modifier = modifier.frosted(hazeState),
                     navigationIcon = {
                         BackButton(onBack = onBack)
                     },
@@ -141,6 +147,8 @@ fun PlaylistScreen(
                 )
             } else {
                 TopAppBar(
+                    colors = frostedTopAppBarColors(),
+                    modifier = Modifier.frosted(hazeState),
                     title = {
                         val displayTitle = if (specialPlaylistCover(playlistInfo.id) == SpecialPlaylistCover.Liked) {
                             stringResource(R.string.liked_songs)
@@ -151,9 +159,7 @@ fun PlaylistScreen(
                             displayTitle,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                                fontFamily = nunitoFontFamily()
-                            )
+                            style = MaterialTheme.typography.titleMedium
                         )
                     },
                     navigationIcon = {
@@ -258,14 +264,26 @@ fun PlaylistScreen(
                         }
 
                     } else {
+                        val pullToRefreshState = rememberPullToRefreshState()
                         PullToRefreshBox(
                             isRefreshing = uiState.isRefreshing,
                             onRefresh = playlistViewModel::refreshPlaylistInfo,
+                            state = pullToRefreshState,
+                            // Drawn below the bar, which would otherwise hide it.
+                            indicator = {
+                                PullToRefreshDefaults.Indicator(
+                                    state = pullToRefreshState,
+                                    isRefreshing = uiState.isRefreshing,
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .padding(top = paddingValues.calculateTopPadding()),
+                                )
+                            },
                             modifier = modifier
                                 .fillMaxSize()
                         ) {
                             LazyColumn(
-                                modifier = modifier.fillMaxSize(),
+                                modifier = modifier.fillMaxSize().hazeSource(hazeState),
                                 contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING)
                             ) {
                                 item { Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding())) }

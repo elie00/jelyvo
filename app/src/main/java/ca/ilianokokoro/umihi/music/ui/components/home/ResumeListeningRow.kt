@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.ui.components.home
 
+import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
+import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -45,16 +47,7 @@ fun ResumeListeningRow(
     onRemoveFromHistory: (ResumeItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = stringResource(R.string.resume_listening),
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
-        ) {
+    Shelf(title = stringResource(R.string.resume_listening), modifier = modifier) {
             items(items = items, key = { it.song.youtubeId }) { item ->
                 ResumeCard(
                     item = item,
@@ -62,7 +55,6 @@ fun ResumeListeningRow(
                     onRemoveFromHistory = { onRemoveFromHistory(item) },
                 )
             }
-        }
     }
 }
 
@@ -80,46 +72,32 @@ private fun ResumeCard(
         PlayerManager.prewarmStream(context, song)
     }
     Box {
-        Column(
+        ShelfCard(
             modifier = Modifier
-                .width(136.dp)
-                .keyboardFocusOutline(RoundedCornerShape(20.dp))
+                .keyboardFocusOutline(RoundedCornerShape(16.dp))
                 .songDragAndDropSource(song)
                 .onKeyboardContextMenu { menuExpanded = true }
-                .onSecondaryClick { menuExpanded = true }
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = { menuExpanded = true },
-                ),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            SquareImage(
-                uri = song.thumbnailPath ?: song.thumbnailHref,
-                modifier = Modifier.fillMaxWidth(),
-                cornerRadius = 18.dp,
-            )
-            LinearProgressIndicator(
-                progress = { item.progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-            )
-            Text(
-                text = song.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.basicMarquee()
-            )
-            Text(
-                text = song.artist,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+                .onSecondaryClick { menuExpanded = true },
+            title = song.title,
+            subtitle = song.artist,
+            artworkUri = song.thumbnailPath ?: song.thumbnailHref,
+            onClick = onClick,
+            onLongClick = { menuExpanded = true },
+            belowArtwork = {
+                LinearProgressIndicator(
+                    progress = { item.progress },
+                    drawStopIndicator = {},
+                    gapSize = 0.dp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    trackColor = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier
+                        .padding(top = 6.dp)
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp)),
+                )
+            },
+        )
         HistoryCardMenu(
             expanded = menuExpanded,
             onDismiss = { menuExpanded = false },

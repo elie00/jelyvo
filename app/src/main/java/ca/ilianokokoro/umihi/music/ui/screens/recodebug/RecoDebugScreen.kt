@@ -38,6 +38,7 @@ import ca.ilianokokoro.umihi.music.core.reco.DayBucket
 import ca.ilianokokoro.umihi.music.core.reco.RecoWeights
 import ca.ilianokokoro.umihi.music.core.reco.SourceContextHealth
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -56,7 +57,13 @@ fun RecoDebugScreen(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.reco_debug_title)) },
+                colors = frostedTopAppBarColors(),
+                title = {
+                    Text(
+                        stringResource(R.string.reco_debug_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
                 navigationIcon = { BackButton(onBack = onBack) },
                 actions = {
                     IconButton(

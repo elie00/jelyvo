@@ -26,6 +26,14 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
+import ca.ilianokokoro.umihi.music.core.jam.JamIdentity
+import ca.ilianokokoro.umihi.music.core.jam.JamManager
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmAuthException
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmClient
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmRequests
+import ca.ilianokokoro.umihi.music.core.scrobbling.ListenBrainzClient
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
 import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
@@ -41,6 +49,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SettingsState())
@@ -71,11 +80,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val settings = datastoreRepository.getSettings()
             val notInterestedCount = datastoreRepository.notInterested.first().size
+            val listenBrainzConnected = datastoreRepository.listenBrainzToken.first().isNotBlank()
+            val lastFmConnected = datastoreRepository.lastFmCredentials.first() != null
             _uiState.update {
                 _uiState.value.copy(
                     screenState = ScreenState.Success(settings = settings),
                     notInterestedCount = notInterestedCount,
                     stabilityReport = StabilityDiagnostics.latest(_application),
+                    listenBrainzConnected = listenBrainzConnected,
+                    lastFmConnected = lastFmConnected,
                 )
             }
         }
@@ -98,6 +111,153 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _application.getString(R.string.stability_report_share),
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         _application.startActivity(chooser)
+    }
+
+    init {
+        viewModelScope.launch {
+            JamManager.status.collect { status ->
+                _uiState.update { it.copy(jamStatus = status) }
+            }
+        }
+        viewModelScope.launch {
+            datastoreRepository.jamServerUrl.collect { url ->
+                _uiState.update { it.copy(jamServerUrl = url) }
+            }
+        }
+    }
+
+    fun updateShowJamDialog(value: Boolean) {
+        JamManager.clearFailure()
+        _uiState.update { it.copy(showJamDialog = value) }
+    }
+
+    fun createJam(serverUrl: String) {
+        viewModelScope.launch {
+            datastoreRepository.save(PreferenceKeys.JAM_SERVER_URL, serverUrl)
+            JamManager.create(serverUrl, jamIdentity())
+        }
+    }
+
+    fun joinJam(serverUrl: String, code: String) {
+        viewModelScope.launch {
+            datastoreRepository.save(PreferenceKeys.JAM_SERVER_URL, serverUrl)
+            JamManager.join(serverUrl, code, jamIdentity())
+        }
+    }
+
+    fun leaveJam() {
+        viewModelScope.launch { JamManager.leave() }
+    }
+
+    private suspend fun jamIdentity() = JamIdentity(
+        deviceId = datastoreRepository.jamDeviceId(),
+        displayName = datastoreRepository.getSettings().profileName.ifBlank { "Jelyvo" },
+    )
+
+    // Held between the browser approval's two steps. Never put in the UI state.
+    private var pendingLastFmAuth: PendingLastFmAuth? = null
+
+    private class PendingLastFmAuth(val apiKey: String, val secret: String, val token: String)
+
+    fun updateShowLastFmDialog(value: Boolean) {
+        if (!value) pendingLastFmAuth = null
+        _uiState.update {
+            it.copy(showLastFmDialog = value, lastFmError = null, lastFmAuthorizeUrl = null)
+        }
+    }
+
+    fun requestLastFmApproval(rawApiKey: String, rawSecret: String) {
+        val apiKey = rawApiKey.trim()
+        val secret = rawSecret.trim()
+        runLastFmStep {
+            val token = LastFmClient.requestToken(apiKey, secret)
+            pendingLastFmAuth = PendingLastFmAuth(apiKey, secret, token)
+            _uiState.update {
+                it.copy(lastFmAuthorizeUrl = LastFmRequests.authorizeUrl(apiKey, token))
+            }
+        }
+    }
+
+    fun finishLastFmApproval() {
+        val pending = pendingLastFmAuth ?: return
+        runLastFmStep {
+            val sessionKey = LastFmClient.requestSessionKey(
+                pending.apiKey,
+                pending.secret,
+                pending.token,
+            )
+            datastoreRepository.saveLastFmCredentials(
+                LastFmCredentials(pending.apiKey, pending.secret, sessionKey)
+            )
+            pendingLastFmAuth = null
+            _uiState.update {
+                it.copy(
+                    lastFmConnected = true,
+                    showLastFmDialog = false,
+                    lastFmAuthorizeUrl = null,
+                )
+            }
+        }
+    }
+
+    fun disconnectLastFm() {
+        viewModelScope.launch {
+            datastoreRepository.saveLastFmCredentials(null)
+            _uiState.update { it.copy(lastFmConnected = false, showLastFmDialog = false) }
+        }
+    }
+
+    private fun runLastFmStep(step: suspend () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(lastFmBusy = true, lastFmError = null) }
+            val error = try {
+                step()
+                null
+            } catch (_: LastFmAuthException) {
+                R.string.lastfm_auth_failed
+            } catch (_: IOException) {
+                R.string.lastfm_unreachable
+            }
+            _uiState.update { it.copy(lastFmBusy = false, lastFmError = error) }
+        }
+    }
+
+    fun updateShowListenBrainzDialog(value: Boolean) {
+        _uiState.update { it.copy(showListenBrainzDialog = value, listenBrainzError = null) }
+    }
+
+    fun connectListenBrainz(rawToken: String) {
+        val token = rawToken.trim()
+        viewModelScope.launch {
+            _uiState.update { it.copy(listenBrainzConnecting = true, listenBrainzError = null) }
+            val error = try {
+                if (ListenBrainzClient.isTokenValid(token)) {
+                    datastoreRepository.saveListenBrainzToken(token)
+                    null
+                } else {
+                    R.string.listenbrainz_invalid_token
+                }
+            } catch (_: IOException) {
+                R.string.listenbrainz_unreachable
+            }
+            _uiState.update {
+                it.copy(
+                    listenBrainzConnecting = false,
+                    listenBrainzError = error,
+                    listenBrainzConnected = error == null,
+                    showListenBrainzDialog = error != null,
+                )
+            }
+        }
+    }
+
+    fun disconnectListenBrainz() {
+        viewModelScope.launch {
+            datastoreRepository.saveListenBrainzToken("")
+            _uiState.update {
+                it.copy(listenBrainzConnected = false, showListenBrainzDialog = false)
+            }
+        }
     }
 
     fun clearLogins() {
