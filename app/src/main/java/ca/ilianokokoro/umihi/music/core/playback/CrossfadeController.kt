@@ -12,6 +12,12 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
+/**
+ * One crossfade: when it starts in the outgoing track, how long it lasts, and where in the incoming
+ * track it enters.
+ */
+data class PlannedFade(val startMs: Long, val fadeMs: Long, val incomingCueMs: Long = 0L)
+
 /** The timing rules of a crossfade, free of any player so they can be tested. */
 object CrossfadeRules {
     /** Shorter fades are transitions the existing volume fade already handles cleanly. */
@@ -35,6 +41,16 @@ object CrossfadeRules {
 
     /** The position in the outgoing track at which the fade begins. */
     fun fadeStartMs(durationMs: Long, fadeMs: Long): Long = durationMs - fadeMs
+
+    /** A plain fade over the very end of the track. */
+    fun plainFade(durationMs: Long, fadeMs: Long): PlannedFade =
+        PlannedFade(startMs = fadeStartMs(durationMs, fadeMs), fadeMs = fadeMs)
+
+    fun shouldArm(positionMs: Long, fade: PlannedFade): Boolean =
+        positionMs in (fade.startMs - ARM_LEAD_MS) until fade.startMs
+
+    fun isTooLateToStart(positionMs: Long, fade: PlannedFade): Boolean =
+        positionMs > fade.startMs + START_SLACK_MS
 
     fun shouldArm(positionMs: Long, durationMs: Long, fadeMs: Long): Boolean {
         val start = fadeStartMs(durationMs, fadeMs)
@@ -61,13 +77,14 @@ class CrossfadeController(
     private val main: ExoPlayer,
     private val createTail: () -> ExoPlayer,
     private val scope: CoroutineScope,
-    private val fadeDurationMs: () -> Long,
+    /** The fade this track should end with, or null to leave the transition alone. */
+    private val planFade: (durationMs: Long) -> PlannedFade?,
     private val isAllowed: () -> Boolean,
     private val targetVolume: () -> Float,
 ) {
     private sealed interface State {
         data object Idle : State
-        data class Armed(val mediaId: String, val startMs: Long) : State
+        data class Armed(val mediaId: String, val fade: PlannedFade) : State
         data class Fading(
             val startedAtNanos: Long,
             val fadeMs: Long,
@@ -117,18 +134,17 @@ class CrossfadeController(
         }
     }
 
-    private fun eligible(): Boolean =
+    private fun eligible(fadeMs: Long): Boolean =
         isAllowed() && main.hasNextMediaItem() && main.repeatMode != Player.REPEAT_MODE_ONE &&
             main.videoSize.width <= 0 &&
-            CrossfadeRules.canOverlap(fadeDurationMs(), main.duration)
+            CrossfadeRules.canOverlap(fadeMs, main.duration)
 
     private fun armIfDue() {
-        if (!main.isPlaying || !eligible()) return
-        val fadeMs = fadeDurationMs()
-        val duration = main.duration
-        if (!CrossfadeRules.shouldArm(main.currentPosition, duration, fadeMs)) return
+        if (!main.isPlaying || !isAllowed() || main.duration <= 0L) return
+        val fade = planFade(main.duration) ?: return
+        if (!eligible(fade.fadeMs)) return
+        if (!CrossfadeRules.shouldArm(main.currentPosition, fade)) return
         val item = main.currentMediaItem ?: return
-        val startMs = CrossfadeRules.fadeStartMs(duration, fadeMs)
 
         val player = tail ?: createTail().also { created ->
             created.addListener(object : Player.Listener {
@@ -143,22 +159,23 @@ class CrossfadeController(
         player.playbackParameters = main.playbackParameters
         player.volume = 0f
         player.playWhenReady = false
-        player.setMediaItem(item, startMs)
+        player.setMediaItem(item, fade.startMs)
         player.prepare()
-        state = State.Armed(item.mediaId, startMs)
+        state = State.Armed(item.mediaId, fade)
     }
 
     private fun startIfDue(armed: State.Armed) {
-        val fadeMs = fadeDurationMs()
+        // The plan is fixed once armed: the tail is already waiting at its start position.
+        val fade = armed.fade
         val position = main.currentPosition
-        val stillValid = main.playWhenReady && eligible() &&
+        val stillValid = main.playWhenReady && eligible(fade.fadeMs) &&
             main.currentMediaItem?.mediaId == armed.mediaId &&
-            !CrossfadeRules.isTooLateToStart(position, main.duration, fadeMs)
+            !CrossfadeRules.isTooLateToStart(position, fade)
         if (!stillValid) {
             abandon()
             return
         }
-        if (position < armed.startMs) return
+        if (position < fade.startMs) return
 
         val player = tail
         if (player == null || player.playbackState != Player.STATE_READY) {
@@ -169,8 +186,12 @@ class CrossfadeController(
         player.volume = volume
         player.play()
         main.volume = 0f
-        main.seekToNextMediaItem()
-        state = State.Fading(System.nanoTime(), fadeMs, volume)
+        if (fade.incomingCueMs > 0L) {
+            main.seekTo(main.nextMediaItemIndex, fade.incomingCueMs)
+        } else {
+            main.seekToNextMediaItem()
+        }
+        state = State.Fading(System.nanoTime(), fade.fadeMs, volume)
     }
 
     private fun advance(fading: State.Fading) {

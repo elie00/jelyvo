@@ -1,15 +1,17 @@
 package ca.ilianokokoro.umihi.music.services
 
-import androidx.annotation.OptIn
 import android.app.PendingIntent
 import android.content.Intent
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.audiofx.AudioEffect
+import android.net.ConnectivityManager
 import android.net.Uri
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
+import androidx.glance.appwidget.updateAll
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Format
@@ -17,8 +19,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Timeline
+import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.util.ExperimentalApi
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.util.Util
@@ -35,71 +37,78 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.CacheBitmapLoader
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.glance.appwidget.updateAll
+import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.automix.LevelAnalysis
+import ca.ilianokokoro.umihi.music.automix.TrackAnalysis
+import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
-import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.cast.planCastHandover
 import ca.ilianokokoro.umihi.music.core.datasources.HdVideoMediaSourceFactory
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
+import ca.ilianokokoro.umihi.music.core.jam.JamBridge
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
+import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
+import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
+import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueSourceType
-import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
-import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
-import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
-import ca.ilianokokoro.umihi.music.core.jam.JamBridge
+import ca.ilianokokoro.umihi.music.core.playback.AutomixAnalyses
+import ca.ilianokokoro.umihi.music.core.playback.AutomixPlanner
 import ca.ilianokokoro.umihi.music.core.playback.CrossfadeController
+import ca.ilianokokoro.umihi.music.core.playback.CrossfadeRules
+import ca.ilianokokoro.umihi.music.core.playback.PlannedFade
+import ca.ilianokokoro.umihi.music.core.playback.TrackLevelReader
+import ca.ilianokokoro.umihi.music.core.reco.TasteProfileRepository
 import ca.ilianokokoro.umihi.music.core.scrobbling.DatastorePendingScrobbleStore
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmSink
 import ca.ilianokokoro.umihi.music.core.scrobbling.ListenBrainzSink
 import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleCoordinator
 import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleDelivery
 import ca.ilianokokoro.umihi.music.core.scrobbling.toScrobbleTrack
+import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
-import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
-import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
-import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
-import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
+import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
-import ca.ilianokokoro.umihi.music.core.reco.TasteProfileRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
-import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayerQueueRepository
+import ca.ilianokokoro.umihi.music.data.repositories.PlaylistRepository
 import ca.ilianokokoro.umihi.music.data.repositories.RadioRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
-import ca.ilianokokoro.umihi.music.models.PlayEvent
-import ca.ilianokokoro.umihi.music.models.Song
-import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.extensions.cappedTo
 import ca.ilianokokoro.umihi.music.extensions.toSong
-import ca.ilianokokoro.umihi.music.models.adapters.toTrack
+import ca.ilianokokoro.umihi.music.models.PlayEvent
 import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
+import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.models.UmihiSettings
+import ca.ilianokokoro.umihi.music.models.adapters.toTrack
+import ca.ilianokokoro.umihi.music.wear.WearPlaybackStatePublisher
 import ca.ilianokokoro.umihi.music.widget.PlaybackWidget
 import ca.ilianokokoro.umihi.music.widget.PlaybackWidgetStateStore
-import ca.ilianokokoro.umihi.music.wear.WearPlaybackStatePublisher
+import java.io.File
+import kotlin.uuid.Uuid
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.io.File
-import kotlin.uuid.Uuid
 
 @UnstableApi
 class PlaybackService : MediaLibraryService() {
@@ -123,6 +132,8 @@ class PlaybackService : MediaLibraryService() {
     @Volatile private var normalizeVolumeEnabled = true
     @Volatile private var crossfadeMs = 0L
     @Volatile private var smartTransitionsEnabled = true
+    @Volatile private var automixEnabled = false
+    private lateinit var automix: AutomixAnalyses
     @Volatile private var resumeOnAudioConnect = false
     // Set only when ExoPlayer pauses because the output vanished (becoming-noisy), so a manual
     // pause never triggers the resume-on-connect behaviour.
@@ -239,6 +250,11 @@ class PlaybackService : MediaLibraryService() {
                 )
             )
             .build()
+        val levelReader = TrackLevelReader(resolvingFactory)
+        automix = AutomixAnalyses(
+            scope = CoroutineScope(serviceScope.coroutineContext + Dispatchers.Main),
+            analyze = { id -> analyzeForAutomix(id, levelReader) },
+        )
         crossfade = CrossfadeController(
             main = player,
             createTail = {
@@ -250,8 +266,8 @@ class PlaybackService : MediaLibraryService() {
                     .build()
             },
             scope = CoroutineScope(serviceScope.coroutineContext + Dispatchers.Main),
-            fadeDurationMs = ::fadeDurationMs,
-            isAllowed = { !isCasting && crossfadeMs > 0L },
+            planFade = ::planFade,
+            isAllowed = { !isCasting && (crossfadeMs > 0L || automixEnabled) },
             targetVolume = { normalizedVolume },
         )
         crossfade.start()
@@ -590,6 +606,7 @@ class PlaybackService : MediaLibraryService() {
         queuePersistenceJob?.cancel()
         volumeFadeJob?.cancel()
         if (::crossfade.isInitialized) crossfade.release()
+        if (::automix.isInitialized) automix.release()
         if (queueRestoreComplete && ::player.isInitialized) {
             val snapshot = captureQueueSnapshot()
             runBlocking(Dispatchers.IO) {
@@ -829,6 +846,53 @@ class PlaybackService : MediaLibraryService() {
         )
     }
 
+    private fun planFade(durationMs: Long): PlannedFade? {
+        if (!automixEnabled) return CrossfadeRules.plainFade(durationMs, fadeDurationMs())
+        val current = player.currentMediaItem ?: return null
+        val next = player.nextMediaItemIndex.takeIf { it != C.INDEX_UNSET }
+            ?.let(player::getMediaItemAt)
+            ?: return null
+        automix.want(listOf(current.mediaId, next.mediaId))
+        val isAlbum = PlayerManager.queueProvenance.value?.type == QueueSourceType.Album
+        return AutomixPlanner.plan(
+            current = current,
+            next = next,
+            currentAnalysis = automix[current.mediaId],
+            nextAnalysis = automix[next.mediaId],
+            positionMs = player.currentPosition,
+            durationMs = durationMs,
+            fadeSeconds = automixFadeSeconds(isAlbum),
+            playingAnAlbum = isAlbum,
+        )
+    }
+
+    /** What Automix falls back on where a track tells it nothing: the listener's fade if any. */
+    private fun automixFadeSeconds(isAlbum: Boolean): Double {
+        val configured = if (isAlbum) 0L else maxOf(crossfadeMs, fadeDurationMs())
+        return (if (configured >= CrossfadeRules.MIN_OVERLAP_MS) configured else DEFAULT_AUTOMIX_FADE_MS) / 1000.0
+    }
+
+    /**
+     * Reads a track's loudness for Automix. Reading fetches whatever is not stored yet, so on a
+     * metered connection only files already on the device are read.
+     */
+    private suspend fun analyzeForAutomix(id: String, reader: TrackLevelReader): TrackAnalysis? {
+        val item = findQueuedItem(id) ?: return null
+        val uri = item.localConfiguration?.uri ?: return null
+        // A download keeps its YouTube address in the queue; playback resolves it to the file.
+        val isLocal = uri.scheme == "file" || uri.scheme == "content" ||
+            AppDatabase.getInstance(application).songRepository().getSong(id)?.audioFilePath != null
+        val connectivity = getSystemService(ConnectivityManager::class.java)
+        if (!isLocal && connectivity?.isActiveNetworkMetered != false) return null
+        val levels = reader.read(uri) ?: return null
+        return withContext(Dispatchers.Default) { LevelAnalysis.analyze(id, levels) }
+    }
+
+    private fun findQueuedItem(id: String): MediaItem? =
+        (0 until player.mediaItemCount).asSequence()
+            .map(player::getMediaItemAt)
+            .firstOrNull { it.mediaId == id }
+
     /**
      * Fade length applied around an automatic track transition. When the user has set a crossfade
      * duration it wins; otherwise the short default fade keeps loudness-normalized gapless
@@ -852,6 +916,7 @@ class PlaybackService : MediaLibraryService() {
             datastoreRepository.settings.collectLatest { settings ->
                 crossfadeMs = settings.crossfadeSeconds.coerceIn(0, 12) * 1000L
                 smartTransitionsEnabled = settings.smartTransitions
+                automixEnabled = settings.automix
                 resumeOnAudioConnect = settings.resumeOnAudioConnect
                 val normalizeChanged = normalizeVolumeEnabled != settings.normalizeVolume
                 normalizeVolumeEnabled = settings.normalizeVolume
@@ -1252,6 +1317,7 @@ class PlaybackService : MediaLibraryService() {
         const val ACTION_WIDGET_NEXT =
             "ca.ilianokokoro.umihi.music.action.WIDGET_NEXT"
         private const val AUDIO_FADE_DURATION_MS = 450L
+        const val DEFAULT_AUTOMIX_FADE_MS = 6_000L
         private const val AUDIO_FADE_POLL_INTERVAL_MS = 30L
         private const val QUEUE_CHANGE_DEBOUNCE_MS = 350L
         private const val QUEUE_POSITION_SAVE_INTERVAL_MS = 5_000L

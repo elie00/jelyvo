@@ -262,6 +262,7 @@ dependencies {
     implementation(project(":music-core"))
     implementation(project(":music-youtube"))
     implementation(project(":music-ui"))
+    implementation(project(":automix"))
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

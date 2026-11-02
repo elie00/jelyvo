@@ -11,39 +11,40 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
+import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.core.jam.DEFAULT_JAM_SERVER_URL
+import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
+import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleTrack
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUDIO_QUALITY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOMIX
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_LIKED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_QUOTA_GB
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_DOWNLOAD_WIFI_ONLY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SAVER_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTO_UPDATE
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.COOKIES
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.CROSSFADE_SECONDS
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SAVER_ON_METERED
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DATA_SYNC_ID
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.DOWNLOAD_ON_METERED
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.KEEP_SCREEN_ON
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.LAST_STREAM_QUALITY
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NORMALIZE_VOLUME
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.RESUME_ON_AUDIO_CONNECT
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
-import ca.ilianokokoro.umihi.music.core.ResponseCache
-import ca.ilianokokoro.umihi.music.core.managers.LikeManager
-import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
-import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleTrack
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
@@ -54,10 +55,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.encodeToString
@@ -85,6 +86,7 @@ class DatastoreRepository(private val context: Context) {
         val AUTOPLAY = booleanPreferencesKey(Constants.Datastore.AUTOPLAY)
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
         val SMART_TRANSITIONS = booleanPreferencesKey(Constants.Datastore.SMART_TRANSITIONS)
+        val AUTOMIX = booleanPreferencesKey(Constants.Datastore.AUTOMIX)
         val NORMALIZE_VOLUME = booleanPreferencesKey(Constants.Datastore.NORMALIZE_VOLUME)
         val RESUME_ON_AUDIO_CONNECT =
             booleanPreferencesKey(Constants.Datastore.RESUME_ON_AUDIO_CONNECT)
@@ -142,6 +144,7 @@ class DatastoreRepository(private val context: Context) {
         val autoplay = it[AUTOPLAY] ?: true
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
         val smartTransitions = it[SMART_TRANSITIONS] ?: true
+        val automix = it[AUTOMIX] ?: false
         val normalizeVolume = it[NORMALIZE_VOLUME] ?: true
         val resumeOnAudioConnect = it[RESUME_ON_AUDIO_CONNECT] ?: false
         val sleepTimerDefaultMinutes = (it[SLEEP_TIMER_DEFAULT_MINUTES]
@@ -189,6 +192,7 @@ class DatastoreRepository(private val context: Context) {
             autoplay = autoplay,
             crossfadeSeconds = crossfadeSeconds,
             smartTransitions = smartTransitions,
+            automix = automix,
             normalizeVolume = normalizeVolume,
             resumeOnAudioConnect = resumeOnAudioConnect,
             sleepTimerDefaultMinutes = sleepTimerDefaultMinutes,
