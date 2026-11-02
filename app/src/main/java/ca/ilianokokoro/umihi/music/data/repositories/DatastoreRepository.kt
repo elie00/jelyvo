@@ -41,6 +41,7 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
+import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleTrack
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
 import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
@@ -99,6 +100,7 @@ class DatastoreRepository(private val context: Context) {
         val AUTO_DOWNLOAD_QUOTA_GB = intPreferencesKey(Constants.Datastore.AUTO_DOWNLOAD_QUOTA_GB)
         val RECENT_SEARCHES = stringPreferencesKey(Constants.Datastore.RECENT_SEARCHES)
         val NOT_INTERESTED = stringPreferencesKey(Constants.Datastore.NOT_INTERESTED)
+        val LISTENBRAINZ_TOKEN = stringPreferencesKey(Constants.Datastore.LISTENBRAINZ_TOKEN)
     }
 
     suspend fun <T> save(key: Preferences.Key<T>, value: T) {
@@ -399,6 +401,46 @@ class DatastoreRepository(private val context: Context) {
         ResponseCache.clear()
         LikeManager.reset()
     }
+
+    /** The user's ListenBrainz token, empty when not connected or no longer decryptable. */
+    val listenBrainzToken: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[PreferenceKeys.LISTENBRAINZ_TOKEN]?.let(KeystoreCrypto::decrypt).orEmpty()
+    }
+
+    /** Stores the token encrypted. Blank disconnects, and so does a failed encryption. */
+    suspend fun saveListenBrainzToken(token: String) {
+        val stored = token.takeIf { it.isNotBlank() }?.let(KeystoreCrypto::encrypt)
+        context.dataStore.edit {
+            if (stored == null) {
+                it.remove(PreferenceKeys.LISTENBRAINZ_TOKEN)
+            } else {
+                it[PreferenceKeys.LISTENBRAINZ_TOKEN] = stored
+            }
+        }
+    }
+
+    /** Listens waiting for a scrobbling service, under that service's own preference key. */
+    suspend fun readPendingScrobbles(key: String): List<ScrobbleTrack> =
+        decodePendingScrobbles(context.dataStore.data.first()[stringPreferencesKey(key)])
+
+    suspend fun updatePendingScrobbles(
+        key: String,
+        transform: (List<ScrobbleTrack>) -> List<ScrobbleTrack>,
+    ) {
+        val preferenceKey = stringPreferencesKey(key)
+        context.dataStore.edit { prefs ->
+            val updated = transform(decodePendingScrobbles(prefs[preferenceKey]))
+            if (updated.isEmpty()) {
+                prefs.remove(preferenceKey)
+            } else {
+                prefs[preferenceKey] = Json.encodeToString(updated)
+            }
+        }
+    }
+
+    private fun decodePendingScrobbles(stored: String?): List<ScrobbleTrack> =
+        stored?.let { runCatching { Json.decodeFromString<List<ScrobbleTrack>>(it) }.getOrNull() }
+            .orEmpty()
 
     suspend fun logOut() {
         saveCookies(Cookies())
