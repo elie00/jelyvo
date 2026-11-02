@@ -60,6 +60,10 @@ import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.components.playlist.SpecialPlaylistCover
 import ca.ilianokokoro.umihi.music.ui.components.playlist.specialPlaylistCover
 
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun PlaylistScreen(
@@ -100,10 +104,12 @@ fun PlaylistScreen(
 
     FadingStatusBarWrapper {
 
+        val hazeState = remember { HazeState() }
         Scaffold(topBar = {
             if (uiState.showingSearch) {
                 TopAppBar(
-                    modifier = modifier,
+                    colors = frostedTopAppBarColors(),
+                    modifier = modifier.frosted(hazeState),
                     navigationIcon = {
                         BackButton(onBack = onBack)
                     },
@@ -140,6 +146,8 @@ fun PlaylistScreen(
                 )
             } else {
                 TopAppBar(
+                    colors = frostedTopAppBarColors(),
+                    modifier = Modifier.frosted(hazeState),
                     title = {
                         val displayTitle = if (specialPlaylistCover(playlistInfo.id) == SpecialPlaylistCover.Liked) {
                             stringResource(R.string.liked_songs)
@@ -262,7 +270,7 @@ fun PlaylistScreen(
                                 .fillMaxSize()
                         ) {
                             LazyColumn(
-                                modifier = modifier.fillMaxSize(),
+                                modifier = modifier.fillMaxSize().hazeSource(hazeState),
                                 contentPadding = PaddingValues(bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING)
                             ) {
                                 item { Spacer(modifier = Modifier.height(paddingValues.calculateTopPadding())) }
