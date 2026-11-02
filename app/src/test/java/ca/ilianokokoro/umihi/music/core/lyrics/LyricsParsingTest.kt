@@ -1,7 +1,6 @@
 package ca.ilianokokoro.umihi.music.core.lyrics
 
 import ca.ilianokokoro.umihi.music.models.LyricLine
-import ca.ilianokokoro.umihi.music.models.LyricLine
 import ca.ilianokokoro.umihi.music.models.LyricWord
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import kotlinx.serialization.json.Json
