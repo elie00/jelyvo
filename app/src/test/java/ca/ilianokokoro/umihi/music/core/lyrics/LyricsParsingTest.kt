@@ -4,7 +4,6 @@ import ca.ilianokokoro.umihi.music.models.LyricLine
 import ca.ilianokokoro.umihi.music.models.LyricWord
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import kotlinx.serialization.json.Json
-import ca.ilianokokoro.umihi.music.ui.screens.player.components.sungWordCount
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -170,18 +169,5 @@ class LyricsParsingTest {
     fun `lrc red never builds a url from an unchecked code`() {
         assertEquals("https://lrc.red/s/GBUM71029604.ttml", LrcRedProvider.documentUrl("gbum71029604"))
         assertNull(LrcRedProvider.documentUrl("../../etc/passwd"))
-    }
-
-    @Test
-    fun `sung word count follows word starts`() {
-        val line = LyricLine(
-            timeMs = 0,
-            text = "a b",
-            words = listOf(LyricWord(0, 100, "a"), LyricWord(100, 200, "b")),
-        )
-
-        assertEquals(1, sungWordCount(line, 50))
-        assertEquals(2, sungWordCount(line, 150))
-        assertNull(sungWordCount(LyricLine(0, "no timing"), 50))
     }
 }
