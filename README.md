@@ -119,6 +119,9 @@ keystore. Share that keystore between machines if you want to install over an ex
   the Studio theme's layout and type scale**: adapted from
   [BitChord](https://github.com/kushagrasinghx/BitChord) by Kushagra Singh and contributors
   (GPL-3.0). Adapted files say so in their header.
+- **Automix** (`automix/`, under the AGPL-3.0): the transition planner comes from BitChord and
+  [Orchard](https://github.com/SFG5453/Orchard), Copyright (C) 2026 SFG545 and Kushagra Singh. See
+  `automix/NOTICE.md`.
 - **DM Sans**, the Studio theme's typeface: The DM Sans Project Authors, under the SIL Open Font
   License (`music-ui/licenses/OFL-DMSans.txt`).
 - **Translations**: inherited from the upstream project's Crowdin, and still shipped here. This fork

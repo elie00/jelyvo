@@ -9,9 +9,8 @@ Part de `origin/main` en 2.6.12, et remplace `feat/bitchord-port`, construite pa
 Mobile uniquement : `:desktopApp` est seulement compilé, car le thème Studio vit dans `:music-ui`. Aucun essai sur appareil.
 
 - **Fait** : scrobbling ListenBrainz et Last.fm, paroles au mot (lrc.red, BetterLyrics, Unison, LRCLIB), fondu enchaîné à deux lecteurs,
-  écoute à plusieurs (`backend/`, aucun serveur déployé), thème Studio, navigation et barres dépolies (Haze), lecteur, écran des paroles,
-  accueil, recherche.
-- **Reste** : bibliothèque et détails, réglages, Automix.
+  écoute à plusieurs (`worker/` sur Cloudflare, gratuit avec garde-fous, utilisé par défaut ; `backend/` en Go conservé jusqu'au test sur deux téléphones), toute l'interface (thème Studio, navigation et barres dépolies, lecteur, paroles, accueil, recherche, bibliothèque, détails, réglages, écrans secondaires), Automix sans calage sur le tempo (`automix/`, AGPL-3.0).
+- **Reste** : tout tester sur téléphone, calage d'Automix sur le tempo (modèles ONNX, moteur natif).
 - **Test connu en échec sur ce poste** : `WearPlaybackBridgeThreadingTest`, qui cherche un saut de ligne LF alors que le clone Windows est en CRLF.
 - **Captures sans appareil** : `app/build/outputs/theme-showcase`. Toujours faire `git fetch` avant de se fier à `origin/main` depuis ce clone.
 
