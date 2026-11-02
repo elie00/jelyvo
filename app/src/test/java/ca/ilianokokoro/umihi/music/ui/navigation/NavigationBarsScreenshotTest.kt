@@ -28,10 +28,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
-import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.junit.Rule
@@ -61,7 +60,7 @@ class NavigationBarsScreenshotTest {
 
     private fun render(name: String, dark: Boolean, tab: Any) {
         compose.setContent {
-            UmihiMusicTheme(darkTheme = dark, themePreset = ThemePreset.Studio) {
+            StudioTestTheme(dark = dark) {
                 val pageHaze = remember { HazeState() }
                 val dockHaze = remember { HazeState() }
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -126,10 +125,10 @@ class NavigationBarsScreenshotTest {
     fun barsDark() = render("bars-dark", dark = true, tab = HomeScreenKey)
 
     @Test
-    fun barsLight() = render("bars-light", dark = false, tab = SearchScreenKey)
+    fun barsLight() = render("bars-light", dark = false, tab = SearchScreenKey())
 
     // No blur below Android 12: the bars must stay readable on their tint alone.
     @Test
     @Config(sdk = [30])
-    fun barsLightWithoutBlur() = render("bars-light-android11", dark = false, tab = SearchScreenKey)
+    fun barsLightWithoutBlur() = render("bars-light-android11", dark = false, tab = SearchScreenKey())
 }
