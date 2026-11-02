@@ -690,6 +690,60 @@ class YoutubeDataExtractorTest {
         assertNull(song.viewCount)
     }
 
+    /**
+     * Rows of the search "All" tab lead with an unlinked type label in the user's language, so the
+     * artist is the first linked run. Reading the first run made "Song" the artist, which then
+     * broke the lyrics lookup and would have been sent to the scrobbling services.
+     */
+    @Test
+    fun `extractSong skips the type label of a search row`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Get Lucky" } ] } } },
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [
+                    { "text": "Titre" },
+                    { "text": " • " },
+                    { "text": "Daft Punk", "navigationEndpoint": { "browseEndpoint": { "browseId": "UCRr1xG_rK4IVg9wPzDMF7Xw" } } },
+                    { "text": ", " },
+                    { "text": "Pharrell Williams", "navigationEndpoint": { "browseEndpoint": { "browseId": "UCJw8VyOjRJ0jY5OXVZDRN9g" } } }
+                  ] } } },
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "1.9B plays" } ] } } }
+                ],
+                "playlistItemData": { "videoId": "5NV6Rdv1a3I" }
+              }
+            }
+            """
+        )
+
+        assertEquals("Daft Punk", requireNotNull(YoutubeDataExtractor.extractSong(row)).artist)
+    }
+
+    @Test
+    fun `extractSong keeps an artist that has no link`() {
+        val row = Json.parseToJsonElement(
+            """
+            {
+              "musicResponsiveListItemRenderer": {
+                "flexColumns": [
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [ { "text": "Track" } ] } } },
+                  { "musicResponsiveListItemFlexColumnRenderer": { "text": { "runs": [
+                    { "text": "Some Artist" },
+                    { "text": " • " },
+                    { "text": "An Album", "navigationEndpoint": { "browseEndpoint": { "browseId": "MPREb_abc" } } }
+                  ] } } }
+                ],
+                "playlistItemData": { "videoId": "abc" }
+              }
+            }
+            """
+        )
+
+        assertEquals("Some Artist", requireNotNull(YoutubeDataExtractor.extractSong(row)).artist)
+    }
+
     @Test
     fun `extractSong leaves the play count null when the row has none`() {
         val row = Json.parseToJsonElement(

@@ -1593,7 +1593,10 @@ object YoutubeDataExtractor {
         val thumbnailUrl = songContent["thumbnail"]?.let { getBestThumbnailUrl(it) } ?: ""
 
         val title = getSongInfo(songContent, SongInfoType.TITLE)
-        val artist = getSongInfo(songContent, SongInfoType.ARTIST)
+        val artistRef = extractBrowseId(songContent, "UC")
+        // Search rows lead with an unlinked type label ("Song • Daft Punk"), so the first run alone
+        // is only the artist when no run links to one.
+        val artist = artistRef?.second ?: getSongInfo(songContent, SongInfoType.ARTIST)
         val videoId = extractVideoId(songContent) ?: return null
 
 
@@ -1627,7 +1630,6 @@ object YoutubeDataExtractor {
         val isLiked = likeStatus?.let { it == "LIKE" }
 
         val album = extractBrowseId(songContent, "MPRE")
-        val artistRef = extractBrowseId(songContent, "UC")
 
         return Song(
             youtubeId = videoId,
