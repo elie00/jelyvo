@@ -3,11 +3,16 @@
  * Copyright (C) Kushagra Singh and BitChord contributors.
  */
 import { env as rawEnv, exports } from "cloudflare:workers";
-import { runDurableObjectAlarm, runInDurableObject } from "cloudflare:test";
+import { runDurableObjectAlarm, runInDurableObject as runInObject } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
 import { CONFIG, type Env } from "../src/config";
 
 const env = rawEnv as unknown as Env;
+// Its generic signature is too deep for the compiler once the stub is the real class.
+const runInDurableObject = runInObject as (
+  stub: unknown,
+  callback: (instance: any, state: DurableObjectState) => unknown,
+) => Promise<any>;
 const BASE = "https://jam.test";
 let ipCounter = 0;
 /** Every test comes from its own address, so the limits only bite where a test means them to. */
