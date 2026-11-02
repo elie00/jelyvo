@@ -32,7 +32,7 @@ import coil3.request.crossfade
 fun SongThumbnail(
     song: Song,
     modifier: Modifier = Modifier,
-    size: Dp = 60.dp,
+    size: Dp = 56.dp,
 ) {
     val uri = song.thumbnailPath ?: song.thumbnailHref
     if (song.isVideo) {
@@ -68,6 +68,7 @@ fun SongThumbnail(
                 uri = uri,
                 modifier = Modifier.matchParentSize(),
                 requestSize = size,
+            cornerRadius = 8.dp,
             )
         }
     }
