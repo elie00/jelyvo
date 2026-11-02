@@ -38,7 +38,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -81,6 +80,10 @@ import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlin.math.roundToInt
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 /**
  * Distance de defilement au bout de laquelle la barre superieure est totalement opaque.
@@ -136,14 +139,14 @@ fun AlbumScreen(
         ?.page?.name?.ifBlank { albumName }
         ?: albumName
 
+    val hazeState = remember { HazeState() }
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            // Barre collante : le bouton retour reste toujours atteignable, le fond et le
+            // Barre collante : le bouton retour reste toujours atteignable, le verre et le
             // titre n'apparaissent qu'au fur et a mesure du defilement.
-            val containerColor = MaterialTheme.colorScheme.surfaceContainer
-                .copy(alpha = collapseProgress)
             TopAppBar(
+                modifier = Modifier.frosted(hazeState, visibility = collapseProgress),
                 title = {
                     Text(
                         text = topBarTitle,
@@ -156,15 +159,12 @@ fun AlbumScreen(
                 navigationIcon = {
                     BackButton(onBack = onBack)
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = containerColor,
-                    scrolledContainerColor = containerColor,
-                ),
+                colors = frostedTopAppBarColors(),
             )
         }
     ) { paddingValues ->
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().hazeSource(hazeState)
         ) {
             when (state) {
                 is AlbumState.Loading -> {
