@@ -26,6 +26,7 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
+import ca.ilianokokoro.umihi.music.core.scrobbling.ListenBrainzClient
 import ca.ilianokokoro.umihi.music.core.workers.NewReleasesScheduler
 import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SettingsState())
@@ -70,11 +72,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val settings = datastoreRepository.getSettings()
             val notInterestedCount = datastoreRepository.notInterested.first().size
+            val listenBrainzConnected = datastoreRepository.listenBrainzToken.first().isNotBlank()
             _uiState.update {
                 _uiState.value.copy(
                     screenState = ScreenState.Success(settings = settings),
                     notInterestedCount = notInterestedCount,
                     stabilityReport = StabilityDiagnostics.latest(_application),
+                    listenBrainzConnected = listenBrainzConnected,
                 )
             }
         }
@@ -97,6 +101,44 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _application.getString(R.string.stability_report_share),
         ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         _application.startActivity(chooser)
+    }
+
+    fun updateShowListenBrainzDialog(value: Boolean) {
+        _uiState.update { it.copy(showListenBrainzDialog = value, listenBrainzError = null) }
+    }
+
+    fun connectListenBrainz(rawToken: String) {
+        val token = rawToken.trim()
+        viewModelScope.launch {
+            _uiState.update { it.copy(listenBrainzConnecting = true, listenBrainzError = null) }
+            val error = try {
+                if (ListenBrainzClient.isTokenValid(token)) {
+                    datastoreRepository.saveListenBrainzToken(token)
+                    null
+                } else {
+                    R.string.listenbrainz_invalid_token
+                }
+            } catch (_: IOException) {
+                R.string.listenbrainz_unreachable
+            }
+            _uiState.update {
+                it.copy(
+                    listenBrainzConnecting = false,
+                    listenBrainzError = error,
+                    listenBrainzConnected = error == null,
+                    showListenBrainzDialog = error != null,
+                )
+            }
+        }
+    }
+
+    fun disconnectListenBrainz() {
+        viewModelScope.launch {
+            datastoreRepository.saveListenBrainzToken("")
+            _uiState.update {
+                it.copy(listenBrainzConnected = false, showListenBrainzDialog = false)
+            }
+        }
     }
 
     fun clearLogins() {

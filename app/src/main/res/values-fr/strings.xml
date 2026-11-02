@@ -592,4 +592,14 @@
     <string name="add_selection_to_queue">Ajouter la sélection à la file d’attente</string>
     <string name="add_selection_to_playlist">Ajouter la sélection à une playlist</string>
     <string name="selection_already_in_playlist">Tous les titres sélectionnés sont déjà dans cette playlist</string>
+    <string name="scrobbling_section">Scrobbling</string>
+    <string name="listenbrainz_title">ListenBrainz</string>
+    <string name="listenbrainz_subtitle">Envoyer ce que vous écoutez sur votre profil ListenBrainz</string>
+    <string name="listenbrainz_connected">Connecté. Vos écoutes sont envoyées à ListenBrainz.</string>
+    <string name="listenbrainz_token_hint">Collez le jeton utilisateur affiché dans vos réglages sur listenbrainz.org. Il reste chiffré sur cet appareil et n\'est pas inclus dans les sauvegardes.</string>
+    <string name="listenbrainz_token_label">Jeton utilisateur</string>
+    <string name="listenbrainz_connect">Connecter</string>
+    <string name="listenbrainz_disconnect">Déconnecter</string>
+    <string name="listenbrainz_invalid_token">ListenBrainz ne reconnaît pas ce jeton.</string>
+    <string name="listenbrainz_unreachable">Impossible de joindre ListenBrainz. Vérifiez votre connexion et réessayez.</string>
 </resources>

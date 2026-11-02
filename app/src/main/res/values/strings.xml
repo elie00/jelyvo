@@ -606,4 +606,14 @@
     <string name="add_selection_to_queue">Add selection to queue</string>
     <string name="add_selection_to_playlist">Add selection to playlist</string>
     <string name="selection_already_in_playlist">Every selected track is already in this playlist</string>
+    <string name="scrobbling_section">Scrobbling</string>
+    <string name="listenbrainz_title">ListenBrainz</string>
+    <string name="listenbrainz_subtitle">Send what you listen to to your ListenBrainz profile</string>
+    <string name="listenbrainz_connected">Connected. Your listens are being sent to ListenBrainz.</string>
+    <string name="listenbrainz_token_hint">Paste the user token shown on your listenbrainz.org settings page. It stays encrypted on this device and is left out of backups.</string>
+    <string name="listenbrainz_token_label">User token</string>
+    <string name="listenbrainz_connect">Connect</string>
+    <string name="listenbrainz_disconnect">Disconnect</string>
+    <string name="listenbrainz_invalid_token">ListenBrainz doesn\'t recognise this token.</string>
+    <string name="listenbrainz_unreachable">Couldn\'t reach ListenBrainz. Check your connection and try again.</string>
 </resources>

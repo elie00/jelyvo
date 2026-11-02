@@ -112,6 +112,7 @@ import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import coil3.compose.AsyncImage
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.ListenBrainzDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SliderSettingItem
@@ -656,6 +657,25 @@ fun SettingsScreen(
                         }
 
                         SettingsSection(
+                            title = stringResource(R.string.scrobbling_section)
+                        ) {
+                            SettingsItem(
+                                title = stringResource(R.string.listenbrainz_title),
+                                subtitle = stringResource(
+                                    if (uiState.listenBrainzConnected) {
+                                        R.string.listenbrainz_connected
+                                    } else {
+                                        R.string.listenbrainz_subtitle
+                                    }
+                                ),
+                                leadingIcon = Icons.Outlined.GraphicEq,
+                                onClick = {
+                                    settingsViewModel.updateShowListenBrainzDialog(true)
+                                }
+                            )
+                        }
+
+                        SettingsSection(
                             title = stringResource(R.string.updates)
                         ) {
                             SettingsItem(
@@ -746,6 +766,17 @@ fun SettingsScreen(
                                 onClose = {
                                     settingsViewModel.updateShowProfileDialog(false)
                                 }
+                            )
+                        } else if (uiState.showListenBrainzDialog) {
+                            ListenBrainzDialog(
+                                connected = uiState.listenBrainzConnected,
+                                connecting = uiState.listenBrainzConnecting,
+                                errorMessage = uiState.listenBrainzError,
+                                onConnect = settingsViewModel::connectListenBrainz,
+                                onDisconnect = settingsViewModel::disconnectListenBrainz,
+                                onClose = {
+                                    settingsViewModel.updateShowListenBrainzDialog(false)
+                                },
                             )
                         } else if (uiState.showThemeColorDialog) {
                             ThemeColorDialog(
