@@ -18,10 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
-import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +44,7 @@ class PlayerScreenshotTest {
 
     private fun render(name: String, dark: Boolean, isPlaying: Boolean = true) {
         compose.setContent {
-            UmihiMusicTheme(darkTheme = dark, themePreset = ThemePreset.Studio) {
+            StudioTestTheme(dark = dark) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
