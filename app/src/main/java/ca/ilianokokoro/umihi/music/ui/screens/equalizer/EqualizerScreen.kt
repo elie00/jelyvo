@@ -47,6 +47,11 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import kotlin.math.roundToInt
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import androidx.compose.runtime.remember
 
 @Composable
 fun EqualizerScreen(
@@ -58,9 +63,12 @@ fun EqualizerScreen(
 ) {
     val state = equalizerViewModel.uiState.collectAsStateWithLifecycle().value
 
+    val hazeState = remember { HazeState() }
     Scaffold(
         topBar = {
             TopAppBar(
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
                 title = { Text(stringResource(R.string.equalizer_title)) },
                 navigationIcon = { BackButton(onBack = onBack) },
                 actions = {
@@ -79,8 +87,9 @@ fun EqualizerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .hazeSource(hazeState)
                 .verticalScroll(rememberScrollState())
+                .padding(top = paddingValues.calculateTopPadding())
                 .padding(
                     start = 16.dp,
                     end = 16.dp,
