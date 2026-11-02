@@ -35,7 +35,6 @@ import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 /** Complete album, EP or singles shelf opened from an artist page. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -68,9 +67,7 @@ fun ArtistReleasesScreen(
                 BackButton(onBack = onBack)
                 Text(
                     text = localizedApiSectionTitle(title),
-                    style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                        fontFamily = nunitoFontFamily()
-                    ),
+                    style = MaterialTheme.typography.headlineSmallEmphasized,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

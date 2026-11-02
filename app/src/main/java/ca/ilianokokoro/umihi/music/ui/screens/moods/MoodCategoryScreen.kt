@@ -31,7 +31,6 @@ import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 /** A mood/genre category page: the sections of playlists/stations behind a moods-hub chip. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -91,9 +90,7 @@ fun MoodCategoryScreen(
                                 BackButton(onBack = onBack)
                                 Text(
                                     text = localizedApiSectionTitle(title),
-                                    style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-                                        fontFamily = nunitoFontFamily()
-                                    ),
+                                    style = MaterialTheme.typography.headlineSmallEmphasized,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )

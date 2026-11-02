@@ -80,7 +80,6 @@ import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import kotlin.math.roundToInt
 
 /**
@@ -150,9 +149,7 @@ fun AlbumScreen(
                         text = topBarTitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                            fontFamily = nunitoFontFamily()
-                        ),
+                        style = MaterialTheme.typography.titleLargeEmphasized,
                         modifier = Modifier.alpha(collapseProgress)
                     )
                 },
@@ -590,9 +587,7 @@ private fun ColumnScope.AlbumContextHeader(
     )
     Text(
         text = name,
-        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-            fontFamily = nunitoFontFamily()
-        ),
+        style = MaterialTheme.typography.headlineSmallEmphasized,
         textAlign = TextAlign.Center,
     )
     if (artist.isNotBlank()) {

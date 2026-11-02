@@ -134,7 +134,6 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBot
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBottomSheet
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsPermanentSecondaryPane
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import kotlinx.coroutines.delay
 import androidx.car.app.connection.CarConnection
 
@@ -1374,9 +1373,7 @@ fun SongInfo(
             ) {
                 Text(
                     text = it?.title ?: "",
-                    style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                        fontFamily = nunitoFontFamily()
-                    ),
+                    style = MaterialTheme.typography.titleLargeEmphasized,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.basicMarquee()
                 )

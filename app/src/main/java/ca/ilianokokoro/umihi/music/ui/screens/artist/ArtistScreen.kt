@@ -76,7 +76,6 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
 import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import coil3.compose.AsyncImage
 import kotlin.math.roundToInt
 
@@ -526,7 +525,6 @@ private fun ArtistHero(
             Text(
                 text = name,
                 style = MaterialTheme.typography.displaySmall.copy(
-                    fontFamily = nunitoFontFamily(),
                     fontWeight = FontWeight.Bold,
                 ),
                 maxLines = 2,
@@ -585,9 +583,7 @@ private fun ColumnScope.ArtistContextHeader(
     )
     Text(
         text = name,
-        style = MaterialTheme.typography.headlineSmallEmphasized.copy(
-            fontFamily = nunitoFontFamily()
-        ),
+        style = MaterialTheme.typography.headlineSmallEmphasized,
         textAlign = TextAlign.Center,
     )
     subscriberCount?.takeIf { it.isNotBlank() }?.let { count ->

@@ -59,7 +59,6 @@ import ca.ilianokokoro.umihi.music.ui.screens.playlist.components.PlaylistHeader
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.components.playlist.SpecialPlaylistCover
 import ca.ilianokokoro.umihi.music.ui.components.playlist.specialPlaylistCover
-import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 
 
 @Composable
@@ -151,9 +150,7 @@ fun PlaylistScreen(
                             displayTitle,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.titleLargeEmphasized.copy(
-                                fontFamily = nunitoFontFamily()
-                            )
+                            style = MaterialTheme.typography.titleLargeEmphasized
                         )
                     },
                     navigationIcon = {
