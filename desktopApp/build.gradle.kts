@@ -36,7 +36,7 @@ dependencies {
 
 // Same vendored typeface as Android, copied onto the desktop classpath.
 val copyJelyvoFont by tasks.registering(Copy::class) {
-    from(rootProject.file("music-ui/fonts/nunito.ttf"))
+    from(rootProject.files("music-ui/fonts/nunito.ttf", "music-ui/fonts/dm_sans.ttf"))
     into(layout.buildDirectory.dir("generated/jelyvoFont/font"))
 }
 

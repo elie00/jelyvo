@@ -35,7 +35,7 @@ kotlinExtension.jvmToolchain {
 // file under version control while still giving Android a real res/font entry.
 val jelyvoFontResDir = "build/generated/jelyvoFont/res"
 val copyJelyvoFont by tasks.registering(Copy::class) {
-    from(rootProject.file("music-ui/fonts/nunito.ttf"))
+    from(rootProject.files("music-ui/fonts/nunito.ttf", "music-ui/fonts/dm_sans.ttf"))
     into(file("$jelyvoFontResDir/font"))
 }
 tasks.named("preBuild") { dependsOn(copyJelyvoFont) }
@@ -123,6 +123,11 @@ android {
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
+    }
+
+    testOptions {
+        // Robolectric reads the real resources: fonts, strings and the merged manifest.
+        unitTests.isIncludeAndroidResources = true
     }
 
 
@@ -288,6 +293,10 @@ dependencies {
 
     // Unit tests
     testImplementation(libs.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.room.testing)

@@ -37,6 +37,7 @@ javafx = "21.0.12"
 # 1.5.0-alpha22, below the 1.5.0-alpha23 the app already pins, so Android resolves unchanged.
 composeMultiplatformMaterial3 = "1.12.0-alpha03"
 junit = "4.13.2"
+robolectric = "4.16"
 kotlinxCoroutines = "1.10.2"
 benchmarkMacro = "1.5.0-alpha07"
 baselineprofile = "1.5.0-alpha07"
@@ -110,6 +111,9 @@ javafx-base = { module = "org.openjfx:javafx-base", version.ref = "javafx" }
 javafx-graphics = { module = "org.openjfx:javafx-graphics", version.ref = "javafx" }
 javafx-media = { module = "org.openjfx:javafx-media", version.ref = "javafx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmarkMacro" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 androidx-palette = { module = "androidx.palette:palette", version.ref = "palette" }
