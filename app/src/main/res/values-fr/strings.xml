@@ -602,4 +602,16 @@
     <string name="listenbrainz_disconnect">Déconnecter</string>
     <string name="listenbrainz_invalid_token">ListenBrainz ne reconnaît pas ce jeton.</string>
     <string name="listenbrainz_unreachable">Impossible de joindre ListenBrainz. Vérifiez votre connexion et réessayez.</string>
+    <string name="lastfm_title">Last.fm</string>
+    <string name="lastfm_subtitle">Envoyer ce que vous écoutez sur votre profil Last.fm</string>
+    <string name="lastfm_connected">Connecté. Vos écoutes sont envoyées à Last.fm.</string>
+    <string name="lastfm_keys_hint">Saisissez la clé d\'API et le secret partagé de votre propre compte API Last.fm (last.fm/api/account/create). Ils restent chiffrés sur cet appareil et ne sont pas inclus dans les sauvegardes.</string>
+    <string name="lastfm_api_key_label">Clé d\'API</string>
+    <string name="lastfm_secret_label">Secret partagé</string>
+    <string name="lastfm_authorize">Autoriser</string>
+    <string name="lastfm_approve_hint">Autorisez Jelyvo dans la page qui vient de s\'ouvrir, puis revenez et appuyez sur Terminer.</string>
+    <string name="lastfm_finish">Terminer</string>
+    <string name="lastfm_disconnect">Déconnecter</string>
+    <string name="lastfm_auth_failed">Last.fm a refusé la demande. Vérifiez votre clé et votre secret, et que vous avez bien autorisé l\'accès.</string>
+    <string name="lastfm_unreachable">Impossible de joindre Last.fm. Vérifiez votre connexion et réessayez.</string>
 </resources>

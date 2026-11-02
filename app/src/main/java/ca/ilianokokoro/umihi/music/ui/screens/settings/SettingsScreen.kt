@@ -112,6 +112,7 @@ import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import coil3.compose.AsyncImage
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.BooleanSettingItem
+import ca.ilianokokoro.umihi.music.ui.screens.settings.components.LastFmDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.ListenBrainzDialog
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsItem
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.SettingsSection
@@ -673,6 +674,21 @@ fun SettingsScreen(
                                     settingsViewModel.updateShowListenBrainzDialog(true)
                                 }
                             )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            SettingsItem(
+                                title = stringResource(R.string.lastfm_title),
+                                subtitle = stringResource(
+                                    if (uiState.lastFmConnected) {
+                                        R.string.lastfm_connected
+                                    } else {
+                                        R.string.lastfm_subtitle
+                                    }
+                                ),
+                                leadingIcon = Icons.Outlined.GraphicEq,
+                                onClick = {
+                                    settingsViewModel.updateShowLastFmDialog(true)
+                                }
+                            )
                         }
 
                         SettingsSection(
@@ -776,6 +792,19 @@ fun SettingsScreen(
                                 onDisconnect = settingsViewModel::disconnectListenBrainz,
                                 onClose = {
                                     settingsViewModel.updateShowListenBrainzDialog(false)
+                                },
+                            )
+                        } else if (uiState.showLastFmDialog) {
+                            LastFmDialog(
+                                connected = uiState.lastFmConnected,
+                                busy = uiState.lastFmBusy,
+                                errorMessage = uiState.lastFmError,
+                                authorizeUrl = uiState.lastFmAuthorizeUrl,
+                                onRequestApproval = settingsViewModel::requestLastFmApproval,
+                                onApproved = settingsViewModel::finishLastFmApproval,
+                                onDisconnect = settingsViewModel::disconnectLastFm,
+                                onClose = {
+                                    settingsViewModel.updateShowLastFmDialog(false)
                                 },
                             )
                         } else if (uiState.showThemeColorDialog) {

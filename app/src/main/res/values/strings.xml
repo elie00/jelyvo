@@ -616,4 +616,16 @@
     <string name="listenbrainz_disconnect">Disconnect</string>
     <string name="listenbrainz_invalid_token">ListenBrainz doesn\'t recognise this token.</string>
     <string name="listenbrainz_unreachable">Couldn\'t reach ListenBrainz. Check your connection and try again.</string>
+    <string name="lastfm_title">Last.fm</string>
+    <string name="lastfm_subtitle">Send what you listen to to your Last.fm profile</string>
+    <string name="lastfm_connected">Connected. Your listens are being sent to Last.fm.</string>
+    <string name="lastfm_keys_hint">Enter the API key and shared secret of your own Last.fm API account (last.fm/api/account/create). They stay encrypted on this device and are left out of backups.</string>
+    <string name="lastfm_api_key_label">API key</string>
+    <string name="lastfm_secret_label">Shared secret</string>
+    <string name="lastfm_authorize">Authorize</string>
+    <string name="lastfm_approve_hint">Approve Jelyvo in the page that just opened, then come back and tap Finish.</string>
+    <string name="lastfm_finish">Finish</string>
+    <string name="lastfm_disconnect">Disconnect</string>
+    <string name="lastfm_auth_failed">Last.fm refused the request. Check your key and secret, and that you approved access.</string>
+    <string name="lastfm_unreachable">Couldn\'t reach Last.fm. Check your connection and try again.</string>
 </resources>

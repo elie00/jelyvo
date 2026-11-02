@@ -31,6 +31,12 @@ data class SettingsState(
     val listenBrainzConnected: Boolean = false,
     val listenBrainzConnecting: Boolean = false,
     val listenBrainzError: Int? = null,
+    val showLastFmDialog: Boolean = false,
+    val lastFmConnected: Boolean = false,
+    val lastFmBusy: Boolean = false,
+    val lastFmError: Int? = null,
+    // Set while the user is approving the app in their browser.
+    val lastFmAuthorizeUrl: String? = null,
 )
 
 @Immutable
