@@ -43,6 +43,12 @@ class JamBridge(
         if (party.seq <= ignoreRemoteUntilSeq && now() < ignoreRemoteUntilMs) return
 
         val current = player()
+        val item = current.currentMediaItem
+        if (item != null && JamSync.shouldPublishCurrentTrack(party, JamManager.isHost, item.mediaId)) {
+            beforeLocalSend(party)
+            JamManager.sendTrack(item.toPartyTrack(current.duration), current.playWhenReady, current.currentPosition)
+            return
+        }
         val local = LocalPlayback(
             mediaId = current.currentMediaItem?.mediaId,
             positionMs = current.currentPosition,

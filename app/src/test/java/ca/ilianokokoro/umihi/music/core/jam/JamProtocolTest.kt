@@ -110,6 +110,28 @@ class JamProtocolTest {
     }
 
     @Test
+    fun `a host opens an empty party with what it is playing`() {
+        val empty = PartyPlayback()
+
+        assertTrue(JamSync.shouldPublishCurrentTrack(empty, isHost = true, mediaId = "abc"))
+    }
+
+    @Test
+    fun `only the host opens an empty party`() {
+        assertFalse(JamSync.shouldPublishCurrentTrack(PartyPlayback(), isHost = false, mediaId = "abc"))
+    }
+
+    @Test
+    fun `a host with nothing loaded has nothing to publish`() {
+        assertFalse(JamSync.shouldPublishCurrentTrack(PartyPlayback(), isHost = true, mediaId = null))
+    }
+
+    @Test
+    fun `a party that already has a track is left alone`() {
+        assertFalse(JamSync.shouldPublishCurrentTrack(playing, isHost = true, mediaId = "other"))
+    }
+
+    @Test
     fun `an applied state is not mistaken for a local seek`() {
         assertFalse(JamSync.isLocalSeek(playing, 1_000_000L, 40_200L))
         assertTrue(JamSync.isLocalSeek(playing, 1_000_000L, 90_000L))

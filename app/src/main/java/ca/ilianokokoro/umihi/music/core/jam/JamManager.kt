@@ -71,6 +71,11 @@ object JamManager {
     /** The party's latest state, or null outside a party. */
     val playback: StateFlow<PartyPlayback?> = _playback.asStateFlow()
 
+    /** Whether this device created the party it is in. */
+    @Volatile
+    var isHost = false
+        private set
+
     private class Connection(val serverUrl: String, val code: String, val token: String)
 
     @Volatile
@@ -116,6 +121,7 @@ object JamManager {
                     }
                     val reply = json.decodeFromString<JoinReply>(response.body?.string().orEmpty())
                     connection = Connection(serverUrl, reply.code, reply.token)
+                    isHost = reply.you.isHost
                     _playback.value = reply.party.playback
                     _status.value = JamStatus.InParty(reply.code, reply.party.members)
                     reconnectAttempts = 0
@@ -133,6 +139,7 @@ object JamManager {
     suspend fun leave() {
         val current = connection
         connection = null
+        isHost = false
         closeSocket()
         _playback.value = null
         _status.value = JamStatus.Idle
@@ -159,12 +166,12 @@ object JamManager {
 
     fun sendSeek(positionMs: Long) = sendControl("seek") { put("positionMs", positionMs) }
 
-    fun sendTrack(track: PartyTrack, isPlaying: Boolean) = send(
+    fun sendTrack(track: PartyTrack, isPlaying: Boolean, positionMs: Long = 0L) = send(
         buildJsonObject {
             put("type", "control")
             put("action", "setTrack")
             put("track", json.encodeToJsonElementOf(track))
-            put("positionMs", 0L)
+            put("positionMs", positionMs)
             put("isPlaying", isPlaying)
         }
     )

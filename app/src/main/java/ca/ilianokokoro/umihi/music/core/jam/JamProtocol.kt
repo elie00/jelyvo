@@ -154,6 +154,14 @@ object JamSync {
         }
     }
 
+    /**
+     * Whether the host should open an empty party with what it is already playing. A track change
+     * is what normally publishes a track, so a party created mid-song would otherwise stay silent
+     * for everyone else until the host skipped.
+     */
+    fun shouldPublishCurrentTrack(party: PartyPlayback, isHost: Boolean, mediaId: String?): Boolean =
+        isHost && party.track == null && mediaId != null
+
     /** Whether a position this device just reached differs from the party by a real seek. */
     fun isLocalSeek(party: PartyPlayback, serverNowMs: Long, positionMs: Long): Boolean =
         abs(party.positionAt(serverNowMs) - positionMs) > DRIFT_TOLERANCE_MS
