@@ -118,7 +118,7 @@ internal object ProviderReply {
     }
 
     fun unwrap(raw: String): String? {
-        val value = raw.replace("﻿", "").trim()
+        val value = raw.replace("\uFEFF", "").trim()
         if (value.isBlank()) return null
         val json = runCatching { lyricsJson.parseToJsonElement(value) }.getOrNull() ?: return value
         return extract(json)?.trim()?.takeIf { it.isNotEmpty() }
