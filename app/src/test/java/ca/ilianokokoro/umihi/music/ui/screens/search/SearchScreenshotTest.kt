@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.models.SearchItem
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
@@ -31,7 +30,7 @@ import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
-import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.junit.Rule
@@ -62,7 +61,7 @@ class SearchScreenshotTest {
 
     private fun render(name: String, dark: Boolean) {
         compose.setContent {
-            UmihiMusicTheme(darkTheme = dark, themePreset = ThemePreset.Studio) {
+            StudioTestTheme(dark = dark) {
                 val haze = remember { HazeState() }
                 Box(
                     Modifier

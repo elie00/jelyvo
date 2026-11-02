@@ -18,14 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.ThemePreset
 import ca.ilianokokoro.umihi.music.models.HomeFeedItem
 import ca.ilianokokoro.umihi.music.models.HomeFeedSection
 import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBar
 import ca.ilianokokoro.umihi.music.ui.components.FrostedPageBarHeight
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.home.HomeFeedSectionRow
-import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import org.junit.Rule
@@ -62,7 +61,7 @@ class HomeScreenshotTest {
 
     private fun render(name: String, dark: Boolean) {
         compose.setContent {
-            UmihiMusicTheme(darkTheme = dark, themePreset = ThemePreset.Studio) {
+            StudioTestTheme(dark = dark) {
                 val haze = remember { HazeState() }
                 Box(
                     Modifier
