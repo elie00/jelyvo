@@ -13,6 +13,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.NotInterestedFilter
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
+import ca.ilianokokoro.umihi.music.core.jam.DEFAULT_JAM_SERVER_URL
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUDIO_QUALITY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.AUTOPLAY
@@ -406,9 +407,9 @@ class DatastoreRepository(private val context: Context) {
         LikeManager.reset()
     }
 
-    /** The listening party server, empty until the user has entered one. */
+    /** The listening party server: the user's own if they entered one, otherwise the default. */
     val jamServerUrl: Flow<String> = context.dataStore.data.map {
-        it[PreferenceKeys.JAM_SERVER_URL].orEmpty()
+        it[PreferenceKeys.JAM_SERVER_URL].orEmpty().ifBlank { DEFAULT_JAM_SERVER_URL }
     }
 
     /** A random id for this install, created on first use. Not tied to the device or an account. */

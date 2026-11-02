@@ -621,7 +621,7 @@
     <string name="listenbrainz_unreachable">Couldn\'t reach ListenBrainz. Check your connection and try again.</string>
     <string name="jam_title">Listen together</string>
     <string name="jam_subtitle">Listen to the same thing at the same time as your friends</string>
-    <string name="jam_hint">Enter the address of a party server, then create a party or join one with its code. Your display name and what you play are shared with the party.</string>
+    <string name="jam_hint">Create a party or join one with its code. Only change the server address if you run your own. Your display name and what you play are shared with the party.</string>
     <string name="jam_server_label">Server address (https://…)</string>
     <string name="jam_code_label">Party code</string>
     <string name="jam_create">Create</string>

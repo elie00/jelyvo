@@ -73,6 +73,9 @@ data class ServerFrame(
     val reason: String? = null,
 )
 
+/** The server this app uses until someone enters their own. */
+const val DEFAULT_JAM_SERVER_URL = "https://jelyvo-listen-together.elieyvon-b-o.workers.dev"
+
 /** Accepts what a person would paste, and only https: tokens must never travel in the clear. */
 fun normalizeJamServerUrl(raw: String): String? {
     val url = raw.trim().trimEnd('/')

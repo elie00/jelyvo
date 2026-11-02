@@ -124,6 +124,11 @@ class JamProtocolTest {
     }
 
     @Test
+    fun `the default server is one the app accepts`() {
+        assertEquals(DEFAULT_JAM_SERVER_URL, normalizeJamServerUrl(DEFAULT_JAM_SERVER_URL))
+    }
+
+    @Test
     fun `frames decode despite fields this client ignores`() {
         val json = Json { ignoreUnknownKeys = true }
         val frame = json.decodeFromString<ServerFrame>(
