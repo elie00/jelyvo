@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,7 +22,6 @@ import androidx.compose.material.icons.outlined.CloudDone
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -31,18 +31,26 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.WorkInfo
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
+import ca.ilianokokoro.umihi.music.ui.components.PagePanel
+import ca.ilianokokoro.umihi.music.ui.components.ShelfHeader
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun DownloadManagerScreen(
@@ -53,17 +61,31 @@ fun DownloadManagerScreen(
     ),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle().value
+    val hazeState = remember { HazeState() }
     Scaffold(
+        contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.download_manager_title)) },
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
+                title = {
+                    Text(
+                        stringResource(R.string.download_manager_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
                 navigationIcon = { BackButton(onBack) },
             )
         },
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(top = padding.calculateTopPadding()),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+            modifier = Modifier.fillMaxSize().hazeSource(hazeState),
+            contentPadding = PaddingValues(
+                start = PageGutter,
+                end = PageGutter,
+                top = padding.calculateTopPadding() + 8.dp,
+                bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
+            ),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
@@ -116,11 +138,11 @@ fun DownloadManagerScreen(
 }
 
 @Composable
-private fun DownloadSummary(state: DownloadManagerState) {
+internal fun DownloadSummary(state: DownloadManagerState) {
     val context = LocalContext.current
-    Card(Modifier.fillMaxWidth()) {
+    PagePanel {
         Row(
-            Modifier.fillMaxWidth().padding(18.dp),
+            Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -128,8 +150,7 @@ private fun DownloadSummary(state: DownloadManagerState) {
             Column {
                 Text(
                     stringResource(R.string.download_manager_available, state.downloadedCount),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
                 Text(
                     if (state.loading) {
@@ -150,19 +171,24 @@ private fun SectionTitle(title: String, action: @Composable (() -> Unit)? = null
         Modifier.fillMaxWidth().padding(top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f),
+        )
         action?.invoke()
     }
 }
 
 @Composable
-private fun DownloadTaskCard(
+internal fun DownloadTaskCard(
     task: DownloadManagerTask,
     onCancel: (() -> Unit)? = null,
     onRetry: (() -> Unit)? = null,
 ) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+    PagePanel {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     if (task.hasIssue) Icons.Outlined.ErrorOutline else Icons.Outlined.CloudDownload,
@@ -174,7 +200,7 @@ private fun DownloadTaskCard(
                     Text(task.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
                         taskStatus(task),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }

@@ -6,6 +6,7 @@
 package ca.ilianokokoro.umihi.music.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -123,11 +125,13 @@ fun PillFilterChip(
     selected: Boolean,
     onClick: () -> Unit,
     label: String,
+    enabled: Boolean = true,
     leadingIcon: (@Composable () -> Unit)? = null,
 ) {
     FilterChip(
         selected = selected,
         onClick = onClick,
+        enabled = enabled,
         shape = RoundedCornerShape(percent = 50),
         border = null,
         leadingIcon = leadingIcon,
@@ -153,4 +157,19 @@ fun Modifier.bleedToPageEdges(): Modifier = layout { measurable, constraints ->
     layout(constraints.maxWidth, placeable.height) {
         placeable.place(-gutter, 0)
     }
+}
+
+/** A plain inset panel: the same grouping the settings use, for anything else that needs one. */
+@Composable
+fun PagePanel(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        content = content,
+    )
 }
