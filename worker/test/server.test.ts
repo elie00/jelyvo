@@ -9,7 +9,7 @@ import { CONFIG, type Env } from "../src/config";
 
 const env = rawEnv as unknown as Env;
 // Its generic signature is too deep for the compiler once the stub is the real class.
-const runInDurableObject = runInObject as (
+const runInDurableObject = runInObject as unknown as (
   stub: unknown,
   callback: (instance: any, state: DurableObjectState) => unknown,
 ) => Promise<any>;
