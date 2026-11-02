@@ -42,6 +42,11 @@ import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ListeningHeatmap
 import ca.ilianokokoro.umihi.music.ui.screens.stats.components.WrappedCard
+import ca.ilianokokoro.umihi.music.ui.components.frosted
+import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import androidx.compose.runtime.remember
 
 @Composable
 fun ListeningStatsScreen(
@@ -63,10 +68,13 @@ fun ListeningStatsScreen(
         uri?.let { viewModel.exportStats(it) }
     }
 
+    val hazeState = remember { HazeState() }
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             TopAppBar(
+                modifier = Modifier.frosted(hazeState),
+                colors = frostedTopAppBarColors(),
                 title = {
                     androidx.compose.foundation.layout.Column {
                         Text(stringResource(R.string.listening_stats))
@@ -105,10 +113,11 @@ fun ListeningStatsScreen(
         },
     ) { paddingValues ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            modifier = Modifier.fillMaxSize().hazeSource(hazeState),
             contentPadding = PaddingValues(
                 start = 12.dp,
                 end = 12.dp,
+                top = paddingValues.calculateTopPadding(),
                 bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
             ),
             verticalArrangement = Arrangement.spacedBy(4.dp),
