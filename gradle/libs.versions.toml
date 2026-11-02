@@ -39,6 +39,8 @@ composeMultiplatformMaterial3 = "1.12.0-alpha03"
 junit = "4.13.2"
 robolectric = "4.16"
 kotlinxCoroutines = "1.10.2"
+# material3 sets Compose to its 1.12 alpha. 1.7.3 would move it on to 1.12.0, a separate change.
+haze = "1.7.2"
 benchmarkMacro = "1.5.0-alpha07"
 baselineprofile = "1.5.0-alpha07"
 profileinstaller = "1.4.1"
@@ -112,6 +114,8 @@ javafx-graphics = { module = "org.openjfx:javafx-graphics", version.ref = "javaf
 javafx-media = { module = "org.openjfx:javafx-media", version.ref = "javafx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+haze-materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = "haze" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-benchmark-macro-junit4 = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmarkMacro" }
