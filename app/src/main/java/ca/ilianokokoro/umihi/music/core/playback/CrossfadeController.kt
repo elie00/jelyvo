@@ -1,8 +1,10 @@
 package ca.ilianokokoro.umihi.music.core.playback
 
+import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -139,6 +141,7 @@ class CrossfadeController(
             main.videoSize.width <= 0 &&
             CrossfadeRules.canOverlap(fadeMs, main.duration)
 
+    @OptIn(UnstableApi::class)
     private fun armIfDue() {
         if (!main.isPlaying || !isAllowed() || main.duration <= 0L) return
         val fade = planFade(main.duration) ?: return
