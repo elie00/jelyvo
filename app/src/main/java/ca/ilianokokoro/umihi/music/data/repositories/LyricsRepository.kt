@@ -2,13 +2,23 @@ package ca.ilianokokoro.umihi.music.data.repositories
 
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.cachedApiFlow
-import ca.ilianokokoro.umihi.music.data.datasources.LyricsDataSource
+import ca.ilianokokoro.umihi.music.core.lyrics.BetterLyricsProvider
+import ca.ilianokokoro.umihi.music.core.lyrics.LrcLibProvider
+import ca.ilianokokoro.umihi.music.core.lyrics.LrcRedProvider
+import ca.ilianokokoro.umihi.music.core.lyrics.LyricsQuery
+import ca.ilianokokoro.umihi.music.core.lyrics.LyricsResolver
+import ca.ilianokokoro.umihi.music.core.lyrics.UnisonProvider
+import ca.ilianokokoro.umihi.music.core.lyrics.artistForLyricsSearch
+import ca.ilianokokoro.umihi.music.core.lyrics.forLyricsSearch
 import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.flow.Flow
 
 class LyricsRepository {
-    private val lyricsDataSource = LyricsDataSource()
+    // Priority order: the word-timed catalogues first, LRCLIB as the dependable fallback.
+    private val resolver = LyricsResolver(
+        listOf(LrcRedProvider, BetterLyricsProvider, UnisonProvider, LrcLibProvider())
+    )
 
     /**
      * Emits [ApiResult.Loading] then [ApiResult.Success] with the resolved
@@ -18,15 +28,18 @@ class LyricsRepository {
      */
     fun getLyrics(song: Song, useCache: Boolean = true): Flow<ApiResult<Lyrics>> =
         cachedApiFlow(
-            key = "lyrics:${song.youtubeId}",
+            // Versioned: entries cached before word timing would otherwise stay line-timed for good.
+            key = "lyrics-v2:${song.youtubeId}",
             useCache = useCache,
             // Lyrics remain useful indefinitely and make the karaoke available offline.
             diskSerializer = Lyrics.serializer(),
         ) {
-            lyricsDataSource.getLyrics(
-                title = song.title,
-                artist = song.artist,
-                durationSeconds = durationToSeconds(song.duration),
+            resolver.resolve(
+                LyricsQuery(
+                    title = song.title.forLyricsSearch(),
+                    artist = song.artist.artistForLyricsSearch(),
+                    durationSeconds = durationToSeconds(song.duration),
+                )
             ) ?: throw Exception("Lyrics not available")
         }
 
