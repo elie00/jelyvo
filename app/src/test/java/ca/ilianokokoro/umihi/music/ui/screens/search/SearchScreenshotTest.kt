@@ -73,7 +73,7 @@ class SearchScreenshotTest {
                         modifier = Modifier
                             .fillMaxSize()
                             .hazeSource(haze)
-                            .padding(top = 128.dp),
+                            .padding(top = 152.dp),
                     ) {
                         TopResultCard(
                             item = SearchItem.Track(song(0)),
