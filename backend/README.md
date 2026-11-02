@@ -250,7 +250,7 @@ To keep memory, bandwidth, and latency strictly bounded:
 ## Deploying
 
 Any host that runs a Go binary and terminates TLS will do: `go build`, run it behind a reverse
-proxy, and set `JAM_TRUST_PROXY=true` there. No instance is deployed for Jelyvo yet.
+proxy, and set `JAM_TRUST_PROXY=true` there. The deployed instance runs the Cloudflare port in [`worker/`](../worker/README.md), not this binary.
 
 ### Environment
 
