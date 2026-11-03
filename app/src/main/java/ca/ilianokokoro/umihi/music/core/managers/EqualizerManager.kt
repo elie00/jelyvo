@@ -15,7 +15,11 @@ private val FRENCH_PRESET_NAMES = mapOf(
     "Hip Hop" to "Hip-hop",
 )
 
-internal fun frenchPresetName(name: String): String = FRENCH_PRESET_NAMES[name] ?: name
+/** Android's names can end in a NUL, which would hide them from the table and reach the screen. */
+internal fun frenchPresetName(name: String): String {
+    val clean = name.substringBefore('\u0000').trim()
+    return FRENCH_PRESET_NAMES[clean] ?: clean
+}
 
 /**
  * Owns a native [Equalizer] (and [BassBoost]) bound to an audio session id.

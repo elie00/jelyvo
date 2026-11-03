@@ -15,4 +15,10 @@ class EqualizerPresetNamesTest {
     fun `a preset this list does not know keeps its name`() {
         assertEquals("Salle de concert", frenchPresetName("Salle de concert"))
     }
+
+    @Test
+    fun `the end marker Android leaves in preset names goes away`() {
+        assertEquals("Classique", frenchPresetName("Classical\u0000"))
+        assertEquals("Folk", frenchPresetName("Folk\u0000"))
+    }
 }
