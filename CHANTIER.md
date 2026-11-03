@@ -3,9 +3,11 @@
 > État courant : [audit et validation du 8 octobre 2026](docs/PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-11-03, branche `feat/bitchord-components`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-11-03, branche `main`, remote `origin = github.com/elie00/umihi-music`.
 
 ## État du 3 novembre 2026 au soir, sur le Mac
+
+Les PR #2, #3 et #4 sont fusionnées dans `main`, et la **v2.6.14 est publiée**. La mise à jour depuis l'application a été déroulée jusqu'au bout sur un émulateur : proposée, téléchargée, installée, données conservées.
 
 La PR #4 a été compilée et testée sur le Mac : 802 tests JVM sans échec, 65 tests du serveur, lint sans erreur. L'APK de release a été installé par-dessus la 2.6.13 publique sur deux émulateurs. Toujours faire `git fetch` avant de se fier à cette note.
 
@@ -24,8 +26,7 @@ La PR #4 a été compilée et testée sur le Mac : 802 tests JVM sans échec, 65
 1. Écouter à l'oreille sur de vrais téléphones : synchronisation à deux, fondu, Automix.
 2. Tester le partage des écoutes avec de vrais comptes ListenBrainz et Last.fm. Seul le refus d'un mauvais jeton a été vérifié.
 3. Déployer la page d'invitation en français : `cd worker && npx wrangler login && npm run deploy`. Le code est prêt, le serveur en ligne affiche encore l'anglais.
-4. Passer la PR #4 en fusion, puis monter la version en 2.6.14 avant de publier : la 2.6.13 est déjà sortie, et le téléphone ne verrait rien sans nouveau numéro.
-5. Republier le dépôt public `elie00/jelyvo` avec le script de publication, jamais à la main : il réécrit l'historique.
+4. Republier le dépôt public `elie00/jelyvo` avec le script de publication, jamais à la main : il réécrit l'historique. Ce script n'est pas dans ce dépôt ni sur le Mac. Tant que ce n'est pas fait, le code public est en retard sur la 2.6.14, or la GPL impose de fournir le code de ce qu'on distribue.
 
 **Non testable au doigt** : la sélection multiple et le glisser-déposer vers les zones de dépôt, réservés à la souris et au stylet (DeX). Le rafraîchissement le plus rapide : l'émulateur reste à 60 Hz.
 

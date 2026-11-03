@@ -4,9 +4,8 @@
 
 ## État
 
-La v2.6.13 est publiée sur `elie00/jelyvo-releases`. L'APK est signé avec la clé officielle
-(`b47ac9b…`). `feat/bitchord-port-v2` et `codex/finish-existing-platforms` sont fusionnées dans
-`main`, et la PR #1 est close.
+La v2.6.14 est publiée sur `elie00/jelyvo-releases`. L'APK est signé avec la clé officielle
+(`b47ac9b…`). Tout ce qui suit est fusionné dans `main`.
 
 ## Fait le 3 novembre, sur `feat/jam-complete`
 
