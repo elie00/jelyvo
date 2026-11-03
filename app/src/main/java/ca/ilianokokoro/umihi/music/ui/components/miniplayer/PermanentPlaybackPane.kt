@@ -31,7 +31,7 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material3.FilledIconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -58,6 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircleButton
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.playback.Media3PlaybackEngine
@@ -207,7 +208,7 @@ fun PermanentPlaybackPane(
                                 contentDescription = stringResource(R.string.previous),
                             )
                         }
-                        FilledIconButton(
+                        CircleButton(
                             onClick = {
                                 if (isPlaying) {
                                     Media3PlaybackEngine.pause()
@@ -215,8 +216,9 @@ fun PermanentPlaybackPane(
                                     Media3PlaybackEngine.play()
                                 }
                             },
+                            size = 56.dp,
                             enabled = !isLoading,
-                            modifier = Modifier.size(56.dp),
+                            filled = true,
                         ) {
                             Icon(
                                 imageVector = if (isPlaying) {

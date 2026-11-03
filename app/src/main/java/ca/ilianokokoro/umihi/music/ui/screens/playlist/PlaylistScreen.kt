@@ -19,9 +19,8 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Upload
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.FilledIconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -120,11 +119,6 @@ fun PlaylistScreen(
                     actions = {
                         FilledIconButton(
                             onClick = playlistViewModel::hideSearch,
-                            shapes = IconButtonDefaults.shapes(),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Close,
@@ -175,11 +169,6 @@ fun PlaylistScreen(
                         )
                         FilledIconButton(
                             onClick = { exportLauncher.launch("${playlistInfo.title}.json") },
-                            shapes = IconButtonDefaults.shapes(),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Upload,
@@ -188,11 +177,6 @@ fun PlaylistScreen(
                         }
                         FilledIconButton(
                             onClick = playlistViewModel::showSearch,
-                            shapes = IconButtonDefaults.shapes(),
-                            colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                contentColor = MaterialTheme.colorScheme.onSurface
-                            ),
                         ) {
                             Icon(
                                 imageVector = Icons.Rounded.Search,
