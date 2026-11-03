@@ -10,9 +10,6 @@ La v2.6.13 est publiée sur `elie00/jelyvo-releases`. L'APK est signé avec la c
 
 ## Fait le 3 novembre, sur `feat/jam-complete`
 
-Rien de ceci n'a tourné dans l'application sur un appareil. Tests unitaires, captures et protocole rejoué
-par script contre le serveur déployé uniquement.
-
 - **Écoute à plusieurs** : membres, exclusion, contrôle réservé à l'hôte, lien d'invitation et QR code, ouverture
   depuis un lien (avec confirmation, et un avertissement si le serveur n'est pas celui par défaut), file
   partagée, message quand une partie se termine.
@@ -25,15 +22,24 @@ par script contre le serveur déployé uniquement.
 **À tester en priorité sur deux téléphones** : la file partagée. Sa logique est testée, mais jamais avec de vrais
 lecteurs. Surveiller les deux appareils en lecture automatique, qui peuvent proposer chacun leur suite.
 
-## À décider en premier
+## Fait le 3 novembre, sur `feat/bitchord-components`
 
-1. **Par quoi commencer ?** Recommandation : l'écoute à plusieurs complète et les petits gains
-   rapides, parce que c'est visible tout de suite et que le serveur est prêt. PoToken vient ensuite.
-2. **Comment fournir le code source ?** Jelyvo est sous GPL-3.0 et son APK est public, alors que
-   `umihi-music` est privé et que `jelyvo-releases` ne contient qu'un README. La GPL impose de
-   fournir le code source à ceux qui reçoivent l'APK, et la 2.6.13 ajoute du code BitChord sous GPL
-   et AGPL. Le plus simple est de rendre le dépôt public, après avoir vérifié qu'il ne contient aucun
-   secret. Sinon, joindre le code source à chaque release.
+- **Interface alignée sur BitChord** : feuilles du bas, menus, rangées, cartes, boutons, indicateurs, volets grand
+  écran, pages teintées par la pochette, icônes de la barre d'état selon la photo d'artiste.
+- **Traduction des paroles**, à la demande. Les paroles ne partent chez Google que si on appuie sur le bouton, par
+  un service web non officiel qui peut cesser de marcher. Le cache reste en mémoire, et le nouvel essai sur les
+  paroles en alphabet latin de BitChord n'est pas repris.
+- **Minuterie** : durée libre, de 1 minute à 24 heures.
+- **Bibliothèque locale** : navigation par dossiers et paroles intégrées (MP3, FLAC, M4A). Les fichiers Ogg et
+  Matroska ne sont pas lus. Les pochettes intégrées passent par MediaStore, sans le lecteur de BitChord : à vérifier.
+- **Replay** : version compacte, sur l'année en cours, avec des histoires plein écran et une affiche à partager.
+  Pas de choix de période ni de cartes multiples comme dans BitChord.
+
+## Testé le 3 novembre sur le Mac
+
+Tout ce qui précède a tourné sur deux émulateurs : résultats et reste à faire dans [`CHANTIER.md`](../CHANTIER.md).
+Le code source est désormais publié dans `elie00/jelyvo`. PoToken n'est pas écrit, par choix : il sert à
+contourner la détection de robots.
 
 ## Résultats des tests du 2 novembre
 
@@ -72,13 +78,13 @@ Les chemins ci-dessous partent de `app/src/main/java/com/music/bitchord/`, sauf 
 | Écoute à plusieurs complète : lien d'invitation, QR code, membres, exclusion, contrôle réservé à l'hôte, file partagée | `ui/screens/ListenTogetherScreen.kt`, `ui/screens/ListenTogetherSheets.kt`, `data/listentogether/ListenTogether.kt`, `playback/PartySync.kt`, `ui/components/QrCode.kt` (`com.google.zxing:core:3.5.3`) | `JamManager` n'envoie que lecture, pause, saut et titre. `worker/` gère déjà le reste, dont `/invite/{code}`. Le manifeste n'a pas de lien pour les invitations. | Moyen |
 | PoToken | `data/innertube/potoken/PoTokenWebView.kt` | Absent. Le repli marche encore, mais c'est le point le plus fragile. | Moyen |
 | Carte image pour partager les paroles | `ui/player/LyricsShareCard.kt`, `ui/player/AndroidLyricsShareSheet.kt` | `ShareHelper.shareLyrics` n'envoie que du texte. | Faible |
-| Traduction des paroles | `docs/LYRICS_TRANSLATION.md` et `shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LyricsTranslation.kt` (depuis la racine du dépôt) | Absente. | Faible à moyen |
+| Traduction des paroles | `docs/LYRICS_TRANSLATION.md` et `shared/src/jvmSharedMain/kotlin/com/music/bitchord/data/lyrics/LyricsTranslation.kt` (depuis la racine du dépôt) | Faite (voir plus haut). | Faible à moyen |
 | Saut des silences | Réglage Media3 `skipSilenceEnabled` | Absent. | Faible |
-| Arrêt de la minuterie en fin de titre, durée libre | Notes de la v1.9 | Curseur en minutes seulement. | Faible |
+| Arrêt de la minuterie en fin de titre, durée libre | Notes de la v1.9 | Faits. | Faible |
 | « Ouvrir avec » pour les fichiers audio | Notes de la v1.9 | Le manifeste ne déclare aucun type audio. | Faible |
 | Choix du taux de rafraîchissement (120 Hz) | `ui/performance/DisplayRefreshRates.kt` | Absent. | Faible |
-| Replay, rétrospective façon « Wrapped » | `ui/replay/`, `data/stats/ListeningStats.kt` | Les écoutes sont déjà enregistrées, avec un écran de statistiques. | Moyen |
-| Bibliothèque locale : dossiers, pochettes et paroles intégrées aux fichiers | `data/LocalMediaRepository.kt`, `data/LocalGroups.kt`, `data/remote/EmbeddedArt.kt`, `data/lyrics/EmbeddedLyrics.kt` | Aucune lecture des tags intégrés. L'absence de navigation par dossiers reste à confirmer. | Moyen |
+| Replay, rétrospective façon « Wrapped » | `ui/replay/`, `data/stats/ListeningStats.kt` | Version compacte faite (voir plus haut). | Moyen |
+| Bibliothèque locale : dossiers, pochettes et paroles intégrées aux fichiers | `data/LocalMediaRepository.kt`, `data/LocalGroups.kt`, `data/remote/EmbeddedArt.kt`, `data/lyrics/EmbeddedLyrics.kt` | Dossiers et paroles faits (voir plus haut). | Moyen |
 
 Points d'attention :
 

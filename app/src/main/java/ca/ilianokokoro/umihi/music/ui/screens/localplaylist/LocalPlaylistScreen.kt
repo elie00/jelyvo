@@ -23,17 +23,13 @@ import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Upload
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,10 +57,15 @@ import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedTextField
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.components.EditableSongItem
+import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPageTheme
+import ca.ilianokokoro.umihi.music.ui.theme.rememberArtworkPalette
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import sh.calvin.reorderable.ReorderableItem
@@ -114,10 +115,11 @@ fun LocalPlaylistScreen(
         if (uiState.isManualOrder) items else uiState.visibleSongs
     }
 
+    ArtworkPageTheme(rememberArtworkPalette(coverUris.firstOrNull())) {
     Box(Modifier.fillMaxSize()) {
         val hazeState = remember { HazeState() }
         Scaffold(topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 modifier = Modifier.frosted(hazeState),
                 colors = frostedTopAppBarColors(),
                 title = {
@@ -132,18 +134,17 @@ fun LocalPlaylistScreen(
                 actions = {
                     IconButton(
                         onClick = { menuExpanded = true },
-                        shapes = IconButtonDefaults.shapes(),
                     ) {
                         Icon(
                             imageVector = Icons.Rounded.MoreVert,
                             contentDescription = stringResource(R.string.actions)
                         )
 
-                        MaterialUDropdown(
+                        StudioMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.DriveFileRenameOutline,
                                 text = stringResource(R.string.rename_playlist),
                                 onClick = {
@@ -151,7 +152,7 @@ fun LocalPlaylistScreen(
                                     showRenameDialog = true
                                 }
                             )
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.Description,
                                 text = stringResource(R.string.edit_description),
                                 onClick = {
@@ -159,7 +160,7 @@ fun LocalPlaylistScreen(
                                     showDescriptionDialog = true
                                 }
                             )
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.Upload,
                                 text = stringResource(R.string.export_playlist),
                                 onClick = {
@@ -167,7 +168,7 @@ fun LocalPlaylistScreen(
                                     exportLauncher.launch("${uiState.name}.json")
                                 }
                             )
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.Delete,
                                 text = stringResource(R.string.delete_playlist),
                                 onClick = {
@@ -332,6 +333,7 @@ fun LocalPlaylistScreen(
                 }
             }
         }
+    }
     }
 
     if (showRenameDialog) {

@@ -171,4 +171,59 @@ class JamQueueSyncTest {
         )
         assertEquals(7L, frame.playback?.queueSeq)
     }
+
+    @Test
+    fun `a shared duration reads the way song rows write it`() {
+        assertEquals("3:20", JamQueueSync.durationLabel(200_000L))
+        assertEquals("1:02:05", JamQueueSync.durationLabel(3_725_000L))
+    }
+
+    @Test
+    fun `a track without a duration shows none`() {
+        assertEquals("", JamQueueSync.durationLabel(null))
+        assertEquals("", JamQueueSync.durationLabel(0L))
+    }
+
+    @Test
+    fun `a song row's duration survives the trip through a party`() {
+        val label = "4:30"
+        assertEquals(label, JamQueueSync.durationLabel(JamQueueSync.durationMillis(label)))
+        assertEquals(null, JamQueueSync.durationMillis(""))
+        assertEquals(null, JamQueueSync.durationMillis(null))
+    }
+
+    @Test
+    fun `tracks beyond what was shared stay in the queue`() {
+        val change = JamQueueSync.plan(
+            localIds = listOf("a", "b", "c", "d", "e"),
+            currentId = "a",
+            remote = PartyQueue(seq = 2, index = 0, items = tracks("a", "c", "b")),
+            sharedIds = listOf("a", "b", "c"),
+        )
+
+        assertEquals(QueueChange.AroundCurrent(emptyList(), tracks("c", "b"), keptTail = 2), change)
+    }
+
+    @Test
+    fun `a device holding only what was shared keeps nothing else`() {
+        val change = JamQueueSync.plan(
+            localIds = listOf("a", "b", "c"),
+            currentId = "a",
+            remote = PartyQueue(seq = 2, index = 0, items = tracks("a", "c", "b")),
+            sharedIds = listOf("a", "b", "c"),
+        )
+
+        assertEquals(QueueChange.AroundCurrent(emptyList(), tracks("c", "b"), keptTail = 0), change)
+    }
+
+    @Test
+    fun `nothing is kept when nothing was shared before`() {
+        val change = JamQueueSync.plan(
+            localIds = listOf("a", "b", "c"),
+            currentId = "a",
+            remote = PartyQueue(seq = 2, index = 0, items = tracks("a", "c")),
+        )
+
+        assertEquals(QueueChange.AroundCurrent(emptyList(), tracks("c"), keptTail = 0), change)
+    }
 }

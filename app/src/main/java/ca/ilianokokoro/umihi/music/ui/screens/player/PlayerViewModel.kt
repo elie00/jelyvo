@@ -26,6 +26,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
+import ca.ilianokokoro.umihi.music.core.lyrics.EmbeddedLyrics
 import ca.ilianokokoro.umihi.music.data.repositories.LyricsRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
 import ca.ilianokokoro.umihi.music.models.Song
@@ -46,7 +47,9 @@ class PlayerViewModel(application: Application) :
     val uiState = _uiState.asStateFlow()
     private val datastoreRepository = DatastoreRepository(application)
     private val localPlaylistRepository = LocalPlaylistRepository(application)
-    private val lyricsRepository = LyricsRepository()
+    private val lyricsRepository = LyricsRepository { song ->
+        song.localUri?.let { EmbeddedLyrics.forUri(getApplication(), it) }
+    }
     private val songRepository = SongRepository()
     private var lyricsJob: Job? = null
     private var lyricsSongId: String? = null

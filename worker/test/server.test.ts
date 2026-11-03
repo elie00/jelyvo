@@ -212,6 +212,17 @@ describe("REST", () => {
 });
 
 describe("invite page", () => {
+  it("speaks French", async () => {
+    const host = await create();
+    const page = await (await call(`/invite/${host.code}`)).text();
+    expect(page).toContain('<html lang="fr">');
+    expect(page).toContain("Rejoindre dans Jelyvo");
+    expect(page).not.toMatch(/Join|listening|Party code|Download/);
+    const gone = await (await call("/invite/ZZZZZZ")).text();
+    expect(gone).toContain("Partie introuvable");
+    expect(gone).not.toMatch(/Party|expired|Please/);
+  });
+
   it("opens the app for a live party and escapes what it shows", async () => {
     const host = await create("<b>");
     const page = await call(`/invite/${host.code}`);

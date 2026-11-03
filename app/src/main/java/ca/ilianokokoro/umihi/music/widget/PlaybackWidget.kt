@@ -153,8 +153,8 @@ private fun PlaybackControl(
     primary: Boolean = false,
 ) {
     val intent = Intent(context, PlaybackService::class.java).setAction(action)
-    val tint = if (primary) GlanceTheme.colors.onPrimaryContainer else GlanceTheme.colors.onSurface
-    val background = if (primary) GlanceTheme.colors.primaryContainer else GlanceTheme.colors.surfaceVariant
+    val tint = if (primary) GlanceTheme.colors.surface else GlanceTheme.colors.onSurface
+    val background = if (primary) GlanceTheme.colors.onSurface else GlanceTheme.colors.surfaceVariant
 
     Box(
         modifier = GlanceModifier

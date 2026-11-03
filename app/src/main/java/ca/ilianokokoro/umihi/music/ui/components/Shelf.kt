@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -117,33 +115,6 @@ fun ShelfCard(
             )
         }
     }
-}
-
-/** A filter as a plain pill: filled when on, and the same on every page that filters. */
-@Composable
-fun PillFilterChip(
-    selected: Boolean,
-    onClick: () -> Unit,
-    label: String,
-    enabled: Boolean = true,
-    leadingIcon: (@Composable () -> Unit)? = null,
-) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(percent = 50),
-        border = null,
-        leadingIcon = leadingIcon,
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedContainerColor = MaterialTheme.colorScheme.primary,
-            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
-        ),
-        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-    )
 }
 
 /**

@@ -1,9 +1,6 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -31,15 +28,13 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.IconToggleButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconToggleButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Surface
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
@@ -367,7 +362,7 @@ private fun TransportGlyph(
 
 /**
  * Ghost icon toggle button for the secondary controls row. Inactive: no
- * container. Active: secondaryContainer pill background. Optionally shows a
+ * container. Active: the veil of the buttons beside Play. Optionally shows a
  * small dot indicator under the icon (repeat-one).
  */
 @Composable
@@ -388,8 +383,8 @@ private fun GhostToggleButton(
         onCheckedChange = onCheckedChange,
         colors = IconButtonDefaults.iconToggleButtonColors(
             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            checkedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-            checkedContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            checkedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+            checkedContentColor = MaterialTheme.colorScheme.onSurface,
         ),
         modifier = modifier
             .minimumInteractiveComponentSize()

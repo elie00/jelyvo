@@ -33,9 +33,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledTonalButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -48,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -69,7 +68,7 @@ import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
-import ca.ilianokokoro.umihi.music.ui.components.materialu.MaterialUButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
@@ -160,47 +159,12 @@ internal fun OnDeviceTab(
         return
     }
 
-    val sourceName = stringResource(R.string.on_device)
-
-    val listState = rememberLazyListState()
-    DockScrollToTopEffect(listState)
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        state = listState,
-        contentPadding = PaddingValues(
-            top = LocalLibraryHeaderHeight.current + 8.dp,
-            bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-        ),
-    ) {
-        item(key = "play-shuffle") {
-            PlayShuffleRow(
-                onPlay = {
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.map { it.mediaItem },
-                        sourceName = sourceName
-                    )
-                },
-                onShuffle = {
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.shuffled().map { it.mediaItem },
-                        sourceName = sourceName
-                    )
-                },
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-        }
-
-        items(items = songs, key = { it.youtubeId }) { song ->
-            LocalSongListItem(
-                song = song,
-                songs = songs,
-                onOpenPlayer = onOpenPlayer,
-            )
-        }
-    }
+    LocalSongsContent(
+        songs = songs,
+        onOpenPlayer = onOpenPlayer,
+        topPadding = LocalLibraryHeaderHeight.current + 8.dp,
+        scrollEffect = { DockScrollToTopEffect(it) },
+    )
 }
 
 @Composable
@@ -208,9 +172,9 @@ internal fun LocalSongListItem(
     song: Song,
     songs: List<Song>,
     onOpenPlayer: () -> Unit,
+    sourceName: String = stringResource(R.string.on_device),
 ) {
     val context = LocalContext.current
-    val sourceName = stringResource(R.string.on_device)
 
     SongListItem(
         song = song,
@@ -285,18 +249,24 @@ internal fun LazyGridScope.playlistItems(
 ) {
     item(key = "playlist-actions", span = { GridItemSpan(maxLineSpan) }) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-            MaterialUButton(
-                onClick = onImportPlaylist,
+            ActionPill(
                 icon = Icons.Rounded.FileOpen,
-                text = stringResource(R.string.import_playlist)
+                label = stringResource(R.string.import_playlist),
+                onClick = onImportPlaylist,
+                filled = false,
+                size = 44.dp,
+                horizontalPadding = 18.dp,
             )
             // Creating a playlist writes to the connected account, so it is only offered
             // when signed in (null callback while logged out).
             if (onCreatePlaylist != null) {
-                MaterialUButton(
-                    onClick = onCreatePlaylist,
+                ActionPill(
                     icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                    text = stringResource(R.string.create_playlist)
+                    label = stringResource(R.string.create_playlist),
+                    onClick = onCreatePlaylist,
+                    filled = false,
+                    size = 44.dp,
+                    horizontalPadding = 18.dp,
                 )
             }
         }
@@ -440,7 +410,7 @@ internal fun LikedSongsTab(
                             sourceName = sourceName
                         )
                     },
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(start = PageGutter, end = PageGutter, bottom = 8.dp),
                 )
             }
 
@@ -596,13 +566,12 @@ internal fun ArtistListItem(
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
     ListItem(
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        headlineContent = { Text(artist.name, style = MaterialTheme.typography.titleMedium) },
+        headlineContent = { Text(artist.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         leadingContent = {
             SquareImage(
                 uri = artist.thumbnail,
-                modifier = Modifier.size(56.dp),
-                cornerRadius = 28.dp,
+                modifier = Modifier.size(ROW_ART_SIZE),
+                cornerRadius = ROW_ART_SIZE / 2,
             )
         },
         modifier = Modifier.clickable { onOpenArtist(artist.id, artist.name) },

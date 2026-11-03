@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,19 +26,16 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -64,11 +59,13 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.LocalLibrarySectionKind
@@ -83,11 +80,12 @@ import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
@@ -195,7 +193,6 @@ fun SearchScreen(
                         items(uiState.suggestions, key = { it }) { suggestion ->
                             ListItem(
                                 headlineContent = { Text(suggestion) },
-                                colors = transparentRowColors(),
                                 modifier = Modifier.clickable {
                                     focusManager.clearFocus()
                                     searchViewModel.selectSuggestion(suggestion)
@@ -248,7 +245,6 @@ fun SearchScreen(
                             }
                             items(uiState.recentSearches, key = { it }) { query ->
                                 ListItem(
-                                    colors = transparentRowColors(),
                                     headlineContent = { Text(query) },
                                     leadingContent = {
                                         Icon(
@@ -554,30 +550,23 @@ fun SearchScreen(
                 focusRequester = focusRequester,
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = PageGutter),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SearchFilter.entries.forEach { filter ->
-                    PillFilterChip(
-                        selected = uiState.filter == filter,
-                        onClick = { searchViewModel.selectFilter(filter) },
-                        label = stringResource(
-                                    when (filter) {
-                                        SearchFilter.All -> R.string.search_all
-                                        SearchFilter.Songs -> R.string.search_songs
-                                        SearchFilter.Videos -> R.string.search_videos
-                                        SearchFilter.Albums -> R.string.search_albums
-                                        SearchFilter.Artists -> R.string.search_artists
-                                        SearchFilter.Library -> R.string.search_library
-                                    }
-                        ),
+            PillSegmentedControl(
+                options = SearchFilter.entries.map { filter ->
+                    stringResource(
+                        when (filter) {
+                            SearchFilter.All -> R.string.search_all
+                            SearchFilter.Songs -> R.string.search_songs
+                            SearchFilter.Videos -> R.string.search_videos
+                            SearchFilter.Albums -> R.string.search_albums
+                            SearchFilter.Artists -> R.string.search_artists
+                            SearchFilter.Library -> R.string.search_library
+                        }
                     )
-                }
-            }
+                },
+                selectedIndex = SearchFilter.entries.indexOf(uiState.filter),
+                onSelect = { searchViewModel.selectFilter(SearchFilter.entries[it]) },
+                modifier = Modifier.padding(horizontal = PageGutter),
+            )
         }
         }
     }
@@ -675,11 +664,18 @@ private fun MoodSectionChips(
                 modifier = Modifier.padding(bottom = 4.dp),
             )
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             section.categories.forEach { category ->
-                SuggestionChip(
+                ActionPill(
+                    icon = null,
+                    label = localizedApiSectionTitle(category.title),
                     onClick = { onOpenMoodCategory(category) },
-                    label = { Text(localizedApiSectionTitle(category.title)) },
+                    filled = false,
+                    size = 40.dp,
+                    horizontalPadding = 16.dp,
                 )
             }
         }
@@ -706,10 +702,6 @@ private fun LocalLibrarySectionKind.titleRes(): Int = when (this) {
     LocalLibrarySectionKind.DOWNLOADS -> R.string.downloaded
 }
 
-/** Rows show the page behind them: a surface colour here would stripe a black page. */
-@Composable
-private fun transparentRowColors() = ListItemDefaults.colors(containerColor = Color.Transparent)
-
 @Composable
 private fun SearchBrowseResult(
     title: String,
@@ -719,16 +711,15 @@ private fun SearchBrowseResult(
     round: Boolean = false,
 ) {
     ListItem(
-        colors = transparentRowColors(),
-        headlineContent = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        headlineContent = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = subtitle.takeIf(String::isNotBlank)?.let { value ->
-            { Text(value, style = MaterialTheme.typography.bodyMedium) }
+            { Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         },
         leadingContent = {
             SquareImage(
                 uri = thumbnail,
-                modifier = Modifier.size(56.dp),
-                cornerRadius = if (round) 28.dp else 8.dp,
+                modifier = Modifier.size(ROW_ART_SIZE),
+                cornerRadius = if (round) ROW_ART_SIZE / 2 else 8.dp,
             )
         },
         modifier = Modifier.clickable(onClick = onClick),

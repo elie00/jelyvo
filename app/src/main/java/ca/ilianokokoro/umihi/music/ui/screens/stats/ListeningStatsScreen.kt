@@ -4,49 +4,48 @@ import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CenterAlignedTopAppBar
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ReplayDialog
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.stats.StatsExporter
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.ShelfHeader
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
 import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ListeningHeatmap
 import ca.ilianokokoro.umihi.music.ui.screens.stats.components.WrappedCard
 import dev.chrisbanes.haze.HazeState
@@ -64,6 +63,12 @@ fun ListeningStatsScreen(
     ),
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
+    var showReplay by remember { mutableStateOf(false) }
+    if (showReplay) {
+        state.wrapped?.let { wrapped ->
+            ReplayDialog(wrapped = wrapped, onDismiss = { showReplay = false })
+        }
+    }
     val hasStats = state.topTracks.isNotEmpty() || state.topArtists.isNotEmpty()
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -76,7 +81,7 @@ fun ListeningStatsScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 modifier = Modifier.frosted(hazeState),
                 colors = frostedTopAppBarColors(),
                 title = {
@@ -132,6 +137,7 @@ fun ListeningStatsScreen(
                     WrappedCard(
                         wrapped = wrapped,
                         modifier = Modifier.padding(horizontal = PageGutter, vertical = 8.dp),
+                        onOpenReplay = { showReplay = true },
                     )
                 }
             }
@@ -171,7 +177,6 @@ fun ListeningStatsScreen(
                     key = { _, stat -> stat.youtubeId },
                 ) { index, stat ->
                     ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
                                 text = "${index + 1}. ${stat.title}",
@@ -182,7 +187,7 @@ fun ListeningStatsScreen(
                         leadingContent = {
                             SquareImage(
                                 uri = stat.thumbnailHref,
-                                modifier = Modifier.size(56.dp),
+                                modifier = Modifier.size(ROW_ART_SIZE),
                                 cornerRadius = 8.dp,
                             )
                         },
@@ -212,7 +217,6 @@ fun ListeningStatsScreen(
                     key = { _, stat -> stat.artist },
                 ) { index, stat ->
                     ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { onSearchArtist(stat.artist) },
                         headlineContent = { Text(stat.artist, maxLines = 1) },
                         leadingContent = {
@@ -245,21 +249,12 @@ internal fun PeriodSelector(
 ) {
     val periods = StatsPeriod.entries
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = PageGutter, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        periods.forEach { period ->
-            PillFilterChip(
-                selected = period == selected,
-                onClick = { onSelect(period) },
-                label = stringResource(period.labelRes),
-            )
-        }
-    }
+    PillSegmentedControl(
+        options = periods.map { stringResource(it.labelRes) },
+        selectedIndex = periods.indexOf(selected),
+        onSelect = { onSelect(periods[it]) },
+        modifier = Modifier.padding(horizontal = PageGutter, vertical = 8.dp),
+    )
 }
 
 @Composable

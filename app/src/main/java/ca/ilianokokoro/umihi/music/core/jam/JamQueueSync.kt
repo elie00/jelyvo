@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.jam
 
+import ca.ilianokokoro.umihi.music.core.domain.parseTrackDurationMillis
+import java.util.Locale
 import kotlin.math.abs
 
 /** What this device's queue must do to match the party's. */
@@ -10,6 +12,8 @@ sealed interface QueueChange {
     data class AroundCurrent(
         val before: List<PartyTrack>,
         val after: List<PartyTrack>,
+        /** How many tracks at the end of this device's queue the party never saw, and so keep. */
+        val keptTail: Int = 0,
     ) : QueueChange
 
     /** The playing track is not in the party's queue, so the whole queue goes. */
@@ -32,6 +36,23 @@ object JamQueueSync {
 
     /** Below this, a device holding more of the queue shares the next stretch of it. */
     const val TOP_UP_BELOW_TRACKS = 5
+
+    /** A song row's duration, in the form a party carries it. */
+    fun durationMillis(label: String?): Long? =
+        label?.let(::parseTrackDurationMillis)?.takeIf { it > 0L }
+
+    /** What a song row shows for a party track's duration. */
+    fun durationLabel(durationMs: Long?): String {
+        val totalSeconds = durationMs?.takeIf { it > 0L }?.div(1_000L) ?: return ""
+        val hours = totalSeconds / 3_600L
+        val minutes = totalSeconds % 3_600L / 60L
+        val seconds = totalSeconds % 60L
+        return if (hours > 0L) {
+            String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
+        }
+    }
 
     /**
      * Cuts a device's queue down to what fits in one message. History goes first, because a track
@@ -64,6 +85,7 @@ object JamQueueSync {
         localIds: List<String>,
         currentId: String?,
         remote: PartyQueue,
+        sharedIds: List<String> = emptyList(),
     ): QueueChange {
         if (remote.items.isEmpty() || localIds == remote.items.map(PartyTrack::videoId)) {
             return QueueChange.None
@@ -74,10 +96,17 @@ object JamQueueSync {
             QueueChange.AroundCurrent(
                 before = remote.items.subList(0, anchor).toList(),
                 after = remote.items.subList(anchor + 1, remote.items.size).toList(),
+                keptTail = tailBeyond(localIds, sharedIds),
             )
         } else {
             QueueChange.Replace(remote.items, remote.index.coerceIn(0, remote.items.lastIndex))
         }
+    }
+
+    /** One message holds part of a long queue, so what lies past that part is still this device's. */
+    private fun tailBeyond(localIds: List<String>, sharedIds: List<String>): Int {
+        val lastShared = sharedIds.lastOrNull()?.let(localIds::lastIndexOf) ?: -1
+        return if (lastShared >= 0) localIds.lastIndex - lastShared else 0
     }
 
     /** Finds a track near a position: a queue can hold one track twice, once played and once to come. */

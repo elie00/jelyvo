@@ -3,10 +3,8 @@ package ca.ilianokokoro.umihi.music.ui.navigation
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -19,6 +17,8 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.core.jam.JamStatus
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.jamEndMessage
 import ca.ilianokokoro.umihi.music.ui.screens.settings.components.jamErrorMessage
 import kotlinx.coroutines.launch

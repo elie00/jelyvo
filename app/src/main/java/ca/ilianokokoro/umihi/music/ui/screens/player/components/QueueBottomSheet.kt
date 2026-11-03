@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,26 +9,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.Switch
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,13 +41,19 @@ import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.song.QueueSongListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircleButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.ModalBottomSheet
+import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedTextField
+import ca.ilianokokoro.umihi.music.ui.components.studio.Switch
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.sheetTitleStyle
 import ca.ilianokokoro.umihi.music.ui.screens.player.moveWithinUserQueue
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QueueBottomSheet(
     changeVisibility: (visible: Boolean) -> Unit,
@@ -70,13 +66,7 @@ fun QueueBottomSheet(
     onSaveQueue: (name: String, songs: List<Song>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    ModalBottomSheet(
-        onDismissRequest = { changeVisibility(false) },
-        sheetState = rememberBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            enabledValues = setOf(SheetValue.Expanded, SheetValue.Hidden),
-        ),
-    ) {
+    ModalBottomSheet(onDismissRequest = { changeVisibility(false) }) {
         QueuePanel(
             songs = songs,
             currentIndex = currentIndex,
@@ -147,8 +137,7 @@ fun QueuePanel(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.queue),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = sheetTitleStyle(),
                     )
                     // Queue provenance, mirroring YT Music: the source collection's name when the
                     // queue was built from one, "Radio" for a radio queue, nothing otherwise.
@@ -171,24 +160,18 @@ fun QueuePanel(
                         ),
                     )
                 }
-                Surface(
-                    shape = MaterialTheme.shapes.large,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ) {
-                    Text(
-                        text = pluralStringResource(
-                            R.plurals.song_count,
-                            mutableSongList.size,
-                            mutableSongList.size,
-                        ),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                    )
-                }
-                FilledTonalIconButton(
+                Text(
+                    text = pluralStringResource(
+                        R.plurals.song_count,
+                        mutableSongList.size,
+                        mutableSongList.size,
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                CircleButton(
                     onClick = { isSaveDialogShown = true },
+                    size = 40.dp,
                     enabled = mutableSongList.isNotEmpty() && !isSavingQueue,
                 ) {
                     if (isSavingQueue) {
@@ -200,6 +183,7 @@ fun QueuePanel(
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.PlaylistAdd,
                             contentDescription = stringResource(R.string.save_queue),
+                            modifier = Modifier.size(20.dp),
                         )
                     }
                 }
@@ -215,7 +199,7 @@ fun QueuePanel(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         stringResource(R.string.smart_transitions_title),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                     Text(
                         stringResource(R.string.smart_transitions_description),
@@ -233,12 +217,11 @@ fun QueuePanel(
                 modifier = Modifier.fillMaxSize(),
                 state = lazyListState,
                 contentPadding = PaddingValues(
-                    start = 8.dp,
+                    start = 16.dp,
                     top = 8.dp,
-                    end = 8.dp,
+                    end = 16.dp,
                     bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING
                 ),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (mutableSongList.isEmpty()) {
                     item {
@@ -257,9 +240,7 @@ fun QueuePanel(
                         items = mutableSongList, key = { _, song -> song.uid }
                     ) { index, song ->
                         val itemScope = this
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        Column {
                             // Only split into sections once suggestions exist, and only show the
                             // "up next" header when there is at least one user-added item above them.
                             if (hasSuggestions && index == 0 && firstSuggestionIndex > 0) {
@@ -273,11 +254,12 @@ fun QueuePanel(
                             itemScope.ReorderableItem(
                                 reorderableLazyListState,
                                 key = song.uid
-                            ) { _ ->
+                            ) { isDragging ->
                                 QueueSongListItem(
                                 song = song,
                                 isCurrentSong = song.uid == songs.getOrNull(currentIndex)?.uid,
                                 isDraggable = !song.isSuggestion,
+                                lifted = isDragging,
                                 onPress = {
                                     PlayerManager.seekToIndex(index)
                                 },
@@ -325,9 +307,9 @@ fun QueuePanel(
 private fun QueueSectionHeader(text: String) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.padding(start = 4.dp, top = 12.dp, bottom = 6.dp)
     )
 }
 

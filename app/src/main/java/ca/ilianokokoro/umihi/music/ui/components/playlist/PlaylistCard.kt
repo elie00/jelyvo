@@ -106,9 +106,8 @@ fun PlaylistCard(
                 Surface(
                     modifier = Modifier.matchParentSize(),
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    tonalElevation = 6.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

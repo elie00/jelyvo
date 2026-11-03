@@ -8,25 +8,23 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
+import ca.ilianokokoro.umihi.music.ui.components.studio.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledTonalButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -168,6 +166,7 @@ fun HomeScreen(
                                                 stringResource(R.string.home_local_content),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.padding(horizontal = PageGutter),
                                             )
                                         }
                                     }
@@ -375,24 +374,7 @@ private fun LoggedOutHome(
             .fillMaxSize()
             .padding(top = statusBarHeight),
     ) {
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 92.dp, y = (-112).dp)
-                .size(280.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f),
-        ) {}
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-96).dp, y = 100.dp)
-                .size(240.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.32f),
-        ) {}
-
-        FilledTonalIconButton(
+        FilledIconButton(
             onClick = onSettingsButtonPress,
             modifier = Modifier
                 .align(Alignment.TopEnd)

@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.core.jam
 
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -192,16 +193,22 @@ class JamBridge(
 
     private fun reapply(queue: PartyQueue) {
         val current = player()
-        val change = JamQueueSync.plan(current.mediaIds(), current.currentMediaItem?.mediaId, queue)
+        val change = JamQueueSync.plan(
+            current.mediaIds(),
+            current.currentMediaItem?.mediaId,
+            queue,
+            lastSharedIds,
+        )
         when (change) {
             QueueChange.None -> Unit
 
             is QueueChange.AroundCurrent -> {
                 val index = current.currentMediaItemIndex
-                if (index + 1 < current.mediaItemCount) {
-                    current.removeMediaItems(index + 1, current.mediaItemCount)
+                val tailStart = (current.mediaItemCount - change.keptTail).coerceAtLeast(index + 1)
+                if (index + 1 < tailStart) {
+                    current.removeMediaItems(index + 1, tailStart)
                 }
-                current.addMediaItems(change.after.map { it.toSong().mediaItem })
+                current.addMediaItems(index + 1, change.after.map { it.toSong().mediaItem })
                 if (index > 0) current.removeMediaItems(0, index)
                 current.addMediaItems(0, change.before.map { it.toSong().mediaItem })
             }
@@ -225,12 +232,17 @@ class JamBridge(
         (0 until mediaItemCount).map { getMediaItemAt(it).mediaId }
 
     private fun MediaItem.toPartyTrack(): PartyTrack =
-        toPartyTrack(mediaMetadata.durationMs ?: 0L)
+        toPartyTrack(
+            mediaMetadata.durationMs
+                ?: JamQueueSync.durationMillis(mediaMetadata.extras?.getString(Constants.ExoPlayer.SongMetadata.DURATION))
+                ?: 0L
+        )
 
     private fun PartyTrack.toSong() = Song(
         youtubeId = videoId,
         title = title,
         artist = artist,
+        duration = JamQueueSync.durationLabel(durationMs),
         thumbnailHref = thumbnailUrl.orEmpty(),
     )
 

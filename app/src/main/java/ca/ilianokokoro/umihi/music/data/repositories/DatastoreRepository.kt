@@ -46,7 +46,6 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_AUDIO_OFFLOAD
-import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.USE_SPECIAL_LANGUAGE
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.VIDEO_QUALITY
 import ca.ilianokokoro.umihi.music.models.Cookies
 import ca.ilianokokoro.umihi.music.models.UmihiSettings
@@ -75,7 +74,6 @@ class DatastoreRepository(private val context: Context) {
         val COOKIES = stringPreferencesKey(Constants.Datastore.COOKIES_KEY)
         val DATA_SYNC_ID = stringPreferencesKey(Constants.Datastore.DATA_SYNC_ID)
         val SHOW_PODCAST_PLAYLIST = booleanPreferencesKey(Constants.Datastore.SHOW_PODCAST_PLAYLIST)
-        val USE_SPECIAL_LANGUAGE = booleanPreferencesKey(Constants.Datastore.USE_SPECIAL_LANGUAGE)
         val USE_AUDIO_OFFLOAD = booleanPreferencesKey(Constants.Datastore.USE_AUDIO_OFFLOAD)
         val KEEP_SCREEN_ON = booleanPreferencesKey(Constants.Datastore.KEEP_SCREEN_ON)
         val AUTO_UPDATE = booleanPreferencesKey(Constants.Datastore.AUTO_UPDATE)
@@ -119,9 +117,6 @@ class DatastoreRepository(private val context: Context) {
         context.dataStore.edit {
             it[key] = value
         }
-        if (key == USE_SPECIAL_LANGUAGE) {
-            mirrorUseSpecialLanguage(value as Boolean)
-        }
     }
 
     /**
@@ -133,7 +128,6 @@ class DatastoreRepository(private val context: Context) {
 
     private fun settingsSource(): Flow<UmihiSettings> = context.dataStore.data.map {
         val showPodcastPlaylist = it[SHOW_PODCAST_PLAYLIST] ?: true
-        val useSpecialLanguage = it[USE_SPECIAL_LANGUAGE] ?: false
         val useAudioOffload = it[USE_AUDIO_OFFLOAD] ?: false
         val keepScreenOn = it[KEEP_SCREEN_ON] ?: false
         val updateChecking = it[AUTO_UPDATE] ?: true
@@ -181,13 +175,10 @@ class DatastoreRepository(private val context: Context) {
         // act on behalf of, so a failed decrypt reads as fully logged out.
         val dataSyncId = if (cookies.isEmpty()) null else dataSyncId.first()
 
-        mirrorUseSpecialLanguage(useSpecialLanguage)
-
         UmihiSettings(
             showPodcastPlaylist = showPodcastPlaylist,
             cookies = cookies,
             dataSyncId = dataSyncId,
-            useSpecialLanguage = useSpecialLanguage,
             useAudioOffload = useAudioOffload,
             keepScreenOn = keepScreenOn,
             updateChecking = updateChecking,
@@ -219,15 +210,6 @@ class DatastoreRepository(private val context: Context) {
 
     suspend fun getSettings(): UmihiSettings {
         return settings.first()
-    }
-
-    /**
-     * Keeps a plain SharedPreferences mirror of the special-language flag so
-     * [StartupPreferences] can read it synchronously in `attachBaseContext` without
-     * blocking the first frame on a DataStore read. DataStore stays the source of truth.
-     */
-    private fun mirrorUseSpecialLanguage(value: Boolean) {
-        StartupPreferences.setUseSpecialLanguage(context, value)
     }
 
     /**

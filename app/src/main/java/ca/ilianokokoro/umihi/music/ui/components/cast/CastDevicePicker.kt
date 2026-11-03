@@ -6,10 +6,7 @@ import android.media.MediaRouter2
 import android.os.Build
 import android.provider.Settings
 import androidx.car.app.connection.CarConnection
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,12 +25,7 @@ import androidx.compose.material.icons.rounded.StopCircle
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material.icons.rounded.Usb
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -42,18 +34,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.mediarouter.media.MediaRouter
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.SheetHeading
+import ca.ilianokokoro.umihi.music.ui.components.studio.SheetActionRow
+import ca.ilianokokoro.umihi.music.ui.components.studio.ModalBottomSheet
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertRule
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 
@@ -122,7 +116,6 @@ fun rememberIsCastRouteAvailable(): Boolean {
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 fun AvailableDevicesSheet(
     carConnectionType: Int,
     onDismiss: () -> Unit,
@@ -163,20 +156,16 @@ fun AvailableDevicesSheet(
         onDispose { router.removeCallback(callback) }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        title = stringResource(R.string.available_devices),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 24.dp),
         ) {
-            Text(
-                text = stringResource(R.string.available_devices),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-            )
-
             DeviceSectionLabel(stringResource(R.string.current_output))
 
             DeviceRow(
@@ -243,7 +232,6 @@ fun AvailableDevicesSheet(
 
             // Discovery is asynchronous: without a heading the whole section simply vanished,
             // leaving no clue whether the app was searching or had found nothing.
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             DeviceSectionLabel(stringResource(R.string.cast_devices))
 
             if (routes.isEmpty() && !isCasting) {
@@ -251,7 +239,7 @@ fun AvailableDevicesSheet(
                     text = stringResource(R.string.cast_searching),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 22.dp, vertical = 8.dp),
                 )
             }
 
@@ -287,7 +275,7 @@ fun AvailableDevicesSheet(
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            AlertRule(Modifier.padding(vertical = 8.dp))
             DeviceRow(
                 icon = Icons.Rounded.Settings,
                 name = stringResource(R.string.manage_audio_outputs),
@@ -303,69 +291,35 @@ fun AvailableDevicesSheet(
 }
 
 @Composable
-private fun DeviceSectionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp),
-    )
+internal fun DeviceSectionLabel(text: String) {
+    SheetHeading(text)
 }
 
 @Composable
-private fun DeviceRow(
+internal fun DeviceRow(
     icon: ImageVector,
     name: String,
     subtitle: String,
     selected: Boolean,
     onClick: (() -> Unit)?,
 ) {
-    ListItem(
-        headlineContent = {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(name, modifier = Modifier.weight(1f))
-                if (selected) {
-                    Icon(
-                        Icons.Rounded.CheckCircle,
-                        contentDescription = stringResource(R.string.device_connected),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                }
-            }
-        },
-        supportingContent = {
-            Text(
-                subtitle,
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        },
-        leadingContent = {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = if (selected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
-                },
-            ) {
+    SheetActionRow(
+        icon = icon,
+        label = name,
+        description = subtitle,
+        trailing = if (selected) {
+            {
                 Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.padding(10.dp),
+                    Icons.Rounded.CheckCircle,
+                    contentDescription = stringResource(R.string.device_connected),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp),
                 )
             }
+        } else {
+            null
         },
-        modifier = Modifier.then(
-            if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
-        ),
+        onClick = onClick,
     )
 }
 

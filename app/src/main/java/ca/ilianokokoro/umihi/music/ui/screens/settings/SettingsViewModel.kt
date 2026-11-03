@@ -20,13 +20,16 @@ import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.StorageCategory
 import ca.ilianokokoro.umihi.music.core.StorageInspector
 import ca.ilianokokoro.umihi.music.core.backup.BackupManager
+import ca.ilianokokoro.umihi.music.core.diagnostics.FailureRules
+import ca.ilianokokoro.umihi.music.core.diagnostics.PlaybackFailures
 import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityDiagnostics
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
+import ca.ilianokokoro.umihi.music.core.jam.JamIdentity
+import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
-import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmAuthException
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmClient
@@ -38,17 +41,17 @@ import ca.ilianokokoro.umihi.music.core.workers.OfflineSyncScheduler
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DownloadRepository
+import coil3.SingletonImageLoader
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import coil3.SingletonImageLoader
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.IOException
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(SettingsState())
@@ -86,6 +89,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                     screenState = ScreenState.Success(settings = settings),
                     notInterestedCount = notInterestedCount,
                     stabilityReport = StabilityDiagnostics.latest(_application),
+                    playbackFailureCount = PlaybackFailures.recent().size,
                     listenBrainzConnected = listenBrainzConnected,
                     lastFmConnected = lastFmConnected,
                 )
@@ -96,14 +100,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun shareStabilityReport() {
         val report = _uiState.value.stabilityReport
             ?: StabilityDiagnostics.latest(_application)
-        if (report == null) {
+        val failures = PlaybackFailures.recent()
+        if (report == null && failures.isEmpty()) {
             showToast(R.string.stability_report_empty)
             return
         }
+        val text = listOfNotNull(
+            report?.asShareText(),
+            failures.takeIf { it.isNotEmpty() }?.let(FailureRules::summary),
+        ).joinToString("\n\n")
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, _application.getString(R.string.stability_report_title))
-            putExtra(Intent.EXTRA_TEXT, report.asShareText())
+            putExtra(Intent.EXTRA_TEXT, text)
         }
         val chooser = Intent.createChooser(
             sendIntent,

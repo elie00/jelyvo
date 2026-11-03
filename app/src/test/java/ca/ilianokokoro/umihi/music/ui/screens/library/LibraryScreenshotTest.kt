@@ -5,18 +5,15 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -33,9 +30,9 @@ import ca.ilianokokoro.umihi.music.models.PlaylistInfo
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.FrostedPageHeader
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.bleedToPageEdges
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
+import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import dev.chrisbanes.haze.HazeState
@@ -128,22 +125,12 @@ class LibraryScreenshotTest {
                         onHeightChanged = { headerPx = it },
                         modifier = Modifier.align(Alignment.TopCenter),
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState())
-                                .padding(horizontal = PageGutter),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            listOf("Playlists", "Titres aimés", "Albums", "Artistes")
-                                .forEachIndexed { index, label ->
-                                    PillFilterChip(
-                                        selected = index == 0,
-                                        onClick = {},
-                                        label = label,
-                                    )
-                                }
-                        }
+                        PillSegmentedControl(
+                            options = listOf("Playlists", "Titres aimés", "Albums", "Artistes"),
+                            selectedIndex = 0,
+                            onSelect = {},
+                            modifier = Modifier.padding(horizontal = PageGutter),
+                        )
                     }
                 }
             }

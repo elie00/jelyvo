@@ -1,19 +1,17 @@
 package ca.ilianokokoro.umihi.music.ui.components.dialog
 
-import androidx.activity.ComponentActivity
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.LinearWavyProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +28,8 @@ import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
 import ca.ilianokokoro.umihi.music.models.Version
 import ca.ilianokokoro.umihi.music.models.dto.GithubReleaseResponse
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -79,12 +79,12 @@ fun UpdateDialog(scope: CoroutineScope) {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         if (downloadProgress > 0f) {
-                            LinearWavyProgressIndicator(
+                            LinearProgressIndicator(
                                 progress = { downloadProgress },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
-                            LinearWavyProgressIndicator(
+                            LinearProgressIndicator(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }

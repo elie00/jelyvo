@@ -27,7 +27,7 @@ import java.net.URI
  * each provider's OAuth/MusicKit credentials and are deliberately not scraped.
  */
 class ExternalPlaylistRepository(
-    private val defaultPlaylistName: String = "Imported playlist",
+    private val defaultPlaylistName: String = "Liste de lecture importée",
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 

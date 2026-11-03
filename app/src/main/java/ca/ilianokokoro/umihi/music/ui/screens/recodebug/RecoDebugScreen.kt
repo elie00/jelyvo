@@ -13,17 +13,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import ca.ilianokokoro.umihi.music.ui.components.studio.Button
+import ca.ilianokokoro.umihi.music.ui.components.studio.Card
+import androidx.compose.material3.CenterAlignedTopAppBar
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +56,7 @@ fun RecoDebugScreen(
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 colors = frostedTopAppBarColors(),
                 title = {
                     Text(

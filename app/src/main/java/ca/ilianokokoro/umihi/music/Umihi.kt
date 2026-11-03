@@ -1,5 +1,8 @@
 package ca.ilianokokoro.umihi.music
 
+import android.content.Context
+import ca.ilianokokoro.umihi.music.core.i18n.AppLocale
+import java.util.Locale
 import android.app.ActivityManager
 import android.app.Application
 import android.os.Build
@@ -9,6 +12,7 @@ import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.UmihiHttpClient
+import ca.ilianokokoro.umihi.music.core.diagnostics.PlaybackFailures
 import ca.ilianokokoro.umihi.music.core.diagnostics.StabilityDiagnostics
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
@@ -33,6 +37,16 @@ import okio.Path.Companion.toOkioPath
 class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provider {
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrap(base))
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // The system resets the default locale when the phone's language changes.
+        Locale.setDefault(resources.configuration.locales[0])
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -43,6 +57,7 @@ class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provide
         // Account screens are product data, not disposable artwork. Keep their last snapshot in
         // filesDir so Android cache cleanup cannot bring skeletons back on every cold launch.
         ResponseCache.init(storageDir = filesDir, legacyStorageDir = cacheDir)
+        PlaybackFailures.init(this)
         startupScope.launch {
             StabilityDiagnostics.captureLatestUnexpectedExit(this@Umihi)
         }

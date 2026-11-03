@@ -14,7 +14,10 @@ import ca.ilianokokoro.umihi.music.models.Lyrics
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.flow.Flow
 
-class LyricsRepository {
+class LyricsRepository(
+    /** What an on-device file carries itself. Asked first, so it works with the connection off. */
+    private val embeddedLyrics: suspend (Song) -> Lyrics? = { null },
+) {
     // Priority order: the word-timed catalogues first, LRCLIB as the dependable fallback.
     private val resolver = LyricsResolver(
         listOf(LrcRedProvider, BetterLyricsProvider, UnisonProvider, LrcLibProvider())
@@ -29,12 +32,14 @@ class LyricsRepository {
     fun getLyrics(song: Song, useCache: Boolean = true): Flow<ApiResult<Lyrics>> =
         cachedApiFlow(
             // Versioned: entries cached before word timing would otherwise stay line-timed for good.
-            key = "lyrics-v2:${song.youtubeId}",
+            // On-device tracks have their own key, or lyrics cached from the network before files were read
+            // would keep hiding the ones inside the file.
+            key = if (song.isLocal) "lyrics-local-v1:${song.youtubeId}" else "lyrics-v2:${song.youtubeId}",
             useCache = useCache,
             // Lyrics remain useful indefinitely and make the karaoke available offline.
             diskSerializer = Lyrics.serializer(),
         ) {
-            resolver.resolve(
+            song.takeIf { it.isLocal }?.let { embeddedLyrics(it) } ?: resolver.resolve(
                 LyricsQuery(
                     title = song.title.forLyricsSearch(),
                     artist = song.artist.artistForLyricsSearch(),

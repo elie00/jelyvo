@@ -46,16 +46,14 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material.icons.rounded.TouchApp
 import androidx.compose.material.icons.rounded.Videocam
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilledIconToggleButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconToggleButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -88,7 +86,6 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -109,6 +106,8 @@ import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.cast.AvailableDevicesSheet
 import ca.ilianokokoro.umihi.music.ui.components.cast.rememberCarConnectionType
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsPermanentSecondaryPane
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerArtworkBackground
@@ -120,7 +119,6 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottom
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -483,7 +481,6 @@ fun PlayerScreen(
                             .padding(top = 12.dp, end = 12.dp, bottom = 12.dp),
                         shape = RoundedCornerShape(28.dp),
                         color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f),
-                        tonalElevation = 2.dp,
                     ) {
                         QueuePanel(
                             songs = uiState.queue,
@@ -615,13 +612,13 @@ private fun GestureHint(icon: ImageVector, text: String) {
     ) {
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 modifier = Modifier.padding(10.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
         Text(text, style = MaterialTheme.typography.bodyMedium)
@@ -1048,16 +1045,15 @@ fun SongInfo(
             modifier = Modifier.padding(start = 8.dp)
         ) {
             if (isLoggedIn) {
-                FilledIconToggleButton(
+                IconToggleButton(
                     checked = isLiked,
                     onCheckedChange = {
                         if (isLiking) {
-                            return@FilledIconToggleButton
+                            return@IconToggleButton
                         }
                         haptic.performHapticFeedback(HapticFeedbackType.Confirm)
                         onToggleLike()
                     },
-                    shapes = IconButtonDefaults.toggleableShapes(),
                     colors = IconButtonDefaults.filledIconToggleButtonColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
                         contentColor = MaterialTheme.colorScheme.onSurface,

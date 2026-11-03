@@ -16,7 +16,7 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,6 +33,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.studioMenuColors
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuShape
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuShadow
+import androidx.compose.foundation.BorderStroke
 import ca.ilianokokoro.umihi.music.data.repositories.LocalPlaylistRepository
 import ca.ilianokokoro.umihi.music.models.LocalPlaylist
 import ca.ilianokokoro.umihi.music.models.Song
@@ -71,11 +75,14 @@ fun SongSelectionActionBar(
         enter = fadeIn() + scaleIn(initialScale = 0.94f),
         exit = fadeOut() + scaleOut(targetScale = 0.94f),
     ) {
+        // The slab menus are made of: this bar floats over a page of rows just the same.
+        val colors = studioMenuColors()
         Surface(
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            shadowElevation = 8.dp,
+            shape = StudioMenuShape,
+            color = colors.fill,
+            contentColor = colors.label,
+            shadowElevation = StudioMenuShadow,
+            border = BorderStroke(0.5.dp, colors.rim),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),

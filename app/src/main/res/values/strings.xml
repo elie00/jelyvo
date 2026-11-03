@@ -122,6 +122,10 @@
     <string name="search_load_more_failed">Couldn\'t load more results. Scroll down to retry.</string>
     <string name="get_song_failed">Failed to get Song Information</string>
     <string name="playback_failed">Playback stopped. Check your connection and try again.</string>
+    <string name="playback_failed_other">Playback stopped because these tracks could not be played. Try other tracks.</string>
+    <string name="playback_failed_refused">YouTube is refusing to play this right now. Please try again later.</string>
+    <string name="playback_track_skipped">This track could not be played. Moving to the next one.</string>
+    <string name="stability_report_playback_failures">Playback failures recorded: %1$d. Tap to share the details, which name no tracks</string>
     <string name="queue_empty">No songs in the queue</string>
     <string name="queue_up_next_empty">Nothing else is queued</string>
     <string name="save_queue">Save queue</string>
@@ -170,8 +174,6 @@
     <string name="theme_color_mono">Graphite</string>
     <string name="show_podcast_playlist_title">Show Podcast Playlist</string>
     <string name="show_podcast_playlist_description">Toggles the visibility of the \'Episodes for Later\' Playlist</string>
-    <string name="special_language_disabled">Special Language Disabled</string>
-    <string name="special_language_enabled">Special Language Enabled</string>
     <string name="reorder">Reorder</string>
     <string name="actions">Actions</string>
     <string name="playback">Playback</string>
@@ -211,7 +213,7 @@
     <string name="music_import_title">Import your music</string>
     <string name="music_import_settings_subtitle">From Apple Music, Spotify or Deezer</string>
     <string name="music_import_heading">Bring your playlists with you</string>
-    <string name="music_import_description">Paste a public or shared playlist link. Umihi will find the available tracks and create an editable local playlist.</string>
+    <string name="music_import_description">Paste a public or shared playlist link. Jelyvo will find the available tracks and create an editable local playlist.</string>
     <string name="music_import_supported_services">Supported services</string>
     <string name="music_import_link_label">Playlist link</string>
     <string name="music_import_link_placeholder">Paste a Spotify, Apple Music or Deezer link</string>
@@ -667,4 +669,13 @@
     <string name="lastfm_disconnect">Disconnect</string>
     <string name="lastfm_auth_failed">Last.fm refused the request. Check your key and secret, and that you approved access.</string>
     <string name="lastfm_unreachable">Couldn\'t reach Last.fm. Check your connection and try again.</string>
+    <string name="lyrics_translate">Translate lyrics</string>
+    <string name="lyrics_show_original">Show original lyrics</string>
+    <string name="lyrics_translation_failed">Couldn\'t translate these lyrics. Check your connection and try again.</string>
+    <string name="lyrics_already_in_language">These lyrics are already in your language.</string>
+    <string name="sleep_timer_minutes_field">Minutes</string>
+    <string name="sleep_timer_minutes_short">min</string>
+    <string name="local_view_songs">Songs</string>
+    <string name="local_view_folders">Folders</string>
+    <string name="replay_open">See your Replay</string>
 </resources>

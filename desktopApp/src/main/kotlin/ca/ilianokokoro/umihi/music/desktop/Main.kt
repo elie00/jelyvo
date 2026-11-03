@@ -245,7 +245,7 @@ private fun JelyvoDesktopApp(onQuit: () -> Unit, registerShortcuts: ((KeyEvent) 
         )
         if (deletePlaylist != null || clearHistory) AlertDialog(
             onDismissRequest = { deletePlaylist = null; clearHistory = false },
-            title = { Text(if (clearHistory) "Effacer l'historique ?" else "Supprimer cette playlist ?") },
+            title = { Text(if (clearHistory) "Effacer l'historique ?" else "Supprimer cette liste de lecture ?") },
             confirmButton = { TextButton(onClick = {
                 val deleting = deletePlaylist
                 libraryAction { if (deleting != null) library.deletePlaylist(deleting.id) else library.clearHistory() }
@@ -293,7 +293,7 @@ private fun JelyvoDesktopApp(onQuit: () -> Unit, registerShortcuts: ((KeyEvent) 
                                 onSubmit = {
                                     val playlistUrl = youtubePlaylistUrl(query)
                                     if (playlistUrl == null) runSearch()
-                                    else openCollection(Screen.Album(playlistUrl, "Playlist YouTube")) {
+                                    else openCollection(Screen.Album(playlistUrl, "Liste de lecture YouTube")) {
                                         val page = NewPipeMusicSearch.album(playlistUrl)
                                         Triple(page.tracks, page.artworkUrl, page.title)
                                     }

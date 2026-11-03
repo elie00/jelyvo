@@ -31,7 +31,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.LibraryMusic
-import androidx.compose.material3.HorizontalDivider
+import ca.ilianokokoro.umihi.music.ui.components.studio.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,7 +45,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -222,8 +221,8 @@ private fun LibraryHeader(onClick: () -> Unit) {
         ) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 Icon(
                     imageVector = Icons.Rounded.LibraryMusic,
@@ -255,11 +254,7 @@ private fun LibraryPlaylistRow(
     var isDropHovered by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(18.dp)
     val containerColor = if (isDropHovered) {
-        lerp(
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.surfaceContainerHigh,
-            0.18f,
-        )
+        MaterialTheme.colorScheme.surfaceContainerHighest
     } else {
         Color.Transparent
     }

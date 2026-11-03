@@ -27,10 +27,10 @@ import androidx.compose.material.icons.rounded.Fullscreen
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Replay10
-import androidx.compose.material3.CircularWavyProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearWavyProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
@@ -320,7 +320,7 @@ private fun FullscreenVideoControls(
                 modifier = Modifier.size(72.dp)
             ) {
                 if (uiState.isLoading) {
-                    CircularWavyProgressIndicator(modifier = Modifier.size(40.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(40.dp))
                 } else {
                     Icon(
                         imageVector = if (uiState.isPlaying) {
@@ -387,11 +387,9 @@ private fun FullscreenVideoControls(
                     )
                 },
                 track = { sliderState ->
-                    LinearWavyProgressIndicator(
+                    LinearProgressIndicator(
                         progress = { sliderState.coercedValueAsFraction },
                         modifier = Modifier.fillMaxWidth(),
-                        // Flat track while paused, wavy while playing
-                        amplitude = { if (uiState.isPlaying && seekEnabled) 1f else 0f },
                     )
                 },
                 modifier = Modifier.fillMaxWidth()

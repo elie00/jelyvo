@@ -17,15 +17,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PersonRemove
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilledTonalButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +42,12 @@ import ca.ilianokokoro.umihi.music.core.jam.JamStatus
 import ca.ilianokokoro.umihi.music.core.jam.PartyMember
 import ca.ilianokokoro.umihi.music.core.jam.normalizeJamServerUrl
 import ca.ilianokokoro.umihi.music.ui.components.QrCode
+import ca.ilianokokoro.umihi.music.ui.components.studio.ALERT_WIDTH_WIDE
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertRule
+import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedTextField
+import ca.ilianokokoro.umihi.music.ui.components.studio.Switch
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 
 /** Creates or joins a listening party, or shows the current one and who is in it. */
 @Composable
@@ -65,6 +67,7 @@ fun JamDialog(
     val validUrl = normalizeJamServerUrl(serverUrl)
 
     AlertDialog(
+        width = ALERT_WIDTH_WIDE,
         onDismissRequest = onClose,
         title = { Text(stringResource(R.string.jam_title)) },
         text = {
@@ -114,13 +117,14 @@ fun JamDialog(
             if (status is JamStatus.InParty) {
                 TextButton(onClick = onLeave) { Text(stringResource(R.string.jam_leave)) }
             } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column {
                     TextButton(
                         onClick = { validUrl?.let(onCreate) },
                         enabled = validUrl != null && !connecting,
                     ) {
                         Text(stringResource(R.string.jam_create))
                     }
+                    AlertRule()
                     TextButton(
                         onClick = { validUrl?.let { onJoin(it, code) } },
                         enabled = validUrl != null && code.isNotBlank() && !connecting,

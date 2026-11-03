@@ -23,7 +23,6 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.DownloadDone
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircleOutline
@@ -31,9 +30,6 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -58,6 +54,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.helpers.ComposeHelper
 import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
@@ -72,8 +75,11 @@ import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropSource
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.PAGE_GUTTER
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
+import ca.ilianokokoro.umihi.music.ui.components.studio.RowMoreButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlinx.coroutines.launch
@@ -81,8 +87,8 @@ import kotlinx.coroutines.launch
 /** Fraction of the row width the finger must cross before a swipe commits to its action. */
 private const val SWIPE_TRIGGER_FRACTION = 0.33f
 
-/** Same width as [SongThumbnail]'s default so numbered and thumbnailed rows stay aligned. */
-private val TRACK_NUMBER_SLOT_SIZE = 60.dp
+/** Narrow, so the number sits centred between the screen edge and the title. */
+private val TRACK_NUMBER_WIDTH = 24.dp
 
 /**
  * A track row. [trackNumber] and [hideArtist] switch the row to its "album page" look: the
@@ -140,8 +146,7 @@ fun SongListItem(
 
     val containerColor by animateColorAsState(
         targetValue = when {
-            isSelected -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f)
-            isCurrentSong -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.38f)
+            isSelected || isCurrentSong -> MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
             else -> Color.Transparent
         },
         animationSpec = tween(durationMillis = 180),
@@ -162,7 +167,6 @@ fun SongListItem(
         SwipeToDismissBoxValue.Settled,
         { distance: Float -> distance * SWIPE_TRIGGER_FRACTION },
     )
-    val isSwiping = swipeState.dismissDirection != SwipeToDismissBoxValue.Settled
 
     SwipeToDismissBox(
         state = swipeState,
@@ -170,6 +174,7 @@ fun SongListItem(
         enableDismissFromStartToEnd = isLoggedIn,
         backgroundContent = {
             SwipeActionBackground(
+                state = swipeState,
                 direction = swipeState.dismissDirection,
                 isLiked = isSongLiked,
             )
@@ -189,15 +194,10 @@ fun SongListItem(
             swipeScope.launch { swipeState.reset() }
         },
     ) {
-        ListItem(
+        Row(
             modifier = Modifier
-                .background(
-                    if (isSwiping) {
-                        MaterialTheme.colorScheme.surface
-                    } else {
-                        Color.Transparent
-                    }
-                )
+                .fillMaxWidth()
+                .background(containerColor)
                 .keyboardFocusOutline()
                 .songDragAndDropSource(song)
                 .onKeyboardContextMenu { expanded = true }
@@ -207,24 +207,17 @@ fun SongListItem(
                     selectionActive = selectionActive,
                     onSelectionClick = { modifiers -> onSelectionClick?.invoke(modifiers) },
                 )
-                .combinedClickable(onClick = onPress, onLongClick = { expanded = true }),
-        leadingContent = {
-            if (isSelected) {
-                Box(
-                    modifier = Modifier.size(TRACK_NUMBER_SLOT_SIZE),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            } else if (trackNumber != null) {
+                .combinedClickable(onClick = onPress, onLongClick = { expanded = true })
+                .padding(horizontal = PAGE_GUTTER, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (trackNumber != null) {
                 // On an album page the number replaces the cover, which every row would repeat.
                 // The playing track yields the number to the indicator, as YT Music does.
                 Box(
-                    modifier = Modifier.size(TRACK_NUMBER_SLOT_SIZE),
+                    modifier = Modifier
+                        .widthIn(min = TRACK_NUMBER_WIDTH)
+                        .height(ROW_ART_SIZE),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (isCurrentSong) {
@@ -232,209 +225,224 @@ fun SongListItem(
                     } else {
                         Text(
                             text = trackNumber.toString(),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
                 }
             } else if (rank != null) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier.width(28.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (isCurrentSong) {
-                            NowPlayingIndicator(isPlaying = isPlaying)
-                        } else {
-                            Text(
-                                text = rank.toString(),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    SongThumbnail(song = song)
-                }
-            } else {
-                SongThumbnail(song = song)
-            }
-        },
-        trailingContent = {
-            if (!selectionActive) {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(
-                        Icons.Rounded.MoreVert,
-                        contentDescription = stringResource(R.string.more)
-                    )
-                }
-                MaterialUDropdown(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false },
+                Box(
+                    modifier = Modifier.width(28.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    MaterialUDropdownItem(
-                    leadingIcon = Icons.Rounded.PlayCircleOutline,
-                    text = stringResource(R.string.play_next),
-                    onClick = {
-                        playNext()
-                        expanded = false
-                    }
-                )
-                MaterialUDropdownItem(
-                    leadingIcon = Icons.AutoMirrored.Rounded.PlaylistPlay,
-                    text = stringResource(R.string.add_to_queue),
-                    onClick = {
-                        addToQueue()
-                        expanded = false
-                    }
-                )
-                MaterialUDropdownItem(
-                    leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                    text = stringResource(R.string.album_add_to_playlist),
-                    onClick = {
-                        expanded = false
-                        swipeScope.launch {
-                            localPlaylists = localPlaylistRepository.getAll()
-                            showPlaylistPicker = true
-                        }
-                    }
-                )
-                MaterialUDropdownItem(
-                    leadingIcon = Icons.Rounded.Radio,
-                    text = stringResource(R.string.start_radio),
-                    onClick = {
-                        startRadio()
-                        expanded = false
-                    }
-                )
-                if (!song.isLocal) {
-                    MaterialUDropdownItem(
-                        leadingIcon = Icons.Rounded.NotInterested,
-                        text = stringResource(R.string.not_interested),
-                        onClick = {
-                            NotInterestedStore.hide(song, context)
-                            expanded = false
-                        }
-                    )
-                }
-                if (isLoggedIn) {
-                    MaterialUDropdownItem(
-                        leadingIcon = if (isSongLiked) {
-                            Icons.Rounded.Favorite
-                        } else {
-                            Icons.Rounded.FavoriteBorder
-                        },
-                        text = stringResource(
-                            if (isSongLiked) R.string.unlike else R.string.add_to_liked
-                        ),
-                        onClick = {
-                            LikeManager.setLiked(
-                                song = song,
-                                liked = !isSongLiked,
-                                context = context,
-                                currentStatus = isSongLiked,
-                            )
-                            expanded = false
-                        }
-                    )
-                }
-                if (onViewArtist != null && song.artistId != null) {
-                    MaterialUDropdownItem(
-                        leadingIcon = Icons.Rounded.Person,
-                        text = stringResource(R.string.view_artist),
-                        onClick = {
-                            onViewArtist()
-                            expanded = false
-                        }
-                    )
-                }
-                if (onViewAlbum != null && song.albumId != null) {
-                    MaterialUDropdownItem(
-                        leadingIcon = Icons.Rounded.Album,
-                        text = stringResource(R.string.view_album),
-                        onClick = {
-                            onViewAlbum()
-                            expanded = false
-                        }
-                    )
-                }
-                if (download != null && !song.downloaded) {
-                    MaterialUDropdownItem(
-                        leadingIcon = Icons.Rounded.Download,
-                        text = stringResource(R.string.download),
-                        onClick = {
-                            download()
-                            expanded = false
-                        }
-                    )
-                }
-                    // Local MediaStore files have no YouTube link to share.
-                    if (!song.isLocal) {
-                        MaterialUDropdownItem(
-                            leadingIcon = Icons.Rounded.Share,
-                            text = stringResource(R.string.share),
-                            onClick = {
-                                ShareHelper.shareSong(context, song)
-                                expanded = false
-                            }
+                    if (isCurrentSong) {
+                        NowPlayingIndicator(isPlaying = isPlaying)
+                    } else {
+                        Text(
+                            text = rank.toString(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
                 }
+                Spacer(modifier = Modifier.width(8.dp))
+                SongThumbnail(song = song, size = ROW_ART_SIZE)
+            } else {
+                SongThumbnail(song = song, size = ROW_ART_SIZE)
             }
-        },
-        supportingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                if (isDownloaded ?: song.downloaded) {
-                    // Discreet "available offline" marker, next to the subtitle/duration.
-                    Icon(
-                        modifier = Modifier.size(15.dp),
-                        imageVector = Icons.Rounded.DownloadDone,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        contentDescription = null
-                    )
-                }
 
+            // A number is followed by the gutter again, so the gap from the screen edge to the
+            // number and from the number to the title match, whatever its digit count.
+            Spacer(Modifier.width(if (trackNumber == null) 14.dp else PAGE_GUTTER))
+
+            Column(Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = song.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (isCurrentSong) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            // Only the one playing moves: a page of titles sliding at once is noise.
+                            .then(if (isCurrentSong) Modifier.basicMarquee() else Modifier),
+                    )
+                    if (song.isExplicit) {
+                        ExplicitBadge()
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = songSubtitle(song, hideArtist = hideArtist),
+                    text = songSubtitle(song, hideArtist = hideArtist, includeDuration = false),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.basicMarquee()
                 )
             }
-        },
-        colors = ListItemDefaults.colors(containerColor = containerColor),
-        verticalAlignment = Alignment.CenterVertically,
-        content = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                // Numbered rows already show the indicator in place of the number.
-                if (isCurrentSong && trackNumber == null && rank == null) {
-                    NowPlayingIndicator(isPlaying = isPlaying)
-                }
+
+            if (isDownloaded ?: song.downloaded) {
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Rounded.DownloadDone,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            if (isSelected) {
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Rounded.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            // Numbered rows already show the indicator in place of the number.
+            if (isCurrentSong && trackNumber == null && rank == null) {
+                Spacer(Modifier.width(8.dp))
+                NowPlayingIndicator(isPlaying = isPlaying)
+            }
+            if (song.duration.isNotBlank()) {
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = song.title,
-                    color = if (isCurrentSong) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        Color.Unspecified
-                    },
+                    text = song.duration,
+                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .basicMarquee()
                 )
-                if (song.isExplicit) {
-                    ExplicitBadge()
+            }
+            if (!selectionActive) {
+                RowMoreButton(
+                    onClick = { expanded = true },
+                    contentDescription = stringResource(R.string.more),
+                ) {
+                    StudioMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                        ) {
+                            StudioMenuItem(
+                            leadingIcon = Icons.Rounded.PlayCircleOutline,
+                            text = stringResource(R.string.play_next),
+                            onClick = {
+                                playNext()
+                                expanded = false
+                            }
+                        )
+                        StudioMenuItem(
+                            leadingIcon = Icons.AutoMirrored.Rounded.PlaylistPlay,
+                            text = stringResource(R.string.add_to_queue),
+                            onClick = {
+                                addToQueue()
+                                expanded = false
+                            }
+                        )
+                        StudioMenuItem(
+                            leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
+                            text = stringResource(R.string.album_add_to_playlist),
+                            onClick = {
+                                expanded = false
+                                swipeScope.launch {
+                                    localPlaylists = localPlaylistRepository.getAll()
+                                    showPlaylistPicker = true
+                                }
+                            }
+                        )
+                        StudioMenuItem(
+                            leadingIcon = Icons.Rounded.Radio,
+                            text = stringResource(R.string.start_radio),
+                            onClick = {
+                                startRadio()
+                                expanded = false
+                            }
+                        )
+                        if (!song.isLocal) {
+                            StudioMenuItem(
+                                leadingIcon = Icons.Rounded.NotInterested,
+                                text = stringResource(R.string.not_interested),
+                                onClick = {
+                                    NotInterestedStore.hide(song, context)
+                                    expanded = false
+                                }
+                            )
+                        }
+                        if (isLoggedIn) {
+                            StudioMenuItem(
+                                leadingIcon = if (isSongLiked) {
+                                    Icons.Rounded.Favorite
+                                } else {
+                                    Icons.Rounded.FavoriteBorder
+                                },
+                                text = stringResource(
+                                    if (isSongLiked) R.string.unlike else R.string.add_to_liked
+                                ),
+                                onClick = {
+                                    LikeManager.setLiked(
+                                        song = song,
+                                        liked = !isSongLiked,
+                                        context = context,
+                                        currentStatus = isSongLiked,
+                                    )
+                                    expanded = false
+                                }
+                            )
+                        }
+                        if (onViewArtist != null && song.artistId != null) {
+                            StudioMenuItem(
+                                leadingIcon = Icons.Rounded.Person,
+                                text = stringResource(R.string.view_artist),
+                                onClick = {
+                                    onViewArtist()
+                                    expanded = false
+                                }
+                            )
+                        }
+                        if (onViewAlbum != null && song.albumId != null) {
+                            StudioMenuItem(
+                                leadingIcon = Icons.Rounded.Album,
+                                text = stringResource(R.string.view_album),
+                                onClick = {
+                                    onViewAlbum()
+                                    expanded = false
+                                }
+                            )
+                        }
+                        if (download != null && !song.downloaded) {
+                            StudioMenuItem(
+                                leadingIcon = Icons.Rounded.Download,
+                                text = stringResource(R.string.download),
+                                onClick = {
+                                    download()
+                                    expanded = false
+                                }
+                            )
+                        }
+                            // Local MediaStore files have no YouTube link to share.
+                            if (!song.isLocal) {
+                                StudioMenuItem(
+                                    leadingIcon = Icons.Rounded.Share,
+                                    text = stringResource(R.string.share),
+                                    onClick = {
+                                        ShareHelper.shareSong(context, song)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
                 }
             }
-        },
-        )
+        }
     }
 
     if (showPlaylistPicker) {
@@ -479,13 +487,17 @@ fun SongListItem(
  * just repeat the album artist.
  */
 @Composable
-internal fun songSubtitle(song: Song, hideArtist: Boolean = false): String {
+internal fun songSubtitle(
+    song: Song,
+    hideArtist: Boolean = false,
+    includeDuration: Boolean = true,
+): String {
     val separator = stringResource(R.string.dot)
     return listOfNotNull(
         song.artist.takeIf { !hideArtist }?.takeIf(String::isNotBlank),
         song.viewCount.takeIf { song.isVideo }?.takeIf(String::isNotBlank),
         song.playCount?.takeIf(String::isNotBlank),
-        song.duration.takeIf(String::isNotBlank),
+        song.duration.takeIf { includeDuration }?.takeIf(String::isNotBlank),
     ).joinToString(" $separator ")
 }
 
@@ -525,24 +537,30 @@ internal fun resolveSongLikeStatus(
 
 @Composable
 private fun SwipeActionBackground(
+    state: SwipeToDismissBoxState,
     direction: SwipeToDismissBoxValue,
     isLiked: Boolean,
 ) {
     if (direction == SwipeToDismissBoxValue.Settled) return
 
     val isLike = direction == SwipeToDismissBoxValue.StartToEnd
-    Box(
+    val tint = MaterialTheme.colorScheme.primary
+    Row(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                if (isLike) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.secondaryContainer
+            // Only what the row has uncovered: it is see-through, so the rest would show under it.
+            .drawWithContent {
+                val offset = runCatching { state.requireOffset() }.getOrDefault(0f)
+                val left = if (offset < 0f) size.width + offset else 0f
+                val right = if (offset > 0f) offset else size.width
+                clipRect(left = left, top = 0f, right = right, bottom = size.height) {
+                    this@drawWithContent.drawContent()
                 }
-            )
-            .padding(horizontal = 24.dp),
-        contentAlignment = if (isLike) Alignment.CenterStart else Alignment.CenterEnd,
+            }
+            .background(tint.copy(alpha = 0.18f))
+            .padding(horizontal = PAGE_GUTTER),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (isLike) Arrangement.Start else Arrangement.End,
     ) {
         Icon(
             imageVector = if (isLike) {
@@ -551,11 +569,20 @@ private fun SwipeActionBackground(
                 Icons.AutoMirrored.Rounded.PlaylistPlay
             },
             contentDescription = null,
-            tint = if (isLike) {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            } else {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            },
+            tint = tint,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(
+                when {
+                    !isLike -> R.string.add_to_queue
+                    isLiked -> R.string.unlike
+                    else -> R.string.like
+                }
+            ),
+            style = MaterialTheme.typography.labelMedium,
+            color = tint,
         )
     }
 }

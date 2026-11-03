@@ -33,6 +33,7 @@ fun SongThumbnail(
     song: Song,
     modifier: Modifier = Modifier,
     size: Dp = 56.dp,
+    cornerRadius: Dp = 8.dp,
 ) {
     val uri = song.thumbnailPath ?: song.thumbnailHref
     if (song.isVideo) {
@@ -54,7 +55,7 @@ fun SongThumbnail(
             modifier = modifier
                 .height(size)
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(8.dp)),
+                .clip(RoundedCornerShape(cornerRadius)),
             error = ColorPainter(MaterialTheme.colorScheme.surfaceContainerHighest),
             placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceContainerHighest),
         )
@@ -68,7 +69,7 @@ fun SongThumbnail(
                 uri = uri,
                 modifier = Modifier.matchParentSize(),
                 requestSize = size,
-            cornerRadius = 8.dp,
+            cornerRadius = cornerRadius,
             )
         }
     }

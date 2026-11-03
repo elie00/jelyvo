@@ -31,12 +31,11 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.HorizontalDivider
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.LinearProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,8 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircleButton
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackStatus
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.playback.Media3PlaybackEngine
@@ -138,12 +136,7 @@ fun PermanentPlaybackPane(
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 shape = RoundedCornerShape(28.dp),
-                color = lerp(
-                    MaterialTheme.colorScheme.surfaceContainer,
-                    MaterialTheme.colorScheme.primaryContainer,
-                    0.08f,
-                ),
-                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surfaceContainer,
             ) {
                 Column(
                     modifier = Modifier
@@ -207,7 +200,7 @@ fun PermanentPlaybackPane(
                                 contentDescription = stringResource(R.string.previous),
                             )
                         }
-                        FilledIconButton(
+                        CircleButton(
                             onClick = {
                                 if (isPlaying) {
                                     Media3PlaybackEngine.pause()
@@ -215,8 +208,9 @@ fun PermanentPlaybackPane(
                                     Media3PlaybackEngine.play()
                                 }
                             },
+                            size = 56.dp,
                             enabled = !isLoading,
-                            modifier = Modifier.size(56.dp),
+                            filled = true,
                         ) {
                             Icon(
                                 imageVector = if (isPlaying) {
@@ -281,9 +275,6 @@ fun PermanentPlaybackPane(
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                     },
-                                    colors = ListItemDefaults.colors(
-                                        containerColor = Color.Transparent
-                                    ),
                                 ) {
                                     Text(
                                         text = entry.song.title,
@@ -301,9 +292,8 @@ fun PermanentPlaybackPane(
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    tonalElevation = 6.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

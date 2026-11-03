@@ -32,7 +32,6 @@ fun BrowsingContextPane(
             .padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        tonalElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier

@@ -6,7 +6,6 @@ import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +30,7 @@ import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
 import ca.ilianokokoro.umihi.music.ui.components.ShelfHeader
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.screens.album.AlbumContextHeader
-import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistHero
+import ca.ilianokokoro.umihi.music.ui.screens.artist.ArtistHeader
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.components.PlaylistHeader
 import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import org.junit.Rule
@@ -145,13 +144,7 @@ class DetailPagesScreenshotTest {
 
     @Test
     fun artist() = render("detail-artist") {
-        Box {
-            ArtistHero(
-                thumbnail = "",
-                name = "Daft Punk",
-                subscriberCount = "12 M d'abonnés",
-            )
-        }
+        ArtistHeader(name = "Daft Punk", artHeight = 360.dp)
     }
 
     @Test

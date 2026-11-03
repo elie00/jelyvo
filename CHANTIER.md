@@ -3,7 +3,48 @@
 > État courant : [audit et validation du 8 octobre 2026](docs/PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-07-27, branche `main`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-11-03, branche `feat/bitchord-components`, remote `origin = github.com/elie00/umihi-music`.
+
+## État du 3 novembre 2026 au soir, sur le Mac
+
+La PR #4 a été compilée et testée sur le Mac : 802 tests JVM sans échec, 65 tests du serveur, lint sans erreur. L'APK de release a été installé par-dessus la 2.6.13 publique sur deux émulateurs. Toujours faire `git fetch` avant de se fier à cette note.
+
+**Vérifié sur deux émulateurs, en release**
+
+- Écoute à plusieurs avec deux vrais lecteurs : lien d'invitation, QR code, membres, exclusion, contrôle réservé à l'hôte, file partagée dans les deux sens. Écart mesuré entre 0,05 et 0,7 s, signal du serveur à 10,0 s.
+- Fondu enchaîné (deux lecteurs pendant la durée réglée) et Automix : sur des fichiers à silences, il sort à 40,4 s au lieu de 59,6 s et entre à 5,0 s au lieu de 0. Saut des silences : un titre de 60 s joué en 42 s.
+- Feuilles, réordonner la file, menus près des bords, glissement à gauche, gestes du lecteur, accueil sans compte, grand écran, barre d'état sur photos claires et sombres, traduction réelle et hors ligne, paroles MP3, FLAC et M4A, pochettes, dossiers, « Ouvrir avec », minuterie à durée libre, Replay et son affiche, carte image, messages d'échec.
+
+**Corrigé par ces tests** : la file d'un hôte tronquée quand un invité la modifiait, les durées perdues dans une file reçue, les préréglages de l'égaliseur (Android ajoute un caractère nul à leur nom), l'ombre coupée des menus, les marges de plusieurs écrans.
+
+**L'application est maintenant toujours en français**, quelle que soit la langue du téléphone : voir [`docs/I18N.md`](docs/I18N.md). La langue spéciale cachée est retirée.
+
+**Reste à faire, qui demande quelqu'un** :
+
+1. Écouter à l'oreille sur de vrais téléphones : synchronisation à deux, fondu, Automix.
+2. Tester le partage des écoutes avec de vrais comptes ListenBrainz et Last.fm. Seul le refus d'un mauvais jeton a été vérifié.
+3. Déployer la page d'invitation en français : `cd worker && npx wrangler login && npm run deploy`. Le code est prêt, le serveur en ligne affiche encore l'anglais.
+4. Passer la PR #4 en fusion, puis monter la version en 2.6.14 avant de publier : la 2.6.13 est déjà sortie, et le téléphone ne verrait rien sans nouveau numéro.
+5. Republier le dépôt public `elie00/jelyvo` avec le script de publication, jamais à la main : il réécrit l'historique.
+
+**Non testable au doigt** : la sélection multiple et le glisser-déposer vers les zones de dépôt, réservés à la souris et au stylet (DeX). Le rafraîchissement le plus rapide : l'émulateur reste à 60 Hz.
+
+**Limites assumées**
+
+- Traduction : service web non officiel de Google, appelé seulement quand on appuie sur le bouton. Cache en mémoire uniquement.
+- Replay : version compacte sur l'année en cours, sans choix de période ni plusieurs affiches.
+- Paroles intégrées : ni Ogg ni Matroska.
+- Feuilles et menus : ni flou ni voile de BitChord derrière les menus, à cause de leur propre fenêtre.
+- Les pochettes spéciales gardent leur dégradé.
+- Les commits de `95e7798e` à `e63d400c` ne compilent pas pris un par un (`8c1748b1` et `6cfd25c1` rétablissent le build) : à savoir pour un `git bisect`.
+
+**Décisions restantes**
+
+- Calage d'Automix sur le tempo : à décider après une écoute réelle.
+- PoToken n'est pas écrit, par choix : il sert à contourner la détection de robots. Le repli actuel marche encore, mais reste le point le plus fragile de la lecture.
+- Avenir du dépôt privé `umihi-music`, à garder privé pour l'instant : le dépôt public est `elie00/jelyvo`.
+
+Détail des reprises depuis BitChord : [`docs/BITCHORD_BACKLOG.md`](docs/BITCHORD_BACKLOG.md).
 
 ## Reprise depuis BitChord (2026-11-02), publiée en 2.6.13
 
@@ -15,6 +56,7 @@
 - **Reste à tester** : sur téléphone réel, à l'oreille ; écoute à plusieurs entre deux vrais appareils ; effet réel de l'analyse d'Automix sur le fondu (l'émulateur montre la transition, pas ce que l'analyse a décidé) ; scrobbling avec de vrais comptes ; écrans secondaires.
 - **Suite, au 3 novembre** : décisions à prendre, tests restants et reprises possibles depuis BitChord dans [`docs/BITCHORD_BACKLOG.md`](docs/BITCHORD_BACKLOG.md).
 - **Reste à faire** : calage d'Automix sur le tempo (modèles ONNX, moteur natif), jamais porté.
+- **Composants alignés sur BitChord** (`ui/components/studio/`, branche `feat/bitchord-components`) : interrupteur, curseur, champ de texte, boîtes de dialogue, contrôle segmenté, boutons d'action. Pages de détail teintées par la pochette et photo d'artiste en fond. Feuilles du bas alignées (`StudioSheet.kt`), sans le flou : elles ont leur propre fenêtre. Menus (`StudioMenu.kt`, sans voile ni flou : ils ont leur propre fenêtre) et boutons alignés. Rangées (`StudioList.kt`, le menu et le glissement gardés), cartes et surfaces teintées alignées. Icônes de la barre d'état choisies selon le haut de la photo d'artiste (`StatusBarIcons.kt`). Volets grand écran, rail et widgets alignés aussi, les pochettes spéciales gardent leur dégradé. Tous les tests sur appareil restent à faire, sur le Mac.
 - **Test connu en échec sur le poste Windows** : `WearPlaybackBridgeThreadingTest`, qui cherche un saut de ligne LF alors que le clone Windows est en CRLF. Il passe sur le Mac.
 - **Captures sans appareil** : `app/build/outputs/theme-showcase`. Toujours faire `git fetch` avant de se fier à `origin/main` depuis ce clone.
 

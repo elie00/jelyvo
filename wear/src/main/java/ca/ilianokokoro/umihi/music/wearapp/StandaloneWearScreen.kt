@@ -358,7 +358,7 @@ private fun LibraryScreen(
         item { NavigationCard(Icons.Filled.DownloadDone, "Hors connexion", "${state.downloads.size} titre(s)") { onNavigate(WatchRoute.DOWNLOADS) } }
         item { NavigationCard(Icons.Filled.MusicNote, "Tous les titres", "${allSongs.size} titre(s)") { onList("Tous les titres", allSongs) } }
         item { NavigationCard(Icons.Filled.Person, "Artistes", "${artists.size} artiste(s)") { onList("Artistes", artists) } }
-        item { NavigationCard(Icons.Filled.Album, "Mix Jelyvo", "Recommandations actualisées") { onList("Mix Jelyvo", state.homeSongs) } }
+        item { NavigationCard(Icons.Filled.Album, "Sélection Jelyvo", "Recommandations actualisées") { onList("Sélection Jelyvo", state.homeSongs) } }
         item { NavigationCard(Icons.Filled.Podcasts, "Podcasts", "Bientôt disponible", enabled = false) {} }
     }
 }
