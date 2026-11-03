@@ -15,7 +15,7 @@
 - **Reste à tester** : sur téléphone réel, à l'oreille ; écoute à plusieurs entre deux vrais appareils ; effet réel de l'analyse d'Automix sur le fondu (l'émulateur montre la transition, pas ce que l'analyse a décidé) ; scrobbling avec de vrais comptes ; écrans secondaires.
 - **Suite, au 3 novembre** : décisions à prendre, tests restants et reprises possibles depuis BitChord dans [`docs/BITCHORD_BACKLOG.md`](docs/BITCHORD_BACKLOG.md).
 - **Reste à faire** : calage d'Automix sur le tempo (modèles ONNX, moteur natif), jamais porté.
-- **Composants alignés sur BitChord** (`ui/components/studio/`, branche `feat/bitchord-components`) : interrupteur, curseur, champ de texte, boîtes de dialogue, contrôle segmenté, boutons d'action. Pages de détail teintées par la pochette et photo d'artiste en fond. Feuilles du bas alignées (`StudioSheet.kt`), sans le flou : elles ont leur propre fenêtre. Pas encore repris : menus, boutons restants, listes et cartes.
+- **Composants alignés sur BitChord** (`ui/components/studio/`, branche `feat/bitchord-components`) : interrupteur, curseur, champ de texte, boîtes de dialogue, contrôle segmenté, boutons d'action. Pages de détail teintées par la pochette et photo d'artiste en fond. Feuilles du bas alignées (`StudioSheet.kt`), sans le flou : elles ont leur propre fenêtre. Menus (`StudioMenu.kt`, sans voile ni flou : ils ont leur propre fenêtre) et boutons alignés. Pas encore repris : listes et cartes.
 - **Test connu en échec sur le poste Windows** : `WearPlaybackBridgeThreadingTest`, qui cherche un saut de ligne LF alors que le clone Windows est en CRLF. Il passe sur le Mac.
 - **Captures sans appareil** : `app/build/outputs/theme-showcase`. Toujours faire `git fetch` avant de se fier à `origin/main` depuis ce clone.
 
