@@ -1,5 +1,7 @@
 package ca.ilianokokoro.umihi.music.core.jam
 
+import ca.ilianokokoro.umihi.music.core.domain.parseTrackDurationMillis
+import java.util.Locale
 import kotlin.math.abs
 
 /** What this device's queue must do to match the party's. */
@@ -32,6 +34,23 @@ object JamQueueSync {
 
     /** Below this, a device holding more of the queue shares the next stretch of it. */
     const val TOP_UP_BELOW_TRACKS = 5
+
+    /** A song row's duration, in the form a party carries it. */
+    fun durationMillis(label: String?): Long? =
+        label?.let(::parseTrackDurationMillis)?.takeIf { it > 0L }
+
+    /** What a song row shows for a party track's duration. */
+    fun durationLabel(durationMs: Long?): String {
+        val totalSeconds = durationMs?.takeIf { it > 0L }?.div(1_000L) ?: return ""
+        val hours = totalSeconds / 3_600L
+        val minutes = totalSeconds % 3_600L / 60L
+        val seconds = totalSeconds % 60L
+        return if (hours > 0L) {
+            String.format(Locale.ROOT, "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format(Locale.ROOT, "%d:%02d", minutes, seconds)
+        }
+    }
 
     /**
      * Cuts a device's queue down to what fits in one message. History goes first, because a track

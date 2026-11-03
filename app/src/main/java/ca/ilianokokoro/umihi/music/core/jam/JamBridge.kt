@@ -2,6 +2,7 @@ package ca.ilianokokoro.umihi.music.core.jam
 
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.models.Song
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -225,12 +226,17 @@ class JamBridge(
         (0 until mediaItemCount).map { getMediaItemAt(it).mediaId }
 
     private fun MediaItem.toPartyTrack(): PartyTrack =
-        toPartyTrack(mediaMetadata.durationMs ?: 0L)
+        toPartyTrack(
+            mediaMetadata.durationMs
+                ?: JamQueueSync.durationMillis(mediaMetadata.extras?.getString(Constants.ExoPlayer.SongMetadata.DURATION))
+                ?: 0L
+        )
 
     private fun PartyTrack.toSong() = Song(
         youtubeId = videoId,
         title = title,
         artist = artist,
+        duration = JamQueueSync.durationLabel(durationMs),
         thumbnailHref = thumbnailUrl.orEmpty(),
     )
 
