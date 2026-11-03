@@ -86,7 +86,6 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -120,7 +119,6 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottom
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -615,13 +613,13 @@ private fun GestureHint(icon: ImageVector, text: String) {
     ) {
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.primaryContainer,
+            color = MaterialTheme.colorScheme.surfaceContainerHighest,
         ) {
             Icon(
                 icon,
                 contentDescription = null,
                 modifier = Modifier.padding(10.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
         Text(text, style = MaterialTheme.typography.bodyMedium)
