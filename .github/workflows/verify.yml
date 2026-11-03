@@ -10,6 +10,29 @@ concurrency:
   group: verify-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 jobs:
+  servers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
+      - name: Test the Cloudflare party server
+        working-directory: worker
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Test the Go party server
+        working-directory: backend
+        run: go test ./...
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 35
