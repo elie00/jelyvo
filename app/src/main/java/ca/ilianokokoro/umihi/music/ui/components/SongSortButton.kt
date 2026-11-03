@@ -19,8 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.SongSort
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 
 /** Single-choice sort menu, shared by the remote and the on-device playlist screens. */
 @Composable
@@ -41,12 +41,12 @@ fun SongSortButton(
             contentDescription = stringResource(R.string.sort_by),
         )
 
-        MaterialUDropdown(
+        StudioMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
             SongSort.entries.forEach { option ->
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     // A tick on the active axis: the menu is the only place the current sort shows.
                     leadingIcon = if (option == sort) Icons.Rounded.Check else option.icon(),
                     text = stringResource(option.labelRes()),

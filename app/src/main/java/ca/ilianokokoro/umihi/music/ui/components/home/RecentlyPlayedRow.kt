@@ -3,27 +3,13 @@ package ca.ilianokokoro.umihi.music.ui.components.home
 import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
 import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistPlay
 import androidx.compose.material.icons.rounded.PlayCircleOutline
 import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,12 +19,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
-import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
@@ -108,43 +94,31 @@ internal fun HistoryCardMenu(
     song: Song? = null,
 ) {
     val context = LocalContext.current
-    DropdownMenu(
+    StudioMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
     ) {
         song?.let { historySong ->
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.play_next)) },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Rounded.PlayCircleOutline, contentDescription = null)
-                },
+            StudioMenuItem(
+                text = stringResource(R.string.play_next),
+                leadingIcon = Icons.Rounded.PlayCircleOutline,
                 onClick = {
                     PlayerManager.addNext(historySong, context)
                     onDismiss()
                 },
             )
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.add_to_queue)) },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.PlaylistPlay,
-                        contentDescription = null,
-                    )
-                },
+            StudioMenuItem(
+                text = stringResource(R.string.add_to_queue),
+                leadingIcon = Icons.AutoMirrored.Rounded.PlaylistPlay,
                 onClick = {
                     PlayerManager.addToQueue(historySong, context)
                     onDismiss()
                 },
             )
         }
-        DropdownMenuItem(
-            text = { Text(stringResource(R.string.remove_from_history)) },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Rounded.Delete,
-                    contentDescription = null,
-                )
-            },
+        StudioMenuItem(
+            text = stringResource(R.string.remove_from_history),
+            leadingIcon = Icons.Rounded.Delete,
             onClick = onRemoveFromHistory,
         )
     }

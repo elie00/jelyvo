@@ -48,8 +48,8 @@ import androidx.compose.ui.window.DialogProperties
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.models.Playlist
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
 import ca.ilianokokoro.umihi.music.ui.components.studio.CircleButton
 import ca.ilianokokoro.umihi.music.ui.components.studio.RELEASE_ACTION_GAP
@@ -227,12 +227,12 @@ fun PlaylistInfo(
                                 contentDescription = stringResource(R.string.actions)
                             )
 
-                            MaterialUDropdown(
+                            StudioMenu(
                                 expanded = optionsExtended,
                                 onDismissRequest = { optionsExtended = false },
                             ) {
                                 onStartRadio?.let { startRadio ->
-                                    MaterialUDropdownItem(
+                                    StudioMenuItem(
                                         leadingIcon = Icons.Rounded.Radio,
                                         text = stringResource(R.string.start_radio),
                                         onClick = {
@@ -243,7 +243,7 @@ fun PlaylistInfo(
                                 }
 
                                 if (isDownloading) {
-                                    MaterialUDropdownItem(
+                                    StudioMenuItem(
                                         leadingIcon = Icons.Rounded.Cancel,
                                         text = stringResource(R.string.cancel_download),
                                         onClick = {
@@ -252,7 +252,7 @@ fun PlaylistInfo(
                                         }
                                     )
                                 } else if (!playlist.downloaded) {
-                                    MaterialUDropdownItem(
+                                    StudioMenuItem(
                                         leadingIcon = Icons.Rounded.Download,
                                         text = stringResource(R.string.download),
                                         onClick = {
@@ -265,7 +265,7 @@ fun PlaylistInfo(
                                 // Nothing to remove when no track is stored locally, and the
                                 // account playlists we do not own reject deletion outright.
                                 if (playlist.songs.any { it.downloaded }) {
-                                    MaterialUDropdownItem(
+                                    StudioMenuItem(
                                         leadingIcon = Icons.Rounded.FileDownloadOff,
                                         text = stringResource(R.string.remove_download),
                                         onClick = {
@@ -276,7 +276,7 @@ fun PlaylistInfo(
                                 }
 
                                 if (playlist.info.isEditable) {
-                                    MaterialUDropdownItem(
+                                    StudioMenuItem(
                                         leadingIcon = Icons.Rounded.Delete,
                                         text = stringResource(R.string.delete_playlist),
                                         onClick = {

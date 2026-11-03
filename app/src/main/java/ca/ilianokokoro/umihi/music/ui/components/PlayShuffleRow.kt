@@ -25,8 +25,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
 import ca.ilianokokoro.umihi.music.ui.components.studio.CircleIconButton
 import ca.ilianokokoro.umihi.music.ui.components.studio.RELEASE_ACTION_GAP
@@ -103,12 +103,12 @@ private fun ReleaseMenuButton(actions: List<PlaySplitButtonAction>) {
             contentDescription = stringResource(R.string.actions),
             onClick = { expanded = true },
         )
-        MaterialUDropdown(
+        StudioMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
             actions.forEach { action ->
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     text = action.label,
                     leadingIcon = action.icon,
                     onClick = {

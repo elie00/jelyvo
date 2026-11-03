@@ -46,8 +46,8 @@ import ca.ilianokokoro.umihi.music.core.managers.NotInterestedStore
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 import sh.calvin.reorderable.ReorderableCollectionItemScope
@@ -166,11 +166,11 @@ fun QueueSongListItem(
                 modifier = Modifier.size(20.dp),
             )
 
-            MaterialUDropdown(
+            StudioMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
             ) {
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     leadingIcon = Icons.Rounded.Radio,
                     text = stringResource(R.string.start_radio),
                     onClick = {
@@ -182,7 +182,7 @@ fun QueueSongListItem(
                 // Rejecting a track is only actionable where it was actually suggested:
                 // hide() drops it from the queue's autoplay tail and from later mixes.
                 if (song.isSuggestion) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                         leadingIcon = Icons.Rounded.NotInterested,
                         text = stringResource(R.string.not_interested),
                         onClick = {
@@ -192,7 +192,7 @@ fun QueueSongListItem(
                     )
                 }
 
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     leadingIcon = Icons.Rounded.Remove,
                     text = stringResource(R.string.remove_from_queue),
                     onClick = {

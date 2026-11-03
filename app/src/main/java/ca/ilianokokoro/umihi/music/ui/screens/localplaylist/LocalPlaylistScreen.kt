@@ -58,8 +58,8 @@ import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SongSortButton
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistMosaicCover
 import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
 import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedTextField
@@ -142,11 +142,11 @@ fun LocalPlaylistScreen(
                             contentDescription = stringResource(R.string.actions)
                         )
 
-                        MaterialUDropdown(
+                        StudioMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
                         ) {
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.DriveFileRenameOutline,
                                 text = stringResource(R.string.rename_playlist),
                                 onClick = {
@@ -154,7 +154,7 @@ fun LocalPlaylistScreen(
                                     showRenameDialog = true
                                 }
                             )
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.Description,
                                 text = stringResource(R.string.edit_description),
                                 onClick = {
@@ -162,7 +162,7 @@ fun LocalPlaylistScreen(
                                     showDescriptionDialog = true
                                 }
                             )
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.Upload,
                                 text = stringResource(R.string.export_playlist),
                                 onClick = {
@@ -170,7 +170,7 @@ fun LocalPlaylistScreen(
                                     exportLauncher.launch("${uiState.name}.json")
                                 }
                             )
-                            MaterialUDropdownItem(
+                            StudioMenuItem(
                                 leadingIcon = Icons.Rounded.Delete,
                                 text = stringResource(R.string.delete_playlist),
                                 onClick = {

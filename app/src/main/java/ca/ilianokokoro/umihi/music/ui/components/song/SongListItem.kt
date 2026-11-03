@@ -72,8 +72,8 @@ import ca.ilianokokoro.umihi.music.models.adapters.toTrack
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.songDragAndDropSource
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdown
-import ca.ilianokokoro.umihi.music.ui.components.materialu.dropdown.MaterialUDropdownItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenu
+import ca.ilianokokoro.umihi.music.ui.components.studio.StudioMenuItem
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
 import kotlinx.coroutines.launch
@@ -268,11 +268,11 @@ fun SongListItem(
                         contentDescription = stringResource(R.string.more)
                     )
                 }
-                MaterialUDropdown(
+                StudioMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                 ) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                     leadingIcon = Icons.Rounded.PlayCircleOutline,
                     text = stringResource(R.string.play_next),
                     onClick = {
@@ -280,7 +280,7 @@ fun SongListItem(
                         expanded = false
                     }
                 )
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     leadingIcon = Icons.AutoMirrored.Rounded.PlaylistPlay,
                     text = stringResource(R.string.add_to_queue),
                     onClick = {
@@ -288,7 +288,7 @@ fun SongListItem(
                         expanded = false
                     }
                 )
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     leadingIcon = Icons.AutoMirrored.Rounded.PlaylistAdd,
                     text = stringResource(R.string.album_add_to_playlist),
                     onClick = {
@@ -299,7 +299,7 @@ fun SongListItem(
                         }
                     }
                 )
-                MaterialUDropdownItem(
+                StudioMenuItem(
                     leadingIcon = Icons.Rounded.Radio,
                     text = stringResource(R.string.start_radio),
                     onClick = {
@@ -308,7 +308,7 @@ fun SongListItem(
                     }
                 )
                 if (!song.isLocal) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                         leadingIcon = Icons.Rounded.NotInterested,
                         text = stringResource(R.string.not_interested),
                         onClick = {
@@ -318,7 +318,7 @@ fun SongListItem(
                     )
                 }
                 if (isLoggedIn) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                         leadingIcon = if (isSongLiked) {
                             Icons.Rounded.Favorite
                         } else {
@@ -339,7 +339,7 @@ fun SongListItem(
                     )
                 }
                 if (onViewArtist != null && song.artistId != null) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                         leadingIcon = Icons.Rounded.Person,
                         text = stringResource(R.string.view_artist),
                         onClick = {
@@ -349,7 +349,7 @@ fun SongListItem(
                     )
                 }
                 if (onViewAlbum != null && song.albumId != null) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                         leadingIcon = Icons.Rounded.Album,
                         text = stringResource(R.string.view_album),
                         onClick = {
@@ -359,7 +359,7 @@ fun SongListItem(
                     )
                 }
                 if (download != null && !song.downloaded) {
-                    MaterialUDropdownItem(
+                    StudioMenuItem(
                         leadingIcon = Icons.Rounded.Download,
                         text = stringResource(R.string.download),
                         onClick = {
@@ -370,7 +370,7 @@ fun SongListItem(
                 }
                     // Local MediaStore files have no YouTube link to share.
                     if (!song.isLocal) {
-                        MaterialUDropdownItem(
+                        StudioMenuItem(
                             leadingIcon = Icons.Rounded.Share,
                             text = stringResource(R.string.share),
                             onClick = {
