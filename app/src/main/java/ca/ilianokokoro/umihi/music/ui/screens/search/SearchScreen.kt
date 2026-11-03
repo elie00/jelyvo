@@ -9,7 +9,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +26,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
@@ -39,7 +37,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -83,11 +80,12 @@ import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.TopResultCard
@@ -554,30 +552,23 @@ fun SearchScreen(
                 focusRequester = focusRequester,
             )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = PageGutter),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SearchFilter.entries.forEach { filter ->
-                    PillFilterChip(
-                        selected = uiState.filter == filter,
-                        onClick = { searchViewModel.selectFilter(filter) },
-                        label = stringResource(
-                                    when (filter) {
-                                        SearchFilter.All -> R.string.search_all
-                                        SearchFilter.Songs -> R.string.search_songs
-                                        SearchFilter.Videos -> R.string.search_videos
-                                        SearchFilter.Albums -> R.string.search_albums
-                                        SearchFilter.Artists -> R.string.search_artists
-                                        SearchFilter.Library -> R.string.search_library
-                                    }
-                        ),
+            PillSegmentedControl(
+                options = SearchFilter.entries.map { filter ->
+                    stringResource(
+                        when (filter) {
+                            SearchFilter.All -> R.string.search_all
+                            SearchFilter.Songs -> R.string.search_songs
+                            SearchFilter.Videos -> R.string.search_videos
+                            SearchFilter.Albums -> R.string.search_albums
+                            SearchFilter.Artists -> R.string.search_artists
+                            SearchFilter.Library -> R.string.search_library
+                        }
                     )
-                }
-            }
+                },
+                selectedIndex = SearchFilter.entries.indexOf(uiState.filter),
+                onSelect = { searchViewModel.selectFilter(SearchFilter.entries[it]) },
+                modifier = Modifier.padding(horizontal = PageGutter),
+            )
         }
         }
     }

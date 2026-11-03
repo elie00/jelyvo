@@ -8,7 +8,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,18 +26,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -46,12 +39,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -73,9 +66,10 @@ import ca.ilianokokoro.umihi.music.ui.components.FrostedPageHeader
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.bleedToPageEdges
 import ca.ilianokokoro.umihi.music.ui.components.dialog.PlaylistCreationDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import dev.chrisbanes.haze.HazeState
@@ -343,37 +337,16 @@ fun LibraryScreen(
                     LoggedOutBanner(onSettingsButtonPress = onSettingsButtonPress)
                 }
                 if (chipTabs.isNotEmpty()) {
-                    // Spotify-style filter chips: selecting a chip replaces the current filter,
-                    // tapping the X (or the chip again) clears it.
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = PageGutter),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        chipTabs.forEach { tab ->
-                            val selected = selectedTab == tab
-                            PillFilterChip(
-                                selected = selected,
-                                onClick = {
-                                    selectedTabOrdinal = if (selected) -1 else tab.ordinal
-                                },
-                                label = stringResource(tab.labelRes),
-                                leadingIcon = if (selected) {
-                                    {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Close,
-                                            contentDescription = stringResource(R.string.clear_filter),
-                                            modifier = Modifier.size(FilterChipDefaults.IconSize),
-                                        )
-                                    }
-                                } else {
-                                    null
-                                },
-                            )
-                        }
-                    }
+                    // Selecting a segment replaces the current filter, and tapping it again clears it.
+                    PillSegmentedControl(
+                        options = chipTabs.map { stringResource(it.labelRes) },
+                        selectedIndex = chipTabs.indexOf(selectedTab),
+                        onSelect = { index ->
+                            val tab = chipTabs[index]
+                            selectedTabOrdinal = if (selectedTab == tab) -1 else tab.ordinal
+                        },
+                        modifier = Modifier.padding(horizontal = PageGutter),
+                    )
                 }
             }
         }

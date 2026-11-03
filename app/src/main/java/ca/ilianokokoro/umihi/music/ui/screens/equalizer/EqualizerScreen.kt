@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,15 +19,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.RestartAlt
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -48,9 +45,11 @@ import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PagePanel
-import ca.ilianokokoro.umihi.music.ui.components.PillFilterChip
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
+import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
+import ca.ilianokokoro.umihi.music.ui.components.studio.Slider
+import ca.ilianokokoro.umihi.music.ui.components.studio.Switch
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
@@ -68,7 +67,7 @@ fun EqualizerScreen(
     val hazeState = remember { HazeState() }
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 modifier = Modifier.frosted(hazeState),
                 colors = frostedTopAppBarColors(),
                 title = {
@@ -169,23 +168,18 @@ fun EqualizerScreen(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        state.presets.forEachIndexed { index, name ->
-                            PillFilterChip(
-                                selected = state.selectedPreset == index,
-                                onClick = { equalizerViewModel.selectPreset(index) },
-                                label = name,
-                                enabled = state.enabled,
-                            )
-                        }
-                        if (state.selectedPreset < 0) {
-                            Text(
+                    PillSegmentedControl(
+                        options = state.presets,
+                        selectedIndex = state.selectedPreset,
+                        onSelect = equalizerViewModel::selectPreset,
+                        enabled = state.enabled,
+                    )
+                    if (state.selectedPreset < 0) {
+                        Text(
                                 text = stringResource(R.string.equalizer_preset_custom),
                                 style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.align(Alignment.CenterVertically),
-                            )
-                        }
+                        )
                     }
                 }
             }
