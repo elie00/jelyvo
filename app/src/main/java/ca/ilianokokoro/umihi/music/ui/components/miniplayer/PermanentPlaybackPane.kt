@@ -32,10 +32,10 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
-import androidx.compose.material3.HorizontalDivider
+import ca.ilianokokoro.umihi.music.ui.components.studio.HorizontalDivider
 import androidx.compose.material3.Icon
 import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
-import androidx.compose.material3.LinearProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -137,12 +136,7 @@ fun PermanentPlaybackPane(
             Surface(
                 modifier = Modifier.fillMaxSize(),
                 shape = RoundedCornerShape(28.dp),
-                color = lerp(
-                    MaterialTheme.colorScheme.surfaceContainer,
-                    MaterialTheme.colorScheme.primaryContainer,
-                    0.08f,
-                ),
-                tonalElevation = 2.dp,
+                color = MaterialTheme.colorScheme.surfaceContainer,
             ) {
                 Column(
                     modifier = Modifier
@@ -298,9 +292,8 @@ fun PermanentPlaybackPane(
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     shape = RoundedCornerShape(28.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    tonalElevation = 6.dp,
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
