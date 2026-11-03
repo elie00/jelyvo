@@ -52,17 +52,17 @@ export function invitePage(page: InvitePage): string {
       ? `<div class="playing">${escapeHtml(page.title)} - ${escapeHtml(page.artist)}</div>`
       : "";
     content = `
-      <h1>Join the music party</h1>
-      <p class="subtitle">${page.memberCount} listening. Opening Jelyvo to play in time with them.</p>
+      <h1>Rejoindre la partie</h1>
+      <p class="subtitle">${page.memberCount} à l'écoute. Ouverture de Jelyvo pour écouter en même temps.</p>
       <div class="code-box">
-        <div class="code-label">Party code</div>
+        <div class="code-label">Code de la partie</div>
         <div class="code">${code}</div>
         ${playing}
       </div>
-      <a class="button" href="${escapeHtml(intent)}">Join in Jelyvo</a>
-      <p class="note">Didn't open automatically? Tap the button above.<br>
-        Don't have Jelyvo yet?
-        <a href="https://github.com/elie00/jelyvo-releases/releases" rel="noopener">Download it here</a>.</p>
+      <a class="button" href="${escapeHtml(intent)}">Rejoindre dans Jelyvo</a>
+      <p class="note">Jelyvo ne s'est pas ouverte ? Appuyez sur le bouton ci-dessus.<br>
+        Vous n'avez pas encore Jelyvo ?
+        <a href="https://github.com/elie00/jelyvo-releases/releases" rel="noopener">Téléchargez-la ici</a>.</p>
       <script>
         setTimeout(function () {
           window.location.href = /Android/i.test(navigator.userAgent)
@@ -72,20 +72,20 @@ export function invitePage(page: InvitePage): string {
       </script>`;
   } else {
     content = `
-      <h1>Party not found</h1>
-      <p class="subtitle">This party code has expired or does not exist on this server.</p>
+      <h1>Partie introuvable</h1>
+      <p class="subtitle">Ce code a expiré ou n'existe pas sur ce serveur.</p>
       <div class="code-box">
-        <div class="code-label">Party code</div>
+        <div class="code-label">Code de la partie</div>
         <div class="code">${code}</div>
       </div>
-      <p class="note">Please ask the host for a new invite link.</p>`;
+      <p class="note">Demandez un nouveau lien d'invitation à l'hôte.</p>`;
   }
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jelyvo Listen Together - Party ${code}</title>
+<title>Jelyvo, écouter ensemble - Partie ${code}</title>
 <style>${STYLE}</style>
 </head>
 <body><main class="card">${content}</main></body>
