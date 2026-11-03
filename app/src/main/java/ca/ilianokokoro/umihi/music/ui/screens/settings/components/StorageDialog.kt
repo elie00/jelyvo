@@ -7,13 +7,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +21,9 @@ import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.StorageCategory
 import ca.ilianokokoro.umihi.music.core.StorageUsage
+import ca.ilianokokoro.umihi.music.ui.components.studio.ALERT_WIDTH_WIDE
+import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 
 /** Label shown for each purgeable storage category. */
 @Composable
@@ -51,6 +52,7 @@ fun StorageDialog(
     val context = LocalContext.current
 
     AlertDialog(
+        width = ALERT_WIDTH_WIDE,
         onDismissRequest = onClose,
         title = {
             Text(text = stringResource(R.string.storage_title))
