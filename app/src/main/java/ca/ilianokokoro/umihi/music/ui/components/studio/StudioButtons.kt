@@ -5,6 +5,14 @@
  */
 package ca.ilianokokoro.umihi.music.ui.components.studio
 
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.ButtonShapes
+import androidx.compose.material3.ButtonColors
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -99,6 +107,7 @@ fun ActionPill(
     filled: Boolean,
     modifier: Modifier = Modifier,
     size: Dp = RELEASE_SIDE_BUTTON,
+    horizontalPadding: Dp = 24.dp,
 ) {
     val colors = MaterialTheme.colorScheme
     val content = if (filled) colors.background else colors.onSurface
@@ -108,7 +117,7 @@ fun ActionPill(
             .clip(CircleShape)
             .then(if (filled) Modifier.background(colors.onBackground) else Modifier.veil())
             .clickable(onClick = onClick)
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = horizontalPadding),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -126,6 +135,7 @@ fun ActionPill(
             style = MaterialTheme.typography.titleMedium,
             color = content,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -180,6 +190,7 @@ fun CircleButton(
     modifier: Modifier = Modifier,
     size: Dp = RELEASE_SIDE_BUTTON,
     enabled: Boolean = true,
+    filled: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
@@ -187,15 +198,118 @@ fun CircleButton(
             .size(size)
             .alpha(if (enabled) 1f else DISABLED_ALPHA)
             .clip(CircleShape)
-            .veil()
+            .then(
+                if (filled) {
+                    Modifier.background(MaterialTheme.colorScheme.onBackground)
+                } else {
+                    Modifier.veil()
+                }
+            )
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+        CompositionLocalProvider(
+            LocalContentColor provides if (filled) {
+                MaterialTheme.colorScheme.background
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        ) {
             content()
         }
     }
 }
+
+private val BUTTON_MIN_HEIGHT = 48.dp
+private val ICON_BUTTON_SIZE = 40.dp
+
+@Composable
+private fun PillButton(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean,
+    filled: Boolean,
+    colors: ButtonColors?,
+    contentPadding: PaddingValues?,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val fill = when {
+        colors != null -> Modifier.background(colors.containerColor)
+        filled -> Modifier.background(scheme.onBackground)
+        else -> Modifier.veil()
+    }
+    Row(
+        modifier = modifier
+            .alpha(if (enabled) 1f else DISABLED_ALPHA)
+            .heightIn(min = BUTTON_MIN_HEIGHT)
+            .clip(CircleShape)
+            .then(fill)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(contentPadding ?: PaddingValues(horizontal = 20.dp, vertical = 8.dp)),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CompositionLocalProvider(
+            LocalContentColor provides (
+                colors?.contentColor ?: if (filled) scheme.background else scheme.onSurface
+            ),
+            LocalTextStyle provides MaterialTheme.typography.titleSmall,
+        ) {
+            content()
+        }
+    }
+}
+
+/** The page's main action, in its strongest contrast. Takes Material's call shape, so a screen adopts it by import alone. */
+@Composable
+fun Button(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    @Suppress("UNUSED_PARAMETER") shapes: ButtonShapes? = null,
+    colors: ButtonColors? = null,
+    contentPadding: PaddingValues? = null,
+    content: @Composable RowScope.() -> Unit,
+) = PillButton(onClick, modifier, enabled, filled = true, colors, contentPadding, content)
+
+/** A secondary action in the veil of the buttons beside Play. Takes Material's call shape. */
+@Composable
+fun FilledTonalButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    @Suppress("UNUSED_PARAMETER") shapes: ButtonShapes? = null,
+    colors: ButtonColors? = null,
+    contentPadding: PaddingValues? = null,
+    content: @Composable RowScope.() -> Unit,
+) = PillButton(onClick, modifier, enabled, filled = false, colors, contentPadding, content)
+
+/** The same as [FilledTonalButton]: an outline is the one thing no button here wears. */
+@Composable
+fun OutlinedButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    @Suppress("UNUSED_PARAMETER") shapes: ButtonShapes? = null,
+    contentPadding: PaddingValues? = null,
+    content: @Composable RowScope.() -> Unit,
+) = PillButton(onClick, modifier, enabled, filled = false, colors = null, contentPadding, content)
+
+/** A round icon in the veil. Takes Material's call shape, keeping its 40dp and its 48dp to aim at. */
+@Composable
+fun FilledIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable BoxScope.() -> Unit,
+) = CircleButton(
+    onClick = onClick,
+    modifier = modifier.minimumInteractiveComponentSize(),
+    size = ICON_BUTTON_SIZE,
+    enabled = enabled,
+    content = content,
+)
 
 @Composable
 fun CircleIconButton(
