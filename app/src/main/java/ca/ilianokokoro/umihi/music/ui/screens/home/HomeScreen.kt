@@ -8,14 +8,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
@@ -375,23 +373,6 @@ private fun LoggedOutHome(
             .fillMaxSize()
             .padding(top = statusBarHeight),
     ) {
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 92.dp, y = (-112).dp)
-                .size(280.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f),
-        ) {}
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-96).dp, y = 100.dp)
-                .size(240.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.32f),
-        ) {}
-
         FilledIconButton(
             onClick = onSettingsButtonPress,
             modifier = Modifier
