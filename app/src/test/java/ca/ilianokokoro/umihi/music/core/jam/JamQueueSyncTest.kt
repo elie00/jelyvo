@@ -191,4 +191,39 @@ class JamQueueSyncTest {
         assertEquals(null, JamQueueSync.durationMillis(""))
         assertEquals(null, JamQueueSync.durationMillis(null))
     }
+
+    @Test
+    fun `tracks beyond what was shared stay in the queue`() {
+        val change = JamQueueSync.plan(
+            localIds = listOf("a", "b", "c", "d", "e"),
+            currentId = "a",
+            remote = PartyQueue(seq = 2, index = 0, items = tracks("a", "c", "b")),
+            sharedIds = listOf("a", "b", "c"),
+        )
+
+        assertEquals(QueueChange.AroundCurrent(emptyList(), tracks("c", "b"), keptTail = 2), change)
+    }
+
+    @Test
+    fun `a device holding only what was shared keeps nothing else`() {
+        val change = JamQueueSync.plan(
+            localIds = listOf("a", "b", "c"),
+            currentId = "a",
+            remote = PartyQueue(seq = 2, index = 0, items = tracks("a", "c", "b")),
+            sharedIds = listOf("a", "b", "c"),
+        )
+
+        assertEquals(QueueChange.AroundCurrent(emptyList(), tracks("c", "b"), keptTail = 0), change)
+    }
+
+    @Test
+    fun `nothing is kept when nothing was shared before`() {
+        val change = JamQueueSync.plan(
+            localIds = listOf("a", "b", "c"),
+            currentId = "a",
+            remote = PartyQueue(seq = 2, index = 0, items = tracks("a", "c")),
+        )
+
+        assertEquals(QueueChange.AroundCurrent(emptyList(), tracks("c"), keptTail = 0), change)
+    }
 }

@@ -193,16 +193,22 @@ class JamBridge(
 
     private fun reapply(queue: PartyQueue) {
         val current = player()
-        val change = JamQueueSync.plan(current.mediaIds(), current.currentMediaItem?.mediaId, queue)
+        val change = JamQueueSync.plan(
+            current.mediaIds(),
+            current.currentMediaItem?.mediaId,
+            queue,
+            lastSharedIds,
+        )
         when (change) {
             QueueChange.None -> Unit
 
             is QueueChange.AroundCurrent -> {
                 val index = current.currentMediaItemIndex
-                if (index + 1 < current.mediaItemCount) {
-                    current.removeMediaItems(index + 1, current.mediaItemCount)
+                val tailStart = (current.mediaItemCount - change.keptTail).coerceAtLeast(index + 1)
+                if (index + 1 < tailStart) {
+                    current.removeMediaItems(index + 1, tailStart)
                 }
-                current.addMediaItems(change.after.map { it.toSong().mediaItem })
+                current.addMediaItems(index + 1, change.after.map { it.toSong().mediaItem })
                 if (index > 0) current.removeMediaItems(0, index)
                 current.addMediaItems(0, change.before.map { it.toSong().mediaItem })
             }

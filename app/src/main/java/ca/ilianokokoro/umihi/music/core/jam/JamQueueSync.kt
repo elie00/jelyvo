@@ -12,6 +12,8 @@ sealed interface QueueChange {
     data class AroundCurrent(
         val before: List<PartyTrack>,
         val after: List<PartyTrack>,
+        /** How many tracks at the end of this device's queue the party never saw, and so keep. */
+        val keptTail: Int = 0,
     ) : QueueChange
 
     /** The playing track is not in the party's queue, so the whole queue goes. */
@@ -83,6 +85,7 @@ object JamQueueSync {
         localIds: List<String>,
         currentId: String?,
         remote: PartyQueue,
+        sharedIds: List<String> = emptyList(),
     ): QueueChange {
         if (remote.items.isEmpty() || localIds == remote.items.map(PartyTrack::videoId)) {
             return QueueChange.None
@@ -93,10 +96,17 @@ object JamQueueSync {
             QueueChange.AroundCurrent(
                 before = remote.items.subList(0, anchor).toList(),
                 after = remote.items.subList(anchor + 1, remote.items.size).toList(),
+                keptTail = tailBeyond(localIds, sharedIds),
             )
         } else {
             QueueChange.Replace(remote.items, remote.index.coerceIn(0, remote.items.lastIndex))
         }
+    }
+
+    /** One message holds part of a long queue, so what lies past that part is still this device's. */
+    private fun tailBeyond(localIds: List<String>, sharedIds: List<String>): Int {
+        val lastShared = sharedIds.lastOrNull()?.let(localIds::lastIndexOf) ?: -1
+        return if (lastShared >= 0) localIds.lastIndex - lastShared else 0
     }
 
     /** Finds a track near a position: a queue can hold one track twice, once played and once to come. */
