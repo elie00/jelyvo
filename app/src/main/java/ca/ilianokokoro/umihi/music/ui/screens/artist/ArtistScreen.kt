@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,20 +24,15 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -84,6 +78,11 @@ import ca.ilianokokoro.umihi.music.ui.components.localizedApiSectionTitle
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
 import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
+import ca.ilianokokoro.umihi.music.ui.components.studio.ARTIST_ACTION_GAP
+import ca.ilianokokoro.umihi.music.ui.components.studio.ARTIST_SIDE_BUTTON
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircleIconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.PlayCircle
+import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import coil3.compose.AsyncImage
 import dev.chrisbanes.haze.HazeState
@@ -133,7 +132,7 @@ fun ArtistScreen(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
             // Always there, so going back never depends on the hero still being on screen.
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 modifier = Modifier.frosted(hazeState, visibility = collapseProgress),
                 colors = frostedTopAppBarColors(),
                 title = {
@@ -270,41 +269,41 @@ fun ArtistScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = PageGutter, vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(
+                                        ARTIST_ACTION_GAP,
+                                        Alignment.CenterHorizontally,
+                                    ),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    subscriptionChannelId?.let {
-                                        if (isSubscribed) {
-                                            FilledTonalButton(onClick = artistViewModel::toggleSubscribed) {
-                                                Text(stringResource(R.string.artist_following))
-                                            }
-                                        } else {
-                                            OutlinedButton(onClick = artistViewModel::toggleSubscribed) {
-                                                Text(stringResource(R.string.artist_follow))
-                                            }
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.weight(1f))
                                     if (page.songs.isNotEmpty()) {
-                                        FilledTonalIconButton(
+                                        CircleIconButton(
+                                            icon = Icons.Rounded.Shuffle,
+                                            contentDescription = stringResource(R.string.shuffle),
                                             onClick = shuffleAll,
-                                            modifier = Modifier.size(48.dp),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.Shuffle,
-                                                contentDescription = stringResource(R.string.shuffle),
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        FilledIconButton(
+                                            size = ARTIST_SIDE_BUTTON,
+                                        )
+                                        PlayCircle(
                                             onClick = playAll,
-                                            modifier = Modifier.size(64.dp),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Rounded.PlayArrow,
-                                                contentDescription = stringResource(R.string.play),
-                                                modifier = Modifier.size(32.dp),
-                                            )
-                                        }
+                                            description = stringResource(R.string.play),
+                                        )
+                                    }
+                                    subscriptionChannelId?.let {
+                                        CircleIconButton(
+                                            icon = if (isSubscribed) {
+                                                Icons.Rounded.Star
+                                            } else {
+                                                Icons.Rounded.StarBorder
+                                            },
+                                            contentDescription = stringResource(
+                                                if (isSubscribed) {
+                                                    R.string.artist_following
+                                                } else {
+                                                    R.string.artist_follow
+                                                }
+                                            ),
+                                            onClick = artistViewModel::toggleSubscribed,
+                                            size = ARTIST_SIDE_BUTTON,
+                                        )
                                     }
                                 }
                             }

@@ -18,13 +18,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Upload
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -108,7 +108,7 @@ fun PlaylistScreen(
         val hazeState = remember { HazeState() }
         Scaffold(topBar = {
             if (uiState.showingSearch) {
-                TopAppBar(
+                CenterAlignedTopAppBar(
                     colors = frostedTopAppBarColors(),
                     modifier = modifier.frosted(hazeState),
                     navigationIcon = {
@@ -146,7 +146,7 @@ fun PlaylistScreen(
                     }
                 )
             } else {
-                TopAppBar(
+                CenterAlignedTopAppBar(
                     colors = frostedTopAppBarColors(),
                     modifier = Modifier.frosted(hazeState),
                     title = {

@@ -11,31 +11,29 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Radio
-import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material3.FilledIconToggleButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -45,13 +43,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
@@ -67,8 +68,8 @@ import ca.ilianokokoro.umihi.music.ui.components.ErrorMessage
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeleton
 import ca.ilianokokoro.umihi.music.ui.components.MusicSkeletonLayout
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
-import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButton
 import ca.ilianokokoro.umihi.music.ui.components.PlaySplitButtonAction
+import ca.ilianokokoro.umihi.music.ui.components.ReleaseActionRow
 import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
 import ca.ilianokokoro.umihi.music.ui.components.ShelfHeader
@@ -80,6 +81,7 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.components.song.SongSelectionActionBar
 import ca.ilianokokoro.umihi.music.ui.components.song.isTrackArtistRedundant
 import ca.ilianokokoro.umihi.music.ui.components.song.updateSongSelection
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircleIconButton
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
@@ -147,7 +149,7 @@ fun AlbumScreen(
         topBar = {
             // Barre collante : le bouton retour reste toujours atteignable, le verre et le
             // titre n'apparaissent qu'au fur et a mesure du defilement.
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 modifier = Modifier.frosted(hazeState, visibility = collapseProgress),
                 title = {
                     Text(
@@ -572,17 +574,23 @@ internal fun ColumnScope.AlbumContextHeader(
 ) {
     SquareImage(
         uri = coverUri,
-        modifier = Modifier.size(artworkSize),
+        modifier = Modifier
+            .size(artworkSize)
+            .shadow(18.dp, RoundedCornerShape(12.dp)),
     )
     Text(
         text = name,
-        style = MaterialTheme.typography.headlineSmallEmphasized,
+        style = MaterialTheme.typography.headlineMedium,
+        color = MaterialTheme.colorScheme.onBackground,
         textAlign = TextAlign.Center,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
     )
     if (artist.isNotBlank()) {
         Text(
             text = artist,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal, fontSize = 19.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = if (artistId != null) {
                 Modifier.clickable { onOpenArtist(artistId, artist) }
@@ -594,28 +602,37 @@ internal fun ColumnScope.AlbumContextHeader(
     if (metadataLine.isNotBlank()) {
         Text(
             text = metadataLine,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
     }
     if (hasSongs) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (isLoggedIn && canSaveAlbum) {
-                FilledIconToggleButton(
-                    checked = isAlbumSaved,
-                    onCheckedChange = { onToggleAlbumSaved() },
-                    shapes = IconButtonDefaults.toggleableShapes(),
-                    colors = IconButtonDefaults.filledIconToggleButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = MaterialTheme.colorScheme.onSurface,
-                    ),
-                ) {
-                    Icon(
-                        imageVector = if (isAlbumSaved) {
+        Spacer(Modifier.height(6.dp))
+        ReleaseActionRow(
+            onPlay = onPlay,
+            onShuffle = onShuffle,
+            menuActions = listOf(
+                PlaySplitButtonAction(
+                    label = stringResource(R.string.start_radio),
+                    icon = Icons.Rounded.Radio,
+                    onClick = onStartRadio,
+                ),
+                PlaySplitButtonAction(
+                    label = stringResource(R.string.download),
+                    icon = Icons.Rounded.Download,
+                    onClick = onDownload,
+                ),
+                PlaySplitButtonAction(
+                    label = stringResource(R.string.more),
+                    icon = Icons.Rounded.MoreVert,
+                    onClick = onMore,
+                ),
+            ),
+            saved = if (isLoggedIn && canSaveAlbum) {
+                {
+                    CircleIconButton(
+                        icon = if (isAlbumSaved) {
                             Icons.Rounded.Favorite
                         } else {
                             Icons.Rounded.FavoriteBorder
@@ -627,36 +644,13 @@ internal fun ColumnScope.AlbumContextHeader(
                                 R.string.save_album_to_library
                             }
                         ),
+                        onClick = onToggleAlbumSaved,
                     )
                 }
-            }
-            PlaySplitButton(
-                onPlay = onPlay,
-                menuActions = listOf(
-                    PlaySplitButtonAction(
-                        label = stringResource(R.string.shuffle),
-                        icon = Icons.Rounded.Shuffle,
-                        onClick = onShuffle,
-                    ),
-                    PlaySplitButtonAction(
-                        label = stringResource(R.string.start_radio),
-                        icon = Icons.Rounded.Radio,
-                        onClick = onStartRadio,
-                    ),
-                    PlaySplitButtonAction(
-                        label = stringResource(R.string.download),
-                        icon = Icons.Rounded.Download,
-                        onClick = onDownload,
-                    ),
-                ),
-            )
-            IconButton(onClick = onMore) {
-                Icon(
-                    imageVector = Icons.Rounded.MoreVert,
-                    contentDescription = stringResource(R.string.more),
-                )
-            }
-        }
+            } else {
+                null
+            },
+        )
     }
     if (description.isNotBlank()) {
         var expanded by remember(description) { mutableStateOf(false) }
