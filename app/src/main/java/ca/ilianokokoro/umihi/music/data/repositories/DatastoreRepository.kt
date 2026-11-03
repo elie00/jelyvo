@@ -15,6 +15,7 @@ import ca.ilianokokoro.umihi.music.core.ResponseCache
 import ca.ilianokokoro.umihi.music.core.helpers.KeystoreCrypto
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.isNullOrInvalidId
 import ca.ilianokokoro.umihi.music.core.jam.DEFAULT_JAM_SERVER_URL
+import ca.ilianokokoro.umihi.music.core.jam.JamIdentity
 import ca.ilianokokoro.umihi.music.core.managers.LikeManager
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmCredentials
 import ca.ilianokokoro.umihi.music.core.scrobbling.ScrobbleTrack
@@ -415,6 +416,12 @@ class DatastoreRepository(private val context: Context) {
     val jamServerUrl: Flow<String> = context.dataStore.data.map {
         it[PreferenceKeys.JAM_SERVER_URL].orEmpty().ifBlank { DEFAULT_JAM_SERVER_URL }
     }
+
+    /** Who this device says it is in a listening party. */
+    suspend fun jamIdentity(): JamIdentity = JamIdentity(
+        deviceId = jamDeviceId(),
+        displayName = getSettings().profileName.ifBlank { "Jelyvo" },
+    )
 
     /** A random id for this install, created on first use. Not tied to the device or an account. */
     suspend fun jamDeviceId(): String {

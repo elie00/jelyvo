@@ -846,6 +846,8 @@ fun SettingsScreen(
                                 onCreate = settingsViewModel::createJam,
                                 onJoin = settingsViewModel::joinJam,
                                 onLeave = settingsViewModel::leaveJam,
+                                onKick = settingsViewModel::kickJamMember,
+                                onSetHostOnlyControl = settingsViewModel::setJamHostOnlyControl,
                                 onClose = { settingsViewModel.updateShowJamDialog(false) },
                             )
                         } else if (uiState.showLastFmDialog) {

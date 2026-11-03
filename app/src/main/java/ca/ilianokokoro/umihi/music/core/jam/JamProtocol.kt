@@ -51,6 +51,8 @@ data class PartySnapshot(
     val code: String = "",
     val playback: PartyPlayback = PartyPlayback(),
     val members: List<PartyMember> = emptyList(),
+    val maxMembers: Int = 5,
+    val hostOnlyControl: Boolean = false,
 )
 
 @Serializable
@@ -67,6 +69,8 @@ data class ServerFrame(
     val type: String = "",
     val playback: PartyPlayback? = null,
     val members: List<PartyMember>? = null,
+    val maxMembers: Int? = null,
+    val hostOnlyControl: Boolean? = null,
     val party: PartySnapshot? = null,
     val clientMs: Long? = null,
     val serverMs: Long? = null,

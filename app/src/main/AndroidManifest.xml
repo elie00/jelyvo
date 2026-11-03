@@ -67,6 +67,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
+            <!-- Listening party invitations, opened from the server's invite page -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="jelyvo" android:host="party" />
+            </intent-filter>
+
             <!-- Open In app -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />

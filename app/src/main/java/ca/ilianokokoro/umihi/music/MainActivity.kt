@@ -1,6 +1,5 @@
 package ca.ilianokokoro.umihi.music
 
-import ca.ilianokokoro.umihi.music.ui.theme.dmSansFontFamily
 import android.Manifest
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
@@ -41,6 +40,8 @@ import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
+import ca.ilianokokoro.umihi.music.core.jam.JamInvites
+import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
@@ -56,6 +57,7 @@ import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.dmSansFontFamily
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
@@ -382,6 +384,11 @@ class MainActivity : ComponentActivity() {
             return
         }
         val data: Uri = intent.data ?: return
+
+        JamInvites.parse(data.toString())?.let { invite ->
+            JamManager.offerInvite(invite)
+            return
+        }
 
         val videoId = YoutubeDataExtractor.extractYouTubeVideoId(data.toString()) ?: return
         playVideoFromId(videoId)

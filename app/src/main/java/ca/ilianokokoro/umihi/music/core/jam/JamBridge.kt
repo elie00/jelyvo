@@ -87,6 +87,11 @@ class JamBridge(
     fun onLocalTrack(item: MediaItem?) {
         val party = JamManager.playback.value ?: return
         if (isSuspended() || item == null || item.mediaId == party.track?.videoId) return
+        if (!JamManager.canControl) {
+            // The server would refuse it, so go straight back to what the party is playing.
+            scope.launch { sync() }
+            return
+        }
         beforeLocalSend(party)
         JamManager.sendTrack(item.toPartyTrack(player().duration), player().playWhenReady)
     }
@@ -94,6 +99,11 @@ class JamBridge(
     fun onLocalPlayWhenReady(play: Boolean) {
         val party = JamManager.playback.value ?: return
         if (isSuspended() || play == party.isPlaying || party.track == null) return
+        if (!JamManager.canControl) {
+            // The server would refuse it, so go straight back to what the party is playing.
+            scope.launch { sync() }
+            return
+        }
         beforeLocalSend(party)
         val position = player().currentPosition
         if (play) JamManager.sendPlay(position) else JamManager.sendPause(position)
@@ -103,6 +113,11 @@ class JamBridge(
         val party = JamManager.playback.value ?: return
         val serverNow = JamManager.clock.serverNowMs() ?: return
         if (isSuspended() || !JamSync.isLocalSeek(party, serverNow, positionMs)) return
+        if (!JamManager.canControl) {
+            // The server would refuse it, so go straight back to what the party is playing.
+            scope.launch { sync() }
+            return
+        }
         beforeLocalSend(party)
         JamManager.sendSeek(positionMs)
     }

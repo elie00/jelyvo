@@ -92,6 +92,7 @@ import dev.chrisbanes.haze.hazeSource
 
 @Composable
 fun NavigationRoot(modifier: Modifier = Modifier) {
+    JamInviteHost()
     val sharedViewModel: SharedViewModel = viewModel()
     val backStack = rememberNavBackStack(HomeScreenKey)
     val app = LocalContext.current.applicationContext as Application
