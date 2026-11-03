@@ -3,7 +3,49 @@
 > État courant : [audit et validation du 8 octobre 2026](docs/PROJECT_AUDIT_2026-10-08.md). Les sections datées ci-dessous sont historiques ; elles ne remplacent pas ces vérifications.
 
 > Document de passation pour reprendre le travail sur un autre poste.
-> Dernière mise à jour : 2026-07-27, branche `main`, remote `origin = github.com/elie00/umihi-music`.
+> Dernière mise à jour : 2026-11-03, branche `feat/bitchord-components`, remote `origin = github.com/elie00/umihi-music`.
+
+## À reprendre sur le Mac (état du 3 novembre 2026)
+
+Tout ce qui pouvait se faire sans appareil est fait et poussé sur `feat/bitchord-components`, avec la PR #4 en brouillon. **Rien de ce travail n'a encore tourné sur un téléphone ou un émulateur.** Ne pas se fier à cette note pour l'état de `main` : toujours faire `git fetch` d'abord.
+
+**Vérifié sous Windows, sans appareil** : tests de tous les modules, 681 tests de l'app avec le seul échec connu ci-dessous, lint sans erreur (app et montre), tests du bureau, APK de la montre et APK de release construits. Écrans contrôlés par captures JVM ; taps, menus, glissement à gauche et bascules par tests Compose. La CI de la PR #4 (Linux et macOS) tournait encore quand cette note a été écrite : regarder son résultat. CodeQL échoue sur ce dépôt privé, l'analyse de code n'y étant pas activée.
+
+**Ordre à suivre**
+
+1. Lire le résultat de la CI de la PR #4.
+2. Compiler et installer sur l'émulateur : `./gradlew :app:assembleStandaloneDebug`, puis `adb install -r` de l'APK produit dans `app/build/outputs/apk/standalone/debug/`.
+3. Dérouler la liste ci-dessous et corriger ce qui casse sur `feat/bitchord-components`.
+4. Fusionner les PR #2 et #3, puis sortir la #4 du brouillon et la fusionner. Rien ne va sur `main` sans accord explicite.
+5. Republier le dépôt public `elie00/jelyvo` avec le script de publication, jamais à la main : il réécrit l'historique.
+
+**À vérifier sur appareil**
+
+- Feuilles du bas : glisser pour fermer, réordonner la file au doigt, fond de la rangée déplacée.
+- Menus : position près des bords de l'écran. Rangées : glissement à droite (j'aime, demande un compte) et à gauche (file).
+- Barre d'état : icônes sur des photos d'artiste claires et sombres, retour à la normale en quittant la page. Flou de la photo d'artiste.
+- Accueil sans compte, aide aux gestes, boutons actifs du lecteur, zones de dépôt, badge d'édition : modifiés mais jamais capturés.
+- Traduction des paroles contre le vrai service, y compris sans connexion.
+- Fichiers locaux réels : paroles MP3, FLAC et M4A, pochettes intégrées (passent par MediaStore, non vérifié), vue par dossiers.
+- Minuterie avec une durée saisie à la main. Replay : ouverture, pages, partage de l'affiche.
+- Toujours en attente depuis avant : écoute à plusieurs entre deux vrais téléphones (file partagée, lien d'invitation), « Ouvrir avec », saut des silences, taux de rafraîchissement, messages d'échec de lecture, décodeur d'Automix, scrobbling avec de vrais comptes, fondu enchaîné à l'oreille.
+
+**Limites assumées**
+
+- Traduction : service web non officiel de Google, appelé seulement quand on appuie sur le bouton. Cache en mémoire uniquement.
+- Replay : version compacte sur l'année en cours, sans choix de période ni plusieurs affiches.
+- Paroles intégrées : ni Ogg ni Matroska.
+- Feuilles et menus : ni flou ni voile de BitChord derrière les menus, à cause de leur propre fenêtre.
+- Les pochettes spéciales gardent leur dégradé.
+- Les commits de `95e7798e` à `e63d400c` ne compilent pas pris un par un (`8c1748b1` et `6cfd25c1` rétablissent le build) : à savoir pour un `git bisect`.
+
+**Décisions restantes**
+
+- Calage d'Automix sur le tempo : à décider après une écoute réelle.
+- PoToken n'est pas écrit, par choix : il sert à contourner la détection de robots. Le repli actuel marche encore, mais reste le point le plus fragile de la lecture.
+- Avenir du dépôt privé `umihi-music`, à garder privé pour l'instant : le dépôt public est `elie00/jelyvo`.
+
+Détail des reprises depuis BitChord : [`docs/BITCHORD_BACKLOG.md`](docs/BITCHORD_BACKLOG.md).
 
 ## Reprise depuis BitChord (2026-11-02), publiée en 2.6.13
 
