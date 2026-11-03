@@ -26,7 +26,6 @@ import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
-import ca.ilianokokoro.umihi.music.core.jam.JamIdentity
 import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys
 import ca.ilianokokoro.umihi.music.core.scrobbling.LastFmAuthException
@@ -134,14 +133,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun createJam(serverUrl: String) {
         viewModelScope.launch {
             datastoreRepository.save(PreferenceKeys.JAM_SERVER_URL, serverUrl)
-            JamManager.create(serverUrl, jamIdentity())
+            JamManager.create(serverUrl, datastoreRepository.jamIdentity())
         }
     }
 
     fun joinJam(serverUrl: String, code: String) {
         viewModelScope.launch {
             datastoreRepository.save(PreferenceKeys.JAM_SERVER_URL, serverUrl)
-            JamManager.join(serverUrl, code, jamIdentity())
+            JamManager.join(serverUrl, code, datastoreRepository.jamIdentity())
         }
     }
 
@@ -149,10 +148,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { JamManager.leave() }
     }
 
-    private suspend fun jamIdentity() = JamIdentity(
-        deviceId = datastoreRepository.jamDeviceId(),
-        displayName = datastoreRepository.getSettings().profileName.ifBlank { "Jelyvo" },
-    )
+    fun kickJamMember(memberId: String) = JamManager.kick(memberId)
+
+    fun setJamHostOnlyControl(enabled: Boolean) = JamManager.setHostOnlyControl(enabled)
 
     // Held between the browser approval's two steps. Never put in the UI state.
     private var pendingLastFmAuth: PendingLastFmAuth? = null

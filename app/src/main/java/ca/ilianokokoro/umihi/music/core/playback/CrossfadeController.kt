@@ -160,6 +160,7 @@ class CrossfadeController(
             player.setAudioSessionId(main.audioSessionId)
         }
         player.playbackParameters = main.playbackParameters
+        player.skipSilenceEnabled = main.skipSilenceEnabled
         player.volume = 0f
         player.playWhenReady = false
         player.setMediaItem(item, fade.startMs)

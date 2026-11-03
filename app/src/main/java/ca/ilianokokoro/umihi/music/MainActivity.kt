@@ -1,12 +1,12 @@
 package ca.ilianokokoro.umihi.music
 
-import ca.ilianokokoro.umihi.music.ui.theme.dmSansFontFamily
 import android.Manifest
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
 import android.app.SearchManager
 import android.content.BroadcastReceiver
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -41,6 +41,10 @@ import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
+import ca.ilianokokoro.umihi.music.core.helpers.DisplayRefresh
+import ca.ilianokokoro.umihi.music.core.helpers.ExternalAudio
+import ca.ilianokokoro.umihi.music.core.jam.JamInvites
+import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.ScreenAwakeManager
 import ca.ilianokokoro.umihi.music.core.managers.VersionManager
@@ -56,11 +60,14 @@ import ca.ilianokokoro.umihi.music.ui.navigation.NavigationRoot
 import ca.ilianokokoro.umihi.music.ui.theme.ThemeColor
 import ca.ilianokokoro.umihi.music.ui.theme.ThemePreset
 import ca.ilianokokoro.umihi.music.ui.theme.UmihiMusicTheme
+import ca.ilianokokoro.umihi.music.ui.theme.dmSansFontFamily
 import ca.ilianokokoro.umihi.music.ui.theme.nunitoFontFamily
 import cat.ereza.customactivityoncrash.config.CaocConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -114,6 +121,12 @@ class MainActivity : ComponentActivity() {
         handleShareIntent(intent)
         handleViewIntent(intent)
         handleVoiceSearchIntent(intent)
+        lifecycleScope.launch {
+            DatastoreRepository(applicationContext).settings
+                .map { it.preferFastestRefresh }
+                .distinctUntilChanged()
+                .collect { DisplayRefresh.apply(this@MainActivity, it) }
+        }
 
         //    debugPrintDataStores()
     }
@@ -382,6 +395,17 @@ class MainActivity : ComponentActivity() {
             return
         }
         val data: Uri = intent.data ?: return
+
+        val mimeType = intent.type ?: contentResolver.getType(data)
+        if (data.scheme == ContentResolver.SCHEME_CONTENT && ExternalAudio.isAudio(mimeType)) {
+            PlayerManager.playSong(ExternalAudio.toSong(contentResolver, data))
+            return
+        }
+
+        JamInvites.parse(data.toString())?.let { invite ->
+            JamManager.offerInvite(invite)
+            return
+        }
 
         val videoId = YoutubeDataExtractor.extractYouTubeVideoId(data.toString()) ?: return
         playVideoFromId(videoId)

@@ -1,13 +1,13 @@
 package ca.ilianokokoro.umihi.music.ui.screens.player
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.ui.graphics.graphicsLayer
 import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.car.app.connection.CarConnection
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,6 +16,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -34,16 +35,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FavoriteBorder
-import androidx.compose.material.icons.rounded.Devices
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Lyrics
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material.icons.rounded.TouchApp
-import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledIconToggleButton
@@ -61,14 +62,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -87,7 +90,6 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.focusable
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -99,14 +101,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.domain.PlaybackEngine
+import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
+import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.managers.QueueProvenance
-import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
-import ca.ilianokokoro.umihi.music.core.helpers.ShareHelper
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.cast.AvailableDevicesSheet
 import ca.ilianokokoro.umihi.music.ui.components.cast.rememberCarConnectionType
+import ca.ilianokokoro.umihi.music.ui.navigation.supportsPermanentSecondaryPane
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.LyricsPanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerArtworkBackground
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerControls
@@ -114,12 +117,11 @@ import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerMenuBottom
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueueBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueuePanel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerBottomSheet
-import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsBottomSheet
-import ca.ilianokokoro.umihi.music.ui.navigation.supportsPermanentSecondaryPane
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorBottomSheet
 import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPlayerTheme
 import kotlinx.coroutines.delay
-import androidx.car.app.connection.CarConnection
+import kotlinx.coroutines.launch
 
 @Composable
 fun PlayerScreen(
@@ -642,6 +644,7 @@ private fun ArtworkOrLyrics(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val shareScope = rememberCoroutineScope()
     val showCoverLabel = stringResource(R.string.show_cover)
     Box(modifier = modifier) {
         if (uiState.areLyricsShown) {
@@ -653,7 +656,9 @@ private fun ArtworkOrLyrics(
                 onSeekTo = { PlayerManager.currentController?.seekTo(it) },
                 onRetry = onRetryLyrics,
                 onShareLine = { line ->
-                    currentSong?.let { ShareHelper.shareLyrics(context, it, line) }
+                    currentSong?.let { song ->
+                        shareScope.launch { ShareHelper.shareLyricsCard(context, song, line) }
+                    }
                 },
                 // Only the lyric lines consume taps (they seek); the surrounding area closes the
                 // panel, mirroring the artwork. Without it the system back was the only way out.
