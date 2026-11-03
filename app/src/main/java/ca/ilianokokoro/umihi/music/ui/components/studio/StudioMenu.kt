@@ -84,7 +84,8 @@ val StudioMenuShape: Shape = RoundedCornerShape(30.dp)
 /** Wide enough for the longest action on one line or two. */
 val StudioMenuWidth = 256.dp
 
-val StudioMenuShadow = 24.dp
+/** Short enough to fit the menu's own window, which would cut a longer shadow off in a straight line. */
+val StudioMenuShadow = 8.dp
 
 private const val DISABLED_ROW_ALPHA = 0.4f
 
