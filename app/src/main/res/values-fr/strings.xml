@@ -233,6 +233,10 @@
     <string name="crossfade_title">Fondu enchaîné</string>
     <string name="crossfade_disabled">Désactivé — lecture sans blanc</string>
     <string name="crossfade_seconds">Fondu enchaîné entre les titres sur %1$d s</string>
+    <string name="prefer_fastest_refresh_description">Demande la fréquence la plus élevée de votre écran. Consomme plus de batterie</string>
+    <string name="prefer_fastest_refresh_title">Rafraîchissement le plus rapide</string>
+    <string name="skip_silence_description">Saute les passages silencieux d\'un titre. Suspendu pendant une écoute à plusieurs, et désactive le déchargement audio tant qu\'il est actif</string>
+    <string name="skip_silence_title">Sauter les silences</string>
     <string name="automix_title">Mix automatique</string>
     <string name="automix_description">Ãtudie chaque titre pour Ã©viter les silences et partir avant les fins calmes. Sur les donnÃ©es mobiles, seuls les titres tÃ©lÃ©chargÃ©s sont Ã©tudiÃ©s</string>
     <string name="smart_transitions_title">Transitions intelligentes</string>

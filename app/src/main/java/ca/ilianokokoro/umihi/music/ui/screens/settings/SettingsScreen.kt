@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudSync
 import androidx.compose.material.icons.outlined.DataSaverOn
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FastForward
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.Headphones
@@ -50,6 +51,7 @@ import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Radio
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
+import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.StayCurrentPortrait
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Timer
@@ -341,6 +343,19 @@ fun SettingsScreen(
                             )
                             SettingsRowDivider()
                             BooleanSettingItem(
+                                title = stringResource(R.string.prefer_fastest_refresh_title),
+                                subtitle = stringResource(R.string.prefer_fastest_refresh_description),
+                                leadingIcon = Icons.Outlined.Speed,
+                                value = screenState.settings.preferFastestRefresh,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(
+                                        PreferenceKeys.PREFER_FASTEST_REFRESH,
+                                        it
+                                    )
+                                }
+                            )
+                            SettingsRowDivider()
+                            BooleanSettingItem(
                                 title = stringResource(R.string.keep_screen_on_title),
                                 subtitle = stringResource(R.string.keep_screen_on_title_description),
                                 leadingIcon = Icons.Outlined.StayCurrentPortrait,
@@ -459,6 +474,16 @@ fun SettingsScreen(
                                 value = screenState.settings.automix,
                                 onToggle = {
                                     settingsViewModel.updateSetting(PreferenceKeys.AUTOMIX, it)
+                                }
+                            )
+                            SettingsRowDivider()
+                            BooleanSettingItem(
+                                title = stringResource(R.string.skip_silence_title),
+                                subtitle = stringResource(R.string.skip_silence_description),
+                                leadingIcon = Icons.Outlined.FastForward,
+                                value = screenState.settings.skipSilence,
+                                onToggle = {
+                                    settingsViewModel.updateSetting(PreferenceKeys.SKIP_SILENCE, it)
                                 }
                             )
                             SettingsRowDivider()

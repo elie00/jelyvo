@@ -40,7 +40,6 @@ import androidx.media3.session.MediaSession
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.automix.LevelAnalysis
 import ca.ilianokokoro.umihi.music.automix.TrackAnalysis
-import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.ExoCache
@@ -54,6 +53,8 @@ import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.jam.JamBridge
+import ca.ilianokokoro.umihi.music.core.jam.JamManager
+import ca.ilianokokoro.umihi.music.core.jam.JamStatus
 import ca.ilianokokoro.umihi.music.core.managers.AudioOutputManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerManager
 import ca.ilianokokoro.umihi.music.core.managers.EqualizerProfileStore
@@ -77,6 +78,7 @@ import ca.ilianokokoro.umihi.music.core.youtube.VideoQualitySelector
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStatsTracker
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeStreamResolver
+import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.HistoryRepository
 import ca.ilianokokoro.umihi.music.data.repositories.PlayEventRepository
@@ -104,8 +106,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -272,6 +277,7 @@ class PlaybackService : MediaLibraryService() {
             targetVolume = { normalizedVolume },
         )
         crossfade.start()
+        startSkipSilenceManagement()
         jam = JamBridge(
             player = { activePlayer },
             scope = CoroutineScope(serviceScope.coroutineContext + Dispatchers.Main),
@@ -309,7 +315,7 @@ class PlaybackService : MediaLibraryService() {
 
         serviceScope.launch {
             val settings = datastoreRepository.settings.first()
-            val mode = if (settings.useAudioOffload) {
+            val mode = if (settings.useAudioOffload && !settings.skipSilence) {
                 TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
             } else {
                 TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
@@ -913,6 +919,24 @@ class PlaybackService : MediaLibraryService() {
         }
     }
 
+    /**
+     * Skipping silence moves the playhead faster than the clock, which a party would read as
+     * drift and keep correcting, so it pauses for as long as this device is in one.
+     */
+    private fun startSkipSilenceManagement() {
+        serviceScope.launch(Dispatchers.Main) {
+            combine(
+                datastoreRepository.settings.map { it.skipSilence },
+                JamManager.status.map { it is JamStatus.InParty },
+            ) { wanted, inParty -> wanted to inParty }
+                .distinctUntilChanged()
+                .collect { (wanted, inParty) ->
+                    player.skipSilenceEnabled = wanted && !inParty
+                    applyAudioOffloadForItem(player.currentMediaItem)
+                }
+        }
+    }
+
     private fun startAudioVolumeManagement() {
         serviceScope.launch {
             datastoreRepository.settings.collectLatest { settings ->
@@ -1166,7 +1190,8 @@ class PlaybackService : MediaLibraryService() {
             ?.getBoolean(Constants.ExoPlayer.SongMetadata.FORCE_VIDEO, false) ?: false
 
         serviceScope.launch {
-            val offloadEnabled = !forceVideo && datastoreRepository.getSettings().useAudioOffload
+            val settings = datastoreRepository.getSettings()
+            val offloadEnabled = !forceVideo && settings.useAudioOffload && !settings.skipSilence
             val mode = if (offloadEnabled) {
                 TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_ENABLED
             } else {

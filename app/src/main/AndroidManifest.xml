@@ -67,6 +67,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
+            <!-- "Open with" for audio files other apps hand over -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="content" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+
             <!-- Listening party invitations, opened from the server's invite page -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

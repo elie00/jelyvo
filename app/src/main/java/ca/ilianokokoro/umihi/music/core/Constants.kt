@@ -97,6 +97,8 @@ object Constants {
         const val CROSSFADE_SECONDS = "crossfade-seconds"
         const val SMART_TRANSITIONS = "smart-transitions"
         const val AUTOMIX = "automix"
+        const val SKIP_SILENCE = "skip-silence"
+        const val PREFER_FASTEST_REFRESH = "prefer-fastest-refresh"
         const val NORMALIZE_VOLUME = "normalize-volume"
         const val RESUME_ON_AUDIO_CONNECT = "resume-on-audio-connect"
         const val SLEEP_TIMER_DEFAULT_MINUTES = "sleep-timer-default-minutes"

@@ -37,9 +37,11 @@ import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.Prefere
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NORMALIZE_VOLUME
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFIED_RELEASE_IDS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.NOTIFY_NEW_RELEASES
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.PREFER_FASTEST_REFRESH
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.RESUME_ON_AUDIO_CONNECT
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SEND_PLAYBACK_DATA
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SHOW_PODCAST_PLAYLIST
+import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SKIP_SILENCE
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SLEEP_TIMER_DEFAULT_MINUTES
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.SMART_TRANSITIONS
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.PreferenceKeys.THEME_COLOR
@@ -88,6 +90,8 @@ class DatastoreRepository(private val context: Context) {
         val CROSSFADE_SECONDS = intPreferencesKey(Constants.Datastore.CROSSFADE_SECONDS)
         val SMART_TRANSITIONS = booleanPreferencesKey(Constants.Datastore.SMART_TRANSITIONS)
         val AUTOMIX = booleanPreferencesKey(Constants.Datastore.AUTOMIX)
+        val SKIP_SILENCE = booleanPreferencesKey(Constants.Datastore.SKIP_SILENCE)
+        val PREFER_FASTEST_REFRESH = booleanPreferencesKey(Constants.Datastore.PREFER_FASTEST_REFRESH)
         val NORMALIZE_VOLUME = booleanPreferencesKey(Constants.Datastore.NORMALIZE_VOLUME)
         val RESUME_ON_AUDIO_CONNECT =
             booleanPreferencesKey(Constants.Datastore.RESUME_ON_AUDIO_CONNECT)
@@ -146,6 +150,8 @@ class DatastoreRepository(private val context: Context) {
         val crossfadeSeconds = (it[CROSSFADE_SECONDS] ?: 0).coerceIn(0, 12)
         val smartTransitions = it[SMART_TRANSITIONS] ?: true
         val automix = it[AUTOMIX] ?: false
+        val skipSilence = it[SKIP_SILENCE] ?: false
+        val preferFastestRefresh = it[PREFER_FASTEST_REFRESH] ?: false
         val normalizeVolume = it[NORMALIZE_VOLUME] ?: true
         val resumeOnAudioConnect = it[RESUME_ON_AUDIO_CONNECT] ?: false
         val sleepTimerDefaultMinutes = (it[SLEEP_TIMER_DEFAULT_MINUTES]
@@ -194,6 +200,8 @@ class DatastoreRepository(private val context: Context) {
             crossfadeSeconds = crossfadeSeconds,
             smartTransitions = smartTransitions,
             automix = automix,
+            skipSilence = skipSilence,
+            preferFastestRefresh = preferFastestRefresh,
             normalizeVolume = normalizeVolume,
             resumeOnAudioConnect = resumeOnAudioConnect,
             sleepTimerDefaultMinutes = sleepTimerDefaultMinutes,
