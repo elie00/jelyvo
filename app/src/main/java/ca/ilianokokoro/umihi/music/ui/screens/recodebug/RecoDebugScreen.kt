@@ -16,10 +16,10 @@ import androidx.compose.material.icons.outlined.Refresh
 import ca.ilianokokoro.umihi.music.ui.components.studio.Button
 import ca.ilianokokoro.umihi.music.ui.components.studio.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.material3.MaterialTheme
 import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedButton
 import androidx.compose.material3.Scaffold

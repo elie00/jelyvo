@@ -26,7 +26,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FileDownloadOff
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Radio
-import androidx.compose.material3.CircularWavyProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -212,7 +212,7 @@ fun PlaylistInfo(
                                     contentDescription = null,
                                 )
                             } else if (isDownloading) {
-                                CircularWavyProgressIndicator(modifier = Modifier.size(25.dp))
+                                CircularProgressIndicator(modifier = Modifier.size(25.dp))
                             } else {
                                 Icon(
                                     imageVector = Icons.Rounded.Download,

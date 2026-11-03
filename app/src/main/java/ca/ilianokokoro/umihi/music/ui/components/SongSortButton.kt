@@ -8,8 +8,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material.icons.rounded.Title
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,7 +33,6 @@ fun SongSortButton(
     IconButton(
         onClick = { expanded = true },
         modifier = modifier,
-        shapes = IconButtonDefaults.shapes(),
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Rounded.Sort,

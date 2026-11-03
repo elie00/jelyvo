@@ -3,22 +3,14 @@ package ca.ilianokokoro.umihi.music.ui.components.home
 import ca.ilianokokoro.umihi.music.ui.components.ShelfCard
 import ca.ilianokokoro.umihi.music.ui.components.Shelf
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.LinearProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,12 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.ResumeItem
-import ca.ilianokokoro.umihi.music.ui.components.SquareImage
 import ca.ilianokokoro.umihi.music.ui.components.keyboardFocusOutline
 import ca.ilianokokoro.umihi.music.ui.components.onKeyboardContextMenu
 import ca.ilianokokoro.umihi.music.ui.components.onSecondaryClick
@@ -86,8 +76,6 @@ private fun ResumeCard(
             belowArtwork = {
                 LinearProgressIndicator(
                     progress = { item.progress },
-                    drawStopIndicator = {},
-                    gapSize = 0.dp,
                     color = MaterialTheme.colorScheme.onSurface,
                     trackColor = MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier
