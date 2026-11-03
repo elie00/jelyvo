@@ -93,7 +93,7 @@ private fun Modifier.veil(): Modifier {
  */
 @Composable
 fun ActionPill(
-    icon: ImageVector,
+    icon: ImageVector?,
     label: String,
     onClick: () -> Unit,
     filled: Boolean,
@@ -112,13 +112,15 @@ fun ActionPill(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = content,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+        }
         Text(
             text = label,
             style = MaterialTheme.typography.titleMedium,
