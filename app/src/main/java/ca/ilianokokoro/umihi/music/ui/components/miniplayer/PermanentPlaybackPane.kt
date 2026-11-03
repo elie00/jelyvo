@@ -34,8 +34,7 @@ import androidx.compose.material.icons.rounded.SkipPrevious
 import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -49,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -283,9 +281,6 @@ fun PermanentPlaybackPane(
                                             overflow = TextOverflow.Ellipsis,
                                         )
                                     },
-                                    colors = ListItemDefaults.colors(
-                                        containerColor = Color.Transparent
-                                    ),
                                 ) {
                                     Text(
                                         text = entry.song.title,

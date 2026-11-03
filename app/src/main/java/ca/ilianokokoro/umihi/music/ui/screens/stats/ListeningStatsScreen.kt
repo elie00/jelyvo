@@ -18,15 +18,14 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -167,7 +166,6 @@ fun ListeningStatsScreen(
                     key = { _, stat -> stat.youtubeId },
                 ) { index, stat ->
                     ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
                                 text = "${index + 1}. ${stat.title}",
@@ -178,7 +176,7 @@ fun ListeningStatsScreen(
                         leadingContent = {
                             SquareImage(
                                 uri = stat.thumbnailHref,
-                                modifier = Modifier.size(56.dp),
+                                modifier = Modifier.size(ROW_ART_SIZE),
                                 cornerRadius = 8.dp,
                             )
                         },
@@ -208,7 +206,6 @@ fun ListeningStatsScreen(
                     key = { _, stat -> stat.artist },
                 ) { index, stat ->
                     ListItem(
-                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable { onSearchArtist(stat.artist) },
                         headlineContent = { Text(stat.artist, maxLines = 1) },
                         leadingContent = {

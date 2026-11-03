@@ -34,8 +34,8 @@ import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material3.ButtonDefaults
 import ca.ilianokokoro.umihi.music.ui.components.studio.FilledTonalButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -48,7 +48,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -602,13 +601,12 @@ internal fun ArtistListItem(
     onOpenArtist: (id: String, name: String) -> Unit,
 ) {
     ListItem(
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        headlineContent = { Text(artist.name, style = MaterialTheme.typography.titleMedium) },
+        headlineContent = { Text(artist.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         leadingContent = {
             SquareImage(
                 uri = artist.thumbnail,
-                modifier = Modifier.size(56.dp),
-                cornerRadius = 28.dp,
+                modifier = Modifier.size(ROW_ART_SIZE),
+                cornerRadius = ROW_ART_SIZE / 2,
             )
         },
         modifier = Modifier.clickable { onOpenArtist(artist.id, artist.name) },

@@ -31,8 +31,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
+import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
+import ca.ilianokokoro.umihi.music.ui.components.studio.ROW_ART_SIZE
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -47,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -60,6 +59,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -193,7 +193,6 @@ fun SearchScreen(
                         items(uiState.suggestions, key = { it }) { suggestion ->
                             ListItem(
                                 headlineContent = { Text(suggestion) },
-                                colors = transparentRowColors(),
                                 modifier = Modifier.clickable {
                                     focusManager.clearFocus()
                                     searchViewModel.selectSuggestion(suggestion)
@@ -246,7 +245,6 @@ fun SearchScreen(
                             }
                             items(uiState.recentSearches, key = { it }) { query ->
                                 ListItem(
-                                    colors = transparentRowColors(),
                                     headlineContent = { Text(query) },
                                     leadingContent = {
                                         Icon(
@@ -704,10 +702,6 @@ private fun LocalLibrarySectionKind.titleRes(): Int = when (this) {
     LocalLibrarySectionKind.DOWNLOADS -> R.string.downloaded
 }
 
-/** Rows show the page behind them: a surface colour here would stripe a black page. */
-@Composable
-private fun transparentRowColors() = ListItemDefaults.colors(containerColor = Color.Transparent)
-
 @Composable
 private fun SearchBrowseResult(
     title: String,
@@ -717,16 +711,15 @@ private fun SearchBrowseResult(
     round: Boolean = false,
 ) {
     ListItem(
-        colors = transparentRowColors(),
-        headlineContent = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        headlineContent = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         supportingContent = subtitle.takeIf(String::isNotBlank)?.let { value ->
-            { Text(value, style = MaterialTheme.typography.bodyMedium) }
+            { Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis) }
         },
         leadingContent = {
             SquareImage(
                 uri = thumbnail,
-                modifier = Modifier.size(56.dp),
-                cornerRadius = if (round) 28.dp else 8.dp,
+                modifier = Modifier.size(ROW_ART_SIZE),
+                cornerRadius = if (round) ROW_ART_SIZE / 2 else 8.dp,
             )
         },
         modifier = Modifier.clickable(onClick = onClick),
