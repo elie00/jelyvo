@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.services
 
+import android.content.Context
 import android.app.PendingIntent
 import android.content.Intent
 import android.media.AudioDeviceCallback
@@ -56,6 +57,7 @@ import ca.ilianokokoro.umihi.music.core.diagnostics.FailureSource
 import ca.ilianokokoro.umihi.music.core.diagnostics.PlaybackFailures
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
+import ca.ilianokokoro.umihi.music.core.i18n.AppLocale
 import ca.ilianokokoro.umihi.music.core.jam.JamBridge
 import ca.ilianokokoro.umihi.music.core.jam.JamManager
 import ca.ilianokokoro.umihi.music.core.jam.JamStatus
@@ -122,6 +124,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 @UnstableApi
 class PlaybackService : MediaLibraryService() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrap(newBase))
+    }
+
     private var mediaLibrarySession: MediaLibrarySession? = null
     private lateinit var exoCache: ExoCache
     private lateinit var player: ExoPlayer

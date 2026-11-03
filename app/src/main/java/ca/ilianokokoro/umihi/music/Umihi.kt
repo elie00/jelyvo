@@ -1,5 +1,8 @@
 package ca.ilianokokoro.umihi.music
 
+import android.content.Context
+import ca.ilianokokoro.umihi.music.core.i18n.AppLocale
+import java.util.Locale
 import android.app.ActivityManager
 import android.app.Application
 import android.os.Build
@@ -33,6 +36,16 @@ import okio.Path.Companion.toOkioPath
 
 class Umihi : Application(), SingletonImageLoader.Factory, Configuration.Provider {
     private val startupScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrap(base))
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // The system resets the default locale when the phone's language changes.
+        Locale.setDefault(resources.configuration.locales[0])
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -40,6 +40,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.Player
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.core.Constants
+import ca.ilianokokoro.umihi.music.core.i18n.AppLocale
 import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.helpers.DisplayRefresh
 import ca.ilianokokoro.umihi.music.core.helpers.ExternalAudio
@@ -52,7 +53,6 @@ import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeDataExtractor
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.SongRepository
-import ca.ilianokokoro.umihi.music.data.repositories.StartupPreferences
 import ca.ilianokokoro.umihi.music.models.SearchFilter
 import ca.ilianokokoro.umihi.music.ui.components.PipVideoOverlay
 import ca.ilianokokoro.umihi.music.ui.components.dialog.UpdateDialog
@@ -354,19 +354,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun attachBaseContext(newBase: Context) {
-        // Synchronous SharedPreferences mirror read: no DataStore I/O before the first frame.
-        val useSpecialLanguage = StartupPreferences.useSpecialLanguage(newBase)
-
-        val context = if (useSpecialLanguage) {
-            val locale = java.util.Locale.forLanguageTag(Constants.Locale.Special.CODE)
-            val config = Configuration(newBase.resources.configuration)
-            config.setLocales(android.os.LocaleList(locale))
-            newBase.createConfigurationContext(config)
-        } else {
-            newBase
-        }
-
-        super.attachBaseContext(context)
+        super.attachBaseContext(AppLocale.wrap(newBase))
     }
 
     private fun handleShareIntent(intent: Intent?) {
