@@ -21,10 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Login
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.Button
+import ca.ilianokokoro.umihi.music.ui.components.studio.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledTonalButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -392,7 +392,7 @@ private fun LoggedOutHome(
             color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.32f),
         ) {}
 
-        FilledTonalIconButton(
+        FilledIconButton(
             onClick = onSettingsButtonPress,
             modifier = Modifier
                 .align(Alignment.TopEnd)
