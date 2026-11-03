@@ -46,7 +46,7 @@ fun AccountScreen(
         if (session == null) {
             Text(
                 text = "Le compte porte vos titres likés, vos albums enregistrés, vos artistes " +
-                    "suivis et vos playlists sur YouTube. Les favoris et playlists de la bibliothèque " +
+                    "suivis et vos listes de lecture sur YouTube. Les favoris et listes de lecture de la bibliothèque " +
                     "locale restent propres à ce Mac.",
                 style = MaterialTheme.typography.bodyMedium,
             )

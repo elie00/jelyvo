@@ -30,7 +30,7 @@ fun LibraryScreen(
         Text(if (home) "Accueil" else "Bibliothèque locale", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(20.dp))
         Text("Enregistrée sur ce Mac", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 20.dp))
         if (!home) Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Favoris", "Historique", "Playlists").forEachIndexed { index, label ->
+            listOf("Favoris", "Historique", "Listes de lecture").forEachIndexed { index, label ->
                 FilterChip(selected = tab == index, onClick = { tab = index }, label = { Text(label) })
             }
         }
@@ -39,7 +39,7 @@ fun LibraryScreen(
         LazyColumn(Modifier.weight(1f)) {
             if (!home && tab == 2) {
                 if (library.playlists.isEmpty()) item {
-                    Text("Enregistrez votre file de lecture pour créer une playlist.", Modifier.padding(20.dp))
+                    Text("Enregistrez votre file de lecture pour créer une liste de lecture.", Modifier.padding(20.dp))
                 }
                 items(library.playlists, key = { it.id }) { playlist ->
                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -67,7 +67,7 @@ fun QueueScreen(queue: PlaybackQueue, onPlay: (Int) -> Unit, onRemove: (Int) -> 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("File de lecture", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
-            Button(onClick = onSave, enabled = queue.entries.isNotEmpty()) { Text("Enregistrer en playlist") }
+            Button(onClick = onSave, enabled = queue.entries.isNotEmpty()) { Text("Enregistrer en liste de lecture") }
         }
         if (queue.entries.isEmpty()) Text("Ajoutez des titres depuis la recherche ou une collection.", Modifier.padding(20.dp))
         LazyColumn {
@@ -91,7 +91,7 @@ fun PlaylistNameDialog(initialName: String, onDismiss: () -> Unit, onSave: (Stri
     var name by remember { mutableStateOf(initialName) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nom de la playlist") },
+        title = { Text("Nom de la liste de lecture") },
         text = { OutlinedTextField(value = name, onValueChange = { name = it }, singleLine = true, label = { Text("Nom") }) },
         confirmButton = { TextButton(onClick = { onSave(name.trim()) }, enabled = name.isNotBlank()) { Text("Enregistrer") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Annuler") } },
