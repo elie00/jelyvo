@@ -61,6 +61,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ca.ilianokokoro.umihi.music.R
+import kotlinx.coroutines.launch
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircularProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.CircleButton
+import ca.ilianokokoro.umihi.music.core.lyrics.LyricsTranslation
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.rounded.Translate
+import androidx.compose.material.icons.Icons
+import android.widget.Toast
 import ca.ilianokokoro.umihi.music.core.ApiResult
 import ca.ilianokokoro.umihi.music.models.LyricLine
 import ca.ilianokokoro.umihi.music.models.Lyrics
@@ -141,6 +154,7 @@ fun LyricsPanel(
     onSeekTo: (Long) -> Unit = {},
     onRetry: () -> Unit = {},
     onShareLine: (String) -> Unit = {},
+    translate: suspend (Lyrics, String) -> LyricsTranslation.Result = LyricsTranslation::translate,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
@@ -158,16 +172,115 @@ fun LyricsPanel(
                 if (lyrics.isEmpty) {
                     LyricsUnavailable(onRetry = onRetry)
                 } else {
+                    val translation = rememberLyricsTranslation(lyrics, translate)
                     SyncedLyricsList(
-                        lyrics = lyrics,
+                        lyrics = translation.shown,
                         currentPositionMs = currentPositionMs,
                         isPlaying = isPlaying,
                         playbackSpeed = playbackSpeed,
                         onSeekTo = onSeekTo,
                         onShareLine = onShareLine,
                     )
+                    LyricsTranslationButton(
+                        translation = translation,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp),
+                    )
                 }
             }
+        }
+    }
+}
+
+private class LyricsTranslationState(
+    val shown: Lyrics,
+    val translated: Boolean,
+    val loading: Boolean,
+    val toggle: () -> Unit,
+)
+
+/**
+ * What the panel shows and the toggle that switches it. The original is never replaced, so going
+ * back is instant; so is coming back again, which never asks twice for the same song.
+ */
+@Composable
+private fun rememberLyricsTranslation(
+    original: Lyrics,
+    translate: suspend (Lyrics, String) -> LyricsTranslation.Result,
+): LyricsTranslationState {
+    val context = LocalContext.current
+    val language = LocalConfiguration.current.locales[0].toLanguageTag()
+    val scope = rememberCoroutineScope()
+    var translation by remember(original, language) { mutableStateOf<Lyrics?>(null) }
+    var showing by remember(original, language) { mutableStateOf(false) }
+    var loading by remember(original, language) { mutableStateOf(false) }
+    // A song that changes while its request is out must not receive the answer.
+    val current by rememberUpdatedState(original)
+
+    return LyricsTranslationState(
+        shown = translation?.takeIf { showing } ?: original,
+        translated = showing,
+        loading = loading,
+        toggle = toggle@{
+            if (loading) return@toggle
+            if (showing || translation != null) {
+                showing = !showing
+                return@toggle
+            }
+            val asked = original
+            loading = true
+            scope.launch {
+                val result = translate(asked, language)
+                if (asked !== current) return@launch
+                loading = false
+                when (result) {
+                    is LyricsTranslation.Result.Translated -> {
+                        translation = result.lyrics
+                        showing = true
+                    }
+
+                    is LyricsTranslation.Result.SameLanguage -> Toast.makeText(
+                        context,
+                        R.string.lyrics_already_in_language,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+
+                    LyricsTranslation.Result.Unavailable -> Toast.makeText(
+                        context,
+                        R.string.lyrics_translation_failed,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun LyricsTranslationButton(
+    translation: LyricsTranslationState,
+    modifier: Modifier = Modifier,
+) {
+    CircleButton(
+        onClick = translation.toggle,
+        modifier = modifier,
+        size = 44.dp,
+        filled = translation.translated,
+    ) {
+        if (translation.loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = LocalContentColor.current,
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Rounded.Translate,
+                contentDescription = stringResource(
+                    if (translation.translated) R.string.lyrics_show_original else R.string.lyrics_translate
+                ),
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
