@@ -35,7 +35,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,6 +65,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.LocalLibrarySectionKind
@@ -666,11 +666,18 @@ private fun MoodSectionChips(
                 modifier = Modifier.padding(bottom = 4.dp),
             )
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             section.categories.forEach { category ->
-                SuggestionChip(
+                ActionPill(
+                    icon = null,
+                    label = localizedApiSectionTitle(category.title),
                     onClick = { onOpenMoodCategory(category) },
-                    label = { Text(localizedApiSectionTitle(category.title)) },
+                    filled = false,
+                    size = 40.dp,
+                    horizontalPadding = 16.dp,
                 )
             }
         }
