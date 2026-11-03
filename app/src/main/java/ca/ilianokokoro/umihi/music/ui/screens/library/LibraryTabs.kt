@@ -33,7 +33,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FilledTonalButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.FilledTonalButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -69,7 +69,7 @@ import ca.ilianokokoro.umihi.music.ui.components.LoadingAnimation
 import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.SquareImage
-import ca.ilianokokoro.umihi.music.ui.components.materialu.MaterialUButton
+import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
 import ca.ilianokokoro.umihi.music.ui.components.playlist.PlaylistCard
 import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.DockScrollToTopEffect
@@ -285,18 +285,24 @@ internal fun LazyGridScope.playlistItems(
 ) {
     item(key = "playlist-actions", span = { GridItemSpan(maxLineSpan) }) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-            MaterialUButton(
-                onClick = onImportPlaylist,
+            ActionPill(
                 icon = Icons.Rounded.FileOpen,
-                text = stringResource(R.string.import_playlist)
+                label = stringResource(R.string.import_playlist),
+                onClick = onImportPlaylist,
+                filled = false,
+                size = 44.dp,
+                horizontalPadding = 18.dp,
             )
             // Creating a playlist writes to the connected account, so it is only offered
             // when signed in (null callback while logged out).
             if (onCreatePlaylist != null) {
-                MaterialUButton(
-                    onClick = onCreatePlaylist,
+                ActionPill(
                     icon = Icons.AutoMirrored.Rounded.PlaylistAdd,
-                    text = stringResource(R.string.create_playlist)
+                    label = stringResource(R.string.create_playlist),
+                    onClick = onCreatePlaylist,
+                    filled = false,
+                    size = 44.dp,
+                    horizontalPadding = 18.dp,
                 )
             }
         }
