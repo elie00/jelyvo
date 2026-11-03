@@ -657,4 +657,10 @@
     <string name="lastfm_disconnect">Déconnecter</string>
     <string name="lastfm_auth_failed">Last.fm a refusé la demande. Vérifiez votre clé et votre secret, et que vous avez bien autorisé l\'accès.</string>
     <string name="lastfm_unreachable">Impossible de joindre Last.fm. Vérifiez votre connexion et réessayez.</string>
+    <string name="lyrics_translate">Traduire les paroles</string>
+    <string name="lyrics_show_original">Afficher les paroles d\'origine</string>
+    <string name="lyrics_translation_failed">Impossible de traduire ces paroles. Vérifiez votre connexion et réessayez.</string>
+    <string name="lyrics_already_in_language">Ces paroles sont déjà dans votre langue.</string>
+    <string name="sleep_timer_minutes_field">Minutes</string>
+    <string name="sleep_timer_minutes_short">min</string>
 </resources>

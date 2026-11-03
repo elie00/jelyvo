@@ -671,4 +671,10 @@
     <string name="lastfm_disconnect">Disconnect</string>
     <string name="lastfm_auth_failed">Last.fm refused the request. Check your key and secret, and that you approved access.</string>
     <string name="lastfm_unreachable">Couldn\'t reach Last.fm. Check your connection and try again.</string>
+    <string name="lyrics_translate">Translate lyrics</string>
+    <string name="lyrics_show_original">Show original lyrics</string>
+    <string name="lyrics_translation_failed">Couldn\'t translate these lyrics. Check your connection and try again.</string>
+    <string name="lyrics_already_in_language">These lyrics are already in your language.</string>
+    <string name="sleep_timer_minutes_field">Minutes</string>
+    <string name="sleep_timer_minutes_short">min</string>
 </resources>

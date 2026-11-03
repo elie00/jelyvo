@@ -21,10 +21,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
 import ca.ilianokokoro.umihi.music.ui.components.studio.ModalBottomSheet
+import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedTextField
 import ca.ilianokokoro.umihi.music.ui.components.studio.Slider
 import kotlin.math.roundToInt
 
@@ -118,24 +124,34 @@ internal fun SleepTimerContent(
             )
 
 
-            // Preselects the user's configured default duration, clamped to the slider bounds.
-            var sliderValue by remember(defaultMinutes) {
-                mutableIntStateOf(
-                    defaultMinutes.coerceIn(
-                        Constants.Ui.Player.SleepTimer.STEP_VALUE,
-                        Constants.Ui.Player.SleepTimer.STEP_VALUE *
-                                Constants.Ui.Player.SleepTimer.STEP_AMOUNT,
-                    )
-                )
+                    var sliderValue by remember(defaultMinutes) {
+                mutableIntStateOf(defaultMinutes.coerceIn(1, MAX_SLEEP_MINUTES))
             }
 
-            Text(
-                text = stringResource(R.string.minutes, sliderValue),
-                style = MaterialTheme.typography.titleMedium.copy(
+            var typed by remember(defaultMinutes) { mutableStateOf(sliderValue.toString()) }
+            OutlinedTextField(
+                value = typed,
+                onValueChange = { text ->
+                    typed = text.filter(Char::isDigit).take(MAX_SLEEP_DIGITS)
+                    // What cannot run keeps the last value that can, rather than starting at nothing.
+                    parseSleepMinutes(typed)?.let { sliderValue = it }
+                },
+                label = { Text(stringResource(R.string.sleep_timer_minutes_field)) },
+                trailingIcon = {
+                    Text(
+                        stringResource(R.string.sleep_timer_minutes_short),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = MaterialTheme.typography.titleMedium.copy(
                     fontFeatureSettings = "tnum",
+                    textAlign = TextAlign.Center,
                 ),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(120.dp),
             )
 
 
@@ -144,13 +160,14 @@ internal fun SleepTimerContent(
             val sliderStateDescription = stringResource(R.string.minutes, sliderValue)
 
             Slider(
-                value = sliderValue.toFloat(),
+                value = sliderValue.toFloat().coerceIn(range),
                 onValueChange = { newValue ->
                     val rounded = newValue.roundToInt()
                     if (rounded != sliderValue) {
                         haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
                     }
                     sliderValue = rounded
+                    typed = rounded.toString()
                 },
                 valueRange = range,
                 steps = Constants.Ui.Player.SleepTimer.STEP_AMOUNT - 2,
@@ -198,3 +215,12 @@ internal fun SleepTimerContent(
         }
     }
 }
+
+private const val MAX_SLEEP_DIGITS = 4
+
+/** A day. Past that a timer has stopped being a sleep timer, and is more likely a typing slip. */
+private const val MAX_SLEEP_MINUTES = 24 * 60
+
+/** The minutes a field's text asks for, or null when no timer could run on it. */
+internal fun parseSleepMinutes(text: String): Int? =
+    text.toIntOrNull()?.takeIf { it in 1..MAX_SLEEP_MINUTES }
