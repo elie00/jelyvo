@@ -37,14 +37,6 @@ object Constants {
         const val AUTO_DOWNLOAD_QUOTA_GB_MAX = 20
     }
 
-    object Locale {
-        object Special {
-            const val CODE = "eo"
-            const val CLICK_QUANTITY = 25
-
-        }
-    }
-
     object Ui {
         object MiniPlayer {
             val HEIGHT = 68.dp
@@ -83,7 +75,6 @@ object Constants {
         const val COOKIES_KEY = "cookies"
         const val DATA_SYNC_ID = "data-sync-id"
         const val SHOW_PODCAST_PLAYLIST = "show-podcast-playlist"
-        const val USE_SPECIAL_LANGUAGE = "use-special-language"
         const val USE_AUDIO_OFFLOAD = "use-audio-offload"
         const val KEEP_SCREEN_ON = "keep-screen-on"
         const val AUTO_UPDATE = "auto-update"

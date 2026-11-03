@@ -14,7 +14,6 @@ data class UmihiSettings(
     val cookies: Cookies,
     override val dataSyncId: String?,
     val showPodcastPlaylist: Boolean = true,
-    val useSpecialLanguage: Boolean = false,
     val useAudioOffload: Boolean = false,
     val keepScreenOn: Boolean = false,
     val sendPlaybackData: Boolean = false,
