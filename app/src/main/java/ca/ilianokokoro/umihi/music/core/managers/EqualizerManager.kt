@@ -6,6 +6,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/** Android names its presets in English, whatever the language. */
+private val FRENCH_PRESET_NAMES = mapOf(
+    "Classical" to "Classique",
+    "Dance" to "Danse",
+    "Flat" to "Plat",
+    "Heavy Metal" to "Métal",
+    "Hip Hop" to "Hip-hop",
+)
+
+internal fun frenchPresetName(name: String): String = FRENCH_PRESET_NAMES[name] ?: name
+
 /**
  * Owns a native [Equalizer] (and [BassBoost]) bound to an audio session id.
  *
@@ -141,7 +152,7 @@ object EqualizerManager {
 
     fun getPresets(): List<String> = runCatching {
         val eq = equalizer ?: return emptyList()
-        (0 until eq.numberOfPresets).map { eq.getPresetName(it.toShort()) }
+        (0 until eq.numberOfPresets).map { frenchPresetName(eq.getPresetName(it.toShort())) }
     }.getOrDefault(emptyList())
 
     fun getSelectedPreset(): Int = desiredPreset
