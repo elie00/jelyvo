@@ -35,6 +35,7 @@ import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.BackButton
+import ca.ilianokokoro.umihi.music.ui.components.PageGutter
 import ca.ilianokokoro.umihi.music.ui.components.PlayShuffleRow
 import ca.ilianokokoro.umihi.music.ui.components.studio.ListItem
 import ca.ilianokokoro.umihi.music.ui.components.studio.PillSegmentedControl
@@ -160,7 +161,7 @@ internal fun LocalSongsContent(
                             sourceName = sourceName,
                         )
                     },
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(start = PageGutter, end = PageGutter, bottom = 8.dp),
                 )
             }
 

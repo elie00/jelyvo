@@ -410,7 +410,7 @@ internal fun LikedSongsTab(
                             sourceName = sourceName
                         )
                     },
-                    modifier = Modifier.padding(bottom = 8.dp),
+                    modifier = Modifier.padding(start = PageGutter, end = PageGutter, bottom = 8.dp),
                 )
             }
 
