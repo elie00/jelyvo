@@ -70,6 +70,11 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.ui.graphics.luminance
+import ca.ilianokokoro.umihi.music.ui.theme.StatusBarIcons
+import ca.ilianokokoro.umihi.music.ui.theme.statusBarIconsDark
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
@@ -157,6 +162,16 @@ fun ArtistScreen(
     val hazeState = remember { HazeState() }
 
     val palette = rememberArtworkPalette((state as? ArtistState.Success)?.page?.artist?.thumbnailHref)
+    val iconsDark = statusBarIconsDark(
+        photoTopLuminance = palette.photoTopLuminance,
+        pageLuminance = palette.wash.luminance(),
+        // Past half way the frosted bar has taken over from the picture.
+        photoUnderBar = collapseProgress < 0.5f,
+    )
+    StatusBarIcons(
+        dark = iconsDark,
+        restoreDark = MaterialTheme.colorScheme.background.luminance() > 0.5f,
+    )
     ArtworkPageTheme(palette, pageColor = palette.wash) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
@@ -257,6 +272,7 @@ fun ArtistScreen(
                         ArtistPhotoBackground(
                             photo = page.artist.thumbnailHref,
                             wash = palette.wash,
+                            iconsDark = iconsDark,
                             artHeight = artHeight,
                             listState = listState,
                             modifier = Modifier.matchParentSize(),
@@ -582,10 +598,14 @@ fun ArtistScreen(
  * dissolved into the page. It follows the scroll instead of being scrolled, so the list keeps the
  * gesture, and it is read in a placement block, so a scroll moves it without recomposing anything.
  */
+private val STATUS_SCRIM_REACH = 56.dp
+private const val STATUS_SCRIM_ALPHA = 0.32f
+
 @Composable
 internal fun ArtistPhotoBackground(
     photo: Any?,
     wash: Color,
+    iconsDark: Boolean,
     artHeight: Dp,
     listState: LazyListState,
     modifier: Modifier = Modifier,
@@ -629,6 +649,21 @@ internal fun ArtistPhotoBackground(
                         .blur(SOFT_FOOT_BLUR, BlurredEdgeTreatment.Rectangle),
                 )
             }
+            // A picture is rarely one brightness across: the icons were picked for its average, and this
+            // keeps them readable over the part of it that disagrees.
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + STATUS_SCRIM_REACH)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                (if (iconsDark) Color.White else Color.Black).copy(alpha = STATUS_SCRIM_ALPHA),
+                                Color.Transparent,
+                            )
+                        )
+                    ),
+            )
             // Ends on the page colour at full strength, and eased: a gradient that changes slope at a
             // stop shows a line at that stop, however close the colours either side of it are.
             Box(
