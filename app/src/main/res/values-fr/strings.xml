@@ -288,7 +288,7 @@
     <string name="privacy_public">Publique</string>
     <string name="privacy_private">Privé</string>
     <string name="delete_playlist">Supprimer la playlist</string>
-    <string name="delete_playlist_text">Êtes-vous sûr de vouloir supprimer cette playlist de votre compte YouTube ? Cette action est irréversible.</string>
+    <string name="delete_playlist_text">Voulez-vous vraiment supprimer cette playlist de votre compte YouTube ? Cette action est irréversible.</string>
     <string name="delete_playlist_failed_toast">Impossible de supprimer cette playlist</string>
     <string name="check_update_setting_description">Vérifie les nouvelles mises à jour de GitHub</string>
     <string name="updates">Mises à jour</string>
