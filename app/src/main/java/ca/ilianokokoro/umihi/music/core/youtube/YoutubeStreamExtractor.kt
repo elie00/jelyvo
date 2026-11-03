@@ -4,20 +4,25 @@ import android.content.Context
 import android.widget.Toast
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
-import ca.ilianokokoro.umihi.music.core.SingleFlight
 import ca.ilianokokoro.umihi.music.core.PlaybackLoudnessStore
+import ca.ilianokokoro.umihi.music.core.SingleFlight
 import ca.ilianokokoro.umihi.music.core.YoutubeExtractor
+import ca.ilianokokoro.umihi.music.core.cast.castContentType
+import ca.ilianokokoro.umihi.music.core.diagnostics.FailureSource
+import ca.ilianokokoro.umihi.music.core.diagnostics.PlaybackFailures
+import ca.ilianokokoro.umihi.music.core.helpers.ConnectivityHelper
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printd
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
-import ca.ilianokokoro.umihi.music.core.helpers.ConnectivityHelper
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeArray
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.safeObject
-import ca.ilianokokoro.umihi.music.core.cast.castContentType
 import ca.ilianokokoro.umihi.music.data.database.AppDatabase
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.AudioQuality
 import ca.ilianokokoro.umihi.music.data.repositories.DatastoreRepository.VideoQuality
 import ca.ilianokokoro.umihi.music.models.Song
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,9 +35,6 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.schabi.newpipe.extractor.ServiceList
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.time.Duration.Companion.milliseconds
 
 private val visitorDataRef = AtomicReference<String?>(null)
 
@@ -339,6 +341,9 @@ object YoutubeStreamExtractor {
 
                 if (attempt < retries - 1) {
                     delay((YoutubeApiConstants.RETRY_DELAY * (attempt + 1)).milliseconds)
+                } else {
+                    // One entry for the whole round: its retries are the same failure.
+                    PlaybackFailures.record(FailureSource.NewPipe, e::class.simpleName ?: "Unknown", e.message)
                 }
             }
         }
@@ -530,6 +535,7 @@ object YoutubeStreamExtractor {
 
         if (reason != null) {
             printe("ANDROID_VR Failed ($status). Reason : $reason ")
+            PlaybackFailures.record(FailureSource.AndroidVr, status ?: "NO_STATUS", reason)
         }
 
         if (muxedFormat != null) {
