@@ -174,8 +174,6 @@
     <string name="theme_color_mono">Graphite</string>
     <string name="show_podcast_playlist_title">Show Podcast Playlist</string>
     <string name="show_podcast_playlist_description">Toggles the visibility of the \'Episodes for Later\' Playlist</string>
-    <string name="special_language_disabled">Special Language Disabled</string>
-    <string name="special_language_enabled">Special Language Enabled</string>
     <string name="reorder">Reorder</string>
     <string name="actions">Actions</string>
     <string name="playback">Playback</string>
@@ -215,7 +213,7 @@
     <string name="music_import_title">Import your music</string>
     <string name="music_import_settings_subtitle">From Apple Music, Spotify or Deezer</string>
     <string name="music_import_heading">Bring your playlists with you</string>
-    <string name="music_import_description">Paste a public or shared playlist link. Umihi will find the available tracks and create an editable local playlist.</string>
+    <string name="music_import_description">Paste a public or shared playlist link. Jelyvo will find the available tracks and create an editable local playlist.</string>
     <string name="music_import_supported_services">Supported services</string>
     <string name="music_import_link_label">Playlist link</string>
     <string name="music_import_link_placeholder">Paste a Spotify, Apple Music or Deezer link</string>
