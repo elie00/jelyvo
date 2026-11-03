@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.LinearWavyProgressIndicator
+import ca.ilianokokoro.umihi.music.ui.components.studio.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -79,12 +79,12 @@ fun UpdateDialog(scope: CoroutineScope) {
                         Spacer(modifier = Modifier.height(16.dp))
 
                         if (downloadProgress > 0f) {
-                            LinearWavyProgressIndicator(
+                            LinearProgressIndicator(
                                 progress = { downloadProgress },
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
-                            LinearWavyProgressIndicator(
+                            LinearProgressIndicator(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
