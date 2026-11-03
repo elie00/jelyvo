@@ -21,7 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DragHandle
 import androidx.compose.material.icons.rounded.GraphicEq
-import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.NotInterested
 import androidx.compose.material.icons.rounded.Radio
 import androidx.compose.material.icons.rounded.Remove
@@ -160,7 +160,7 @@ fun QueueSongListItem(
                 .clickable { expanded = true },
         ) {
             Icon(
-                Icons.Rounded.MoreHoriz,
+                Icons.Rounded.MoreVert,
                 contentDescription = stringResource(R.string.more),
                 tint = colors.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
