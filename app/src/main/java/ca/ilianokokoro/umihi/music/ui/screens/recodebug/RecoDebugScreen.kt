@@ -14,7 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Refresh
 import ca.ilianokokoro.umihi.music.ui.components.studio.Button
-import androidx.compose.material3.Card
+import ca.ilianokokoro.umihi.music.ui.components.studio.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
