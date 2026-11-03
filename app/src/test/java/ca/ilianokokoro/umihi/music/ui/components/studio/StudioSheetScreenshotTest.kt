@@ -8,6 +8,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Cast
+import androidx.compose.material.icons.rounded.CastConnected
+import androidx.compose.material.icons.rounded.PhoneAndroid
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -21,9 +26,15 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import ca.ilianokokoro.umihi.music.core.managers.AbLoop
+import ca.ilianokokoro.umihi.music.models.PlaybackAudioInfo
 import ca.ilianokokoro.umihi.music.models.Song
+import ca.ilianokokoro.umihi.music.ui.components.cast.DeviceRow
+import ca.ilianokokoro.umihi.music.ui.components.cast.DeviceSectionLabel
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.PlayerMenuContent
 import ca.ilianokokoro.umihi.music.ui.screens.player.components.QueuePanel
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.SleepTimerContent
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.SongDetailsContent
+import ca.ilianokokoro.umihi.music.ui.screens.player.components.SpeedSelectorContent
 import ca.ilianokokoro.umihi.music.ui.theme.StudioTestTheme
 import org.junit.Rule
 import org.junit.Test
@@ -124,4 +135,40 @@ class StudioSheetScreenshotTest {
 
     @Test
     fun queueLight() = renderSheet("sheet-queue-light", dark = false) { Queue() }
+
+    @Test
+    fun sleepTimer() = renderSheet("sheet-sleep-timer-dark", dark = true, title = "Sleep timer") {
+        SleepTimerContent({}, activeRemainingSeconds = null, defaultMinutes = 30, onStartTimer = {}, onStartEndOfSong = {}, onCancelTimer = {})
+    }
+
+    @Test
+    fun sleepTimerActive() = renderSheet("sheet-sleep-timer-active-light", dark = false, title = "Sleep timer active") {
+        SleepTimerContent({}, activeRemainingSeconds = 754, defaultMinutes = 30, onStartTimer = {}, onStartEndOfSong = {}, onCancelTimer = {})
+    }
+
+    @Test
+    fun speed() = renderSheet("sheet-speed-dark", dark = true, title = "Playback speed") {
+        SpeedSelectorContent(currentSpeed = 1f, onSelectSpeed = {})
+    }
+
+    @Test
+    fun songDetails() = renderSheet("sheet-details-dark", dark = true, title = "About this song") {
+        SongDetailsContent(
+            song = song(0).apply { albumName = "Random Access Memories" },
+            audioInfo = PlaybackAudioInfo(format = "opus", sampleRate = 48000, bitrate = 160000, channelCount = 2),
+            onOpenArtist = {},
+            onOpenAlbum = {},
+        )
+    }
+
+    @Test
+    fun outputs() = renderSheet("sheet-outputs-dark", dark = true, title = "Available devices") {
+        Column {
+            DeviceSectionLabel("Current output")
+            DeviceRow(Icons.Rounded.PhoneAndroid, "This phone", "Connected", selected = true, onClick = {})
+            DeviceSectionLabel("Cast devices")
+            DeviceRow(Icons.Rounded.Cast, "Salon", "Available", selected = false, onClick = {})
+            DeviceRow(Icons.Rounded.CastConnected, "Bureau", "Connected", selected = true, onClick = {})
+        }
+    }
 }
