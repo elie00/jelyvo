@@ -65,6 +65,8 @@ import ca.ilianokokoro.umihi.music.ui.components.studio.AlertDialog
 import ca.ilianokokoro.umihi.music.ui.components.studio.OutlinedTextField
 import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 import ca.ilianokokoro.umihi.music.ui.screens.localplaylist.components.EditableSongItem
+import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPageTheme
+import ca.ilianokokoro.umihi.music.ui.theme.rememberArtworkPalette
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import sh.calvin.reorderable.ReorderableItem
@@ -114,6 +116,7 @@ fun LocalPlaylistScreen(
         if (uiState.isManualOrder) items else uiState.visibleSongs
     }
 
+    ArtworkPageTheme(rememberArtworkPalette(coverUris.firstOrNull())) {
     Box(Modifier.fillMaxSize()) {
         val hazeState = remember { HazeState() }
         Scaffold(topBar = {
@@ -332,6 +335,7 @@ fun LocalPlaylistScreen(
                 }
             }
         }
+    }
     }
 
     if (showRenameDialog) {

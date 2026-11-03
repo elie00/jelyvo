@@ -60,6 +60,8 @@ import ca.ilianokokoro.umihi.music.ui.components.song.SongListItem
 import ca.ilianokokoro.umihi.music.ui.navigation.viewmodels.SharedViewModel
 import ca.ilianokokoro.umihi.music.ui.screens.playlist.components.PlaylistHeader
 import ca.ilianokokoro.umihi.music.ui.screens.search.components.SearchBar
+import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPageTheme
+import ca.ilianokokoro.umihi.music.ui.theme.rememberArtworkPalette
 
 import ca.ilianokokoro.umihi.music.ui.components.frosted
 import ca.ilianokokoro.umihi.music.ui.components.frostedTopAppBarColors
@@ -103,6 +105,7 @@ fun PlaylistScreen(
         }
     }
 
+    ArtworkPageTheme(rememberArtworkPalette(playlistInfo.coverPath ?: playlistInfo.coverHref)) {
     Box(Modifier.fillMaxSize()) {
 
         val hazeState = remember { HazeState() }
@@ -351,5 +354,6 @@ fun PlaylistScreen(
             }
         }
 
+    }
     }
 }

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -53,6 +55,8 @@ import ca.ilianokokoro.umihi.music.ui.components.studio.CircleButton
 import ca.ilianokokoro.umihi.music.ui.components.studio.RELEASE_ACTION_GAP
 import ca.ilianokokoro.umihi.music.ui.components.studio.TextButton
 
+private const val SLEEVE_FRACTION = 0.76f
+
 @Composable
 fun PlaylistInfo(
     playlist: Playlist,
@@ -91,7 +95,8 @@ fun PlaylistInfo(
             specialCover != null -> JelyvoPlaylistCover(
                 cover = specialCover,
                 contentDescription = stringResource(R.string.playlist_cover),
-                modifier = Modifier.size(220.dp),
+                modifier = Modifier.fillMaxWidth(SLEEVE_FRACTION)
+                        .aspectRatio(1f),
             )
             !playlist.info.isDownloadedPlaylist -> {
                 val launcher = rememberLauncherForActivityResult(
@@ -111,7 +116,7 @@ fun PlaylistInfo(
                 ) {
                     SquareImage(
                         uri = playlist.info.coverPath ?: playlist.info.coverHref,
-                        modifier = Modifier.size(220.dp)
+                        modifier = Modifier.fillMaxSize()
                     )
                     if (playlist.info.isEditable) {
                         Surface(

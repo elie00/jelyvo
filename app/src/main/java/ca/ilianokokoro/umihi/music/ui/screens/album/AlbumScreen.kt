@@ -85,6 +85,8 @@ import ca.ilianokokoro.umihi.music.ui.components.studio.CircleIconButton
 import ca.ilianokokoro.umihi.music.ui.navigation.supportsBrowsingContextPane
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.AlbumMenuBottomSheet
 import ca.ilianokokoro.umihi.music.ui.screens.album.components.LocalPlaylistPickerDialog
+import ca.ilianokokoro.umihi.music.ui.theme.ArtworkPageTheme
+import ca.ilianokokoro.umihi.music.ui.theme.rememberArtworkPalette
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
@@ -95,6 +97,10 @@ import kotlin.math.roundToInt
  * juste au moment ou celui de l'en-tete disparait.
  */
 private val ALBUM_TOP_BAR_COLLAPSE_DISTANCE = 200.dp
+
+/** How much of the page's width and height the sleeve may take. */
+private const val SLEEVE_FRACTION = 0.76f
+private const val SLEEVE_MAX_HEIGHT = 0.5f
 
 @Composable
 fun AlbumScreen(
@@ -144,6 +150,10 @@ fun AlbumScreen(
         ?: albumName
 
     val hazeState = remember { HazeState() }
+    val palette = rememberArtworkPalette(
+        (state as? AlbumState.Success)?.page?.cover?.ifBlank { albumCover } ?: albumCover
+    )
+    ArtworkPageTheme(palette) {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
@@ -190,6 +200,7 @@ fun AlbumScreen(
 
                 is AlbumState.Success -> {
                     val page = state.page
+                    val sleeveSize = minOf(maxWidth * SLEEVE_FRACTION, maxHeight * SLEEVE_MAX_HEIGHT)
                     val showContextPane = supportsBrowsingContextPane(
                         availableWidthDp = maxWidth.value.roundToInt(),
                         availableHeightDp = maxHeight.value.roundToInt(),
@@ -317,7 +328,7 @@ fun AlbumScreen(
                                         artistId = page.artistId,
                                         metadataLine = metadataLine,
                                         description = "",
-                                        artworkSize = 220.dp,
+                                        artworkSize = sleeveSize,
                                         hasSongs = playableSongs.isNotEmpty(),
                                         isLoggedIn = isLoggedIn,
                                         canSaveAlbum = page.playlistId != null,
@@ -548,6 +559,7 @@ fun AlbumScreen(
                 }
             }
         }
+    }
     }
 }
 
