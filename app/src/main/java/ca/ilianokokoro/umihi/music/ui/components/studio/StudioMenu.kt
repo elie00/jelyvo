@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -108,6 +109,8 @@ fun StudioMenu(
             expanded = true,
             onDismissRequest = onDismissRequest,
             modifier = modifier.width(StudioMenuWidth),
+            // Off the screen edge, even when the ⋯ button sits right against it.
+            offset = DpOffset(x = (-8).dp, y = 0.dp),
             shape = StudioMenuShape,
             containerColor = colors.fill,
             tonalElevation = 0.dp,
