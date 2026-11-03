@@ -257,7 +257,7 @@ fun OutlinedTextField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 40.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, shape)
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), shape)
                     .then(
                         if (isError) {
                             Modifier.border(1.dp, MaterialTheme.colorScheme.error, shape)
