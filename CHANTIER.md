@@ -26,7 +26,8 @@ La PR #4 a été compilée et testée sur le Mac : 802 tests JVM sans échec, 65
 1. Écouter à l'oreille sur de vrais téléphones : synchronisation à deux, fondu, Automix.
 2. Tester le partage des écoutes avec de vrais comptes ListenBrainz et Last.fm. Seul le refus d'un mauvais jeton a été vérifié.
 3. Déployer la page d'invitation en français : `cd worker && npx wrangler login && npm run deploy`. Le code est prêt, le serveur en ligne affiche encore l'anglais.
-4. Republier le dépôt public `elie00/jelyvo` avec le script de publication, jamais à la main : il réécrit l'historique. Ce script n'est pas dans ce dépôt ni sur le Mac. Tant que ce n'est pas fait, le code public est en retard sur la 2.6.14, or la GPL impose de fournir le code de ce qu'on distribue.
+
+**Après chaque release** : `scripts/publish-source.sh` republie le code sur le dépôt public `elie00/jelyvo` (`--dry-run` pour essayer). Il masque le nom et l'adresse du poste de travail sur une copie, et il ne fait qu'ajouter des commits : si l'historique public devait changer, il s'arrête.
 
 **Non testable au doigt** : la sélection multiple et le glisser-déposer vers les zones de dépôt, réservés à la souris et au stylet (DeX). Le rafraîchissement le plus rapide : l'émulateur reste à 60 Hz.
 
