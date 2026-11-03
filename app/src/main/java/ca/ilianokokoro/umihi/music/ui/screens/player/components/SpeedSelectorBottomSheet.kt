@@ -5,12 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -24,16 +20,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper.speedLabel
+import ca.ilianokokoro.umihi.music.ui.components.studio.ModalBottomSheet
 import ca.ilianokokoro.umihi.music.ui.components.studio.Slider
 import kotlin.math.roundToInt
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpeedSelectorBottomSheet(
     changeVisibility: (visible: Boolean) -> Unit,
@@ -43,86 +38,86 @@ fun SpeedSelectorBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = { changeVisibility(false) },
-        sheetState = rememberBottomSheetState(
-            initialValue = SheetValue.Hidden,
-            enabledValues = setOf(
-                SheetValue.Hidden, SheetValue.Expanded
-            )
-        ),
+        title = stringResource(R.string.playback_speed),
     ) {
-        Column(
-            modifier = modifier
+        SpeedSelectorContent(
+            currentSpeed = currentSpeed,
+            onSelectSpeed = onSelectSpeed,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+internal fun SpeedSelectorContent(
+    currentSpeed: Float,
+    onSelectSpeed: (speed: Float) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val haptic = LocalHapticFeedback.current
+        val speeds = Constants.Player.SPEEDS
+        val initialIndex = speeds.indexOf(currentSpeed).coerceAtLeast(0)
+        var sliderIndex by remember { mutableFloatStateOf(initialIndex.toFloat()) }
+        val selectedSpeed = speeds[
+            sliderIndex.roundToInt().coerceIn(0, speeds.lastIndex)
+        ]
+        val selectedSpeedLabel = selectedSpeed.speedLabel()
+
+
+        Text(
+            text = selectedSpeedLabel,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontFeatureSettings = "tnum",
+            ),
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+
+        Slider(
+            value = sliderIndex,
+            onValueChange = { newValue ->
+                val snapped =
+                    newValue.roundToInt().toFloat().coerceIn(0f, speeds.lastIndex.toFloat())
+                if (snapped != sliderIndex) {
+                    haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+                }
+                sliderIndex = snapped
+                onSelectSpeed(speeds[snapped.roundToInt()])
+            },
+            valueRange = 0f..speeds.lastIndex.toFloat(),
+            steps = speeds.size - 2,
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 40.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .semantics {
+                    stateDescription = selectedSpeedLabel
+                },
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = stringResource(R.string.playback_speed),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start,
-            )
-
-            val haptic = LocalHapticFeedback.current
-            val speeds = Constants.Player.SPEEDS
-            val initialIndex = speeds.indexOf(currentSpeed).coerceAtLeast(0)
-            var sliderIndex by remember { mutableFloatStateOf(initialIndex.toFloat()) }
-            val selectedSpeed = speeds[
-                sliderIndex.roundToInt().coerceIn(0, speeds.lastIndex)
-            ]
-            val selectedSpeedLabel = selectedSpeed.speedLabel()
-
-
-            Text(
-                text = selectedSpeedLabel,
-                style = MaterialTheme.typography.titleMedium.copy(
+                text = speeds.first().speedLabel(),
+                style = MaterialTheme.typography.labelSmall.copy(
                     fontFeatureSettings = "tnum",
                 ),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.align(Alignment.CenterHorizontally),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-
-            Slider(
-                value = sliderIndex,
-                onValueChange = { newValue ->
-                    val snapped =
-                        newValue.roundToInt().toFloat().coerceIn(0f, speeds.lastIndex.toFloat())
-                    if (snapped != sliderIndex) {
-                        haptic.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-                    }
-                    sliderIndex = snapped
-                    onSelectSpeed(speeds[snapped.roundToInt()])
-                },
-                valueRange = 0f..speeds.lastIndex.toFloat(),
-                steps = speeds.size - 2,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics {
-                        stateDescription = selectedSpeedLabel
-                    },
+            Text(
+                text = speeds.last().speedLabel(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFeatureSettings = "tnum",
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = speeds.first().speedLabel(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFeatureSettings = "tnum",
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = speeds.last().speedLabel(),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFeatureSettings = "tnum",
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }
