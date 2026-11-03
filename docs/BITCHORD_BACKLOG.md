@@ -1,12 +1,29 @@
 # Suite de la 2.6.13 et reprises possibles depuis BitChord
 
-> Notes du 2 novembre 2026, à reprendre le 3 novembre. Rien de ce qui suit n'est commencé.
+> Notes du 2 novembre 2026, complétées le 3 novembre.
 
 ## État
 
 La v2.6.13 est publiée sur `elie00/jelyvo-releases`. L'APK est signé avec la clé officielle
 (`b47ac9b…`). `feat/bitchord-port-v2` et `codex/finish-existing-platforms` sont fusionnées dans
 `main`, et la PR #1 est close.
+
+## Fait le 3 novembre, sur `feat/jam-complete`
+
+Rien de ceci n'a tourné dans l'application sur un appareil. Tests unitaires, captures et protocole rejoué
+par script contre le serveur déployé uniquement.
+
+- **Écoute à plusieurs** : membres, exclusion, contrôle réservé à l'hôte, lien d'invitation et QR code, ouverture
+  depuis un lien (avec confirmation, et un avertissement si le serveur n'est pas celui par défaut), file
+  partagée, message quand une partie se termine.
+- **Correctif** : une partie disparue du serveur relançait une reconnexion toutes les 10 s, sans fin, ce qui
+  consommait le quota gratuit. Elle se termine désormais.
+- **Gains rapides** : saut des silences (suspendu pendant une partie, désactive le déchargement audio), carte
+  image pour les paroles, « Ouvrir avec » pour les fichiers audio, rafraîchissement le plus rapide.
+- **Déjà présent** : l'arrêt de la minuterie en fin de titre (`startSleepTimerEndOfSong`). Seule la durée libre manque.
+
+**À tester en priorité sur deux téléphones** : la file partagée. Sa logique est testée, mais jamais avec de vrais
+lecteurs. Surveiller les deux appareils en lecture automatique, qui peuvent proposer chacun leur suite.
 
 ## À décider en premier
 
@@ -101,5 +118,6 @@ Points d'attention :
   `codex/finish-existing-platforms`, `agent/finalize-m3-experience`.
 - `feat/bitchord-port` n'est pas fusionnée, et ne doit pas l'être : elle part de la 2.3.1. Ses
   corrections utiles sont déjà couvertes, et ses notes de suivi n'ont pas été comparées une à une.
-- La CI n'exécute ni les tests de `worker/` ni ceux de `backend/`. Ils passent en local (64 tests pour
+- La CI exécute maintenant les tests de `worker/` et de `backend/` (tâche `servers` de `verify.yml`, pas encore passée).
+- CodeQL échoue sur chaque commit : l'analyse de code n'est pas activée pour ce dépôt privé. Rendre le dépôt public réglerait aussi ce point.
   le worker).
