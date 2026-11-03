@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.wearapp
 
+import android.content.Context
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DimensionBuilders.dp
@@ -17,6 +18,10 @@ import com.google.common.util.concurrent.Futures
 
 /** Glanceable entry point shown in the Wear OS tile carousel. */
 class JelyvoTileService : TileService() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(WatchLocale.wrap(newBase))
+    }
+
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest) =
         Futures.immediateFuture(
             Tile.Builder()

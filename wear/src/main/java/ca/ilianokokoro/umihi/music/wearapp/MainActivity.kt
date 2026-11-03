@@ -1,5 +1,6 @@
 package ca.ilianokokoro.umihi.music.wearapp
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +15,10 @@ import androidx.wear.compose.foundation.rememberAmbientModeManager
 import androidx.wear.compose.material3.MaterialTheme
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(WatchLocale.wrap(newBase))
+    }
+
     private val viewModel: WearPlaybackViewModel by viewModels()
     private val standaloneViewModel: StandalonePlaybackViewModel by viewModels()
 
