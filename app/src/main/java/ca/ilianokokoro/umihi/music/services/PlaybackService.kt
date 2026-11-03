@@ -50,6 +50,10 @@ import ca.ilianokokoro.umihi.music.core.cast.CastManager
 import ca.ilianokokoro.umihi.music.core.cast.planCastHandover
 import ca.ilianokokoro.umihi.music.core.datasources.HdVideoMediaSourceFactory
 import ca.ilianokokoro.umihi.music.core.datasources.YoutubeDataSourceFactory
+import ca.ilianokokoro.umihi.music.core.diagnostics.FailureKind
+import ca.ilianokokoro.umihi.music.core.diagnostics.FailureRules
+import ca.ilianokokoro.umihi.music.core.diagnostics.FailureSource
+import ca.ilianokokoro.umihi.music.core.diagnostics.PlaybackFailures
 import ca.ilianokokoro.umihi.music.core.helpers.LogHelper.printe
 import ca.ilianokokoro.umihi.music.core.helpers.UmihiHelper
 import ca.ilianokokoro.umihi.music.core.jam.JamBridge
@@ -452,6 +456,7 @@ class PlaybackService : MediaLibraryService() {
             }
 
             override fun onPlayerError(error: PlaybackException) {
+                PlaybackFailures.record(FailureSource.Player, error.errorCodeName, error.cause?.message)
                 consecutivePlaybackErrors++
                 val queueSize = activePlayer.mediaItemCount
                 // Stop instead of skipping endlessly when every track fails (e.g. offline).
@@ -464,12 +469,18 @@ class PlaybackService : MediaLibraryService() {
                     )
                     Toast.makeText(
                         applicationContext,
-                        getString(R.string.playback_failed),
+                        getString(stoppedMessage(error)),
                         Toast.LENGTH_LONG,
                     ).show()
                     activePlayer.pause()
                     return
                 }
+                // Otherwise a track just disappears, and nothing says why the next one started.
+                Toast.makeText(
+                    applicationContext,
+                    getString(R.string.playback_track_skipped),
+                    Toast.LENGTH_SHORT,
+                ).show()
                 activePlayer.seekToNext()
                 activePlayer.prepare()
             }
@@ -852,6 +863,24 @@ class PlaybackService : MediaLibraryService() {
             positionMs = positionMs,
             durationMs = durationMs.coerceAtLeast(0L),
         )
+    }
+
+    /** What to tell someone whose music has stopped: what is wrong, and whether it is theirs to fix. */
+    private fun stoppedMessage(error: PlaybackException): Int {
+        val connectivity = getSystemService(ConnectivityManager::class.java)
+        val kind = FailureRules.classify(
+            hasNetwork = connectivity?.activeNetwork != null,
+            isNetworkError = error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED ||
+                error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
+            errorCode = error.errorCodeName,
+            recent = PlaybackFailures.recent(),
+            nowMs = System.currentTimeMillis(),
+        )
+        return when (kind) {
+            FailureKind.Network -> R.string.playback_failed
+            FailureKind.RefusedBySource -> R.string.playback_failed_refused
+            FailureKind.Other -> R.string.playback_failed_other
+        }
     }
 
     private fun planFade(durationMs: Long): PlannedFade? {

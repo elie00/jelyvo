@@ -800,13 +800,16 @@ fun SettingsScreen(
                             SettingsRowDivider()
                             SettingsItem(
                                 title = stringResource(R.string.stability_report_title),
-                                subtitle = stringResource(
-                                    if (uiState.stabilityReport == null) {
-                                        R.string.stability_report_empty
-                                    } else {
-                                        R.string.stability_report_available
-                                    }
-                                ),
+                                subtitle = if (uiState.stabilityReport != null) {
+                                    stringResource(R.string.stability_report_available)
+                                } else if (uiState.playbackFailureCount > 0) {
+                                    stringResource(
+                                        R.string.stability_report_playback_failures,
+                                        uiState.playbackFailureCount,
+                                    )
+                                } else {
+                                    stringResource(R.string.stability_report_empty)
+                                },
                                 leadingIcon = Icons.Outlined.BugReport,
                                 onClick = settingsViewModel::shareStabilityReport,
                             )

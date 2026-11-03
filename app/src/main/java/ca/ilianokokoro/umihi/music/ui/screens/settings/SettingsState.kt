@@ -28,6 +28,7 @@ data class SettingsState(
     // Category awaiting the purge confirmation dialog.
     val pendingStoragePurge: StorageCategory? = null,
     val stabilityReport: StabilityReport? = null,
+    val playbackFailureCount: Int = 0,
     val showListenBrainzDialog: Boolean = false,
     val listenBrainzConnected: Boolean = false,
     val listenBrainzConnecting: Boolean = false,

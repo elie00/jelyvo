@@ -118,6 +118,10 @@
     <string name="search_load_more_failed">Impossible de charger plus de résultats. Faites défiler pour réessayer.</string>
     <string name="get_song_failed">Impossible d\'obtenir les informations du titre</string>
     <string name="playback_failed">La lecture s\'est arrêtée. Vérifiez votre connexion et réessayez.</string>
+    <string name="playback_failed_other">La lecture s\'est arrêtée, car ces titres n\'ont pas pu être lus. Essayez d\'autres titres.</string>
+    <string name="playback_failed_refused">YouTube refuse de lire ce contenu pour le moment. Réessayez plus tard.</string>
+    <string name="playback_track_skipped">Impossible de lire ce titre. Passage au suivant.</string>
+    <string name="stability_report_playback_failures">Échecs de lecture enregistrés : %1$d. Touchez pour partager le détail, qui ne cite aucun titre</string>
     <string name="queue_empty">Aucun titre dans la file d\'attente</string>
     <string name="queue_up_next_empty">Aucun autre titre dans la file</string>
     <string name="save_queue">Enregistrer la file</string>
