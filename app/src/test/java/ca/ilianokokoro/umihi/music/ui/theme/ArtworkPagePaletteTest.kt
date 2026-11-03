@@ -31,6 +31,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.ColorUtils
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.core.view.WindowCompat
 import androidx.core.graphics.createBitmap
 import ca.ilianokokoro.umihi.music.models.Song
 import ca.ilianokokoro.umihi.music.ui.components.ReleaseActionRow
@@ -206,14 +210,71 @@ class ArtworkPagePaletteTest {
     fun releaseLight() = renderRelease("palette-release-light", dark = false)
 
     @Test
-    fun artistDark() {
-        val photo = createBitmap(400, 420).apply {
-            val canvas = Canvas(this)
-            canvas.drawColor(android.graphics.Color.rgb(200, 120, 70))
-            val paint = android.graphics.Paint().apply { color = android.graphics.Color.rgb(90, 30, 50) }
-            canvas.drawCircle(200f, 180f, 120f, paint)
+    fun `the status bar icons follow the top of the picture, then the page`() {
+        val darkPage = 0.02f
+        val lightPage = 0.8f
+        assertEquals(true, statusBarIconsDark(0.9f, darkPage, photoUnderBar = true))
+        assertEquals(false, statusBarIconsDark(0.02f, lightPage, photoUnderBar = true))
+        assertEquals(false, statusBarIconsDark(0.9f, darkPage, photoUnderBar = false))
+        assertEquals(true, statusBarIconsDark(0.02f, lightPage, photoUnderBar = false))
+        // Not read yet: the page answers rather than a guess.
+        assertEquals(false, statusBarIconsDark(null, darkPage, photoUnderBar = true))
+        assertEquals(true, statusBarIconsDark(null, lightPage, photoUnderBar = true))
+    }
+
+    @Test
+    fun `reads how bright the top of a picture is, not the rest of it`() {
+        fun seedOf(top: Int, rest: Int) = artworkSeedOf(
+            createBitmap(100, 100).apply {
+                val canvas = Canvas(this)
+                canvas.drawColor(rest)
+                val paint = android.graphics.Paint().apply { color = top }
+                canvas.drawRect(0f, 0f, 100f, 12f, paint)
+            }
+        )!!
+        val brightTop = seedOf(android.graphics.Color.WHITE, android.graphics.Color.BLACK)
+        val darkTop = seedOf(android.graphics.Color.BLACK, android.graphics.Color.WHITE)
+        assertTrue(brightTop.topLuminance!! > 0.9f)
+        assertTrue(darkTop.topLuminance!! < 0.1f)
+        assertEquals(brightTop.topLuminance, brightTop.toPalette(dark = true).photoTopLuminance)
+    }
+
+    @Test
+    fun `the page sets the status bar icons and puts them back when it goes`() {
+        var shown by mutableStateOf(true)
+        compose.setContent {
+            if (shown) StatusBarIcons(dark = true, restoreDark = false)
         }
-        val palette = PageArtworkSeed(Color(0xFFC87846), Color(0xFFE08A50), Color(0xFF8A4A3C)).toPalette(true)
+        compose.waitForIdle()
+        val controller = compose.runOnIdle {
+            WindowCompat.getInsetsController(compose.activity.window, compose.activity.window.decorView)
+        }
+        assertEquals(true, controller.isAppearanceLightStatusBars)
+        shown = false
+        compose.waitForIdle()
+        assertEquals(false, controller.isAppearanceLightStatusBars)
+    }
+
+    @Test
+    fun `a page leaving does not undo the page that replaced it`() {
+        var first by mutableStateOf(true)
+        var second by mutableStateOf(false)
+        compose.setContent {
+            if (first) StatusBarIcons(dark = false, restoreDark = false)
+            if (second) StatusBarIcons(dark = true, restoreDark = false)
+        }
+        compose.waitForIdle()
+        second = true
+        compose.waitForIdle()
+        first = false
+        compose.waitForIdle()
+        val controller = compose.runOnIdle {
+            WindowCompat.getInsetsController(compose.activity.window, compose.activity.window.decorView)
+        }
+        assertEquals(true, controller.isAppearanceLightStatusBars)
+    }
+
+    private fun renderArtist(name: String, photo: Bitmap, palette: ArtworkPalette, iconsDark: Boolean) {
         compose.setContent {
             StudioTestTheme(dark = true) {
                 ArtworkPageTheme(palette, pageColor = palette.wash) {
@@ -226,6 +287,7 @@ class ArtworkPagePaletteTest {
                         ArtistPhotoBackground(
                             photo = photo,
                             wash = palette.wash,
+                            iconsDark = iconsDark,
                             artHeight = 433.dp,
                             listState = listState,
                             modifier = Modifier.matchParentSize(),
@@ -248,6 +310,27 @@ class ArtworkPagePaletteTest {
                 }
             }
         }
-        capture("palette-artist-dark")
+        // The picture loads off the main thread, which waiting for idle does not cover.
+        Thread.sleep(1500)
+        capture(name)
+    }
+
+    @Test
+    fun artistBrightPhoto() {
+        val photo = createBitmap(400, 420).apply { Canvas(this).drawColor(android.graphics.Color.rgb(245, 240, 230)) }
+        val seed = artworkSeedOf(photo)!!
+        renderArtist("palette-artist-bright", photo, seed.toPalette(true), iconsDark = true)
+    }
+
+    @Test
+    fun artistDark() {
+        val photo = createBitmap(400, 420).apply {
+            val canvas = Canvas(this)
+            canvas.drawColor(android.graphics.Color.rgb(200, 120, 70))
+            val paint = android.graphics.Paint().apply { color = android.graphics.Color.rgb(90, 30, 50) }
+            canvas.drawCircle(200f, 180f, 120f, paint)
+        }
+        val palette = PageArtworkSeed(Color(0xFFC87846), Color(0xFFE08A50), Color(0xFF8A4A3C)).toPalette(true)
+        renderArtist("palette-artist-dark", photo, palette, iconsDark = false)
     }
 }
