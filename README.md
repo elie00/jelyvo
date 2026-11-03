@@ -130,8 +130,9 @@ keystore. Share that keystore between machines if you want to install over an ex
 
 - Original project and the overwhelming majority of this codebase: **[ilianoKokoro](https://github.com/ilianoKokoro)** — [umihi-music](https://github.com/ilianoKokoro/umihi-music).
 - **Jelyvo identity and app logo**: created for this fork.
-- **Word-timed lyrics parsing, lyrics source matching, the listening party server and protocol, and
-  the Studio theme's layout and type scale**: adapted from
+- **Word-timed lyrics parsing, lyrics source matching and translation, reading lyrics from audio files,
+  the listening party server and protocol, the Studio theme's layout and type scale, and the Studio
+  components (sheets, menus, rows, buttons, alerts, controls)**: adapted from
   [BitChord](https://github.com/kushagrasinghx/BitChord) by Kushagra Singh and contributors
   (GPL-3.0). Adapted files say so in their header.
 - **Automix** (`automix/`, under the AGPL-3.0): the transition planner comes from BitChord and
