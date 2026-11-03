@@ -87,6 +87,11 @@ object JamManager {
     /** The party's latest state, or null outside a party. */
     val playback: StateFlow<PartyPlayback?> = _playback.asStateFlow()
 
+    private val _queue = MutableStateFlow<PartyQueue?>(null)
+
+    /** The queue the party shares, or null outside a party. */
+    val queue: StateFlow<PartyQueue?> = _queue.asStateFlow()
+
     private val _pendingInvite = MutableStateFlow<JamInvite?>(null)
 
     /** An invitation waiting for the listener's answer. */
@@ -154,6 +159,7 @@ object JamManager {
                     val reply = json.decodeFromString<JoinReply>(response.body?.string().orEmpty())
                     connection = Connection(serverUrl, reply.code, reply.token)
                     _playback.value = reply.party.playback
+                    _queue.value = reply.party.queue
                     _status.value = JamStatus.InParty(
                         code = reply.code,
                         members = reply.party.members,
@@ -179,6 +185,7 @@ object JamManager {
         connection = null
         closeSocket()
         _playback.value = null
+        _queue.value = null
         _status.value = JamStatus.Idle
         if (current == null) return
         runCatching {
@@ -219,6 +226,19 @@ object JamManager {
             put("isPlaying", isPlaying)
         }
     )
+
+    /** Replaces the party's queue. The window has to fit one message: see [JamQueueSync.window]. */
+    fun sendQueue(window: QueueWindow) = send(
+        buildJsonObject {
+            put("type", "control")
+            put("action", "setQueue")
+            put("queueIndex", window.index)
+            put("queue", json.parseToJsonElement(json.encodeToString(window.tracks)))
+        }
+    )
+
+    /** How large a track is on the wire, which is what the server limits. */
+    fun encodedBytes(track: PartyTrack): Int = json.encodeToString(track).length
 
     private fun Json.encodeToJsonElementOf(track: PartyTrack) =
         parseToJsonElement(encodeToString(track))
@@ -292,10 +312,13 @@ object JamManager {
 
                 "welcome" -> {
                     frame.party?.let { party ->
+                        party.queue?.let(::applyQueue)
                         applyPlayback(party.playback)
                         applyMembers(party.members, party.maxMembers, party.hostOnlyControl)
                     }
                 }
+
+                "queue" -> frame.queue?.let(::applyQueue)
 
                 "state" -> frame.playback?.let(::applyPlayback)
 
@@ -328,6 +351,14 @@ object JamManager {
         // Lower is stale. Equal is the heartbeat restating the truth, kept so drift gets corrected.
         val applied = _playback.value?.seq ?: Long.MIN_VALUE
         if (playback.seq >= applied) _playback.value = playback
+        // A missed queue frame shows up here, and is put right on the very next state.
+        if (playback.queueSeq != (_queue.value?.seq ?: 0L)) {
+            send(buildJsonObject { put("type", "syncQueue") })
+        }
+    }
+
+    private fun applyQueue(queue: PartyQueue) {
+        if (queue.seq >= (_queue.value?.seq ?: Long.MIN_VALUE)) _queue.value = queue
     }
 
     private fun applyMembers(members: List<PartyMember>, maxMembers: Int?, hostOnlyControl: Boolean?) {
@@ -345,6 +376,7 @@ object JamManager {
         connection = null
         closeSocket()
         _playback.value = null
+        _queue.value = null
         _status.value = end?.let(JamStatus::Ended) ?: JamStatus.Idle
     }
 

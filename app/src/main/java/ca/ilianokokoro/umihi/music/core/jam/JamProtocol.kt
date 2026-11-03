@@ -19,6 +19,14 @@ data class PartyTrack(
     val fromAutoplay: Boolean = false,
 )
 
+/** The queue the party shares. It travels apart from the state, which rides every heartbeat. */
+@Serializable
+data class PartyQueue(
+    val seq: Long = 0,
+    val index: Int = -1,
+    val items: List<PartyTrack> = emptyList(),
+)
+
 @Serializable
 data class PartyMember(
     val memberId: String,
@@ -36,6 +44,8 @@ data class PartyMember(
 data class PartyPlayback(
     /** A state whose seq is lower than the one applied is stale and must be dropped. */
     val seq: Long = 0,
+    /** Differing from the queue held here means a queue frame was missed. */
+    val queueSeq: Long = 0,
     val track: PartyTrack? = null,
     val isPlaying: Boolean = false,
     val positionMs: Long = 0,
@@ -53,6 +63,7 @@ data class PartySnapshot(
     val members: List<PartyMember> = emptyList(),
     val maxMembers: Int = 5,
     val hostOnlyControl: Boolean = false,
+    val queue: PartyQueue? = null,
 )
 
 @Serializable
@@ -72,6 +83,7 @@ data class ServerFrame(
     val maxMembers: Int? = null,
     val hostOnlyControl: Boolean? = null,
     val party: PartySnapshot? = null,
+    val queue: PartyQueue? = null,
     val clientMs: Long? = null,
     val serverMs: Long? = null,
     val reason: String? = null,

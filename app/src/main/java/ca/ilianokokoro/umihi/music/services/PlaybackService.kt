@@ -330,6 +330,9 @@ class PlaybackService : MediaLibraryService() {
 
         sessionListener = object : Player.Listener {
             override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+                if (reason == Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) {
+                    jam.onLocalQueueChanged()
+                }
                 scheduleQueuePersistence()
                 wearPlaybackStatePublisher.publish(activePlayer)
             }
