@@ -677,4 +677,6 @@
     <string name="lyrics_already_in_language">These lyrics are already in your language.</string>
     <string name="sleep_timer_minutes_field">Minutes</string>
     <string name="sleep_timer_minutes_short">min</string>
+    <string name="local_view_songs">Songs</string>
+    <string name="local_view_folders">Folders</string>
 </resources>

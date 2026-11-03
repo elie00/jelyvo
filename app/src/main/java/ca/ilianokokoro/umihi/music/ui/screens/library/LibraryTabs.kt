@@ -159,47 +159,12 @@ internal fun OnDeviceTab(
         return
     }
 
-    val sourceName = stringResource(R.string.on_device)
-
-    val listState = rememberLazyListState()
-    DockScrollToTopEffect(listState)
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        state = listState,
-        contentPadding = PaddingValues(
-            top = LocalLibraryHeaderHeight.current + 8.dp,
-            bottom = Constants.Ui.SCROLLABLE_BOTTOM_PADDING,
-        ),
-    ) {
-        item(key = "play-shuffle") {
-            PlayShuffleRow(
-                onPlay = {
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.map { it.mediaItem },
-                        sourceName = sourceName
-                    )
-                },
-                onShuffle = {
-                    onOpenPlayer()
-                    PlayerManager.playQueue(
-                        songs.shuffled().map { it.mediaItem },
-                        sourceName = sourceName
-                    )
-                },
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-        }
-
-        items(items = songs, key = { it.youtubeId }) { song ->
-            LocalSongListItem(
-                song = song,
-                songs = songs,
-                onOpenPlayer = onOpenPlayer,
-            )
-        }
-    }
+    LocalSongsContent(
+        songs = songs,
+        onOpenPlayer = onOpenPlayer,
+        topPadding = LocalLibraryHeaderHeight.current + 8.dp,
+        scrollEffect = { DockScrollToTopEffect(it) },
+    )
 }
 
 @Composable
@@ -207,9 +172,9 @@ internal fun LocalSongListItem(
     song: Song,
     songs: List<Song>,
     onOpenPlayer: () -> Unit,
+    sourceName: String = stringResource(R.string.on_device),
 ) {
     val context = LocalContext.current
-    val sourceName = stringResource(R.string.on_device)
 
     SongListItem(
         song = song,

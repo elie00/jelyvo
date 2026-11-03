@@ -663,4 +663,6 @@
     <string name="lyrics_already_in_language">Ces paroles sont déjà dans votre langue.</string>
     <string name="sleep_timer_minutes_field">Minutes</string>
     <string name="sleep_timer_minutes_short">min</string>
+    <string name="local_view_songs">Titres</string>
+    <string name="local_view_folders">Dossiers</string>
 </resources>

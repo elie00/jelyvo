@@ -55,6 +55,10 @@ data class Song(
     @Ignore
     var localUri: String? = null
 
+    // The directory an on-device track sits in, for browsing by folder. Transient, like its URI's source.
+    @Ignore
+    var localFolder: String? = null
+
     // Autoplay suggestion: true when this queue entry was appended by the end-of-queue radio
     // mechanism (not explicitly added by the user). Transient; carried in the MediaItem extras and
     // persisted with the queue so the UI can separate "up next" from automatic suggestions.
@@ -126,6 +130,7 @@ data class Song(
         updated.artistId = artistId
         updated.isLocal = isLocal
         updated.localUri = localUri
+        updated.localFolder = localFolder
         updated.isSuggestion = isSuggestion
         updated.forceVideo = forceVideo
         updated.isVideo = isVideo
