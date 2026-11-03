@@ -29,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -87,7 +88,7 @@ fun AlertDialog(
         ),
     ) {
         val view = LocalView.current
-        remember(view) { (view.parent as? DialogWindowProvider)?.window?.setDimAmount(SCRIM_ALPHA) }
+        SideEffect { (view.parent as? DialogWindowProvider)?.window?.setDimAmount(SCRIM_ALPHA) }
         AlertCard(
             confirmButton = confirmButton,
             modifier = modifier,
