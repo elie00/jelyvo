@@ -323,11 +323,11 @@ private fun VerticalSlider(
     )
 }
 
-private fun formatFrequency(milliHz: Int): String {
+internal fun formatFrequency(milliHz: Int): String {
     val hz = milliHz / 1000
     return if (hz >= 1000) {
         val k = hz / 1000f
-        if (k % 1f == 0f) "${k.toInt()} kHz" else "${(Math.round(k * 10) / 10f)} kHz"
+        if (k % 1f == 0f) "${k.toInt()} kHz" else "${(Math.round(k * 10) / 10f).toString().replace('.', ',')} kHz"
     } else {
         "$hz Hz"
     }
