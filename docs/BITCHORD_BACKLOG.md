@@ -10,9 +10,6 @@ La v2.6.13 est publiée sur `elie00/jelyvo-releases`. L'APK est signé avec la c
 
 ## Fait le 3 novembre, sur `feat/jam-complete`
 
-Rien de ceci n'a tourné dans l'application sur un appareil. Tests unitaires, captures et protocole rejoué
-par script contre le serveur déployé uniquement.
-
 - **Écoute à plusieurs** : membres, exclusion, contrôle réservé à l'hôte, lien d'invitation et QR code, ouverture
   depuis un lien (avec confirmation, et un avertissement si le serveur n'est pas celui par défaut), file
   partagée, message quand une partie se termine.
@@ -27,8 +24,6 @@ lecteurs. Surveiller les deux appareils en lecture automatique, qui peuvent prop
 
 ## Fait le 3 novembre, sur `feat/bitchord-components`
 
-Rien de ceci n'a tourné sur un appareil non plus : les tests se feront sur le Mac.
-
 - **Interface alignée sur BitChord** : feuilles du bas, menus, rangées, cartes, boutons, indicateurs, volets grand
   écran, pages teintées par la pochette, icônes de la barre d'état selon la photo d'artiste.
 - **Traduction des paroles**, à la demande. Les paroles ne partent chez Google que si on appuie sur le bouton, par
@@ -40,15 +35,11 @@ Rien de ceci n'a tourné sur un appareil non plus : les tests se feront sur le M
 - **Replay** : version compacte, sur l'année en cours, avec des histoires plein écran et une affiche à partager.
   Pas de choix de période ni de cartes multiples comme dans BitChord.
 
-## À décider en premier
+## Testé le 3 novembre sur le Mac
 
-1. **Par quoi commencer ?** Recommandation : l'écoute à plusieurs complète et les petits gains
-   rapides, parce que c'est visible tout de suite et que le serveur est prêt. PoToken vient ensuite.
-2. **Comment fournir le code source ?** Jelyvo est sous GPL-3.0 et son APK est public, alors que
-   `umihi-music` est privé et que `jelyvo-releases` ne contient qu'un README. La GPL impose de
-   fournir le code source à ceux qui reçoivent l'APK, et la 2.6.13 ajoute du code BitChord sous GPL
-   et AGPL. Le plus simple est de rendre le dépôt public, après avoir vérifié qu'il ne contient aucun
-   secret. Sinon, joindre le code source à chaque release.
+Tout ce qui précède a tourné sur deux émulateurs : résultats et reste à faire dans [`CHANTIER.md`](../CHANTIER.md).
+Le code source est désormais publié dans `elie00/jelyvo`. PoToken n'est pas écrit, par choix : il sert à
+contourner la détection de robots.
 
 ## Résultats des tests du 2 novembre
 

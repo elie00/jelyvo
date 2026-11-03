@@ -5,30 +5,29 @@
 > Document de passation pour reprendre le travail sur un autre poste.
 > Dernière mise à jour : 2026-11-03, branche `feat/bitchord-components`, remote `origin = github.com/elie00/umihi-music`.
 
-## À reprendre sur le Mac (état du 3 novembre 2026)
+## État du 3 novembre 2026 au soir, sur le Mac
 
-Tout ce qui pouvait se faire sans appareil est fait et poussé sur `feat/bitchord-components`, avec la PR #4 en brouillon. **Rien de ce travail n'a encore tourné sur un téléphone ou un émulateur.** Ne pas se fier à cette note pour l'état de `main` : toujours faire `git fetch` d'abord.
+La PR #4 a été compilée et testée sur le Mac : 785 tests JVM sans échec, lint sans erreur. L'APK de release a été installé par-dessus la 2.6.13 publique sur deux émulateurs. Toujours faire `git fetch` avant de se fier à cette note.
 
-**Vérifié sous Windows, sans appareil** : tests de tous les modules, 681 tests de l'app avec le seul échec connu ci-dessous, lint sans erreur (app et montre), tests du bureau, APK de la montre et APK de release construits. Écrans contrôlés par captures JVM ; taps, menus, glissement à gauche et bascules par tests Compose. La CI de la PR #4 (Linux et macOS) tournait encore quand cette note a été écrite : regarder son résultat. CodeQL échoue sur ce dépôt privé, l'analyse de code n'y étant pas activée.
+**Vérifié sur deux émulateurs, en release**
 
-**Ordre à suivre**
+- Écoute à plusieurs avec deux vrais lecteurs : lien d'invitation, QR code, membres, exclusion, contrôle réservé à l'hôte, file partagée dans les deux sens. Écart mesuré entre 0,05 et 0,7 s, signal du serveur à 10,0 s.
+- Fondu enchaîné (deux lecteurs pendant la durée réglée) et Automix : sur des fichiers à silences, il sort à 40,4 s au lieu de 59,6 s et entre à 5,0 s au lieu de 0. Saut des silences : un titre de 60 s joué en 42 s.
+- Feuilles, réordonner la file, menus près des bords, glissement à gauche, gestes du lecteur, accueil sans compte, grand écran, barre d'état sur photos claires et sombres, traduction réelle et hors ligne, paroles MP3, FLAC et M4A, pochettes, dossiers, « Ouvrir avec », minuterie à durée libre, Replay et son affiche, carte image, messages d'échec.
 
-1. Lire le résultat de la CI de la PR #4.
-2. Compiler et installer sur l'émulateur : `./gradlew :app:assembleStandaloneDebug`, puis `adb install -r` de l'APK produit dans `app/build/outputs/apk/standalone/debug/`.
-3. Dérouler la liste ci-dessous et corriger ce qui casse sur `feat/bitchord-components`.
-4. Fusionner les PR #2 et #3, puis sortir la #4 du brouillon et la fusionner. Rien ne va sur `main` sans accord explicite.
+**Corrigé par ces tests** : la file d'un hôte tronquée quand un invité la modifiait, les durées perdues dans une file reçue, les préréglages de l'égaliseur (Android ajoute un caractère nul à leur nom), l'ombre coupée des menus, les marges de plusieurs écrans.
+
+**L'application est maintenant toujours en français**, quelle que soit la langue du téléphone : voir [`docs/I18N.md`](docs/I18N.md). La langue spéciale cachée est retirée.
+
+**Reste à faire, qui demande quelqu'un** :
+
+1. Écouter à l'oreille sur de vrais téléphones : synchronisation à deux, fondu, Automix.
+2. Tester le partage des écoutes avec de vrais comptes ListenBrainz et Last.fm. Seul le refus d'un mauvais jeton a été vérifié.
+3. Déployer la page d'invitation en français : `cd worker && npx wrangler login && npm run deploy`. Le code est prêt, le serveur en ligne affiche encore l'anglais.
+4. Passer la PR #4 en fusion, puis monter la version en 2.6.14 avant de publier : la 2.6.13 est déjà sortie, et le téléphone ne verrait rien sans nouveau numéro.
 5. Republier le dépôt public `elie00/jelyvo` avec le script de publication, jamais à la main : il réécrit l'historique.
 
-**À vérifier sur appareil**
-
-- Feuilles du bas : glisser pour fermer, réordonner la file au doigt, fond de la rangée déplacée.
-- Menus : position près des bords de l'écran. Rangées : glissement à droite (j'aime, demande un compte) et à gauche (file).
-- Barre d'état : icônes sur des photos d'artiste claires et sombres, retour à la normale en quittant la page. Flou de la photo d'artiste.
-- Accueil sans compte, aide aux gestes, boutons actifs du lecteur, zones de dépôt, badge d'édition : modifiés mais jamais capturés.
-- Traduction des paroles contre le vrai service, y compris sans connexion.
-- Fichiers locaux réels : paroles MP3, FLAC et M4A, pochettes intégrées (passent par MediaStore, non vérifié), vue par dossiers.
-- Minuterie avec une durée saisie à la main. Replay : ouverture, pages, partage de l'affiche.
-- Toujours en attente depuis avant : écoute à plusieurs entre deux vrais téléphones (file partagée, lien d'invitation), « Ouvrir avec », saut des silences, taux de rafraîchissement, messages d'échec de lecture, décodeur d'Automix, scrobbling avec de vrais comptes, fondu enchaîné à l'oreille.
+**Non testable au doigt** : la sélection multiple et le glisser-déposer vers les zones de dépôt, réservés à la souris et au stylet (DeX). Le rafraîchissement le plus rapide : l'émulateur reste à 60 Hz.
 
 **Limites assumées**
 
