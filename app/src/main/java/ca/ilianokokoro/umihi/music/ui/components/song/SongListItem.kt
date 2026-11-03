@@ -318,7 +318,7 @@ fun SongListItem(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = song.duration,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
