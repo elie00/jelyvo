@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ReplayDialog
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.managers.PlayerManager
 import ca.ilianokokoro.umihi.music.core.stats.StatsExporter
@@ -59,6 +63,12 @@ fun ListeningStatsScreen(
     ),
 ) {
     val state = viewModel.uiState.collectAsStateWithLifecycle().value
+    var showReplay by remember { mutableStateOf(false) }
+    if (showReplay) {
+        state.wrapped?.let { wrapped ->
+            ReplayDialog(wrapped = wrapped, onDismiss = { showReplay = false })
+        }
+    }
     val hasStats = state.topTracks.isNotEmpty() || state.topArtists.isNotEmpty()
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -127,6 +137,7 @@ fun ListeningStatsScreen(
                     WrappedCard(
                         wrapped = wrapped,
                         modifier = Modifier.padding(horizontal = PageGutter, vertical = 8.dp),
+                        onOpenReplay = { showReplay = true },
                     )
                 }
             }

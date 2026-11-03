@@ -665,4 +665,5 @@
     <string name="sleep_timer_minutes_short">min</string>
     <string name="local_view_songs">Titres</string>
     <string name="local_view_folders">Dossiers</string>
+    <string name="replay_open">Voir votre Replay</string>
 </resources>

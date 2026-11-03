@@ -679,4 +679,5 @@
     <string name="sleep_timer_minutes_short">min</string>
     <string name="local_view_songs">Songs</string>
     <string name="local_view_folders">Folders</string>
+    <string name="replay_open">See your Replay</string>
 </resources>

@@ -7,6 +7,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.content.FileProvider
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.screens.stats.components.ReplayPoster
 import ca.ilianokokoro.umihi.music.core.Constants
 import ca.ilianokokoro.umihi.music.core.youtube.YoutubeApiConstants
 import ca.ilianokokoro.umihi.music.models.Song
@@ -66,6 +67,24 @@ object ShareHelper {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(Intent.EXTRA_TEXT, lyricsShareText(context, song, text))
+            clipData = ClipData.newRawUri(null, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(sendIntent, null))
+    }
+
+    /** The year as an image. Nothing else goes with it: the poster already says everything. */
+    suspend fun shareReplay(context: Context, title: String, rows: List<Pair<String, String>>) {
+        val uri = withContext(Dispatchers.IO) {
+            val poster = ReplayPoster.render(title, rows)
+            val directory = File(context.cacheDir, LYRICS_CARD_DIRECTORY).apply { mkdirs() }
+            val file = File(directory, "replay.png")
+            file.outputStream().use { poster.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        }
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
             clipData = ClipData.newRawUri(null, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }

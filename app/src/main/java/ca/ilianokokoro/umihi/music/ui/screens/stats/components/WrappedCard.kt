@@ -17,6 +17,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ca.ilianokokoro.umihi.music.R
+import ca.ilianokokoro.umihi.music.ui.components.studio.ActionPill
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.Icons
 import ca.ilianokokoro.umihi.music.ui.screens.stats.WrappedStats
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -26,6 +29,7 @@ import java.time.format.FormatStyle
 fun WrappedCard(
     wrapped: WrappedStats,
     modifier: Modifier = Modifier,
+    onOpenReplay: (() -> Unit)? = null,
 ) {
     val contentColor = MaterialTheme.colorScheme.onSurface
 
@@ -87,6 +91,17 @@ fun WrappedCard(
                     label = stringResource(R.string.wrapped_most_active_day),
                     value = day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)),
                     contentColor = contentColor,
+                )
+            }
+
+            onOpenReplay?.let { open ->
+                ActionPill(
+                    icon = Icons.Rounded.AutoAwesome,
+                    label = stringResource(R.string.replay_open),
+                    onClick = open,
+                    filled = true,
+                    size = 44.dp,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
