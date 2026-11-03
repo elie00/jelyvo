@@ -7,7 +7,7 @@
 
 ## État du 3 novembre 2026 au soir, sur le Mac
 
-La PR #4 a été compilée et testée sur le Mac : 785 tests JVM sans échec, lint sans erreur. L'APK de release a été installé par-dessus la 2.6.13 publique sur deux émulateurs. Toujours faire `git fetch` avant de se fier à cette note.
+La PR #4 a été compilée et testée sur le Mac : 802 tests JVM sans échec, 65 tests du serveur, lint sans erreur. L'APK de release a été installé par-dessus la 2.6.13 publique sur deux émulateurs. Toujours faire `git fetch` avant de se fier à cette note.
 
 **Vérifié sur deux émulateurs, en release**
 
