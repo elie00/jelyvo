@@ -55,6 +55,8 @@ data class ArtworkPalette(
     val onBackground: Color,
     val onBackgroundVariant: Color,
     val divider: Color,
+    /** See [PageArtworkSeed.topLuminance]. Null until the artwork has been read. */
+    val photoTopLuminance: Float? = null,
 )
 
 /** What the page is mostly made of, its brightest note, and what its bottom edge averages out to. */
@@ -63,6 +65,8 @@ data class PageArtworkSeed(
     val dominant: Color,
     val vibrant: Color,
     val edge: Color,
+    /** How bright the top of the picture is, which is what a status bar drawn over it sits on. */
+    val topLuminance: Float? = null,
 )
 
 private const val PALETTE_PX = 128
@@ -70,6 +74,7 @@ private const val SWATCH_COUNT = 24
 private const val SEED_CACHE_ENTRIES = 128
 private const val TINT_FADE_MS = 260
 private const val EDGE_BAND = 0.18f
+private const val TOP_BAND = 0.12f
 /** Below this, boosting saturation would only make quantisation noise visible as a tint. */
 private const val CHROMATIC_SATURATION_THRESHOLD = 0.12f
 private const val MIN_TEXT_CONTRAST = 4.5
@@ -124,7 +129,10 @@ private fun readableOn(color: Color, pages: List<Color>, dark: Boolean): Color {
 }
 
 internal fun PageArtworkSeed.toPalette(dark: Boolean): ArtworkPalette = basePalette(dark).let {
-    it.copy(onBackgroundVariant = readableOn(it.onBackgroundVariant, listOf(it.background, it.wash), dark))
+    it.copy(
+        onBackgroundVariant = readableOn(it.onBackgroundVariant, listOf(it.background, it.wash), dark),
+        photoTopLuminance = topLuminance,
+    )
 }
 
 private fun PageArtworkSeed.basePalette(dark: Boolean): ArtworkPalette = if (dark) {
@@ -204,7 +212,20 @@ internal fun artworkSeedOf(bitmap: Bitmap): PageArtworkSeed? {
         val hsl = FloatArray(3).also { ColorUtils.colorToHSL(swatch.rgb, it) }
         hsl[1] * sqrt(swatch.population.toFloat())
     }
-    return PageArtworkSeed(Color(dominant.rgb), Color(vibrant.rgb), bitmap.bottomEdgeColor())
+    return PageArtworkSeed(
+        dominant = Color(dominant.rgb),
+        vibrant = Color(vibrant.rgb),
+        edge = bitmap.bottomEdgeColor(),
+        topLuminance = bitmap.topLuminance(),
+    )
+}
+
+/** The mean of the band a status bar covers. Luminance, not colour: this only picks black or white. */
+private fun Bitmap.topLuminance(): Float {
+    val band = (height * TOP_BAND).toInt().coerceIn(1, height)
+    val pixels = IntArray(width * band)
+    getPixels(pixels, 0, width, 0, 0, width, band)
+    return (pixels.sumOf { ColorUtils.calculateLuminance(it) } / pixels.size.coerceAtLeast(1)).toFloat()
 }
 
 /** A flat mean: the page under the artwork has to match what a wide blur actually leaves behind. */
@@ -279,6 +300,7 @@ fun rememberArtworkPalette(imageUrl: String?): ArtworkPalette {
             target.onBackgroundVariant, spec, label = "tintOnVariant",
         ).value,
         divider = animateColorAsState(target.divider, spec, label = "tintDivider").value,
+        photoTopLuminance = target.photoTopLuminance,
     )
 }
 
